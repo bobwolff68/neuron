@@ -85,9 +85,9 @@ int VFRM_init( VFRModule *pVfm )
 	cpu_time[0] = cpu_time[1] = 0;
 	proc_time[0] = proc_time[1] = 0;
 
-	pVfm->opfd = open( pVfm->vfrm_output_fn, O_WRONLY );
 	pVfm->quit_flag = 0;
 	pVfm->video_src_id_str = (char *) av_mallocz( sizeof(char)*50 );
+	strcpy( pVfm->video_src_id_str, "-1" );
 	GOPQ_init( &(pVfm->gopq) );
 	
 	if( !fscInit( &(pVfm->fsc) ) )
@@ -117,7 +117,8 @@ int VFRM_thread_run( void *userdata )
 	VFRModule	*pVfm = (VFRModule *) userdata;
 	pid_t		proc_id = getpid();
 
-	VFRM_init( pVfm );
+	//VFRM_init( pVfm );
+	pVfm->opfd = open( pVfm->vfrm_output_fn, O_WRONLY );
 	strcpy( query_param_list[0], pVfm->video_src_id_str );
 	strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
 	printf( "Parameter list = (%s,%s)\n", query_param_list[0], query_param_list[1] );
@@ -230,11 +231,8 @@ int VFRM_thread_run( void *userdata )
 		}
 	}
 
-	NeuronDP_destroy( &(pVfm->ndp), SUB_CHOICE );
-	free( pVfm->gopq.gop_buf );
-	fscClose( &(pVfm->fsc) );
 	close( pVfm->opfd );
-	fprintf( stderr, "VFRM finished\n" );
+	fprintf( stdout, "VFRM finished\n" );
 	return 1;
 }
 
@@ -283,6 +281,19 @@ void VFRM_get_cpu_usage( pid_t proc_id )
 	pclose( queryReply );
 	*cpu_usage = 100.0*((double) (proc_time[1]-proc_time[0]))/((double) (cpu_time[1]-cpu_time[0]));
 	return;
+}
+
+void VFRM_destroy( VFRModule *pVfm )
+{
+	free( pVfm->gopq.gop_buf );
+	free( pVfm->video_src_id_str );
+	free( bandwidth );
+	free( cpu_usage );
+	free( cpu_time );
+	free( proc_time );
+	fscClose( &(pVfm->fsc) );
+
+	return;	
 }
 
 /*int VFRM_thread_run( void *userdata )

@@ -125,11 +125,15 @@ int fscParseFrame( fscPtr f, uint_t verbose, NeuronDP *pNdp,
 int	fscReadFrame( fscPtr f, NeuronDP *pNdp, const char *query, char query_param_list[][10] )
 {
 	int	layer_type;
+	int bytes_read;
 
 	fscReset( f );
 	NeuronSub_read_frame( pNdp, &(f->streamBuf), &(f->streamBufSize), &(f->streamPtr), &layer_type,
 						  query, query_param_list );
-	return f->streamPtr;
+	bytes_read = f->streamPtr;
+	if( bytes_read==1 ) bytes_read--;
+	
+	return bytes_read;
 }
 
 int fscWriteVideoHeader( fscPtr f, int hdrStreamIndex, int ofd )

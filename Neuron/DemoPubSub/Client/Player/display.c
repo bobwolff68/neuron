@@ -31,18 +31,25 @@ void button_click( GtkWidget *widget, gpointer data )
 	return;
 }
 
-void SDL_refresh_loop( gpointer data )
-{
-	SDL_Event 		event;
-	NeuronGuiObject *pNGObj = (NeuronGuiObject *) data;
-
-	SDL_WaitEvent( &event );
-	if( event.type==FF_REFRESH_EVENT )
-		refresh_display( pNGObj, event.user.data1 );
-
-  	return;
-}
 //---------------------------------- Neuron GUI FUNCTIONS -----------------------------------------
+void setup_src_list( NeuronGuiObject *nguiObj )
+{
+	gchar *colTitles[2] = { "Source Name", "Source ID" };
+	
+	nguiObj->scrollWin = gtk_scrolled_window_new( NULL, NULL );
+	gtk_scrolled_window_set_policy( GTK_SCROLLED_WINDOW(nguiObj->scrollWin),
+                                    GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC );
+    gtk_widget_set_size_request( nguiObj->scrollWin, 170, 150 );
+	gtk_fixed_put( GTK_FIXED(nguiObj->fixedFrame), nguiObj->scrollWin, 10, 15 );
+	nguiObj->srcList = gtk_clist_new_with_titles( 2, colTitles );
+	gtk_clist_column_titles_passive( GTK_CLIST(nguiObj->srcList) );
+	gtk_clist_column_titles_show( GTK_CLIST(nguiObj->srcList) );
+	gtk_clist_set_selection_mode( GTK_CLIST(nguiObj->srcList), GTK_SELECTION_SINGLE );
+	gtk_container_add( GTK_CONTAINER(nguiObj->scrollWin), nguiObj->srcList );
+	
+	return;
+}
+
 void neu_gui_open( NeuronGuiObject *nguiObj, int vwidth, int vheight, char *fps_choice )
 {
 	int			i;
@@ -56,6 +63,8 @@ void neu_gui_open( NeuronGuiObject *nguiObj, int vwidth, int vheight, char *fps_
 	gtk_window_set_title( GTK_WINDOW(nguiObj->window), "Neuron Concept Mini Demo" );
 	nguiObj->fixedFrame = gtk_fixed_new();
 	gtk_container_add( GTK_CONTAINER(nguiObj->window), nguiObj->fixedFrame );
+	// Source List
+	setup_src_list( nguiObj );
 	// Video Screen
 	nguiObj->videoScreen = gtk_drawing_area_new();
 	gtk_widget_set_size_request( nguiObj->videoScreen, vwidth, vheight );
@@ -106,8 +115,11 @@ void neu_gui_open( NeuronGuiObject *nguiObj, int vwidth, int vheight, char *fps_
 	g_signal_connect( G_OBJECT(nguiObj->window), "destroy", G_CALLBACK(gtk_main_quit), NULL );
 
 	for( i=0; i<3; i++ )
+	{
 		g_signal_connect( G_OBJECT(nguiObj->fpsButtons[i]), "clicked", 
 						  G_CALLBACK(button_click), fps_choice );
+		gtk_widget_hide( nguiObj->fpsButtons[i] );
+	}
 
 	return;
 }

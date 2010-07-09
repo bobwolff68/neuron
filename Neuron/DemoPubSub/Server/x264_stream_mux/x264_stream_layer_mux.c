@@ -1,8 +1,11 @@
 #include <sys/time.h>
 #include <time.h>
+#include <signal.h>
+#include <unistd.h>
 #include "x264_stream_layer_mux.h"
 
 int	clk_multiple = 1;
+int ctrl_c_hit = 0;
 
 int64_t av_gettime(void)
 {
@@ -70,6 +73,17 @@ int x264_stream_layer_mux_init( x264_slmux_ptr mux, char *name )
 	return 1;
 }
 
+void sig_handle_ctrl_c( int sig )
+{
+	if( sig==2 )
+	{
+		printf( "\nCTRL+C (FORCE TERMINATION)\n" );
+		ctrl_c_hit = 1;
+	}
+	
+	return;
+}
+
 int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 {
 	int	 	i;
@@ -80,10 +94,9 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 									  &(mux->ndp), &(mux->throttle_mode), 
 									  mux->sink_id_str, THROT_MSG_TAKE_QUERY 
 									};
-
+	(void) signal( SIGINT, sig_handle_ctrl_c );
 	printf( "Neuron Concept server started (%s)....\n", (mux->loop_flag==0) ? "one time playback"
 														: "loop playback" );
-
 	do
 	{
 		x264_stream_layer_mux_init( mux, name );
@@ -108,12 +121,14 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 		while( 
 			   !feof( mux->fl[0].x264_stream ) && 
 			   !feof( mux->fl[1].x264_stream ) && 
-			   !feof( mux->fl[2].x264_stream )
+			   !feof( mux->fl[2].x264_stream ) &&
+			   !ctrl_c_hit
 			 )
 		{
 			// Write one L0 frame
 			time_mus = av_gettime();		
 			if( !fscExtractFrame( &(mux->fl[0]), 0 ) )	break;
+			if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
 			nanosleep_ttw( time_mus, &(mux->throttle_mode) );
 			fscWriteFrame( &(mux->fl[0]), &(mux->ndp) );
 			// If IDR/I frame, parse and write next P frame.
@@ -121,28 +136,26 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 			{
 				clk_multiple++;
 				if( !fscExtractFrame( &(mux->fl[0]), 0 ) )	break;
+				if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
 				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
 				fscWriteFrame( &(mux->fl[0]), &(mux->ndp) );
 			}
 			// Extract the next B frame and write if fps_op > 0.25*fps_orig
 			if( !fscExtractFrame( &(mux->fl[1]), 0 ) )	break;
-			//if( mux->fl[1].streamPtr>NAL_AUD_SIZE )
-			//{
-				clk_multiple++;
-				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
-			//}	
+			if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
+			clk_multiple++;
+			nanosleep_ttw( time_mus, &(mux->throttle_mode) );
 			fscWriteFrame( &(mux->fl[1]), &(mux->ndp) );
 			// Extract the next 2 b frames and write if fps_op == fps_orig
 			for( i=0; i<2; i++ )
 			{
 				if( !fscExtractFrame( &(mux->fl[2]), 0 ) )	break;
-				//if( mux->fl[2].streamPtr>NAL_AUD_SIZE )
-				//{
-					clk_multiple++;
-					nanosleep_ttw( time_mus, &(mux->throttle_mode) );
-				//}
+				if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
+				clk_multiple++;
+				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
 				fscWriteFrame( &(mux->fl[2]), &(mux->ndp) );
-			}		
+			}
+			if( i<2 )	break;
 			clk_multiple = 1;
 		}
 	
@@ -151,8 +164,10 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 		fscClose( &(mux->fl[2]) );
 		
 		if( mux->loop_flag==1 ) mux->loop_flag++;
-	} while( mux->loop_flag>1 );
+	} while( mux->loop_flag>1 && mux->throttle_mode != H264MUX_KILL_SIGNAL && !ctrl_c_hit );
 	
+	NeuronPub_write_frame( &(mux->ndp), (char *) mux->sink_id_str, (long) 1, (long) 0 );
+	sleep( 1 );
 	NeuronDP_destroy( &(mux->ndp), PUB_CHOICE );
 	printf( "Server exiting....\n" );
 	return 1;	

@@ -56,4 +56,5 @@ int GOPQ_flush_to_fifo( GOPQ *, int );
 int 	VFRM_init( VFRModule * );
 int 	VFRM_thread_run( void * );
 void	VFRM_get_cpu_usage( pid_t );
+void	VFRM_destroy( VFRModule * );
 

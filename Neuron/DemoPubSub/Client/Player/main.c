@@ -18,18 +18,197 @@
 //---------------------------------------- DEFINES ------------------------------------------------
 #define VID_W	640
 #define VID_H	480
+
+#define SCHED_SRCLIST_REFRESH( pvrfm, delay_ms ) \
+		SDL_AddTimer( delay_ms, refresh_srclist_callback, pvrfm )
 //---------------------------------------- GLOBALS ------------------------------------------------
 TSDPtr *ptsd_global;
 //--------------------------------------- STRUCTURES ----------------------------------------------
+typedef struct
+{
+	VFRModule		*pvfrm;
+	TSDPtr			ptsd;
+	NeuronGuiObject	*pNGObj;
+} SelectRowUserData;
 
+typedef SelectRowUserData *SRUDPtr;
 //--------------------------------------- MISC FUNCS ----------------------------------------------
+Uint32 refresh_srclist_callback( Uint32 interval, void *opaque )
+{
+	SDL_Event event;
+	event.type = FF_REFRESH_SRCLIST_EVENT;
+	event.user.data1 = opaque;
+	SDL_PushEvent( &event );
+	return 0;
+}
+
+void refresh_src_list( NeuronGuiObject *pNGObj, void *data )
+{
+	int		i;
+	char	*srcListEntry[2];
+	VFRModule *pvfrm = (VFRModule *) data;
+	
+	// Refresh source list
+	if( !strcmp( pvfrm->video_src_id_str, "-1" ) )
+	{
+		srcListEntry[0] = (char *) malloc( sizeof(char)*50 );
+		srcListEntry[1] = (char *) malloc( sizeof(char)*10 );
+		NeuronSub_read_srcadverts( &(pvfrm->ndp) );
+	
+		// Refresh entries in Clist widget
+		gtk_clist_freeze( GTK_CLIST(pNGObj->srcList) );
+		gtk_clist_clear( GTK_CLIST(pNGObj->srcList) );
+		for( i=0; i<(pvfrm->ndp.nsub.n_srcs); i++ )
+		{
+			strcpy( srcListEntry[0], pvfrm->ndp.nsub.srcNameList[i] );
+			strcpy( srcListEntry[1], pvfrm->ndp.nsub.srcIdList[i] );
+			gtk_clist_append( GTK_CLIST(pNGObj->srcList), srcListEntry );
+		}
+		gtk_clist_thaw( GTK_CLIST(pNGObj->srcList) );	
+		free( srcListEntry[0] );
+		free( srcListEntry[1] );
+		SCHED_SRCLIST_REFRESH( pvfrm, 1000 );
+	}
+	return;
+}
+
+void SDL_refresh_loop( gpointer data )
+{
+	SDL_Event 		event;
+	NeuronGuiObject *pNGObj = (NeuronGuiObject *) data;
+
+	SDL_WaitEvent( &event );
+	switch( event.type )
+	{
+		case FF_REFRESH_EVENT:
+								refresh_display( pNGObj, event.user.data1 );
+								break;
+								
+		case FF_REFRESH_SRCLIST_EVENT:
+										refresh_src_list( pNGObj, event.user.data1 );
+										break;
+	}
+  	return;
+}
+
+void on_video_src_select( GtkWidget *widget, gint row, gint column,GdkEventButton *event, 
+						  gpointer data )
+{
+	long	src_id;
+	long	vid_src_id;
+	int		i;
+	
+	SRUDPtr	psrud = (SRUDPtr) data;
+	AVCodec	*pCodec;
+	
+	if( !strcmp( psrud->pvfrm->video_src_id_str, "-1" ) )
+	{
+		// Extract ID of selected source
+		strcpy( psrud->pvfrm->video_src_id_str, psrud->pvfrm->ndp.nsub.srcIdList[row] );
+		
+		// Hide Source List and Show Buttons
+		gtk_widget_hide( widget );
+		
+		// Display Frame Rate Choice Buttons
+		for( i=0; i<3; i++ )
+			gtk_widget_show( psrud->pNGObj->fpsButtons[i] );
+		
+		// Send throttle message to start source
+		src_id = psrud->pvfrm->ndp.dp_id;
+		sscanf( psrud->pvfrm->video_src_id_str, "%ld", &vid_src_id );
+		psrud->pvfrm->ndp.dp_id = (psrud->pvfrm->ndp.dp_id << 8) | vid_src_id;
+		NeuronSub_write_throtmsg( &(psrud->pvfrm->ndp), '1' );
+		psrud->pvfrm->ndp.dp_id = src_id;
+		
+		// Create Content Filtered Frame Topic and Reader
+		NeuronSub_setup_cftopic_and_reader( &(psrud->pvfrm->ndp), psrud->pvfrm->video_src_id_str );
+		
+		// Start vfr module thread
+		psrud->ptsd->vfrm_thread = SDL_CreateThread( VFRM_thread_run, (void *) psrud->pvfrm );
+		
+		// Register all available file formats and codecs with the library
+		av_register_all();
+
+		// Open file and store container information in format context object
+		if( av_open_input_file( &(psrud->ptsd->pFmtCtx), psrud->pvfrm->vfrm_output_fn, NULL, 0, 
+								NULL )!=0 )
+		{
+			fprintf( stderr, "Could not open file: %s\n", psrud->pvfrm->vfrm_output_fn );
+			exit(0);
+		}
+		printf( "Streaming started....\n" );
+	
+		// Retrieve stream information
+		/*if( av_find_stream_info( ptsd->pFmtCtx )<0 )
+		{
+			fprintf( stderr, "Could not retrieve stream info from file: %s\n", vfrm_opfn );
+			return -1;
+		}*/
+		
+		// Dump file info onto stderr
+		//dump_format( ptsd->pFmtCtx, 0, vfrm_opfn, 0 );
+		
+		// Find the video stream and get pointer to its codec context
+		for( i=0; i<(psrud->ptsd->pFmtCtx->nb_streams); i++ )
+		{
+			if( psrud->ptsd->pFmtCtx->streams[i]->codec->codec_type==CODEC_TYPE_VIDEO )
+			{
+				psrud->ptsd->vid_stream_idx = i;
+				break;
+			}
+		}
+		if( psrud->ptsd->vid_stream_idx==-1 )
+		{
+			fprintf( stderr, "Could not retrieve stream from file: %s\n", 
+					 psrud->pvfrm->vfrm_output_fn );
+			exit(0);
+		}
+		psrud->ptsd->pCodecCtx = psrud->ptsd->pFmtCtx->streams[psrud->ptsd->vid_stream_idx]->codec;
+		psrud->ptsd->pCodecCtx->width = VID_W;
+		psrud->ptsd->pCodecCtx->height = VID_H;
+		psrud->ptsd->pCodecCtx->pix_fmt = PIX_FMT_YUV422P;
+		
+		// Find and open appropriate decoder based on codec context
+		pCodec = avcodec_find_decoder( psrud->ptsd->pCodecCtx->codec_id );
+		if( pCodec==NULL )
+		{
+			fprintf( stderr, "No suitable decoder found for stream in file %s\n", 
+					 psrud->pvfrm->vfrm_output_fn );
+			exit(0);
+		}
+		if( avcodec_open( psrud->ptsd->pCodecCtx, pCodec )<0 )
+		{
+			fprintf( stderr, "Could not open decoder\n" );
+			exit(0);
+		}
+	
+		// Initialize presentation queue
+		PCQInit( psrud->ptsd );
+  	
+  		// Start decode thread
+  		psrud->ptsd->decode_frame_count = 0;
+  		psrud->ptsd->decode_thread = SDL_CreateThread( decode_thread_run, (void *) (psrud->ptsd) );
+  		if( psrud->ptsd->decode_thread==NULL )
+  		{
+  			fprintf( stderr, "Could not instantiate decoder thread\n" );
+			exit(0);
+  		}
+  		psrud->ptsd->disp_frame_count = 0;
+  		psrud->ptsd->cur_pts_mus = 0;
+  	
+  		// Trigger the first display refresh event
+  		SCHED_DISP_REFRESH( psrud->ptsd, psrud->ptsd->pCodecCtx->pts_delta_ms );
+	}
+	
+	return;
+}
 
 //-------------------------------------------------------------------------------------------------  
 int main( int argc, char *argv[] )
 {
 	NeuronGuiObject	*ngObj;
 	TSDPtr			ptsd;
-	AVCodec			*pCodec;
+	SRUDPtr			psrud;
 	SDL_Event		event;
 	VFRModule		*pvfrm;
 	char			vfrm_opfn[100] = "../../Fifos/x264vfrmout";
@@ -45,100 +224,61 @@ int main( int argc, char *argv[] )
 		
 	gtk_init( &argc, &argv );
 	ngObj = (NeuronGuiObject *) av_mallocz( sizeof(NeuronGuiObject) );
+	psrud = (SRUDPtr) av_mallocz( sizeof(SelectRowUserData) );
 	ptsd = (TSDPtr) av_mallocz( sizeof( ThreadSharedData ) );
 	ptsd->vid_stream_idx = -1;
 	ptsd->quit_flag = 0;
-	ptsd->h264mux_throttle_signal = H264MUX_MAX_THROTTLE;
-	// Start vfr module thread
+	ptsd->h264mux_throttle_signal = H264MUX_MAX_THROTTLE;	
 	pvfrm = (VFRModule *) av_mallocz( sizeof(VFRModule) );
-	//pvfrm->video_src_id_str = NULL;
 	pvfrm->vfrm_output_fn = vfrm_opfn;
 	pvfrm->p_pcq_throt_signal = &(ptsd->h264mux_throttle_signal);
 	sscanf( argv[1], "%d", &vfrm_id );
 	pvfrm->ndp.dp_id = (DDS_long) vfrm_id;
-	NeuronDP_create_dp_factory( &(pvfrm->ndp) );
 	
-	ptsd->vfrm_thread = SDL_CreateThread( VFRM_thread_run, (void *) pvfrm );
-	// Register all available file formats and codecs with the library
-	av_register_all();
-	// Open file and store container information in format context object
-	printf( "Neuron Concept Demo Client starting up....Src Id = %s\n", pvfrm->video_src_id_str );
-	if( av_open_input_file( &(ptsd->pFmtCtx), vfrm_opfn, NULL, 0, NULL )!=0 )
-	{
-		fprintf( stderr, "Could not open file: %s\n", vfrm_opfn );
-		return -1;
-	}
-	printf( "Streaming started....\n" );
-	// Retrieve stream information
-	/*if( av_find_stream_info( ptsd->pFmtCtx )<0 )
-	{
-		fprintf( stderr, "Could not retrieve stream info from file: %s\n", vfrm_opfn );
-		return -1;
-	}*/
-	// Dump file info onto stderr
-	//dump_format( ptsd->pFmtCtx, 0, vfrm_opfn, 0 );
-	// Find the video stream and get pointer to its codec context
-	for( i=0; i<(ptsd->pFmtCtx->nb_streams); i++ )
-	{
-		if( ptsd->pFmtCtx->streams[i]->codec->codec_type==CODEC_TYPE_VIDEO )
-		{
-			ptsd->vid_stream_idx = i;
-			break;
-		}
-	}
-	if( ptsd->vid_stream_idx==-1 )
-	{
-		fprintf( stderr, "Could not retrieve stream from file: %s\n", vfrm_opfn );
-		return -1;
-	}
-	ptsd->pCodecCtx = ptsd->pFmtCtx->streams[ptsd->vid_stream_idx]->codec;
-	ptsd->pCodecCtx->width = VID_W;
-	ptsd->pCodecCtx->height = VID_H;
-	ptsd->pCodecCtx->pix_fmt = PIX_FMT_YUV422P;
-	// Find and open appropriate decoder based on codec context
-	pCodec = avcodec_find_decoder( ptsd->pCodecCtx->codec_id );
-	if( pCodec==NULL )
-	{
-		fprintf( stderr, "No suitable decoder found for stream in file %s\n", vfrm_opfn );
-		return -1;
-	}
-	if( avcodec_open( ptsd->pCodecCtx, pCodec )<0 )
-	{
-		fprintf( stderr, "Could not open decoder\n" );
-		return -1;
-	}
-	// Initialize presentation queue
-	PCQInit( ptsd );
-  	// Start decode thread
-  	ptsd->decode_frame_count = 0;
-  	ptsd->decode_thread = SDL_CreateThread( decode_thread_run, (void *) ptsd );
-  	if( ptsd->decode_thread==NULL )
-  	{
-  		fprintf( stderr, "Could not instantiate decoder thread\n" );
-		return -1;
-  	}
-  	ptsd->disp_frame_count = 0;
-  	ptsd->cur_pts_mus = 0;
-  	// Init display
-	SDLDInit( ngObj, ptsd->pCodecCtx->width, ptsd->pCodecCtx->height, 
+	NeuronDP_create_dp_factory( &(pvfrm->ndp) );
+	VFRM_init( pvfrm );
+	SDLDInit( ngObj, VID_W, VID_H, 
 			  SDL_YV12_OVERLAY, PIX_FMT_YUV420P, &(pvfrm->new_fps_choice) );
-  	SCHED_DISP_REFRESH( ptsd, ptsd->pCodecCtx->pts_delta_ms );
+	psrud->pvfrm = pvfrm;
+	psrud->ptsd = ptsd;
+	psrud->pNGObj = ngObj;
+	g_signal_connect( G_OBJECT(ngObj->srcList), "select_row", G_CALLBACK(on_video_src_select),
+					  psrud );
   	// Main loop
+	SCHED_SRCLIST_REFRESH( pvfrm, 1000 );
 	gtk_idle_add( SDL_refresh_loop, ngObj );
 	gtk_main();
+
   	// Clean up
   	printf( "Streaming finished, waiting for decoder and VFR module to exit....\n" );
   	ptsd->quit_flag = 1;
   	pvfrm->quit_flag = 1;
-  	SDL_WaitThread( ptsd->decode_thread, NULL );
-  	SDL_WaitThread( ptsd->vfrm_thread, NULL );
+  	  
   	printf( "Releasing resources....\n" );
+  	
   	SDL_Quit();
-  	avcodec_close( ptsd->pCodecCtx );
-	av_close_input_file( ptsd->pFmtCtx );
-	PCQCleanUp( ptsd );
-	av_freep( ptsd );
+  
+  	if( strcmp( pvfrm->video_src_id_str, "-1" ) )
+  	{
+	  	SDL_WaitThread( ptsd->decode_thread, NULL );
+  		SDL_WaitThread( ptsd->vfrm_thread, NULL );
+  		avcodec_close( ptsd->pCodecCtx );
+		av_close_input_file( ptsd->pFmtCtx );
+		NeuronSub_write_throtmsg( &(pvfrm->ndp), H264MUX_KILL_SIGNAL );
+		sleep( 1 );
+		NeuronSub_destroy_cftopic_and_reader( &(pvfrm->ndp) );
+		PCQCleanUp( ptsd );
+	}
+	
+	NeuronDP_destroy( &(pvfrm->ndp), SUB_CHOICE );
+	VFRM_destroy( pvfrm );
+	av_free( pvfrm );
+	av_free( ngObj->pSdlDisp );
+	av_free( ngObj );
+	av_free( psrud );
+	
 	printf( "Client exiting....\n" );
+	
 	return 0;
 }
 

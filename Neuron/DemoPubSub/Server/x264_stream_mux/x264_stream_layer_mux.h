@@ -1,7 +1,8 @@
 #include "x264_stream_parser.h"
 
 #define MUX_FRM_OP_CLK_PERIOD_MUS(throttle) (25000*(throttle))
-		
+
+#define H264MUX_KILL_SIGNAL			3		
 #define H264MUX_MAX_THROTTLE		1
 #define H264MUX_MED_THROTTLE		2
 #define	H264MUX_PAUSE_SIGNAL		0	

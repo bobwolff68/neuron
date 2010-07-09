@@ -244,7 +244,7 @@ int	fscWriteFrame( fscPtr f, NeuronDP *pNdp )
 	long layer_type = (long) LAYER_TYPE( f->type );
 	long size = (long) f->streamPtr;
 	
-	NeuronPub_write_frame( pNdp, f->streamBuf, size, layer_type );
+	NeuronPub_write_frame( pNdp, (char *) f->streamBuf, size, layer_type );
 	return f->type;
 }
 

@@ -18,6 +18,9 @@ typedef struct
 
 typedef struct
 {
+	char							srcNameList[10][50];
+	char							srcIdList[10][10];
+	int								n_srcs;
 	DDS_Subscriber					sub;
 	DDS_Publisher					throtPub;
 	DDS_ContentFilteredTopic		specSrcFrmTopic;
@@ -56,10 +59,12 @@ void	NeuronPub_write_srcadvert( NeuronDP *, long, char * );
 void	NeuronPub_write_frame( NeuronDP *, char *, long, long );
 
 void	NeuronSub_setup( NeuronDP *, const char *, char * );
+void	NeuronSub_setup_cftopic_and_reader( NeuronDP *, char * );
 void	NeuronSub_setup_throtmsg_pub( NeuronDP *, const char * );
 void	NeuronSub_destroy( NeuronDP * );
 void	NeuronSub_destroy_throtmsg_pub( NeuronDP * );
-long	NeuronSub_read_srcadverts( NeuronDP * );
+void	NeuronSub_destroy_cftopic_and_reader( NeuronDP * );
+void	NeuronSub_read_srcadverts( NeuronDP * );
 void	NeuronSub_read_frame( NeuronDP *, char **, int *, int *, int *, const char *, char [][10] );
 void	NeuronSub_write_throtmsg( NeuronDP *, char );
 

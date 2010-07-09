@@ -173,7 +173,7 @@ void on_throt_msg_available( void *listener_data, DDS_DataReader reader )
 	}
 	
 	// If throttle msg available, set new throttle mode
-	if( status != DDS_RETCODE_NO_DATA )		
+	if( status != DDS_RETCODE_NO_DATA && smpInfoSeq->_buffer[0].valid_data )		
 	{
 		throtMsg = &(throtMsgSeq->_buffer[0]);
 		//printf( "New throttle: %d\n", *(ldata->p_mux_throttle_mode) );
@@ -332,18 +332,13 @@ void NeuronPub_write_frame( NeuronDP *pNdp, char *frm_buf, long frm_size, long f
 	frmMsg.size = (DDS_unsigned_long) frm_size;
 	frmMsg.layerType = frm_layer_type;
 	frmMsg.payload._length = frmMsg.payload._maximum = frmMsg.size;
-	//frmMsg.payload._buffer = DDS_string_alloc( frmMsg.payload._length );
-	//checkHandle( frmMsg.payload._buffer, "DDS_string_alloc(frmMsg.payload)" );
 	DDS_sequence_set_release( (void *) &(frmMsg.payload), FALSE );
 	frmMsg.payload._buffer = frm_buf;
-	//memcpy( frmMsg.payload._buffer, frm_buf, (int) frmMsg.payload._length );
 
 	//crc_chksum = crcFast( frmMsg.payload._buffer, frm_size );
 		
 	if( frmMsg.index==0 )
 	{
-		
-		//printf( "Registering Instance for Frame Topic for id: %ld...", pNdp->dp_id );
 		frmMsgInstHdl = NeuronDDS_FrameDataWriter_register_instance(  
 																	 pNdp->npub.frmWriter,
 																	 &frmMsg
@@ -352,22 +347,17 @@ void NeuronPub_write_frame( NeuronDP *pNdp, char *frm_buf, long frm_size, long f
 	
 	status = NeuronDDS_FrameDataWriter_write( pNdp->npub.frmWriter, &frmMsg, frmMsgInstHdl );
 	checkStatus( status, "NeuronDDS_FrameDataWriter_write()" );	
-	//printf( "Index: %ld, Layer Type: %ld, Checksum: %u\n", frmMsg.index, frmMsg.layerType, 
-	//													   crc_chksum );	
+	//printf( "Index: %ld, Layer Type: %ld, Length: %ld\n", frmMsg.index, frmMsg.layerType, 
+	//													   frmMsg.payload._length );	
 	frmMsg.index++;
-	//DDS_free( frmMsg.payload._buffer );
 	
 	return;
 }
 
 void NeuronSub_setup( NeuronDP *pNdp, const char *partition_name, char *src_id_str )
 {
-	int		valid_data = 0;
-	long	vid_src_id;
-
 	DDS_ReturnCode_t	status;
 	DDS_SubscriberQos	*subQos;
-	DDS_StringSeq		*cfTopicParams;
 
 	// Adapt Subscriber QOS to read from partition 'partition_name'
 	printf( "Creating Subscriber QOS Object..." );
@@ -404,11 +394,19 @@ void NeuronSub_setup( NeuronDP *pNdp, const char *partition_name, char *src_id_s
 	checkHandle( pNdp->nsub.srcAdvertReader, "DDS_Subscriber_create_datareader(SrcAdTopic)" );
 	printf( "Successful\n" );
 	NeuronSub_setup_throtmsg_pub( pNdp, partition_name );
+	pNdp->nsub.n_srcs = 0;
 
-	// Setup connection with source
-	vid_src_id = NeuronSub_read_srcadverts( pNdp );
-	sprintf( src_id_str, "%ld", vid_src_id );
+	// Deallocate resources
+	DDS_free( subQos );
+	
+	return;
+}
 
+void NeuronSub_setup_cftopic_and_reader( NeuronDP *pNdp, char *src_id_str )
+{
+	DDS_ReturnCode_t	status;
+	DDS_StringSeq		*cfTopicParams;
+	
 	// Create Content Filtered Topic for receiving frames from a particular source
 	printf( "Successful\nCreating Content Filtered Frame Topic..." );
 	cfTopicParams = DDS_StringSeq__alloc();
@@ -442,8 +440,8 @@ void NeuronSub_setup( NeuronDP *pNdp, const char *partition_name, char *src_id_s
 	checkHandle( pNdp->nsub.frmReader, "DDS_Subscriber_create_datareader(Content FrameTopic)" );
 	
 	// Deallocate resources
-	DDS_free( subQos );
-	
+	DDS_free( cfTopicParams );
+
 	return; 
 }
 
@@ -503,21 +501,7 @@ void NeuronSub_destroy( NeuronDP *pNdp )
 	printf( "Deleting Data Reader for SrcAdvert Topic..." );
 	status = DDS_Subscriber_delete_datareader( pNdp->nsub.sub, pNdp->nsub.srcAdvertReader );
 	checkStatus( status, "DDS_Subscriber_delete_datareader(SrcAdTopic)" );
-	
-	
-	// Delete Data Reader for Content Filtered Frame Topic
-	printf( "Successful\nDeleting Data Reader for Content Filtered Frame Topic..." );
-	status = DDS_Subscriber_delete_datareader( pNdp->nsub.sub, pNdp->nsub.frmReader );
-	checkStatus( status, "DDS_Subscriber_delete_datareader(FrameTopic)" );
-	
-	// Delete Content Filtered Frame Topic
-	printf( "Successful\nDeleting Content Filtered Frame Topic..." );
-	status = DDS_DomainParticipant_delete_contentfilteredtopic( 
-																pNdp->dp, 
-																pNdp->nsub.specSrcFrmTopic 
-															  );
-	checkStatus( status, "DDS_DomainParticipant_delete_contentfilteredtopic(Frame)" );
-	
+		
 	// Delete the Subscriber
 	printf( "Successful\nDeleting the Subscriber Object..." );
 	status = DDS_DomainParticipant_delete_subscriber( pNdp->dp, pNdp->nsub.sub );
@@ -545,69 +529,63 @@ void NeuronSub_destroy_throtmsg_pub( NeuronDP *pNdp )
 	return;
 }
 
-long NeuronSub_read_srcadverts( NeuronDP *pNdp )
+void NeuronSub_destroy_cftopic_and_reader( NeuronDP *pNdp )
 {
-	char	command[50];
-	long	id;
-	long	vid_src_id = -1;
+	DDS_ReturnCode_t	status;
+	
+	// Delete Data Reader for Content Filtered Frame Topic
+	printf( "Successful\nDeleting Data Reader for Content Filtered Frame Topic..." );
+	status = DDS_Subscriber_delete_datareader( pNdp->nsub.sub, pNdp->nsub.frmReader );
+	checkStatus( status, "DDS_Subscriber_delete_datareader(FrameTopic)" );
+	
+	// Delete Content Filtered Frame Topic
+	printf( "Successful\nDeleting Content Filtered Frame Topic..." );
+	status = DDS_DomainParticipant_delete_contentfilteredtopic( 
+																pNdp->dp, 
+																pNdp->nsub.specSrcFrmTopic 
+															  );
+	checkStatus( status, "DDS_DomainParticipant_delete_contentfilteredtopic(Frame)" );
 
+	return;
+}
+
+void NeuronSub_read_srcadverts( NeuronDP *pNdp )
+{
 	DDS_sequence_NeuronDDS_SrcAdvert	*srcAdSeq;
 	DDS_SampleInfoSeq					*smpInfoSeq;
 	DDS_ReturnCode_t					status;
 	DDS_unsigned_long					i;
-	DDS_boolean							refresh_src_list = FALSE;
 	
 	// Allocate memory for srcAdSeq and smpInfoSeq
-	do
-	{
-		srcAdSeq = DDS_sequence_NeuronDDS_SrcAdvert__alloc();
-		checkHandle( srcAdSeq, "DDS_sequence_NeuronDDS_SrcAdvert__alloc()" );
-		smpInfoSeq = DDS_SampleInfoSeq__alloc();
-		checkHandle( smpInfoSeq, "DDS_SampleInfoSeq__alloc()" );
+	srcAdSeq = DDS_sequence_NeuronDDS_SrcAdvert__alloc();
+	checkHandle( srcAdSeq, "DDS_sequence_NeuronDDS_SrcAdvert__alloc()" );
+	smpInfoSeq = DDS_SampleInfoSeq__alloc();
+	checkHandle( smpInfoSeq, "DDS_SampleInfoSeq__alloc()" );
 	
-		status = NeuronDDS_SrcAdvertDataReader_read( 
-													 pNdp->nsub.srcAdvertReader,
-													 srcAdSeq, smpInfoSeq, DDS_LENGTH_UNLIMITED,
-													 DDS_ANY_SAMPLE_STATE, DDS_ANY_VIEW_STATE,
-													 DDS_ANY_INSTANCE_STATE
-												   );
-		checkStatus( status, "NeuronDDS_SrcAdvertDataReader_take()" );
+	status = NeuronDDS_SrcAdvertDataReader_read( 
+												 pNdp->nsub.srcAdvertReader,
+												 srcAdSeq, smpInfoSeq, DDS_LENGTH_UNLIMITED,
+												 DDS_ANY_SAMPLE_STATE, DDS_ANY_VIEW_STATE,
+												 DDS_ANY_INSTANCE_STATE
+											   );
+	checkStatus( status, "NeuronDDS_SrcAdvertDataReader_take()" );
 
-		//system( "clear" );	
-		printf( "\n\n========== NEURON DEMO CLIENT MENU ==========\n" );
-		printf( "Enter the ID of the video source of your choice...\n\n" );
-		for( i=0; i<srcAdSeq->_length; i++ )
-		{
-			NeuronDDS_SrcAdvert *pSrcAdMsg = &(srcAdSeq->_buffer[i]);
-			
-			printf( "Video Source (ID: %d, Name: %s)\n", (int) pSrcAdMsg->srcID, 
-														 pSrcAdMsg->srcName );
-		}
-		printf( "\n'refresh' to refresh video source list, 'quit' to exit...\n\n" );
-		printf( "Command: " );
-		scanf( "%s", command );
+	pNdp->nsub.n_srcs = (int) srcAdSeq->_length;
+	for( i=0; i<srcAdSeq->_length; i++ )
+	{
+		NeuronDDS_SrcAdvert *pSrcAdMsg = &(srcAdSeq->_buffer[i]);
+		strcpy( pNdp->nsub.srcNameList[i], pSrcAdMsg->srcName );
+		sprintf( pNdp->nsub.srcIdList[i], "%d", (int) pSrcAdMsg->srcID );	
+	}
 
-		if( !strcmp( command, "refresh" ) )	refresh_src_list = TRUE;
-		else								
-		{
-			refresh_src_list = FALSE;
-			id = pNdp->dp_id;
-			sscanf( command, "%ld", &vid_src_id );
-			pNdp->dp_id = (pNdp->dp_id << 8) | vid_src_id;
-			NeuronSub_write_throtmsg( pNdp, '1' );
-			pNdp->dp_id = id;
-		}
-		//if( !strcmp( command, "quit" ) )
-		
-		// Sequence memory is borrowed from DDS, so return the loaned memory
-		status = NeuronDDS_SrcAdvertDataReader_return_loan( 
-															pNdp->nsub.srcAdvertReader,
-															srcAdSeq, smpInfoSeq
-														  );
-		checkStatus( status, "NeuronDDS_SrcAdvertDataReader_return_loan()" );	
-	} while( refresh_src_list==TRUE );
+	// Sequence memory is borrowed from DDS, so return the loaned memory
+	status = NeuronDDS_SrcAdvertDataReader_return_loan( 
+														pNdp->nsub.srcAdvertReader,
+														srcAdSeq, smpInfoSeq
+													  );
+	checkStatus( status, "NeuronDDS_SrcAdvertDataReader_return_loan()" );	
 
-	return vid_src_id;
+	return;
 }
 
 void NeuronSub_read_frame( NeuronDP *pNdp, char **frm_buf, int *buf_size, int *frm_size, 
@@ -680,8 +658,8 @@ void NeuronSub_read_frame( NeuronDP *pNdp, char **frm_buf, int *buf_size, int *f
 		{		
 			frmMsg = &(frmSeq->_buffer[0]);
 			//crc_chksum = crcFast( frmMsg->payload._buffer, frmMsg->payload._length );
-			//printf( "Index: %ld, Layer Type: %ld, Checksum: %u\n", 
-			//	frmMsg->index, frmMsg->layerType, crc_chksum );
+			//printf( "Index: %ld, Layer Type: %ld, Length: %ld\n", 
+			//	frmMsg->index, frmMsg->layerType, frmMsg->payload._length );
 	
 			*frm_size = (int) (frmMsg->payload._length);
 			*frm_layer_type = (int) (frmMsg->layerType);
@@ -729,7 +707,7 @@ void NeuronSub_write_throtmsg( NeuronDP *pNdp, char throt_signal )
 												 &throtMsg, DDS_HANDLE_NIL 
 											   );
 	checkStatus( status, "NeuronDDS_ThrotMsgDataWriter_write()" );
-	//printf( "New Throttle: %d\n", (int) throtMsg.mode );
+	//printf( "New throttle(%d): %d\n", (int) throtMsg.srcID, (int) throtMsg.mode );
 	
 	return;
 }
@@ -808,12 +786,6 @@ void NeuronDP_setup( NeuronDP *pNdp, int pub_or_sub, char *src_id_str )
     qos->durability.kind = DDS_VOLATILE_DURABILITY_QOS;
     qos->reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
     qos->history.depth = 2;
-    //qos->resource_limits.max_samples = 1;
-    //qos->resource_limits.max_samples_per_instance = 1;
-    //qos->durability_service.max_samples = 1;
-    //qos->durability_service.max_samples_per_instance = 1;
-   // qos->durability_service.service_cleanup_delay = serv_clnup_dly;
-    //qos->reliability.max_blocking_time = inf_block_time;
     pNdp->frmTopic = DDS_DomainParticipant_create_topic( 
     													 pNdp->dp, "NeuronDDS_Frame", 
     													 frm_type_name, qos, NULL, DDS_ANY_STATUS
@@ -829,7 +801,6 @@ void NeuronDP_setup( NeuronDP *pNdp, int pub_or_sub, char *src_id_str )
     											  			sa_type_name, qos, NULL, DDS_ANY_STATUS
 														 );
 	checkHandle( pNdp->srcAdTopic, "DDS_DomainParticipant_create_topic(SrcAdvert)" );
-	printf( "Successful\n" );
 
     printf( "Successful\nCreating ThrotMsg Topic..." );
 	qos->durability.kind = DDS_VOLATILE_DURABILITY_QOS;
