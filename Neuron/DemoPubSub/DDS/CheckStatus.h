@@ -24,7 +24,13 @@
 #ifndef __CHECKSTATUS_H__
 #define __CHECKSTATUS_H__
 
+//#define RTI_STYLE
+#ifdef RTI_STYLE
+#include <ndds/ndds_c.h>
+#else
 #include "dds_dcps.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 

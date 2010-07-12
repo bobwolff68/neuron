@@ -80,7 +80,7 @@ void sig_handle_ctrl_c( int sig )
 		printf( "\nCTRL+C (FORCE TERMINATION)\n" );
 		ctrl_c_hit = 1;
 	}
-	
+
 	return;
 }
 
@@ -97,6 +97,7 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 	(void) signal( SIGINT, sig_handle_ctrl_c );
 	printf( "Neuron Concept server started (%s)....\n", (mux->loop_flag==0) ? "one time playback"
 														: "loop playback" );
+
 	do
 	{
 		x264_stream_layer_mux_init( mux, name );
@@ -154,7 +155,7 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 				clk_multiple++;
 				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
 				fscWriteFrame( &(mux->fl[2]), &(mux->ndp) );
-			}
+			}		
 			if( i<2 )	break;
 			clk_multiple = 1;
 		}

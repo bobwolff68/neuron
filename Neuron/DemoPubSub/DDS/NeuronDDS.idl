@@ -2,18 +2,18 @@ module NeuronDDS
 {
 	const long	MAX_NAMELEN = 32;
 	typedef string<MAX_NAMELEN>		Name;
-	typedef sequence<char>			Buffer;		
+	typedef sequence<octet>			Buffer;		
 	
 	struct SrcAdvert
 	{
-		long	srcID;
+		long	srcID;  //@key
 		Name	srcName;
 	};
 #pragma keylist SrcAdvert srcID
 	
 	struct Frame
 	{
-		long	srcID;
+		long	srcID;  //@key
 		long	index;
 		long	layerType;
 		long	size;
@@ -23,7 +23,7 @@ module NeuronDDS
 
 	struct ThrotMsg
 	{
-		long srcID;
+		long srcID;  //@key
 		long mode;
 	};
 #pragma keylist ThrotMsg srcID

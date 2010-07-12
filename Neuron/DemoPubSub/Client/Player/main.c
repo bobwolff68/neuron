@@ -14,6 +14,10 @@
 #include "thread_shared_data.h"
 #include "display.h"
 #include "decode.h"
+
+// RTI item.
+//#define DDS_long DDS_Long
+
 #include "../x264_vfr_module/x264_vfr_module.h"
 //---------------------------------------- DEFINES ------------------------------------------------
 #define VID_W	640

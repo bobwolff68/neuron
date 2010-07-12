@@ -5,12 +5,21 @@
 #include <ctype.h>
 #include "x264_stream_layer_mux.h"
 
+// RTI item.
+//#define DDS_long DDS_Long
+
 int main( int argc, char *argv[] )
 {
-	char 			app_signal;
+	//char 			app_signal;
 	int				mux_id;
 	x264_slmux_ptr  pMuxX264 = (x264_slmux_ptr) malloc( sizeof(x264_stream_layer_mux) );
 	 
+	if (argc < 4)
+	{
+	  printf("Usage: %s <videoname-without-Lx> <publisher-name> <unique-id> [L]\n", argv[0]);
+	  exit(-1);
+	}
+
 	pMuxX264->x264mux_input_fn_prefix = argv[1];
 	//pMuxX264->sink_id_str = argv[2];
 	sscanf( argv[3], "%d", &mux_id );
