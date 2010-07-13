@@ -1,6 +1,8 @@
 #include "NeuronDDS.h"
 //RMW: for RTI - must hard-wire include this.
-//#include "NeuronDDSSupport.h"
+#ifdef RTI_STYLE
+#include "NeuronDDSSupport.h"
+#endif
 //RMW: Needed?? #include "NeuronDDSPlugin.h"
 
 #define	PUB_CHOICE	0
@@ -9,6 +11,7 @@
 #define PARTITION_NAME		"NeuronDDS"
 #define CF_FRM_TOPIC_QUERY	"srcID = %0"
 
+// Depricated - use -DRTI_STYLE on commandline instead.
 //#define RTI_STYLE
 
 #ifdef RTI_STYLE
@@ -124,7 +127,7 @@ void	NeuronSub_destroy( NeuronDP * );
 void	NeuronSub_destroy_throtmsg_pub( NeuronDP * );
 void    NeuronSub_destroy_cftopic_and_reader( NeuronDP * );
 void	NeuronSub_read_srcadverts( NeuronDP * );
-void	NeuronSub_read_frame( NeuronDP *, char **, int *, int *, int *, const char *, char [][10] );
+void	NeuronSub_read_frame( NeuronDP *, unsigned char **, int *, int *, int *, const char *, char [][10] );
 void	NeuronSub_write_throtmsg( NeuronDP *, char );
 
 void	NeuronDP_create_dp_factory( NeuronDP * );

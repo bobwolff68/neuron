@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <assert.h>
 
+// Depricated - Use -DRTI_STYLE in commandline compilation instead.
 //#define RTI_STYLE
 #ifdef RTI_STYLE
 #include <ndds/ndds_c.h>
@@ -17,7 +18,9 @@
 DDS_InstanceHandle_t		frmMsgInstHdl;
 NeuronDDS_Frame			frmMsg;
 
-//typedef DDS_UnsignedLong DDS_unsigned_long;
+#ifdef RTI_STYLE
+typedef DDS_UnsignedLong DDS_unsigned_long;
+#endif
 
 void NeuronPub_setup( NeuronDP *pNdp, const char *partition_name, char *name )
 {
@@ -956,7 +959,7 @@ void NeuronSub_read_srcadverts( NeuronDP *pNdp )
         return;
 }
 
-void NeuronSub_read_frame( NeuronDP *pNdp, char **frm_buf, int *buf_size, int *frm_size, 
+void NeuronSub_read_frame( NeuronDP *pNdp, unsigned char **frm_buf, int *buf_size, int *frm_size, 
 						   int *frm_layer_type, const char *query_str, char query_param_list[][10] )
 {
 //	unsigned short	crc_chksum;
@@ -1095,7 +1098,7 @@ void NeuronSub_read_frame( NeuronDP *pNdp, char **frm_buf, int *buf_size, int *f
 			*frm_layer_type = (int) (frmMsg->layerType);
 			if( *buf_size<(*frm_size) )
 			{
-				*frm_buf = (char *) realloc( *frm_buf, *frm_size );
+				*frm_buf = (unsigned char *) realloc( *frm_buf, *frm_size );
 				if( *frm_buf==NULL )
 				{
 					fprintf( stderr, "Subscribe realloc error\n" );

@@ -16,7 +16,9 @@
 #include "decode.h"
 
 // RTI item.
-//#define DDS_long DDS_Long
+#ifdef RTI_STYLE
+#define DDS_long DDS_Long
+#endif
 
 #include "../x264_vfr_module/x264_vfr_module.h"
 //---------------------------------------- DEFINES ------------------------------------------------
@@ -250,7 +252,7 @@ int main( int argc, char *argv[] )
 					  psrud );
   	// Main loop
 	SCHED_SRCLIST_REFRESH( pvfrm, 1000 );
-	gtk_idle_add( SDL_refresh_loop, ngObj );
+	gtk_idle_add( (GtkFunction)SDL_refresh_loop, ngObj );
 	gtk_main();
 
   	// Clean up
