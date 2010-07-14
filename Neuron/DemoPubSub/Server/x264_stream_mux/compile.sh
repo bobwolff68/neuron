@@ -6,4 +6,8 @@
 
 cd ../../DDS;$NDDSHOME/scripts/rtiddsgen NeuronDDS.idl -replace -language C;cd ../Server/x264_stream_mux
 
-gcc *.c ../../DDS/*.c -g3 -DRTI_STYLE -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT -m64 -I$NDDSHOME/include -I$NDDSHOME/include/ndds -L$NDDSHOME/lib/x64Linux2.6gcc4.1.1 -ldl -lnddscd -lnddscored -o x264mux
+# RTI 64-bit
+#gcc *.c ../../DDS/*.c -g3 -DRTI_STYLE -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT -m64 -I$NDDSHOME/include -I$NDDSHOME/include/ndds -L$NDDSHOME/lib/x64Linux2.6gcc4.1.1 -ldl -lnddscd -lnddscored -o x264mux
+
+#RTI 32-bit
+gcc *.c ../../DDS/*.c -g3 -DRTI_STYLE -DRTI_UNIX -DRTI_LINUX -I$NDDSHOME/include -I$NDDSHOME/include/ndds -L$NDDSHOME/lib/i86Linux2.6gcc4.1.1 -ldl -lnddscd -lnddscored -o x264mux
