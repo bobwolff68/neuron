@@ -45,11 +45,9 @@ void NeuronPub_setup( NeuronDP *pNdp, const char *partition_name, char *name )
 	checkStatus( status, "DDS_DomainParticipant_get_default_publisher_qos()" );
 	printf( "Successful\nSetting Partition to %s...", partition_name );
 #ifdef RTI_STYLE
-	DDS_StringSeq_set_maximum(&pubQos->partition.name, 1);
 #warning Experiment with string name duplication
-	const char* namearray[] = { partition_name };				// Must pass in an array of char*.
-	//RMW: This may be bogus and could also be possible by simply using the indirect ref to partition_name as "&partition_name".
-	DDS_StringSeq_from_array(&pubQos->partition.name, namearray, 1);
+	DDS_StringSeq_ensure_length(&pubQos->partition.name, 1, 1);
+	*DDS_StringSeq_get_reference(&pubQos->partition.name, 0) = DDS_String_dup(partition_name);
 #else
 	pubQos->partition.name._length = 1;
 	pubQos->partition.name._maximum = 1;	
@@ -148,9 +146,8 @@ void NeuronPub_setup_throtmsg_sub( NeuronDP *pNdp, const char *partition_name )
 #ifdef RTI_STYLE
 	DDS_StringSeq_set_maximum(&subQos->partition.name, 1);
 #warning Experiment with string name duplication
-	const char* namearray[] = { partition_name };				// Must pass in an array of char*.
-	//RMW: This may be bogus and could also be possible by simply using the indirect ref to partition_name as "&partition_name".
-	DDS_StringSeq_from_array(&subQos->partition.name, namearray, 1);
+	DDS_StringSeq_ensure_length(&subQos->partition.name, 1, 1);
+	*DDS_StringSeq_get_reference(&subQos->partition.name, 0) = DDS_String_dup(partition_name);
 #else
 	subQos->partition.name._length = 1;
 	subQos->partition.name._maximum = 1;	
@@ -253,9 +250,12 @@ void on_throt_msg_available( void *listener_data, DDS_DataReader reader )
 #ifdef RTI_STYLE
 		DDS_StringSeq_set_maximum(queryParams, 1);
 #warning Experiment with string name duplication
-		const char* namearray[] = { ldata->sink_id_string };				// Must pass in an array of char*.
+//		const char* namearray[] = { ldata->sink_id_string };				// Must pass in an array of char*.
 		//RMW: This may be bogus and could also be possible by simply using the indirect ref to partition_name as "&partition_name".
-		DDS_StringSeq_from_array(queryParams, namearray, 1);
+//		DDS_StringSeq_from_array(queryParams, namearray, 1);
+		DDS_StringSeq_ensure_length(queryParams, 1, 1);
+		*DDS_StringSeq_get_reference(queryParams, 0) = DDS_String_dup(ldata->sink_id_string);
+		
 		queryCond = DDS_DataReader_create_querycondition( 
 														  ldata->pNdp->npub.generic_throtReader, 
 														  DDS_NOT_READ_SAMPLE_STATE,
@@ -615,9 +615,8 @@ void NeuronSub_setup( NeuronDP *pNdp, const char *partition_name, char *src_id_s
 #ifdef RTI_STYLE
 	DDS_StringSeq_set_maximum(&subQos->partition.name, 1);
 #warning Experiment with string name duplication
-	const char* namearray[] = { partition_name };				// Must pass in an array of char*.
-	//RMW: This may be bogus and could also be possible by simply using the indirect ref to partition_name as "&partition_name".
-	DDS_StringSeq_from_array(&subQos->partition.name, namearray, 1);
+	DDS_StringSeq_ensure_length(&subQos->partition.name, 1, 1);
+	*DDS_StringSeq_get_reference(&subQos->partition.name, 0) = DDS_String_dup(partition_name);
 #else
 	subQos->partition.name._length = 1;
 	subQos->partition.name._maximum = 1;	
@@ -695,9 +694,11 @@ void NeuronSub_setup_cftopic_and_reader( NeuronDP *pNdp, char *src_id_str )
 #ifdef RTI_STYLE
 	DDS_StringSeq_set_maximum(cfTopicParams, 1);
 #warning Experiment with string name duplication
-	const char* namearray2[] = { src_id_str };				// Must pass in an array of char*.
+//	const char* namearray2[] = { src_id_str };				// Must pass in an array of char*.
 	//RMW: This may be bogus and could also be possible by simply using the indirect ref to partition_name as "&partition_name".
-	DDS_StringSeq_from_array(cfTopicParams, namearray2, 1);
+//	DDS_StringSeq_from_array(cfTopicParams, namearray2, 1);
+	DDS_StringSeq_ensure_length(cfTopicParams, 1, 1);
+	*DDS_StringSeq_get_reference(cfTopicParams, 0) = DDS_String_dup(src_id_str);
 #else
 	cfTopicParams->_length = cfTopicParams->_maximum = 1;
 	cfTopicParams->_buffer = DDS_StringSeq_allocbuf( 1 );
@@ -774,9 +775,8 @@ void NeuronSub_setup_throtmsg_pub( NeuronDP *pNdp, const char *partition_name )
 #ifdef RTI_STYLE
 	DDS_StringSeq_set_maximum(&pubQos->partition.name, 1);
 #warning Experiment with string name duplication
-	const char* namearray[] = { partition_name };				// Must pass in an array of char*.
-	//RMW: This may be bogus and could also be possible by simply using the indirect ref to partition_name as "&partition_name".
-	DDS_StringSeq_from_array(&pubQos->partition.name, namearray, 1);
+	DDS_StringSeq_ensure_length(&pubQos->partition.name, 1, 1);
+	*DDS_StringSeq_get_reference(&pubQos->partition.name, 0) = DDS_String_dup(partition_name);
 #else
 	pubQos->partition.name._length = 1;
 	pubQos->partition.name._maximum = 1;	
@@ -796,7 +796,7 @@ void NeuronSub_setup_throtmsg_pub( NeuronDP *pNdp, const char *partition_name )
 	checkHandle( pNdp->nsub.throtPub, "DDS_DomainParticipant_create_publisher()" );
 	
 	// Create Data Writer for ThrotMsg Topic
-	printf( "Successful\nCreating Data Writer for Frame Topic..." );
+	printf( "Successful\nCreating Data Writer for Throttle Message Topic..." );
 #ifdef RTI_STYLE
 	pNdp->nsub.generic_throtWriter = DDS_Publisher_create_datawriter( 
 															  pNdp->nsub.throtPub, 
@@ -814,10 +814,11 @@ void NeuronSub_setup_throtmsg_pub( NeuronDP *pNdp, const char *partition_name )
 														  	); 
 #endif
 	checkHandle( pNdp->nsub.throtWriter, "DDS_Publisher_create_datawriter(ThrotMsg)" );
-	
+	printf( "Successful\n" );
 	// Deallocate resources
 #ifdef RTI_STYLE
 	DDS_PublisherQos_finalize( pubQos );
+	free( pubQos );
 #else
 	DDS_free( pubQos );
 #endif
@@ -999,9 +1000,12 @@ void NeuronSub_read_frame( NeuronDP *pNdp, unsigned char **frm_buf, int *buf_siz
 #ifdef RTI_STYLE
 	DDS_StringSeq_set_maximum(queryParams, 2);
 #warning Experiment with string name duplication
-	const char* namearray[] = { query_param_list[0], query_param_list[1] };				// Must pass in an array of char*.
+//	const char* namearray[] = { query_param_list[0], query_param_list[1] };				// Must pass in an array of char*.
 	//RMW: This may be bogus and could also be possible by simply using the indirect ref to partition_name as "&partition_name".
-	DDS_StringSeq_from_array(queryParams, namearray, 2);
+//	DDS_StringSeq_from_array(queryParams, namearray, 2);
+	DDS_StringSeq_ensure_length(queryParams, 2, 2);
+	*DDS_StringSeq_get_reference(queryParams, 0) = DDS_String_dup(query_param_list[0]);
+	*DDS_StringSeq_get_reference(queryParams, 1) = DDS_String_dup(query_param_list[1]);
 #else
 	queryParams->_length = queryParams->_maximum = 2;
 	queryParams->_buffer = DDS_StringSeq_allocbuf( 2 );
@@ -1162,17 +1166,18 @@ void NeuronSub_write_throtmsg( NeuronDP *pNdp, char throt_signal )
 	throtMsg.mode = (long) (throt_signal-'0');
 	
 #ifdef RTI_STYLE
+	DDS_InstanceHandle_t instance_handle = DDS_HANDLE_NIL;
 	status = NeuronDDS_ThrotMsgDataWriter_write( 
 												 pNdp->nsub.throtWriter, 
-												 &throtMsg, &DDS_HANDLE_NIL 
+												 &throtMsg, &instance_handle 
 											   );
-	printf( "New Throttle: %d\n", (int) throtMsg.mode );
 #else
 	status = NeuronDDS_ThrotMsgDataWriter_write( 
 												 pNdp->nsub.throtWriter, 
 												 &throtMsg, DDS_HANDLE_NIL 
 											   );
 #endif
+	printf( "New Throttle: %d\n", (int) throtMsg.mode );
 	checkStatus( status, "NeuronDDS_ThrotMsgDataWriter_write()" );
 	//printf( "New Throttle: %d\n", (int) throtMsg.mode );
 	
@@ -1209,6 +1214,12 @@ void NeuronDP_setup( NeuronDP *pNdp, int pub_or_sub, char *src_id_str )
 	DDS_TopicQos					*qos;
 #endif
 	
+	    NDDS_Config_Logger_set_verbosity(
+                        NDDS_Config_Logger_get_instance(),
+			NDDS_CONFIG_LOG_VERBOSITY_ERROR | NDDS_CONFIG_LOG_VERBOSITY_WARNING
+			| NDDS_CONFIG_LOG_VERBOSITY_STATUS_LOCAL );
+  //                        NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL );
+
 	// Create Domain Participant.
 	printf( " Successful\nCreating Domain Participant..." );
 #ifdef RTI_STYLE
