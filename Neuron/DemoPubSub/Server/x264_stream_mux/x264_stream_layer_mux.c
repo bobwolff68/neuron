@@ -94,7 +94,7 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 									  &(mux->ndp), &(mux->throttle_mode), 
 									  mux->sink_id_str, THROT_MSG_TAKE_QUERY 
 									};
-	(void) signal( SIGINT, sig_handle_ctrl_c );
+//	(void) signal( SIGINT, sig_handle_ctrl_c );
 	printf( "Neuron Concept server started (%s)....\n", (mux->loop_flag==0) ? "one time playback"
 														: "loop playback" );
 
