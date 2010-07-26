@@ -1,0 +1,8 @@
+const short MAX_MSG_LEN = 256;
+ 
+struct ChatMessage
+{
+	long					clientID; //@key
+	string<MAX_MSG_LEN>		msg;
+};
+

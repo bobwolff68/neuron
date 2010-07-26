@@ -1,0 +1,12 @@
+#Wed Jul 21 15:39:29 PDT 2010
+eclipse.preferences.version=1
+environment/project/cdt.managedbuild.config.gnu.exe.debug.544187981/NDDSHOME/delimiter=\:
+environment/project/cdt.managedbuild.config.gnu.exe.debug.544187981/NDDSHOME/operation=replace
+environment/project/cdt.managedbuild.config.gnu.exe.debug.544187981/NDDSHOME/value=/home/manjesh/RTIDDS/RTI/ndds.4.5c
+environment/project/cdt.managedbuild.config.gnu.exe.debug.544187981/append=true
+environment/project/cdt.managedbuild.config.gnu.exe.debug.544187981/appendContributed=true
+environment/project/cdt.managedbuild.config.gnu.exe.release.150604459/NDDSHOME/delimiter=\:
+environment/project/cdt.managedbuild.config.gnu.exe.release.150604459/NDDSHOME/operation=replace
+environment/project/cdt.managedbuild.config.gnu.exe.release.150604459/NDDSHOME/value=/home/manjesh/RTIDDS/RTI/ndds.4.5c
+environment/project/cdt.managedbuild.config.gnu.exe.release.150604459/append=true
+environment/project/cdt.managedbuild.config.gnu.exe.release.150604459/appendContributed=true
