@@ -1,8 +1,10 @@
 const short MAX_MSG_LEN = 256;
+const short MAX_NAME_LEN = 32;
  
 struct ChatMessage
 {
-	long					clientID; //@key
-	string<MAX_MSG_LEN>		msg;
+	string<MAX_NAME_LEN>	destCliName; //@key
+	string<MAX_NAME_LEN>	srcCliName;
+	string<MAX_MSG_LEN>		content;
 };
 

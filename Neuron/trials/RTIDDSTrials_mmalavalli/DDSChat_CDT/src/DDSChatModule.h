@@ -1,7 +1,8 @@
 #ifndef DDSCHATMODULE_H_INCLUDED
 #define DDSCHATMODULE_H_INCLUDED
 
-#define DEFAULT_DOMAIN_ID   0
+#define DEFAULT_DOMAIN_ID     0
+#define MAX_CMDLINE_LEN		100
 
 typedef const char *pCChar;
 enum {
@@ -16,11 +17,16 @@ class DDSDPBuiltinListener : public DDSDataReaderListener
         virtual void    on_data_available   (DDSDataReader *pGenericReader);
 };
 
+class ChatMsgListener : public DDSDataReaderListener
+{
+    public:
+        virtual void    on_data_available   (DDSDataReader *pGenericReader);
+};
+
 class DDSChatModule
 {
     private:
         // Properties
-        long    id;
         pCChar  name;
         // Domain participant and relevant topics
         DDSDomainParticipant    *pDomainParticipant;
@@ -37,11 +43,14 @@ class DDSChatModule
         void    startupDomainParticipant    (int domainId);
         void    startupPublisher            (void);
         void    startupSubscriber           (void);
+        void	sendChatMessage				(char *cliName,char *msgContent);
+        void	performTask					(void);
+        void    startup     				(void);
 
     public:
         // Constructor
-        DDSChatModule(long paramId,pCChar paramName) : id(paramId),name(paramName)
-        {
+        DDSChatModule(pCChar paramName) : name(paramName)
+    	{
             pDomainParticipant = NULL;
             pBuiltinSub = NULL;
             pPub = NULL;
@@ -53,13 +62,12 @@ class DDSChatModule
                 pWriter[iTopic] = NULL;
                 pReader[iTopic] = NULL;
             }
+
+            startup();
         }
 
         // Destructor
         ~DDSChatModule();
-
-        // Member functions
-        void    startup     (void);
 };
 
 #endif // DDSCHATMODULE_H_INCLUDED

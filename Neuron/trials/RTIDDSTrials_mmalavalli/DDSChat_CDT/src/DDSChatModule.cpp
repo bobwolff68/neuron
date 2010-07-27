@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 #include "DDSChat.h"
 #include "DDSChatSupport.h"
 #include "DDSChatModule.h"
@@ -14,15 +16,15 @@
                                                 exit(0);\
                                             }
 
+#define DDSCHAT_PROMPT(cliName)	"%s@DDSChat>",cliName
+
 void DDSDPBuiltinListener::on_data_available(DDSDataReader *pGenericReader)
 {
     DDSParticipantBuiltinTopicDataDataReader   *dpBuiltinReader = NULL;
     DDS_ParticipantBuiltinTopicDataSeq          seqDiscovery;
     DDS_SampleInfoSeq                           seqInfo;
     DDS_ReturnCode_t                            retCode;
-    char                                       *userData = NULL;
-    char                                       *newUserName = new char [100];
-    long                                        newUserId;
+    char                                       *newUserName = NULL;
 
     dpBuiltinReader = (DDSParticipantBuiltinTopicDataDataReader *) pGenericReader;
     retCode = dpBuiltinReader->take(seqDiscovery,seqInfo,DDS_LENGTH_UNLIMITED,
@@ -37,21 +39,42 @@ void DDSDPBuiltinListener::on_data_available(DDSDataReader *pGenericReader)
             {
                 if(seqDiscovery[iSeq].user_data.value.length()>0)
                 {
-                    userData = (char *) &(seqDiscovery[iSeq].user_data.value[0]);
-                    sscanf(userData,"%ld,%s",&newUserId,newUserName);
-                    printf("%s (User ID: %ld) has come online...\n",newUserName,newUserId);
+                    newUserName = (char *) &(seqDiscovery[iSeq].user_data.value[0]);
+                    printf("\nDetected: %s\n",newUserName);
                 }
             }
         }
     }
 
     dpBuiltinReader->return_loan(seqDiscovery,seqInfo);
-    delete [] newUserName;
+}
+
+void ChatMsgListener::on_data_available(DDSDataReader *pGenericReader)
+{
+	ChatMessageDataReader  *pChatMsgReader = NULL;
+	ChatMessageSeq			seqSamples;
+	DDS_SampleInfoSeq		seqInfo;
+	DDS_ReturnCode_t		retCode;
+
+	pChatMsgReader = (ChatMessageDataReader *) pGenericReader;
+	retCode = pChatMsgReader->take(seqSamples,seqInfo,DDS_LENGTH_UNLIMITED,
+				DDS_ANY_SAMPLE_STATE,DDS_ANY_VIEW_STATE,DDS_ANY_INSTANCE_STATE);
+
+    if(retCode!=DDS_RETCODE_NO_DATA)
+    {
+        CHECK_RETCODE(retCode,DDS_RETCODE_OK,"ChatMessage reader take() error\n");
+        for(int iSeq=0; iSeq<seqSamples.length(); iSeq++)
+        {
+            if(seqInfo[iSeq].valid_data)
+            	printf("\n%s: %s\n",seqSamples[iSeq].srcCliName,seqSamples[iSeq].content);
+        }
+    }
+
+    pChatMsgReader->return_loan(seqSamples,seqInfo);
 }
 
 void DDSChatModule::startupDomainParticipant(int domainId)
 {
-    char                                       *clientIdentity = NULL;
     DDS_ReturnCode_t                            retCode;
     DDS_DomainParticipantFactoryQos             dpFactoryQos;
     DDS_DomainParticipantQos                    dpQos;
@@ -76,13 +99,9 @@ void DDSChatModule::startupDomainParticipant(int domainId)
     // Use user_data QOS to advertise identity
     retCode = pDomainParticipant->get_qos(dpQos);
     CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot obtain QOS for domain participant\n");
-    clientIdentity = new char [100];
-    sprintf(clientIdentity,"%ld,%s",id,name);
-    dpQos.user_data.value.from_array(reinterpret_cast<const DDS_Octet*>(clientIdentity),
-                                     strlen(clientIdentity)+1); //Room for '\0'
+    dpQos.user_data.value.from_array(reinterpret_cast<const DDS_Octet*>(name),strlen(name)+1);
     retCode = pDomainParticipant->set_qos(dpQos);
     CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot set QOS for domain participant\n");
-    delete [] clientIdentity;
 
     // Get participant's builtin subscriber and datareader
     pBuiltinSub = pDomainParticipant->get_builtin_subscriber();
@@ -132,11 +151,23 @@ void DDSChatModule::startupPublisher(void)
 
 void DDSChatModule::startupSubscriber(void)
 {
+	DDS_ReturnCode_t	retCode;
+	DDS_SubscriberQos	subQos;
+	ChatMsgListener	   *pChatListener = NULL;
+
     // Create subscriber
     pSub = pDomainParticipant->create_subscriber(DDS_SUBSCRIBER_QOS_DEFAULT,NULL,
             DDS_STATUS_MASK_NONE);
     CHECK_HANDLE(pSub,"Cannot create publisher\n");
     printf("Created subscriber\n");
+
+	//Set subscriber partition name to client name
+	retCode = pSub->get_qos(subQos);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to get subscriber QOS\n");
+	subQos.partition.name.ensure_length(1,1);
+	subQos.partition.name[0] = DDS_String_dup(name);
+	retCode = pSub->set_qos(subQos);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to set subscriber QOS\n");
 
     // Create data readers for respective topics
     for(int iTopic=0; iTopic<(MAX_TOPICS-1); iTopic++)
@@ -145,6 +176,82 @@ void DDSChatModule::startupSubscriber(void)
                     NULL,DDS_STATUS_MASK_NONE);
         CHECK_HANDLE(pReader[iTopic],"Cannot create data reader\n");
     }
+
+    // Attach listener to ChatMessage Topic data reader
+    pChatListener = new ChatMsgListener();
+    pReader[TOPIC_MSG]->set_listener(pChatListener,DDS_DATA_AVAILABLE_STATUS);
+}
+
+void DDSChatModule::sendChatMessage(char *cliName,char *msgContent)
+{
+	DDS_ReturnCode_t		retCode;
+	DDS_PublisherQos		pubQos;
+	ChatMessage			   *pChatMsgInstance = NULL;
+	ChatMessageDataWriter  *pChatMsgWriter = NULL;
+
+	//Set publisher's partition name to match that of destination's subscriber
+	retCode = pPub->get_qos(pubQos);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to get publisher QOS\n");
+	pubQos.partition.name.ensure_length(1,1);
+	pubQos.partition.name[0] = DDS_String_dup(cliName);
+	retCode = pPub->set_qos(pubQos);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to set publisher QOS\n");
+	usleep(20000); //Time for DDS to propagate partition change info to other clients
+
+	//Obtain data writer specific to ChatMessage Topic
+	pChatMsgWriter = ChatMessageDataWriter::narrow(pWriter[TOPIC_MSG]);
+	CHECK_HANDLE(pChatMsgWriter,"ChatMessageDataWriter::narrow() error\n");
+
+	//Instantiate an instance of ChatMessage Topic
+	pChatMsgInstance = ChatMessageTypeSupport::create_data();
+	CHECK_HANDLE(pChatMsgInstance,"Unable to instantiate ChatMessage Topic instance\n");
+
+	//Fill instance sample with provided data
+	strcpy(pChatMsgInstance->srcCliName,name);
+	strcpy(pChatMsgInstance->destCliName,cliName);
+	strcpy(pChatMsgInstance->content,msgContent);
+
+	//Write sample to destination
+	retCode = pChatMsgWriter->write(*pChatMsgInstance,DDS_HANDLE_NIL);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to send chat message\n");
+
+	//Delete instance
+	retCode = ChatMessageTypeSupport::delete_data(pChatMsgInstance);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to delete ChatMessage Topic instance\n");
+}
+
+void DDSChatModule::performTask(void)
+{
+	char	cmdLineText[MAX_CMDLINE_LEN] = "";
+
+	do
+	{
+		printf(DDSCHAT_PROMPT(name));
+		fgets(cmdLineText,MAX_CMDLINE_LEN,stdin);
+		cmdLineText[strlen(cmdLineText)-1] = '\0'; //Overwrite '\n' with '\0'
+
+		if(!strcmp(cmdLineText,"cmdlist"))
+		{
+			printf("List of available commands:\n");
+			printf("1. cmdlist (list of commands)\n");
+			printf("2. @<clientname>\\n<chatmessage> (send <chatmessage> to <clientname>)\n");
+			printf("3. logout (log out of chat network)\n");
+		}
+		else if(cmdLineText[0]=='@')
+		{
+			char destCliName[MAX_NAME_LEN+1];
+			char chatMsgContent[MAX_MSG_LEN+1];
+
+			sscanf(cmdLineText,"@%s",destCliName);
+			printf("Message: ");
+			fgets(chatMsgContent,MAX_MSG_LEN,stdin);
+			chatMsgContent[strlen(chatMsgContent)-1] = '\0'; //Overwrite '\n' with '\0'
+			sendChatMessage(destCliName,chatMsgContent);
+			printf("Message sent to %s\n",destCliName);
+		}
+		else if(strcmp(cmdLineText,"")&&strcmp(cmdLineText,"logout"))
+			printf("Unknown command\n");
+	} while(strcmp(cmdLineText,"logout"));
 }
 
 void DDSChatModule::startup(void)
@@ -153,7 +260,8 @@ void DDSChatModule::startup(void)
     startupDomainParticipant(DEFAULT_DOMAIN_ID);
     startupPublisher();
     startupSubscriber();
-    printf("Startup complete...\n");
+    printf("Startup complete...type 'cmdlist' for available commands\n");
+    performTask();
 }
 
 DDSChatModule::~DDSChatModule()
