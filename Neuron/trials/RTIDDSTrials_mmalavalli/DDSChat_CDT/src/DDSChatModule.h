@@ -31,6 +31,7 @@ class DDSChatModule
         // Domain participant and relevant topics
         DDSDomainParticipant    *pDomainParticipant;
         DDSTopic                *pTopic[MAX_TOPICS];
+        //DDS_InstanceHandle_t	 chatMsgInstHdl;
         // Publisher
         DDSPublisher    *pPub;
         DDSDataWriter   *pWriter[MAX_TOPICS];
@@ -40,6 +41,7 @@ class DDSChatModule
         DDSDataReader   *pReader[MAX_TOPICS];
 
         // Member functions not called by main()
+        //void	regunregChatMsgInstance		(DDS_Boolean regFlag);
         void    startupDomainParticipant    (int domainId);
         void    startupPublisher            (void);
         void    startupSubscriber           (void);
@@ -55,6 +57,7 @@ class DDSChatModule
             pBuiltinSub = NULL;
             pPub = NULL;
             pSub = NULL;
+            //chatMsgInstHdl = DDS_HANDLE_NIL;
 
             for(int iTopic=0; iTopic<MAX_TOPICS; iTopic++)
             {

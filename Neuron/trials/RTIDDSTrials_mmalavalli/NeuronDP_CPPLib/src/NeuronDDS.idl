@@ -1,0 +1,16 @@
+const short	MAX_NAME_LEN = 256;
+
+struct Frame
+{
+	string<MAX_NAME_LEN>	srcID; //@key
+	long					index;
+	long					layerType;
+	sequence<octet>			payload;
+};
+
+struct ThrotMsg
+{
+	string<MAX_NAME_LEN>	srcID; //@key
+	long					mode;
+};
+

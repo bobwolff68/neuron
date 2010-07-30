@@ -40,7 +40,7 @@ void DDSDPBuiltinListener::on_data_available(DDSDataReader *pGenericReader)
                 if(seqDiscovery[iSeq].user_data.value.length()>0)
                 {
                     newUserName = (char *) &(seqDiscovery[iSeq].user_data.value[0]);
-                    printf("\nDetected: %s\n",newUserName);
+                    printf("\nOnline: %s\n",newUserName);
                 }
             }
         }
@@ -67,11 +67,49 @@ void ChatMsgListener::on_data_available(DDSDataReader *pGenericReader)
         {
             if(seqInfo[iSeq].valid_data)
             	printf("\n%s: %s\n",seqSamples[iSeq].srcCliName,seqSamples[iSeq].content);
+            else if(seqInfo[iSeq].instance_state==DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE ||
+            		seqInfo[iSeq].instance_state==DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+            {
+            	if(DDS_InstanceHandle_is_nil(&(seqInfo[iSeq].instance_handle))==DDS_BOOLEAN_FALSE)
+            	{
+            		ChatMessage	*pKeyHolderInstance = NULL;
+            		pKeyHolderInstance = ChatMessageTypeSupport::create_data();
+            		CHECK_HANDLE(pKeyHolderInstance,"Unable to instantiate ChatMessage Topic instance\n");
+            		retCode = pChatMsgReader->get_key_value(*pKeyHolderInstance,seqInfo[iSeq].instance_handle);
+            		CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to extract key from instance handle\n");
+            		printf("\nOffline: %s\n",pKeyHolderInstance->srcCliName);
+            		retCode = ChatMessageTypeSupport::delete_data(pKeyHolderInstance);
+            		CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to delete ChatMessage Topic instance\n");
+            	}
+            }
         }
     }
 
     pChatMsgReader->return_loan(seqSamples,seqInfo);
 }
+
+/*void DDSChatModule::regunregChatMsgInstance(DDS_Boolean regFlag)
+{
+	DDS_ReturnCode_t		retCode;
+    ChatMessage		   	   *pChatMsgInstance = NULL;
+    ChatMessageDataWriter  *pChatMsgWriter = NULL;
+
+    //Register ChatMessage Topic instance for current source
+	pChatMsgInstance = ChatMessageTypeSupport::create_data();
+	CHECK_HANDLE(pChatMsgInstance,"Unable to instantiate ChatMessage Topic instance\n");
+	strcpy(pChatMsgInstance->srcCliName,name);
+	pChatMsgWriter = ChatMessageDataWriter::narrow(pWriter[TOPIC_MSG]);
+	CHECK_HANDLE(pChatMsgWriter,"ChatMessageDataWriter::narrow() error\n");
+	if(regFlag)
+		chatMsgInstHdl = pChatMsgWriter->register_instance(*pChatMsgInstance);
+	else
+	{
+		retCode = pChatMsgWriter->unregister_instance(*pChatMsgInstance,chatMsgInstHdl);
+		CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to unregister ChatMessage Topic instance");
+	}
+	retCode = ChatMessageTypeSupport::delete_data(pChatMsgInstance);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to delete ChatMessage Topic instance\n");
+}*/
 
 void DDSChatModule::startupDomainParticipant(int domainId)
 {
@@ -147,13 +185,16 @@ void DDSChatModule::startupPublisher(void)
                     NULL,DDS_STATUS_MASK_NONE);
         CHECK_HANDLE(pWriter[iTopic],"Cannot create data writer\n");
     }
+
+    // Register ChatMessage instance for this source
+    //regunregChatMsgInstance(DDS_BOOLEAN_TRUE);
 }
 
 void DDSChatModule::startupSubscriber(void)
 {
-	DDS_ReturnCode_t	retCode;
-	DDS_SubscriberQos	subQos;
-	ChatMsgListener	   *pChatListener = NULL;
+	DDS_ReturnCode_t		retCode;
+	DDS_SubscriberQos		subQos;
+	ChatMsgListener	   	   *pChatListener = NULL;
 
     // Create subscriber
     pSub = pDomainParticipant->create_subscriber(DDS_SUBSCRIBER_QOS_DEFAULT,NULL,
@@ -208,7 +249,6 @@ void DDSChatModule::sendChatMessage(char *cliName,char *msgContent)
 
 	//Fill instance sample with provided data
 	strcpy(pChatMsgInstance->srcCliName,name);
-	strcpy(pChatMsgInstance->destCliName,cliName);
 	strcpy(pChatMsgInstance->content,msgContent);
 
 	//Write sample to destination
@@ -266,7 +306,10 @@ void DDSChatModule::startup(void)
 
 DDSChatModule::~DDSChatModule()
 {
-    DDS_ReturnCode_t    retCode;
+    DDS_ReturnCode_t    	retCode;
+
+    // Unregister ChatMessage instance for this source
+    //regunregChatMsgInstance(DDS_BOOLEAN_FALSE);
 
     printf("Shutting down chat module...\n");
     retCode = pDomainParticipant->delete_contained_entities();
