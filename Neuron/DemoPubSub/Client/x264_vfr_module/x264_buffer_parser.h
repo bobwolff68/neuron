@@ -5,7 +5,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../DDS/NeuronDP.h"
+//#include "../../DDS/NeuronDP.h"
+#include "../../DDS_RTI/videoPubSubAPI.h"
 
 #define STREAM_CHUNK_SIZE 8192
 
@@ -56,9 +57,9 @@ typedef struct
 typedef frameStreamContainer *fscPtr;
 
 int		fscInit( fscPtr );
-int		fscParseVideoHeader( fscPtr, int, uint_t,  NeuronDP *, const char *, char [][10] );
-int		fscParseFrame( fscPtr, uint_t, NeuronDP *, const char *, char [][10] );
-int		fscReadFrame( fscPtr, NeuronDP *, const char *, char [][10] );
+int		fscParseVideoHeader( fscPtr, int, uint_t, char );//,  NeuronDP *, const char *, char [][10] );
+int		fscParseFrame( fscPtr, uint_t, char );//, NeuronDP *, const char *, char [][10] );
+int		fscReadFrame( fscPtr, char );//, NeuronDP *, const char *, char [][10] );
 int 	fscWriteVideoHeader( fscPtr, int, int );
 int		fscWriteFrame( fscPtr, int );
 void	fscReset( fscPtr );

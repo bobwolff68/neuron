@@ -112,6 +112,7 @@ void NeuronDP::registerAndCreateTopics(void)
 {
 	const char		   *typeName;
 	DDS_ReturnCode_t	retCode;
+	DDS_TopicQos		frameTopicQos;
 
 	for(int iTopic=0; iTopic<N_TOPICS; iTopic++)
 	{
@@ -120,14 +121,24 @@ void NeuronDP::registerAndCreateTopics(void)
 			case TOPIC_FRAME:
 					typeName = FrameTypeSupport::get_type_name();
 					retCode = FrameTypeSupport::register_type(pDomainParticipant,typeName);
+					CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot register type for Frame topic\n");
+					// Make frame data reliable and history depth 2
+					retCode = pDomainParticipant->get_default_topic_qos(frameTopicQos);
+					CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot get QOS for Frame topic\n");
+					//frameTopicQos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
+					//frameTopicQos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
+					frameTopicQos.history.depth = 2;
+					retCode = pDomainParticipant->set_default_topic_qos(frameTopicQos);
+					CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot set QOS for Frame topic\n");
 					break;
 			case TOPIC_THROTMSG:
 					typeName = ThrotMsgTypeSupport::get_type_name();
 					retCode = ThrotMsgTypeSupport::register_type(pDomainParticipant,typeName);
+					CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot register type for ThrotMsg topic\n");
 					break;
 		}
 
-		CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot register type for topic\n");
+
         printf("Registered type %s\n", typeName);
         pTopic[iTopic] = pDomainParticipant->create_topic(typeName,typeName,
                             DDS_TOPIC_QOS_DEFAULT,NULL,DDS_STATUS_MASK_NONE);

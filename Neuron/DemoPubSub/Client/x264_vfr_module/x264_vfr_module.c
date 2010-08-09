@@ -73,7 +73,7 @@ int GOPQ_flush_to_fifo( GOPQ *pGopq, int ofd )
 	return bytes_written;
 }
 //------------------------------VFRM FUNCTIONS-----------------------------------------------------
-int VFRM_init( VFRModule *pVfm )
+int VFRM_init( VFRModule *pVfm, char *name )
 {	
 	bandwidth = (double *) av_mallocz( sizeof(double) );
 	cpu_usage = (double *) av_mallocz( sizeof(double) );
@@ -93,7 +93,8 @@ int VFRM_init( VFRModule *pVfm )
 	if( !fscInit( &(pVfm->fsc) ) )
 		return 0;
 	
-	NeuronDP_setup( &(pVfm->ndp), SUB_CHOICE, pVfm->video_src_id_str );
+	//NeuronDP_setup( &(pVfm->ndp), SUB_CHOICE, pVfm->video_src_id_str );
+	NVSStartup( name );
 	pVfm->fps_choice = 'f';
 	pVfm->new_fps_choice = 'f';
 	pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
@@ -112,20 +113,20 @@ int VFRM_thread_run( void *userdata )
 	int			eos = 0;
 	double		total_bytes_read = 0.0;
 	char		prog_bar_text[50];
-	char		query_param_list[2][10] = { "1","3" };
+	//char		query_param_list[2][10] = { "1","3" };
 	int64_t		new_time_mus;
 	VFRModule	*pVfm = (VFRModule *) userdata;
 	pid_t		proc_id = getpid();
 
 	//VFRM_init( pVfm );
 	pVfm->opfd = open( pVfm->vfrm_output_fn, O_WRONLY );
-	strcpy( query_param_list[0], pVfm->video_src_id_str );
-	strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
-	printf( "Parameter list = (%s,%s)\n", query_param_list[0], query_param_list[1] );
+	//strcpy( query_param_list[0], pVfm->video_src_id_str );
+	//strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
+	//printf( "Parameter list = (%s,%s)\n", query_param_list[0], query_param_list[1] );
 	// Read header info first
 	for( i=0; i<VIDEO_HDR_TYPES; i++ )
 	{
-		if( !fscParseVideoHeader( &(pVfm->fsc), i, 0, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )
+		if( !fscParseVideoHeader( &(pVfm->fsc), i, 0, pVfm->fps_choice ) )//, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )
 			return 0;
 		total_bytes_read += ((double) pVfm->fsc.streamPtr);
 	}
@@ -136,11 +137,11 @@ int VFRM_thread_run( void *userdata )
 		return 0;
 	}
 	// Read first frame
-	if( !fscParseFrame( &(pVfm->fsc), 0, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )	return 0;
+	if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )	return 0;
 	
 	while( !eos && !pVfm->quit_flag )
 	{
-		strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
+		//strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
 		
 		// Read GOP
 		while( !pVfm->gopq.is_pframe_present || (pVfm->fsc.type!=X264_TYPE_IDR && 
@@ -151,7 +152,7 @@ int VFRM_thread_run( void *userdata )
 			GOPQ_add_frame( &(pVfm->gopq), &(pVfm->fsc) );
 			if( pVfm->fsc.type==X264_TYPE_IDR || pVfm->fsc.type==X264_TYPE_I )
 			{
-				if( !fscParseFrame( &(pVfm->fsc), 0, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )	
+				if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )//, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )	
 				{
 					eos = 1;
 					break;
@@ -159,12 +160,13 @@ int VFRM_thread_run( void *userdata )
 				if( pVfm->throt_signal != *(pVfm->p_pcq_throt_signal) )
 				{
 					pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
-					NeuronSub_write_throtmsg( &(pVfm->ndp), pVfm->throt_signal );
+					//NeuronSub_write_throtmsg( &(pVfm->ndp), pVfm->throt_signal );
+					NVSPublishThrotMsg( (int) (pVfm->throt_signal - '0') );
 				}
 				total_bytes_read += ((double) pVfm->fsc.streamPtr);
 				GOPQ_add_frame( &(pVfm->gopq), &(pVfm->fsc) );
 			}
-			if( !fscParseFrame( &(pVfm->fsc), 0, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )	
+			if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )//, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )	
 			{
 				eos = 1;
 				break;
@@ -173,7 +175,8 @@ int VFRM_thread_run( void *userdata )
 			if( pVfm->throt_signal != *(pVfm->p_pcq_throt_signal) )
 			{
 				pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
-				NeuronSub_write_throtmsg( &(pVfm->ndp), pVfm->throt_signal );
+				//NeuronSub_write_throtmsg( &(pVfm->ndp), pVfm->throt_signal );
+				NVSPublishThrotMsg( (int) (pVfm->throt_signal - '0') );
 			}
 		}
 		// If sps[sps_idx] is different from previously transmitted sps,
@@ -212,7 +215,7 @@ int VFRM_thread_run( void *userdata )
 		if( pVfm->throt_signal != *(pVfm->p_pcq_throt_signal) )
 		{
 			pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
-			NeuronSub_write_throtmsg( &(pVfm->ndp), pVfm->throt_signal );
+			NVSPublishThrotMsg( (int) (pVfm->throt_signal - '0') );
 		}
 		
 		new_time_mus = av_gettime();
@@ -292,6 +295,7 @@ void VFRM_destroy( VFRModule *pVfm )
 	free( cpu_time );
 	free( proc_time );
 	fscClose( &(pVfm->fsc) );
+	NVSDestroy();
 
 	return;	
 }

@@ -2,6 +2,7 @@
 #include <time.h>
 #include <signal.h>
 #include <unistd.h>
+#include <string.h>
 #include "x264_stream_layer_mux.h"
 
 int	clk_multiple = 1;
@@ -31,7 +32,9 @@ int nanosleep_ttw( int64_t time_mus, int *throttle_mode )
 	else
 	{
 		while( *throttle_mode==H264MUX_PAUSE_SIGNAL )
-			usleep(1000);
+			usleep(10000);
+		NVPSetVDPPartition();
+		usleep(50000);
 	}
 	
 	return 1;
@@ -47,8 +50,10 @@ int x264_stream_layer_mux_init( x264_slmux_ptr mux, char *name )
 	if( mux->loop_flag==0 || mux->loop_flag==1 )
 	{
 		mux->throttle_mode = H264MUX_PAUSE_SIGNAL;
-		strcpy( mux->sink_id_str, "-1" );
-		NeuronDP_setup( &(mux->ndp), PUB_CHOICE, name );
+		//strcpy( mux->sink_id_str, "-1" );
+		//NeuronDP_setup( &(mux->ndp), PUB_CHOICE, name );
+		NVPStartup( name );
+		NVPSetThrotModePtr( &(mux->throttle_mode) );
 	}
 	
 	for( i=0; i<3; i++ )
@@ -90,10 +95,10 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 	int64_t	time_mus;
 	
 	x264_slmux_ptr			mux = (x264_slmux_ptr) userdata;
-	ThrotMsgListenerData	ldata = { 
-									  &(mux->ndp), &(mux->throttle_mode), 
-									  mux->sink_id_str, THROT_MSG_TAKE_QUERY 
-									};
+	//ThrotMsgListenerData	ldata = { 
+	//								  &(mux->ndp), &(mux->throttle_mode), 
+	//								  mux->sink_id_str, THROT_MSG_TAKE_QUERY 
+	//								};
 //	(void) signal( SIGINT, sig_handle_ctrl_c );
 	printf( "Neuron Concept server started (%s)....\n", (mux->loop_flag==0) ? "one time playback"
 														: "loop playback" );
@@ -101,8 +106,8 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 	do
 	{
 		x264_stream_layer_mux_init( mux, name );
-		if( mux->loop_flag==0 || mux->loop_flag==1 )
-			NeuronPub_setup_throt_msg_listener( &(mux->ndp), &ldata );
+//		if( mux->loop_flag==0 || mux->loop_flag==1 )
+//			NeuronPub_setup_throt_msg_listener( &(mux->ndp), &ldata );
 		
 		// Send header info first
 		for( i=0; i<VIDEO_HDR_TYPES; i++ )
@@ -114,7 +119,7 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 			if( mux->loop_flag==0 || mux->loop_flag==1 )
 			{
 				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
-				fscWriteFrame( &(mux->fl[0]), &(mux->ndp) );
+				fscWriteFrame( &(mux->fl[0]) );
 			}
 		}
 		
@@ -131,7 +136,7 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 			if( !fscExtractFrame( &(mux->fl[0]), 0 ) )	break;
 			if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
 			nanosleep_ttw( time_mus, &(mux->throttle_mode) );
-			fscWriteFrame( &(mux->fl[0]), &(mux->ndp) );
+			fscWriteFrame( &(mux->fl[0]) );
 			// If IDR/I frame, parse and write next P frame.
 			if( mux->fl[0].type==X264_TYPE_IDR || mux->fl[0].type==X264_TYPE_I )
 			{
@@ -139,14 +144,14 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 				if( !fscExtractFrame( &(mux->fl[0]), 0 ) )	break;
 				if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
 				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
-				fscWriteFrame( &(mux->fl[0]), &(mux->ndp) );
+				fscWriteFrame( &(mux->fl[0]) );
 			}
 			// Extract the next B frame and write if fps_op > 0.25*fps_orig
 			if( !fscExtractFrame( &(mux->fl[1]), 0 ) )	break;
 			if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
 			clk_multiple++;
 			nanosleep_ttw( time_mus, &(mux->throttle_mode) );
-			fscWriteFrame( &(mux->fl[1]), &(mux->ndp) );
+			fscWriteFrame( &(mux->fl[1]) );
 			// Extract the next 2 b frames and write if fps_op == fps_orig
 			for( i=0; i<2; i++ )
 			{
@@ -154,7 +159,7 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 				if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
 				clk_multiple++;
 				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
-				fscWriteFrame( &(mux->fl[2]), &(mux->ndp) );
+				fscWriteFrame( &(mux->fl[2]) );
 			}		
 			if( i<2 )	break;
 			clk_multiple = 1;
@@ -167,9 +172,11 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 		if( mux->loop_flag==1 ) mux->loop_flag++;
 	} while( mux->loop_flag>1 && mux->throttle_mode != H264MUX_KILL_SIGNAL && !ctrl_c_hit );
 	
-	NeuronPub_write_frame( &(mux->ndp), (char *) mux->sink_id_str, (long) 1, (long) 0 );
+	//NeuronPub_write_frame( &(mux->ndp), (char *) mux->sink_id_str, (long) 1, (long) 0 );
+	NVPPublishFrame( name, 1, 0 );
 	sleep( 1 );
-	NeuronDP_destroy( &(mux->ndp), PUB_CHOICE );
+	//NeuronDP_destroy( &(mux->ndp), PUB_CHOICE );
+	NVPDestroy();
 	printf( "Server exiting....\n" );
 	return 1;	
 }

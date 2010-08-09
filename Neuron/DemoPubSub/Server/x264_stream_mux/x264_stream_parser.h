@@ -5,7 +5,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../DDS/NeuronDP.h"
+//#include "../../DDS/NeuronDP.h"
+#include "../../DDS_RTI/videoPubSubAPI.h"
 
 #define STREAM_CHUNK_SIZE 8192
 
@@ -59,7 +60,8 @@ int		fscInit( fscPtr, char * );
 int		fscExtractVideoHeader( fscPtr, int, uint_t );
 int		fscExtractFrame( fscPtr, uint_t );
 int		fscRead( fscPtr, size_t, size_t * );
-int		fscWriteFrame( fscPtr, NeuronDP * );
+//int		fscWriteFrame( fscPtr, NeuronDP * );
+int		fscWriteFrame( fscPtr );
 void	fscReset( fscPtr );
 int		fscClose( fscPtr );
 

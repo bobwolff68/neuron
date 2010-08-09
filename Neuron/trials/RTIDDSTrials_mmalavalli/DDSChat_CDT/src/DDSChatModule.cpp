@@ -199,7 +199,7 @@ void DDSChatModule::startupSubscriber(void)
     // Create subscriber
     pSub = pDomainParticipant->create_subscriber(DDS_SUBSCRIBER_QOS_DEFAULT,NULL,
             DDS_STATUS_MASK_NONE);
-    CHECK_HANDLE(pSub,"Cannot create publisher\n");
+    CHECK_HANDLE(pSub,"Cannot create subscriber\n");
     printf("Created subscriber\n");
 
 	//Set subscriber partition name to client name

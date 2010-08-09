@@ -14,21 +14,21 @@ int main( int argc, char *argv[] )
 	int				mux_id;
 	x264_slmux_ptr  pMuxX264 = (x264_slmux_ptr) malloc( sizeof(x264_stream_layer_mux) );
 	 
-	if (argc < 4)
+	if (argc < 3)
 	{
-	  printf("Usage: %s <videoname-without-Lx> <publisher-name> <unique-id> [L]\n", argv[0]);
+	  printf("Usage: %s <videoname-without-Lx> <publisher-name> [L]\n", argv[0]);
 	  exit(-1);
 	}
 
 	pMuxX264->x264mux_input_fn_prefix = argv[1];
 	//pMuxX264->sink_id_str = argv[2];
-	sscanf( argv[3], "%d", &mux_id );
-	pMuxX264->ndp.dp_id = (DDS_long) mux_id;
+	//sscanf( argv[3], "%d", &mux_id );
+	//pMuxX264->ndp.dp_id = (DDS_long) mux_id;
 	
-	if( argc>=5 )	pMuxX264->loop_flag = 1;
+	if( argc>=4 )	pMuxX264->loop_flag = 1;
 	else			pMuxX264->loop_flag = 0;
 	
-	NeuronDP_create_dp_factory( &(pMuxX264->ndp) );
+	//NeuronDP_create_dp_factory( &(pMuxX264->ndp) );
 	x264_stream_layer_mux_thread_run( (void *) pMuxX264, argv[2] );
 	
 	free( pMuxX264 );

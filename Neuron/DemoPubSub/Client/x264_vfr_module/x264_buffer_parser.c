@@ -21,15 +21,15 @@ int fscInit( fscPtr f )
 	return 1;
 }
 
-int fscParseVideoHeader( fscPtr f, int hdrStreamIndex, uint_t verbose, NeuronDP *pNdp,
-						 const char *query, char query_param_list[][10] )
+int fscParseVideoHeader( fscPtr f, int hdrStreamIndex, uint_t verbose, char fpsChoice )//, NeuronDP *pNdp,
+						 //const char *query, char query_param_list[][10] )
 {
 	size_t	bytesRead;
 	uint_t	nalStartCodePrefix = 0;
 	int		nalRefIdc = 0;
 	int		nalType = 0;
 
-	if( !fscReadFrame( f, pNdp, query, query_param_list ) )
+	if( !fscReadFrame( f, fpsChoice ) )//, pNdp, query, query_param_list ) )
 		return 0;
 	// Bytes 1..4 ==> NAL start code prefix.
 	// Byte 5	  ==> NAL header 0 xx yyyyy ( xx - 2 bit nal_ref_idc, yyyyy - 5 bit nal_type ).	
@@ -74,8 +74,8 @@ int fscParseVideoHeader( fscPtr f, int hdrStreamIndex, uint_t verbose, NeuronDP 
 }
 
 // Note: x264_stream always points to the start of an NAL AUD.
-int fscParseFrame( fscPtr f, uint_t verbose, NeuronDP *pNdp,
-				   const char *query, char query_param_list[][10] )
+int fscParseFrame( fscPtr f, uint_t verbose, char fpsChoice )//, NeuronDP *pNdp,
+				   //const char *query, char query_param_list[][10] )
 {
 	size_t	bytesRead;
 	uint_t	nalStartCodePrefix = 0;
@@ -83,7 +83,7 @@ int fscParseFrame( fscPtr f, uint_t verbose, NeuronDP *pNdp,
 	int		nalType = 0;
 	char	frameTypeArray[5] = { 'i', 'I', 'P', 'B', 'b' };
 	
-	if( !fscReadFrame( f, pNdp, query, query_param_list ) )
+	if( !fscReadFrame( f, fpsChoice ) )//, pNdp, query, query_param_list ) )
 		return 0;	
 	// Bytes 1..4 ==> NAL start code prefix.
 	// Byte 5	  ==> NAL header 0 xx yyyyy ( xx - 2 bit nal_ref_idc, yyyyy - 5 bit nal_type ).
@@ -122,14 +122,17 @@ int fscParseFrame( fscPtr f, uint_t verbose, NeuronDP *pNdp,
 	return 1;
 }
 
-int	fscReadFrame( fscPtr f, NeuronDP *pNdp, const char *query, char query_param_list[][10] )
+int	fscReadFrame( fscPtr f, char fpsChoice )//, NeuronDP *pNdp, const char *query, char query_param_list[][10] )
 {
-	int	layer_type;
+	//int	layer_type;
 	int bytes_read;
 
 	fscReset( f );
-	NeuronSub_read_frame( pNdp, &(f->streamBuf), &(f->streamBufSize), &(f->streamPtr), &layer_type,
-						  query, query_param_list );
+	//NeuronSub_read_frame( pNdp, &(f->streamBuf), &(f->streamBufSize), &(f->streamPtr), &layer_type,
+	//					  query, query_param_list );
+	NVSGetFrame(&(f->streamBuf),&(f->streamPtr),fpsChoice);
+	if( f->streamBufSize<f->streamPtr )
+		f->streamBufSize = f->streamPtr;
 	bytes_read = f->streamPtr;
 	if( bytes_read==1 ) bytes_read--;
 	

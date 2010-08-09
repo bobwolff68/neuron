@@ -49,7 +49,20 @@ class NeuronDP
 		~NeuronDP();
 };
 
+#ifdef NEURONVS_H_
 char	srcNameList[100][MAX_NAME_LEN];
 int		srcNameListLen;
+char DDS_Errors[13][50] = {
+						    "Success","Error","Unsupported",
+						    "Bad Param","Prec not met","Out of rescs",
+						    "Not enabled","Imm policy","Inc policy",
+						    "Already deleted","Timeout","No data",
+						    "Illegal operation"
+						  };
+#else
+extern char	srcNameList[100][MAX_NAME_LEN];
+extern int	srcNameListLen;
+extern char DDS_Errors[13][50];
+#endif
 
 #endif /* NEURONDP_H_ */

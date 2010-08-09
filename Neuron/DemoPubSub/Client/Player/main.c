@@ -16,9 +16,9 @@
 #include "decode.h"
 
 // RTI item.
-#ifdef RTI_STYLE
-#define DDS_long DDS_Long
-#endif
+//#ifdef RTI_STYLE
+//#define DDS_long DDS_Long
+//#endif
 
 #include "../x264_vfr_module/x264_vfr_module.h"
 //---------------------------------------- DEFINES ------------------------------------------------
@@ -51,23 +51,25 @@ Uint32 refresh_srclist_callback( Uint32 interval, void *opaque )
 void refresh_src_list( NeuronGuiObject *pNGObj, void *data )
 {
 	int		i;
+	int		n_srcs;
 	char	*srcListEntry[2];
+	//char	***srcNameList;
 	VFRModule *pvfrm = (VFRModule *) data;
 	
 	// Refresh source list
 	if( !strcmp( pvfrm->video_src_id_str, "-1" ) )
 	{
-		srcListEntry[0] = (char *) malloc( sizeof(char)*50 );
+		srcListEntry[0] = (char *) malloc( sizeof(char)*256 );
 		srcListEntry[1] = (char *) malloc( sizeof(char)*10 );
-		NeuronSub_read_srcadverts( &(pvfrm->ndp) );
+		n_srcs = srcNameListLen;//NVSGetVidSrcList(srcNameList);
 	
 		// Refresh entries in Clist widget
 		gtk_clist_freeze( GTK_CLIST(pNGObj->srcList) );
 		gtk_clist_clear( GTK_CLIST(pNGObj->srcList) );
-		for( i=0; i<(pvfrm->ndp.nsub.n_srcs); i++ )
+		for( i=0; i<n_srcs; i++ )
 		{
-			strcpy( srcListEntry[0], pvfrm->ndp.nsub.srcNameList[i] );
-			strcpy( srcListEntry[1], pvfrm->ndp.nsub.srcIdList[i] );
+			strcpy( srcListEntry[0], srcNameList[i] );
+			strcpy( srcListEntry[1], "" );
 			gtk_clist_append( GTK_CLIST(pNGObj->srcList), srcListEntry );
 		}
 		gtk_clist_thaw( GTK_CLIST(pNGObj->srcList) );	
@@ -103,6 +105,7 @@ void on_video_src_select( GtkWidget *widget, gint row, gint column,GdkEventButto
 	long	src_id;
 	long	vid_src_id;
 	int		i;
+	//char	***srcNameList = NULL;//(char **) malloc(sizeof(char *));
 	
 	SRUDPtr	psrud = (SRUDPtr) data;
 	AVCodec	*pCodec;
@@ -110,7 +113,8 @@ void on_video_src_select( GtkWidget *widget, gint row, gint column,GdkEventButto
 	if( !strcmp( psrud->pvfrm->video_src_id_str, "-1" ) )
 	{
 		// Extract ID of selected source
-		strcpy( psrud->pvfrm->video_src_id_str, psrud->pvfrm->ndp.nsub.srcIdList[row] );
+		//NVSGetVidSrcList(srcNameList);
+		strcpy( psrud->pvfrm->video_src_id_str, srcNameList[row] );
 		
 		// Hide Source List and Show Buttons
 		gtk_widget_hide( widget );
@@ -120,14 +124,10 @@ void on_video_src_select( GtkWidget *widget, gint row, gint column,GdkEventButto
 			gtk_widget_show( psrud->pNGObj->fpsButtons[i] );
 		
 		// Send throttle message to start source
-		src_id = psrud->pvfrm->ndp.dp_id;
-		sscanf( psrud->pvfrm->video_src_id_str, "%ld", &vid_src_id );
-		psrud->pvfrm->ndp.dp_id = (psrud->pvfrm->ndp.dp_id << 8) | vid_src_id;
-		NeuronSub_write_throtmsg( &(psrud->pvfrm->ndp), '1' );
-		psrud->pvfrm->ndp.dp_id = src_id;
-		
-		// Create Content Filtered Frame Topic and Reader
-		NeuronSub_setup_cftopic_and_reader( &(psrud->pvfrm->ndp), psrud->pvfrm->video_src_id_str );
+		NVSSetTMPPartition(srcNameList[row]);
+		usleep(50000);
+		printf("Selected: %s\n",srcNameList[row]);
+		NVSPublishThrotMsg( (int) (H264MUX_MAX_THROTTLE - '0') );
 		
 		// Start vfr module thread
 		psrud->ptsd->vfrm_thread = SDL_CreateThread( VFRM_thread_run, (void *) psrud->pvfrm );
@@ -238,11 +238,11 @@ int main( int argc, char *argv[] )
 	pvfrm = (VFRModule *) av_mallocz( sizeof(VFRModule) );
 	pvfrm->vfrm_output_fn = vfrm_opfn;
 	pvfrm->p_pcq_throt_signal = &(ptsd->h264mux_throttle_signal);
-	sscanf( argv[1], "%d", &vfrm_id );
-	pvfrm->ndp.dp_id = (DDS_long) vfrm_id;
+	//sscanf( argv[1], "%d", &vfrm_id );
+	//pvfrm->ndp.dp_id = (DDS_long) vfrm_id;
 	
-	NeuronDP_create_dp_factory( &(pvfrm->ndp) );
-	VFRM_init( pvfrm );
+	//NeuronDP_create_dp_factory( &(pvfrm->ndp) );
+	VFRM_init( pvfrm, argv[1] );
 	SDLDInit( ngObj, VID_W, VID_H, 
 			  SDL_YV12_OVERLAY, PIX_FMT_YUV420P, &(pvfrm->new_fps_choice) );
 	psrud->pvfrm = pvfrm;
@@ -270,13 +270,13 @@ int main( int argc, char *argv[] )
   		SDL_WaitThread( ptsd->vfrm_thread, NULL );
   		avcodec_close( ptsd->pCodecCtx );
 		av_close_input_file( ptsd->pFmtCtx );
-		NeuronSub_write_throtmsg( &(pvfrm->ndp), H264MUX_KILL_SIGNAL );
+		NVSPublishThrotMsg( (int) (H264MUX_KILL_SIGNAL - '0') );
 		sleep( 1 );
-		NeuronSub_destroy_cftopic_and_reader( &(pvfrm->ndp) );
+		//NeuronSub_destroy_cftopic_and_reader( &(pvfrm->ndp) );
 		PCQCleanUp( ptsd );
 	}
 	
-	NeuronDP_destroy( &(pvfrm->ndp), SUB_CHOICE );
+	//NeuronDP_destroy( &(pvfrm->ndp), SUB_CHOICE );
 	VFRM_destroy( pvfrm );
 	av_free( pvfrm );
 	av_free( ngObj->pSdlDisp );

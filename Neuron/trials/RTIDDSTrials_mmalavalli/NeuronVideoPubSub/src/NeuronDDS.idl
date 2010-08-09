@@ -5,7 +5,7 @@ struct Frame
 	string<MAX_NAME_LEN>	srcName; //@key
 	long					index;
 	long					layerType;
-	sequence<octet>			payload;
+	sequence<octet,1000000>	payload;
 };
 
 struct ThrotMsg

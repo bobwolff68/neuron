@@ -12,8 +12,8 @@
 #define SPS_STREAM_IDX( gop_len ) \
 		DEFAULT_GOP_SIZE/((gop_len)-((gop_len)==(DEFAULT_GOP_SIZE+1)))
 #define SPS_STREAM_IDX_MODIFY( idx )	((idx) + ((idx)==(DEFAULT_GOP_SIZE>>1)))
-#define	FRAME_QUERY "layerType < %1"
-#define LAYER_LIMIT_STR( fps_choice ) ( (fps_choice)=='q' ? "1" : ((fps_choice)=='h' ? "2" : "3") )
+//#define	FRAME_QUERY "layerType < %1"
+//#define LAYER_LIMIT_STR( fps_choice ) ( (fps_choice)=='q' ? "1" : ((fps_choice)=='h' ? "2" : "3") )
 //-------------------------------------------------------------------------------------------------
 int64_t		time_mus;
 SDL_mutex	*mutex;
@@ -37,7 +37,7 @@ typedef struct
 {
 	int						opfd;
 	frameStreamContainer 	fsc;
-	NeuronDP				ndp;
+//	NeuronDP				ndp;
 	GOPQ					gopq;
 	char					*vfrm_output_fn;
 	int						quit_flag;
@@ -53,7 +53,7 @@ int GOPQ_reset( GOPQ * );
 int GOPQ_add_frame( GOPQ *, fscPtr );
 int GOPQ_flush_to_fifo( GOPQ *, int );
 //------------------------------VFRM FUNCTIONS-----------------------------------------------------
-int 	VFRM_init( VFRModule * );
+int 	VFRM_init( VFRModule *, char *name );
 int 	VFRM_thread_run( void * );
 void	VFRM_get_cpu_usage( pid_t );
 void	VFRM_destroy( VFRModule * );
