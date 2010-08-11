@@ -27,17 +27,17 @@ void NeuronVS::setVDSPartition(const char *partitionName)
 	printf("Frame Subscriber Partition: %s\n",videoSubQos.partition.name[0]);
 }
 
-void NeuronVS::setTMPPartition(const char *partitionName)
+void NeuronVS::setupVDSMulticast(void)
 {
-	DDS_PublisherQos	throtPubQos;
+	DDS_DataReaderQos	readerQos;
 	DDS_ReturnCode_t	retCode;
 
-	retCode = pThrotPub->get_qos(throtPubQos);
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to get ThrotMsg publisher QOS\n");
-	throtPubQos.partition.name.ensure_length(1,1);
-	throtPubQos.partition.name[0] = DDS_String_dup(partitionName);
-	retCode = pThrotPub->set_qos(throtPubQos);
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to set ThrotMsg publisher QOS\n");
+	retCode = pVideoSub->get_default_datareader_qos(readerQos);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to get video data reader QOS\n");
+	readerQos.multicast.value.ensure_length(1,1);
+	readerQos.multicast.value[0].receive_address = DDS_String_dup("192.168.46.255");
+	retCode = pVideoSub->set_default_datareader_qos(readerQos);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to set video data reader QOS\n");
 }
 
 void NeuronVS::startupVideoDataSubscriber(void)
@@ -46,9 +46,7 @@ void NeuronVS::startupVideoDataSubscriber(void)
     pVideoSub = pDomainParticipant->create_subscriber(DDS_SUBSCRIBER_QOS_DEFAULT,
     												 NULL,DDS_STATUS_MASK_NONE);
     CHECK_HANDLE(pVideoSub,"Unable to create Frame subscriber\n");
-
-    //Set subscriber partition to video source name
-    setVDSPartition(name);
+    setupVDSMulticast();
 
     //Create data reader for Frame topic
     gpFrameReader = pVideoSub->create_datareader(pTopic[TOPIC_FRAME],DDS_DATAREADER_QOS_USE_TOPIC_QOS,
@@ -59,42 +57,6 @@ void NeuronVS::startupVideoDataSubscriber(void)
     pWaitSet = new DDSWaitSet();
 
     printf("Created Frame subscriber\n");
-}
-
-void NeuronVS::startupThrotMsgPublisher(void)
-{
-	//Create ThrotMsg publisher
-	pThrotPub = pDomainParticipant->create_publisher(DDS_PUBLISHER_QOS_DEFAULT,
-													  NULL,DDS_STATUS_MASK_NONE);
-	CHECK_HANDLE(pThrotPub,"Unable to create ThrotMsg publisher");
-
-	//Create data writer for ThrotMsg topic
-	gpThrotWriter = pThrotPub->create_datawriter(pTopic[TOPIC_THROTMSG],DDS_DATAWRITER_QOS_DEFAULT,
-												 NULL,DDS_STATUS_MASK_NONE);
-	CHECK_HANDLE(gpThrotWriter,"Unable to create data writer for ThrotMsg topic\n");
-	printf("Created ThrotMsg publisher\n");
-}
-
-void NeuronVS::publishThrotMsg(int modeVal)
-{
-	ThrotMsgDataWriter *pThrotMsgWriter = NULL;
-	ThrotMsg		   *pThrotMsgInstance = NULL;
-	DDS_ReturnCode_t	retCode;
-
-	pThrotMsgInstance = ThrotMsgTypeSupport::create_data();
-	CHECK_HANDLE(pThrotMsgInstance,"Unable to create new ThrotMsg topic instance\n");
-
-	pThrotMsgWriter = ThrotMsgDataWriter::narrow(gpThrotWriter);
-	CHECK_HANDLE(pThrotMsgWriter,"ThrotMsgDataWriter::narrow() error during publishing\n");
-
-	strcpy(pThrotMsgInstance->srcName,name);
-	pThrotMsgInstance->mode = (DDS_Long) modeVal;
-
-	retCode = pThrotMsgWriter->write(*pThrotMsgInstance,DDS_HANDLE_NIL);
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to write ThrotMsg sample\n");
-
-	retCode = ThrotMsgTypeSupport::delete_data(pThrotMsgInstance);
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to delete ThrotMsg instance\n");
 }
 
 void NeuronVS::getFrame(unsigned char **ppFrameBuf,int *pBufLen,char layerChoice)
@@ -147,9 +109,9 @@ void NeuronVS::getFrame(unsigned char **ppFrameBuf,int *pBufLen,char layerChoice
 				}
 				*pBufLen = (int) seqFrames[0].payload.length();
 				seqFrames[0].payload.to_array(reinterpret_cast<DDS_Octet *>(*ppFrameBuf),*pBufLen);
-				printf("Index: %d, LayerType: %d, Size: %d\n",(int)(seqFrames[0].index)
-																 ,(int)(seqFrames[0].layerType)
-																 ,(int)(seqFrames[0].payload.length()));
+//				printf("Index: %d, LayerType: %d, Size: %d\n",(int)(seqFrames[0].index)
+//																 ,(int)(seqFrames[0].layerType)
+//																 ,(int)(seqFrames[0].payload.length()));
 				gotValidData = DDS_BOOLEAN_TRUE;
 			}
 		}
@@ -163,10 +125,9 @@ void NeuronVS::getFrame(unsigned char **ppFrameBuf,int *pBufLen,char layerChoice
 	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to delete read condition (Frame topic)\n");
 }
 
-NeuronVS::NeuronVS(const char *nameParam) : NeuronDP(nameParam,0)
+NeuronVS::NeuronVS(const char *nameParam) : NeuronDP(nameParam,0,"")
 {
 	startupVideoDataSubscriber();
-	startupThrotMsgPublisher();
 }
 
 NeuronVS::~NeuronVS(void)
@@ -188,20 +149,9 @@ void NVSStartup(const char *name)
 	pTheVideoSub = new NeuronVS(name);
 }
 
-int NVSGetVidSrcList(const char ***pppVidSrcList)
+void NVSSetVDSPartition(const char *partitionName)
 {
-	pppVidSrcList = (const char ***) &srcNameList;
-	return srcNameListLen;
-}
-
-void NVSSetTMPPartition(const char *partitionName)
-{
-	pTheVideoSub->setTMPPartition(partitionName);
-}
-
-void NVSPublishThrotMsg(int modeVal)
-{
-	pTheVideoSub->publishThrotMsg(modeVal);
+	pTheVideoSub->setVDSPartition(partitionName);
 }
 
 void NVSGetFrame(unsigned char **ppFrameBuf,int *pBufLen,char fpsChoice)
@@ -210,12 +160,12 @@ void NVSGetFrame(unsigned char **ppFrameBuf,int *pBufLen,char fpsChoice)
 
 	switch(fpsChoice)
 	{
-	case 'f':	layerChoice = '2';
-				break;
-	case 'h':	layerChoice = '1';
-				break;
-	case 'q':	layerChoice = '0';
-				break;
+		case 'f':	layerChoice = '2';
+					break;
+		case 'h':	layerChoice = '1';
+					break;
+		case 'q':	layerChoice = '0';
+					break;
 	}
 
 	pTheVideoSub->getFrame(ppFrameBuf,pBufLen,layerChoice);

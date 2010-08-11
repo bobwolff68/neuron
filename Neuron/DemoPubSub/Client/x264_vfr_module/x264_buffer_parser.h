@@ -57,9 +57,9 @@ typedef struct
 typedef frameStreamContainer *fscPtr;
 
 int		fscInit( fscPtr );
-int		fscParseVideoHeader( fscPtr, int, uint_t, char );//,  NeuronDP *, const char *, char [][10] );
-int		fscParseFrame( fscPtr, uint_t, char );//, NeuronDP *, const char *, char [][10] );
-int		fscReadFrame( fscPtr, char );//, NeuronDP *, const char *, char [][10] );
+int		fscParseVideoHeader( fscPtr, int, uint_t, char );
+int		fscParseFrame( fscPtr, uint_t, char );
+int		fscReadFrame( fscPtr, char );
 int 	fscWriteVideoHeader( fscPtr, int, int );
 int		fscWriteFrame( fscPtr, int );
 void	fscReset( fscPtr );

@@ -21,8 +21,7 @@
                                             }
 
 enum {
-       TOPIC_FRAME		= 0,
-       TOPIC_THROTMSG,
+       TOPIC_FRAME = 0,
        N_TOPICS
      };
 
@@ -41,28 +40,30 @@ class NeuronDP
 		DDSTopic			   *pTopic[N_TOPICS];
 
 		void	startupDomainParticipant	(void);
-		void	configParticipantDiscovery	(int fVidSrc);	//Flag to inform base class that it is
-															//inherited by a video source
+		void	configParticipantDiscovery	(int fVidSrc,const char *vidStats);//Flag to inform base class that it is
+																				//inherited by a video source
 		void	registerAndCreateTopics		(void);
 	public:
-		NeuronDP(const char *nameParam,int fVidSrc);
+		NeuronDP(const char *nameParam,int fVidSrc,const char *vidStats);
 		~NeuronDP();
 };
 
 #ifdef NEURONVS_H_
 char	srcNameList[100][MAX_NAME_LEN];
+char	srcVidStats[100][50];
 int		srcNameListLen;
-char DDS_Errors[13][50] = {
+/*char DDS_Errors[13][50] = {
 						    "Success","Error","Unsupported",
 						    "Bad Param","Prec not met","Out of rescs",
 						    "Not enabled","Imm policy","Inc policy",
 						    "Already deleted","Timeout","No data",
 						    "Illegal operation"
-						  };
+						  };*/
 #else
 extern char	srcNameList[100][MAX_NAME_LEN];
+extern char	srcVidStats[100][50];
 extern int	srcNameListLen;
-extern char DDS_Errors[13][50];
+//extern char DDS_Errors[13][50];
 #endif
 
 #endif /* NEURONDP_H_ */

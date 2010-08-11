@@ -15,32 +15,22 @@ int64_t av_gettime(void)
 	return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-int nanosleep_ttw( int64_t time_mus, int *throttle_mode )
+int nanosleep_ttw( int64_t time_mus, int64_t mux_period_mus )
 {
 	struct timespec	time_to_wait;
 	int64_t			ttw_mus;
 	
-	if( *throttle_mode!=H264MUX_PAUSE_SIGNAL )
-	{
-		ttw_mus = av_gettime()-time_mus;
-		ttw_mus = clk_multiple*MUX_FRM_OP_CLK_PERIOD_MUS(*throttle_mode) - ttw_mus;
-		ttw_mus = ttw_mus*((int64_t) (ttw_mus>0));
-		time_to_wait.tv_sec = (time_t) ttw_mus/1000000;
-		time_to_wait.tv_nsec = (long) (ttw_mus%1000000)*1000;
-		nanosleep( &time_to_wait, NULL ); 
-	}
-	else
-	{
-		while( *throttle_mode==H264MUX_PAUSE_SIGNAL )
-			usleep(10000);
-		NVPSetVDPPartition();
-		usleep(50000);
-	}
+	ttw_mus = av_gettime()-time_mus;
+	ttw_mus = clk_multiple*mux_period_mus - ttw_mus;
+	ttw_mus = ttw_mus*((int64_t) (ttw_mus>0));
+	time_to_wait.tv_sec = (time_t) ttw_mus/1000000;
+	time_to_wait.tv_nsec = (long) (ttw_mus%1000000)*1000;
+	nanosleep( &time_to_wait, NULL ); 
 	
 	return 1;
 }
 
-int x264_stream_layer_mux_init( x264_slmux_ptr mux, char *name )
+int x264_stream_layer_mux_init( x264_slmux_ptr mux, char *name, char *vid_stats_str, double fps )
 {
 	char	*x264_layer_fn[3];
 	char 	*x264_layer_suffix[3] = { "L0","L1","L2" };
@@ -49,12 +39,12 @@ int x264_stream_layer_mux_init( x264_slmux_ptr mux, char *name )
 	// Initialize mux
 	if( mux->loop_flag==0 || mux->loop_flag==1 )
 	{
-		mux->throttle_mode = H264MUX_PAUSE_SIGNAL;
-		//strcpy( mux->sink_id_str, "-1" );
-		//NeuronDP_setup( &(mux->ndp), PUB_CHOICE, name );
-		NVPStartup( name );
-		NVPSetThrotModePtr( &(mux->throttle_mode) );
+		printf( "Video Stats: %s...\n", vid_stats_str );
+		NVPStartup( name, vid_stats_str );
 	}
+	
+	// Calculate frame publish period
+	mux->frm_publish_period_mus = (int64_t) (1000000.0/fps);
 	
 	for( i=0; i<3; i++ )
 	{
@@ -89,25 +79,29 @@ void sig_handle_ctrl_c( int sig )
 	return;
 }
 
-int x264_stream_layer_mux_thread_run( void *userdata, char *name )
+int x264_stream_layer_mux_thread_run( void *userdata, char *name, char *vid_stats_str, double fps )
 {
 	int	 	i;
 	int64_t	time_mus;
+//	int64_t	tmus;
 	
 	x264_slmux_ptr			mux = (x264_slmux_ptr) userdata;
-	//ThrotMsgListenerData	ldata = { 
-	//								  &(mux->ndp), &(mux->throttle_mode), 
-	//								  mux->sink_id_str, THROT_MSG_TAKE_QUERY 
-	//								};
-//	(void) signal( SIGINT, sig_handle_ctrl_c );
+
 	printf( "Neuron Concept server started (%s)....\n", (mux->loop_flag==0) ? "one time playback"
 														: "loop playback" );
 
 	do
 	{
-		x264_stream_layer_mux_init( mux, name );
-//		if( mux->loop_flag==0 || mux->loop_flag==1 )
-//			NeuronPub_setup_throt_msg_listener( &(mux->ndp), &ldata );
+		x264_stream_layer_mux_init( mux, name, vid_stats_str, fps );
+		
+		if( mux->loop_flag==0 || mux->loop_flag==1 )
+		{
+			printf( "Waiting for subscriptions for %d seconds (pub period: %lld ms)...\n", TTW_PUBLISH,
+															  		mux->frm_publish_period_mus/1000 );
+			sleep( TTW_PUBLISH );
+			printf( "Publishing started...\n" );
+			(void) signal( SIGINT, sig_handle_ctrl_c );
+		}
 		
 		// Send header info first
 		for( i=0; i<VIDEO_HDR_TYPES; i++ )
@@ -118,7 +112,7 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 			
 			if( mux->loop_flag==0 || mux->loop_flag==1 )
 			{
-				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
+				nanosleep_ttw( time_mus, mux->frm_publish_period_mus );
 				fscWriteFrame( &(mux->fl[0]) );
 			}
 		}
@@ -132,34 +126,38 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 			 )
 		{
 			// Write one L0 frame
-			time_mus = av_gettime();		
+			time_mus = av_gettime();
+//			tmus = time_mus;		
 			if( !fscExtractFrame( &(mux->fl[0]), 0 ) )	break;
-			if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
-			nanosleep_ttw( time_mus, &(mux->throttle_mode) );
+			nanosleep_ttw( time_mus, mux->frm_publish_period_mus );
 			fscWriteFrame( &(mux->fl[0]) );
+//			fprintf( stderr, "Time: %lld ms\n", (av_gettime()-tmus)/1000 );
+//			tmus = av_gettime();
 			// If IDR/I frame, parse and write next P frame.
 			if( mux->fl[0].type==X264_TYPE_IDR || mux->fl[0].type==X264_TYPE_I )
 			{
 				clk_multiple++;
 				if( !fscExtractFrame( &(mux->fl[0]), 0 ) )	break;
-				if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
-				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
+				nanosleep_ttw( time_mus, mux->frm_publish_period_mus );
 				fscWriteFrame( &(mux->fl[0]) );
+//				fprintf( stderr, "Time: %lld ms\n", (av_gettime()-tmus)/1000 );
 			}
-			// Extract the next B frame and write if fps_op > 0.25*fps_orig
+			// Extract the next B frame
+//			tmus = av_gettime();
 			if( !fscExtractFrame( &(mux->fl[1]), 0 ) )	break;
-			if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
 			clk_multiple++;
-			nanosleep_ttw( time_mus, &(mux->throttle_mode) );
+			nanosleep_ttw( time_mus, mux->frm_publish_period_mus );
 			fscWriteFrame( &(mux->fl[1]) );
+//			fprintf( stderr, "Time: %lld ms\n", (av_gettime()-tmus)/1000 );
 			// Extract the next 2 b frames and write if fps_op == fps_orig
 			for( i=0; i<2; i++ )
 			{
+//				tmus = av_gettime();
 				if( !fscExtractFrame( &(mux->fl[2]), 0 ) )	break;
-				if( mux->throttle_mode == H264MUX_KILL_SIGNAL ) break;
 				clk_multiple++;
-				nanosleep_ttw( time_mus, &(mux->throttle_mode) );
+				nanosleep_ttw( time_mus, mux->frm_publish_period_mus );
 				fscWriteFrame( &(mux->fl[2]) );
+//				fprintf( stderr, "Time: %lld ms\n", (av_gettime()-tmus)/1000 );
 			}		
 			if( i<2 )	break;
 			clk_multiple = 1;
@@ -170,12 +168,10 @@ int x264_stream_layer_mux_thread_run( void *userdata, char *name )
 		fscClose( &(mux->fl[2]) );
 		
 		if( mux->loop_flag==1 ) mux->loop_flag++;
-	} while( mux->loop_flag>1 && mux->throttle_mode != H264MUX_KILL_SIGNAL && !ctrl_c_hit );
+	} while( mux->loop_flag>1 && !ctrl_c_hit );
 	
-	//NeuronPub_write_frame( &(mux->ndp), (char *) mux->sink_id_str, (long) 1, (long) 0 );
 	NVPPublishFrame( name, 1, 0 );
 	sleep( 1 );
-	//NeuronDP_destroy( &(mux->ndp), PUB_CHOICE );
 	NVPDestroy();
 	printf( "Server exiting....\n" );
 	return 1;	

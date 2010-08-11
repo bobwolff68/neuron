@@ -60,7 +60,6 @@ int		fscInit( fscPtr, char * );
 int		fscExtractVideoHeader( fscPtr, int, uint_t );
 int		fscExtractFrame( fscPtr, uint_t );
 int		fscRead( fscPtr, size_t, size_t * );
-//int		fscWriteFrame( fscPtr, NeuronDP * );
 int		fscWriteFrame( fscPtr );
 void	fscReset( fscPtr );
 int		fscClose( fscPtr );

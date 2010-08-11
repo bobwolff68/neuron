@@ -5,18 +5,15 @@ extern "C"
 
 #define MAX_NAME_LEN	256
 extern char	srcNameList[100][MAX_NAME_LEN];
+extern char	srcVidStats[100][50];
 extern int	srcNameListLen;
 
 //APIs
-void	NVPStartup			(const char *name);
-void	NVPSetThrotModePtr	(int *pThrotMode);
-void	NVPSetVDPPartition	(void);
+void	NVPStartup			(const char *name, const char *vidStats);
 void	NVPPublishFrame		(unsigned char *pFrameBuf,int bufLen,int lType);
 void	NVPDestroy			(void);
 void	NVSStartup			(const char *name);
-int		NVSGetVidSrcList	(const char ***pppVidSrcList);
-void	NVSSetTMPPartition	(const char *partitionName);
-void	NVSPublishThrotMsg	(int modeVal);
+void	NVSSetVDSPartition	(const char *partitionName);
 void	NVSGetFrame			(unsigned char **ppFrameBuf,int *pBufLen,char fpsChoice);
 void	NVPDestroy			(void);
 

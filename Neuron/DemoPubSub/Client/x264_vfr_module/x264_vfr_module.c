@@ -93,11 +93,10 @@ int VFRM_init( VFRModule *pVfm, char *name )
 	if( !fscInit( &(pVfm->fsc) ) )
 		return 0;
 	
-	//NeuronDP_setup( &(pVfm->ndp), SUB_CHOICE, pVfm->video_src_id_str );
 	NVSStartup( name );
 	pVfm->fps_choice = 'f';
 	pVfm->new_fps_choice = 'f';
-	pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
+	//pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
 	time_mus = av_gettime();
 	mutex = SDL_CreateMutex();
 	cond = SDL_CreateCond();
@@ -113,20 +112,17 @@ int VFRM_thread_run( void *userdata )
 	int			eos = 0;
 	double		total_bytes_read = 0.0;
 	char		prog_bar_text[50];
-	//char		query_param_list[2][10] = { "1","3" };
 	int64_t		new_time_mus;
 	VFRModule	*pVfm = (VFRModule *) userdata;
 	pid_t		proc_id = getpid();
 
-	//VFRM_init( pVfm );
+
 	pVfm->opfd = open( pVfm->vfrm_output_fn, O_WRONLY );
-	//strcpy( query_param_list[0], pVfm->video_src_id_str );
-	//strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
-	//printf( "Parameter list = (%s,%s)\n", query_param_list[0], query_param_list[1] );
+
 	// Read header info first
 	for( i=0; i<VIDEO_HDR_TYPES; i++ )
 	{
-		if( !fscParseVideoHeader( &(pVfm->fsc), i, 0, pVfm->fps_choice ) )//, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )
+		if( !fscParseVideoHeader( &(pVfm->fsc), i, 0, pVfm->fps_choice ) )
 			return 0;
 		total_bytes_read += ((double) pVfm->fsc.streamPtr);
 	}
@@ -141,8 +137,6 @@ int VFRM_thread_run( void *userdata )
 	
 	while( !eos && !pVfm->quit_flag )
 	{
-		//strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
-		
 		// Read GOP
 		while( !pVfm->gopq.is_pframe_present || (pVfm->fsc.type!=X264_TYPE_IDR && 
 			   pVfm->fsc.type!=X264_TYPE_I && pVfm->fsc.type!=X264_TYPE_P)
@@ -152,31 +146,18 @@ int VFRM_thread_run( void *userdata )
 			GOPQ_add_frame( &(pVfm->gopq), &(pVfm->fsc) );
 			if( pVfm->fsc.type==X264_TYPE_IDR || pVfm->fsc.type==X264_TYPE_I )
 			{
-				if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )//, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )	
+				if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )
 				{
 					eos = 1;
 					break;
 				}
-				if( pVfm->throt_signal != *(pVfm->p_pcq_throt_signal) )
-				{
-					pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
-					//NeuronSub_write_throtmsg( &(pVfm->ndp), pVfm->throt_signal );
-					NVSPublishThrotMsg( (int) (pVfm->throt_signal - '0') );
-				}
 				total_bytes_read += ((double) pVfm->fsc.streamPtr);
 				GOPQ_add_frame( &(pVfm->gopq), &(pVfm->fsc) );
 			}
-			if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )//, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )	
+			if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )
 			{
 				eos = 1;
 				break;
-			}
-			
-			if( pVfm->throt_signal != *(pVfm->p_pcq_throt_signal) )
-			{
-				pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
-				//NeuronSub_write_throtmsg( &(pVfm->ndp), pVfm->throt_signal );
-				NVSPublishThrotMsg( (int) (pVfm->throt_signal - '0') );
 			}
 		}
 		// If sps[sps_idx] is different from previously transmitted sps,
@@ -212,12 +193,6 @@ int VFRM_thread_run( void *userdata )
 		if( pVfm->fps_choice != pVfm->new_fps_choice )
 			pVfm->fps_choice = pVfm->new_fps_choice;
 
-		if( pVfm->throt_signal != *(pVfm->p_pcq_throt_signal) )
-		{
-			pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
-			NVSPublishThrotMsg( (int) (pVfm->throt_signal - '0') );
-		}
-		
 		new_time_mus = av_gettime();
 		if( (new_time_mus-time_mus)>=STATS_CALC_CLK_PERIOD_MUS )
 		{
@@ -299,143 +274,4 @@ void VFRM_destroy( VFRModule *pVfm )
 
 	return;	
 }
-
-/*int VFRM_thread_run( void *userdata )
-{
-	int	 		i;
-	int			bytes_read;
-	int			sps_idx;
-	int			pps_sent = 0;
-	int			empty_b_frame = 0;
-	int			prev_frame_type;
-	int			eos = 0;
-	double		total_bytes_read = 0.0;
-	char		prog_bar_text[50];
-	char		query_param_list[2][10] = { "1","3" };
-	int64_t		new_time_mus;
-	VFRModule	*pVfm = (VFRModule *) userdata;
-	pid_t		proc_id = getpid();
-
-	VFRM_init( pVfm );
-	strcpy( query_param_list[0], pVfm->video_src_id_str );
-	strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
-	printf( "Parameter list = (%s,%s)\n", query_param_list[0], query_param_list[1] );
-	// Read header info first
-	for( i=0; i<VIDEO_HDR_TYPES; i++ )
-	{
-		if( !fscParseVideoHeader( &(pVfm->fsc), i, 0, &(pVfm->ndp), FRAME_QUERY, query_param_list ) )
-			return 0;
-		total_bytes_read += ((double) pVfm->fsc.streamPtr);
-	}
-	// Send sei
-	if( fscWriteVideoHeader( &(pVfm->fsc), SEI_STREAM_INDEX, pVfm->opfd )<0 )
-	{
-		perror( "x264 vfr module write_vid_hdr()" );
-		return 0;
-	}
-	
-	while( !eos && !pVfm->quit_flag )
-	{
-		strcpy( query_param_list[1], LAYER_LIMIT_STR( pVfm->fps_choice ) );
-		fscParseFrame( &(pVfm->fsc), 0, &(pVfm->ndp), FRAME_QUERY, query_param_list );
-		total_bytes_read += ((double) pVfm->fsc.streamPtr);
-		
-		switch( pVfm->fsc.type )
-		{
-			case X264_TYPE_I:
-			case X264_TYPE_IDR:
-								if( pVfm->fps_choice != pVfm->new_fps_choice )
-								{
-									pVfm->fps_choice = pVfm->new_fps_choice;
-									if( fscWriteVideoHeader( 
-															 &(pVfm->fsc), 
-															 SPS_HDR_IDX( pVfm->fps_choice ), 
-															 pVfm->opfd 
-														   )<0 )
-									{
-										perror( "x264 vfr module write_vid_hdr()" );
-										return 0;
-									}
-								}
-								if( !pps_sent )
-								{
-									if( fscWriteVideoHeader( 
-															 &(pVfm->fsc), 
-															 PPS_STREAM_INDEX, 
-															 pVfm->opfd 
-														   )<0 )
-									{
-										perror( "x264 vfr module write_vid_hdr()" );
-										return 0;
-									}
-									pps_sent = 1;
-								}
-								break;
-			
-			case X264_TYPE_P:
-								if( prev_frame_type != X264_TYPE_I && 
-								    prev_frame_type != X264_TYPE_IDR )
-								{
-									if( pVfm->fps_choice != pVfm->new_fps_choice )
-									{
-										pVfm->fps_choice = pVfm->new_fps_choice;
-										if( fscWriteVideoHeader( 
-																 &(pVfm->fsc), 
-																 SPS_HDR_IDX( pVfm->fps_choice ), 
-																 pVfm->opfd 
-															   )<0 )
-										{
-											perror( "x264 vfr module write_vid_hdr()" );
-											return 0;
-										}
-									}	
-								}
-								break;
-								
-			case X264_TYPE_BREF:
-			case X264_TYPE_B:
-								if( pVfm->fsc.streamPtr<=NAL_AUD_SIZE )
-									empty_b_frame = 1;
-								break;
-		}
-		
-		if( !empty_b_frame )
-		{
-			if( fscWriteFrame( &(pVfm->fsc), pVfm->opfd )<0 )
-			{
-				perror( "x264 vfr module write_vid_hdr()" );
-				return 0;
-			}
-		}
-		empty_b_frame = 0;
-		prev_frame_type = pVfm->fsc.type;
-
-		if( pVfm->throt_signal != *(pVfm->p_pcq_throt_signal) )
-		{
-			pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
-			NeuronSub_write_throtmsg( &(pVfm->ndp), pVfm->throt_signal );
-		}
-		
-		new_time_mus = av_gettime();
-		if( (new_time_mus-time_mus)>=STATS_CALC_CLK_PERIOD_MUS )
-		{
-			SDL_CondWait( cond, mutex );
-			SDL_LockMutex( mutex );
-			// Bandwidth in Kb/s
-			*bandwidth = total_bytes_read*(8e-3) / (((double)(new_time_mus-time_mus))*(1e-6));
-			VFRM_get_cpu_usage( proc_id );
-			
-			SDL_CondSignal( cond );
-			SDL_UnlockMutex( mutex );	
-			total_bytes_read = 0.0;
-			time_mus = new_time_mus;
-		}
-	}
-
-	NeuronDP_destroy( &(pVfm->ndp), SUB_CHOICE );
-	fscClose( &(pVfm->fsc) );
-	close( pVfm->opfd );
-	fprintf( stderr, "VFRM finished\n" );
-	return 1;
-}*/
 

@@ -20,6 +20,9 @@ void DDSDPBuiltinListener::on_data_available(DDSDataReader *pGenericReader)
     DDS_ReturnCode_t                            retCode;
     char                                       *newUserInfo = NULL;
     int											fVidSrc;
+    int											vidWidth;
+    int											vidHeight;
+    double										vidFps;
 
     dpBuiltinReader = (DDSParticipantBuiltinTopicDataDataReader *) pGenericReader;
     retCode = dpBuiltinReader->take(seqDiscovery,seqInfo,DDS_LENGTH_UNLIMITED,
@@ -35,10 +38,13 @@ void DDSDPBuiltinListener::on_data_available(DDSDataReader *pGenericReader)
                 if(seqDiscovery[iSeq].user_data.value.length()>0)
                 {
                     newUserInfo = (char *) &(seqDiscovery[iSeq].user_data.value[0]);
-                    sscanf(&newUserInfo[strlen(newUserInfo)-1],"%d",&fVidSrc);
-                    newUserInfo[strlen(newUserInfo)-2] = '\0';
-                    if(fVidSrc)	//printf("\nDetected Video Source: %s\n",newUserInfo);
-                    	strcpy(srcNameList[srcNameListLen++],newUserInfo);
+                    fVidSrc = (int) (newUserInfo[0]-'0');
+
+                    if(fVidSrc)
+                    {
+                    	sscanf(&newUserInfo[2],"%d,%d,%lf,%s",&vidWidth,&vidHeight,&vidFps,srcNameList[srcNameListLen]);
+                    	sprintf(srcVidStats[srcNameListLen++],"(%dX%d)@(%.2lf)",vidWidth,vidHeight,vidFps);
+                    }
                 }
             }
         }
@@ -70,7 +76,7 @@ void NeuronDP::startupDomainParticipant(void)
     CHECK_HANDLE(pDomainParticipant,"Cannot create domain participant\n");
 }
 
-void NeuronDP::configParticipantDiscovery(int fVidSrc)
+void NeuronDP::configParticipantDiscovery(int fVidSrc,const char *vidStats)
 {
 	char									   *discInfo;
     char										fVidSrcInfo[3];
@@ -80,10 +86,13 @@ void NeuronDP::configParticipantDiscovery(int fVidSrc)
     DDSParticipantBuiltinTopicDataDataReader   *pDPBuiltinReader = NULL;
     DDSDPBuiltinListener                       *pDPBuiltinListener = NULL;
 
-    discInfo = new char[strlen(name)+3];	// 1 extra for '\0', 2 extra for ",<fVidSrc>"
-    strcpy(discInfo,name);
-    sprintf(fVidSrcInfo,",%d",fVidSrc);
-    strcat(discInfo,fVidSrcInfo);
+    discInfo = new char[MAX_NAME_LEN+50];
+    //strcpy(discInfo,name);
+    sprintf(fVidSrcInfo,"%d,",fVidSrc);
+    strcpy(discInfo,fVidSrcInfo);
+    strcat(discInfo,vidStats);
+    strcat(discInfo,",");
+    strcat(discInfo,name);
 
     // Use user_data QOS to advertise identity
     retCode = pDomainParticipant->get_qos(dpQos);
@@ -125,19 +134,11 @@ void NeuronDP::registerAndCreateTopics(void)
 					// Make frame data reliable and history depth 2
 					retCode = pDomainParticipant->get_default_topic_qos(frameTopicQos);
 					CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot get QOS for Frame topic\n");
-					//frameTopicQos.reliability.kind = DDS_RELIABLE_RELIABILITY_QOS;
-					//frameTopicQos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
 					frameTopicQos.history.depth = 2;
 					retCode = pDomainParticipant->set_default_topic_qos(frameTopicQos);
 					CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot set QOS for Frame topic\n");
 					break;
-			case TOPIC_THROTMSG:
-					typeName = ThrotMsgTypeSupport::get_type_name();
-					retCode = ThrotMsgTypeSupport::register_type(pDomainParticipant,typeName);
-					CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Cannot register type for ThrotMsg topic\n");
-					break;
 		}
-
 
         printf("Registered type %s\n", typeName);
         pTopic[iTopic] = pDomainParticipant->create_topic(typeName,typeName,
@@ -146,12 +147,12 @@ void NeuronDP::registerAndCreateTopics(void)
 	}
 }
 
-NeuronDP::NeuronDP(const char *nameParam, int fVidSrc)
+NeuronDP::NeuronDP(const char *nameParam,int fVidSrc,const char *vidStats)
 {
 	name = nameParam;
 	srcNameListLen = 0;
 	startupDomainParticipant();
-	configParticipantDiscovery(fVidSrc);
+	configParticipantDiscovery(fVidSrc,vidStats);
 	registerAndCreateTopics();
 }
 

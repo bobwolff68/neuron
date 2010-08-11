@@ -39,7 +39,6 @@ int fscExtractVideoHeader( fscPtr f, int hdrStreamIndex, uint_t verbose )
 	uint_t	nalStartCodePrefix = 0;
 	int		nalRefIdc = 0;
 	int		nalType = 0;
-	//int 	i;
 	
 	// Reset frame buffer position and size.
 	fscReset( f );
@@ -239,14 +238,8 @@ int	fscRead( fscPtr f, size_t nEle, size_t *bytesRead )
 	return 1;
 }
 
-//int	fscWriteFrame( fscPtr f, NeuronDP *pNdp )
 int	fscWriteFrame( fscPtr f )
 {
-	//long layer_type = (long) LAYER_TYPE( f->type );
-	//long size = (long) f->streamPtr;
-	
-	//NeuronPub_write_frame( pNdp, (char *) f->streamBuf, size, layer_type );
-	//printf("Size: %d, Type: %d\n", f->streamPtr, LAYER_TYPE(f->type) );
 	NVPPublishFrame( f->streamBuf, f->streamPtr, LAYER_TYPE(f->type) );
 	return f->type;
 }

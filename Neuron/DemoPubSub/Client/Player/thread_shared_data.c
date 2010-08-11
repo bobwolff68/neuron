@@ -69,6 +69,7 @@ int PCQEnqueue( TSDPtr ptsd, AVFrame *pFrame, uint32_t pts_del_ms )
 	ptsd->ppcq->len++;
 	ptsd->ppcq->len_time_ms += pts_del_ms;
 
+	//fprintf( stderr, "QLen: %d\n", ptsd->ppcq->len );
 	SDL_UnlockMutex( ptsd->ppcq->mutex );	
 	return 1;
 }
@@ -77,28 +78,8 @@ int64_t PCQDequeue( TSDPtr ptsd )
 {
 	SDL_LockMutex( ptsd->ppcq->mutex );
 	ptsd->ppcq->len--;
+	//fprintf( stderr, "QLen: %d\n", ptsd->ppcq->len );
 	ptsd->ppcq->len_time_ms -= (ptsd->ppcq->pts_delta_ms[ptsd->ppcq->read_pos]);
-	// Determine throttle control signal for h264_mux
-	if( (ptsd->h264mux_throttle_signal!=H264MUX_PAUSE_SIGNAL) && 
-		(ptsd->ppcq->len_time_ms>=MAX_PCQ_SIZE_TIME_MS) )
-	{
-		ptsd->h264mux_throttle_signal = H264MUX_PAUSE_SIGNAL;
-	}
-	else if( (ptsd->h264mux_throttle_signal!=H264MUX_MAX_THROTTLE) && 
-		(ptsd->ppcq->len_time_ms<MIN_PCQ_SIZE_TIME_MS) )
-	{
-		ptsd->h264mux_throttle_signal = H264MUX_MAX_THROTTLE;
-	}
-	else if( (ptsd->h264mux_throttle_signal==H264MUX_MAX_THROTTLE) && 
-			 (ptsd->ppcq->len_time_ms>=MED_PCQ_SIZE_TIME_MS) )
-	{
-		ptsd->h264mux_throttle_signal = H264MUX_MED_THROTTLE;
-	}
-	else if( (ptsd->h264mux_throttle_signal==H264MUX_PAUSE_SIGNAL) && 
-			 (ptsd->ppcq->len_time_ms<MED_PCQ_SIZE_TIME_MS) )
-	{
-		ptsd->h264mux_throttle_signal = H264MUX_MED_THROTTLE;
-	}
 	SDL_CondSignal( ptsd->ppcq->cond );
 	SDL_UnlockMutex( ptsd->ppcq->mutex );
 	// Remove first frame

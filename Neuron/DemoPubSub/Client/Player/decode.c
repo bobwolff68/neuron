@@ -26,8 +26,7 @@ int decode_thread_run( void *userdata )
 	
 	AVFrame		*pFrame;
 	AVPacket	packet;
-	//SDL_Event	*event;
-	TSDPtr 		 ptsd = (TSDPtr) userdata;
+	TSDPtr 		ptsd = (TSDPtr) userdata;
 	// Allocate memory for decoded frame
 	if( (pFrame=avcodec_alloc_frame())==NULL )
 	{
@@ -40,26 +39,17 @@ int decode_thread_run( void *userdata )
 	// Decode each frame and enqueue it
 	while( !ptsd->quit_flag && av_read_frame( ptsd->pFmtCtx, &packet )>=0 )
 	{
-		//printf( "begin\n" );
 		if( packet.stream_index==ptsd->vid_stream_idx )
 		{
 			avcodec_decode_video2( ptsd->pCodecCtx, pFrame, &frame_done, &packet );
 			if( frame_done )
 			{
-				ptsd->decode_frame_count++;
-				//fps = ( (double) ptsd->pCodecCtx->pts_delta_ms );
-				//if( fps != fps_prev ) 
-				//	fprintf( stderr, "Frame delay at frame %lld: %lf msec\n", 
-				//			 ptsd->decode_frame_count, fps );
-				//	fps_prev = fps;
-				
-				if( !ptsd->quit_flag && 
-					!PCQEnqueue( ptsd, pFrame, ptsd->pCodecCtx->pts_delta_ms ) )
+				ptsd->decode_frame_count++;			
+				if( !ptsd->quit_flag && !PCQEnqueue( ptsd, pFrame, ptsd->pCodecCtx->pts_delta_ms ) )
 					break;
 			}
 		}
 		av_free_packet( &packet );
-		//printf( "end\n" );
 	}
 
 	fprintf( stderr, "Decode ended...\n" );	

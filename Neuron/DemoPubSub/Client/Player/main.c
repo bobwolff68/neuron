@@ -50,28 +50,26 @@ Uint32 refresh_srclist_callback( Uint32 interval, void *opaque )
 
 void refresh_src_list( NeuronGuiObject *pNGObj, void *data )
 {
-	int		i;
-	int		n_srcs;
-	char	*srcListEntry[2];
-	//char	***srcNameList;
-	VFRModule *pvfrm = (VFRModule *) data;
+	int			i;
+	char		*srcListEntry[2];
+	VFRModule 	*pvfrm = (VFRModule *) data;
 	
 	// Refresh source list
 	if( !strcmp( pvfrm->video_src_id_str, "-1" ) )
 	{
 		srcListEntry[0] = (char *) malloc( sizeof(char)*256 );
-		srcListEntry[1] = (char *) malloc( sizeof(char)*10 );
-		n_srcs = srcNameListLen;//NVSGetVidSrcList(srcNameList);
+		srcListEntry[1] = (char *) malloc( sizeof(char)*100 );
 	
 		// Refresh entries in Clist widget
 		gtk_clist_freeze( GTK_CLIST(pNGObj->srcList) );
 		gtk_clist_clear( GTK_CLIST(pNGObj->srcList) );
-		for( i=0; i<n_srcs; i++ )
+		for( i=0; i<srcNameListLen; i++ )
 		{
 			strcpy( srcListEntry[0], srcNameList[i] );
-			strcpy( srcListEntry[1], "" );
+			strcpy( srcListEntry[1], srcVidStats[i] );
 			gtk_clist_append( GTK_CLIST(pNGObj->srcList), srcListEntry );
 		}
+		
 		gtk_clist_thaw( GTK_CLIST(pNGObj->srcList) );	
 		free( srcListEntry[0] );
 		free( srcListEntry[1] );
@@ -105,7 +103,6 @@ void on_video_src_select( GtkWidget *widget, gint row, gint column,GdkEventButto
 	long	src_id;
 	long	vid_src_id;
 	int		i;
-	//char	***srcNameList = NULL;//(char **) malloc(sizeof(char *));
 	
 	SRUDPtr	psrud = (SRUDPtr) data;
 	AVCodec	*pCodec;
@@ -113,7 +110,6 @@ void on_video_src_select( GtkWidget *widget, gint row, gint column,GdkEventButto
 	if( !strcmp( psrud->pvfrm->video_src_id_str, "-1" ) )
 	{
 		// Extract ID of selected source
-		//NVSGetVidSrcList(srcNameList);
 		strcpy( psrud->pvfrm->video_src_id_str, srcNameList[row] );
 		
 		// Hide Source List and Show Buttons
@@ -123,11 +119,11 @@ void on_video_src_select( GtkWidget *widget, gint row, gint column,GdkEventButto
 		for( i=0; i<3; i++ )
 			gtk_widget_show( psrud->pNGObj->fpsButtons[i] );
 		
-		// Send throttle message to start source
-		NVSSetTMPPartition(srcNameList[row]);
+		// Display Video Screen
+		gtk_widget_show( psrud->pNGObj->videoScreen );
+		
+		NVSSetVDSPartition(srcNameList[row]);
 		usleep(50000);
-		printf("Selected: %s\n",srcNameList[row]);
-		NVSPublishThrotMsg( (int) (H264MUX_MAX_THROTTLE - '0') );
 		
 		// Start vfr module thread
 		psrud->ptsd->vfrm_thread = SDL_CreateThread( VFRM_thread_run, (void *) psrud->pvfrm );
@@ -220,7 +216,6 @@ int main( int argc, char *argv[] )
 	char			vfrm_opfn[100] = "../../Fifos/x264vfrmout";
 	char			*key_press_str;
 	int 			i;
-	int				vfrm_id;
 
 	// Setup communication channel between vfrm and decode/display thread
 	strcat( vfrm_opfn, argv[1] );
@@ -234,14 +229,9 @@ int main( int argc, char *argv[] )
 	ptsd = (TSDPtr) av_mallocz( sizeof( ThreadSharedData ) );
 	ptsd->vid_stream_idx = -1;
 	ptsd->quit_flag = 0;
-	ptsd->h264mux_throttle_signal = H264MUX_MAX_THROTTLE;	
 	pvfrm = (VFRModule *) av_mallocz( sizeof(VFRModule) );
 	pvfrm->vfrm_output_fn = vfrm_opfn;
-	pvfrm->p_pcq_throt_signal = &(ptsd->h264mux_throttle_signal);
-	//sscanf( argv[1], "%d", &vfrm_id );
-	//pvfrm->ndp.dp_id = (DDS_long) vfrm_id;
-	
-	//NeuronDP_create_dp_factory( &(pvfrm->ndp) );
+
 	VFRM_init( pvfrm, argv[1] );
 	SDLDInit( ngObj, VID_W, VID_H, 
 			  SDL_YV12_OVERLAY, PIX_FMT_YUV420P, &(pvfrm->new_fps_choice) );
@@ -270,13 +260,9 @@ int main( int argc, char *argv[] )
   		SDL_WaitThread( ptsd->vfrm_thread, NULL );
   		avcodec_close( ptsd->pCodecCtx );
 		av_close_input_file( ptsd->pFmtCtx );
-		NVSPublishThrotMsg( (int) (H264MUX_KILL_SIGNAL - '0') );
-		sleep( 1 );
-		//NeuronSub_destroy_cftopic_and_reader( &(pvfrm->ndp) );
 		PCQCleanUp( ptsd );
 	}
 	
-	//NeuronDP_destroy( &(pvfrm->ndp), SUB_CHOICE );
 	VFRM_destroy( pvfrm );
 	av_free( pvfrm );
 	av_free( ngObj->pSdlDisp );

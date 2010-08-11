@@ -10,9 +10,9 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_thread.h>
 //---------------------------------------- DEFINES ------------------------------------------------
-#define MAX_PCQ_SIZE_TIME_MS	1500
-#define MED_PCQ_SIZE_TIME_MS	600
-#define MIN_PCQ_SIZE_TIME_MS	300
+#define MAX_PCQ_SIZE_TIME_MS	500
+#define MED_PCQ_SIZE_TIME_MS	200
+#define MIN_PCQ_SIZE_TIME_MS	100
 #define MAX_PCQ_LEN				50
 #define H264MUX_KILL_SIGNAL		'3'
 #define H264MUX_MAX_THROTTLE	'1'
@@ -40,7 +40,6 @@ typedef struct
 {
 	int		vid_stream_idx;
 	int 	quit_flag;
-	char	h264mux_throttle_signal;
 	int64_t	cur_pts_mus;
 	int64_t pts_ref_time_mus;
 	int64_t decode_frame_count;

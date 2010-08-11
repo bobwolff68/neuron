@@ -8,9 +8,3 @@ struct Frame
 	sequence<octet,1000000>	payload;
 };
 
-struct ThrotMsg
-{
-	string<MAX_NAME_LEN>	srcName; //@key
-	long					mode;
-};
-

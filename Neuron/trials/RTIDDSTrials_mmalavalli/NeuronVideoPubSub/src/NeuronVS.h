@@ -14,23 +14,18 @@
 class NeuronVS : public NeuronDP
 {
 	DDSSubscriber		   *pVideoSub;			//Frame topic subscriber
-	DDSPublisher		   *pThrotPub;			//ThrotMsg topic publisher
-	DDSDataWriter		   *gpThrotWriter;		//Generic pointer for ThrotMsg data writer
 	DDSDataReader		   *gpFrameReader;		//Generic pointer for Frame data reader
 	DDSWaitSet			   *pWaitSet;			//Waitset for Frame samples
 
-	void	setVDSPartition				(const char *partitionName);
+	void	setupVDSMulticast			(void);
 	void	startupVideoDataSubscriber	(void);
-	void	startupThrotMsgPublisher	(void);
 
 	public:
 		NeuronVS(const char *nameParam);
 		~NeuronVS();
 
-		void	setTMPPartition	(const char *partitionName);
-		void	publishThrotMsg	(int modeVal);
+		void	setVDSPartition	(const char *partitionName);
 		void	getFrame		(unsigned char **ppFrameBuf,int *pBufLen,char layerChoice);
-
 };
 
 NeuronVS	*pTheVideoSub = NULL;
@@ -42,9 +37,7 @@ extern "C"
 
 //APIs
 void	NVSStartup			(const char *name);
-int		NVSGetVidSrcList	(const char ***pppVidSrcList);
-void	NVSSetTMPPartition	(const char *partitionName);
-void	NVSPublishThrotMsg	(int modeVal);
+void	NVSSetVDSPartition	(const char *partitionName);
 void	NVSGetFrame			(unsigned char **ppFrameBuf,int *pBufLen,char fpsChoice);
 void	NVPDestroy			(void);
 

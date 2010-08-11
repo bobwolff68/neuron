@@ -34,12 +34,12 @@ void button_click( GtkWidget *widget, gpointer data )
 //---------------------------------- Neuron GUI FUNCTIONS -----------------------------------------
 void setup_src_list( NeuronGuiObject *nguiObj )
 {
-	gchar *colTitles[2] = { "Source Name", "Source ID" };
+	gchar *colTitles[2] = { "Source Name", "Video Stats" };
 	
 	nguiObj->scrollWin = gtk_scrolled_window_new( NULL, NULL );
 	gtk_scrolled_window_set_policy( GTK_SCROLLED_WINDOW(nguiObj->scrollWin),
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC );
-    gtk_widget_set_size_request( nguiObj->scrollWin, 170, 150 );
+    gtk_widget_set_size_request( nguiObj->scrollWin, 250, 150 );
 	gtk_fixed_put( GTK_FIXED(nguiObj->fixedFrame), nguiObj->scrollWin, 10, 15 );
 	nguiObj->srcList = gtk_clist_new_with_titles( 2, colTitles );
 	gtk_clist_column_titles_passive( GTK_CLIST(nguiObj->srcList) );
@@ -121,6 +121,7 @@ void neu_gui_open( NeuronGuiObject *nguiObj, int vwidth, int vheight, char *fps_
 		gtk_widget_hide( nguiObj->fpsButtons[i] );
 	}
 
+	gtk_widget_hide( nguiObj->videoScreen );
 	return;
 }
 //---------------------------------- SDLDisplay FUNCTIONS -----------------------------------------
@@ -201,7 +202,7 @@ int	refresh_display( NeuronGuiObject *pNGObj, void *userdata )
 	if( ptsd->pFmtCtx->streams[ptsd->vid_stream_idx] )
 	{
 		if( ptsd->ppcq->len==0 )
-			SCHED_DISP_REFRESH( ptsd, 1 );
+			SCHED_DISP_REFRESH( ptsd, (int32_t) (cur_pts_delta_mus/10000)*10 );
 		else
 		{
 			// If first frame, store pts reference time as current time
@@ -216,7 +217,7 @@ int	refresh_display( NeuronGuiObject *pNGObj, void *userdata )
 			disp_cur_frame_time = GET_REL_TIME_MUS(ptsd->pts_ref_time_mus);
 			disp_int = disp_cur_frame_time - disp_prev_frame_time;
 			//printf( "fc: %lld, ts: %lld (mus), ", ptsd->disp_frame_count, 
-			//											    ptsd->cur_pts_mus );
+														    ptsd->cur_pts_mus );
 			//printf( "id: %lld (mus), ", cur_pts_delta_mus-disp_int );
 			// If early wait before displaying
 			if( cur_pts_delta_mus>disp_int )
@@ -235,7 +236,7 @@ int	refresh_display( NeuronGuiObject *pNGObj, void *userdata )
 			cur_pts_delta_mus = ((int64_t) ptsd->ppcq->pts_delta_ms[ptsd->ppcq->read_pos])*1000;
 			SCHED_DISP_REFRESH( ptsd, (int32_t) (cur_pts_delta_mus/10000)*10 );
 			//printf( "i: %d (%d), ", (int) (cur_pts_delta_mus/1000), 
-			//						(int) (cur_pts_delta_mus/10000)*10 );
+									(int) (cur_pts_delta_mus/10000)*10 );
 			ptsd->cur_pts_mus += cur_pts_delta_mus;
 			//printf( "q_len_time: %lld ms\n", PCQDequeue( ptsd ) );
 			PCQDequeue( ptsd );

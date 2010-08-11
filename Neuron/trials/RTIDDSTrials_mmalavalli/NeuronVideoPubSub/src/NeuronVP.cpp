@@ -10,34 +10,6 @@
 #include "NeuronDDSSupport.h"
 #include "NeuronVP.h"
 
-//------------------------------------ DDSThrotMsgListener member functions ------------------------------------//
-
-void DDSThrotMsgListener::on_data_available(DDSDataReader *pGenericReader)
-{
-	ThrotMsgDataReader *pThrotMsgReader = NULL;
-	ThrotMsgSeq			seqSamples;
-	DDS_SampleInfoSeq	seqSampleInfos;
-	DDS_ReturnCode_t	retCode;
-
-	pThrotMsgReader = (ThrotMsgDataReader *) pGenericReader;
-	retCode = pThrotMsgReader->take(seqSamples,seqSampleInfos,DDS_LENGTH_UNLIMITED,DDS_ANY_SAMPLE_STATE,
-									DDS_ANY_VIEW_STATE,DDS_ANY_INSTANCE_STATE);
-
-	if(retCode!=DDS_RETCODE_NO_DATA)
-	{
-		CHECK_RETCODE(retCode,DDS_RETCODE_OK,"ThrotMsg reader take() error\n");
-		if(seqSampleInfos[seqSampleInfos.length()-1].valid_data)
-		{
-			if(vidSinkName[0]=='\0')
-				strcpy(vidSinkName,seqSamples[seqSamples.length()-1].srcName);
-			*pTheThrotMode = (int) seqSamples[seqSamples.length()-1].mode;
-			//printf("%s: %d\n",vidSinkName,*pTheThrotMode);
-		}
-	}
-
-	pThrotMsgReader->return_loan(seqSamples,seqSampleInfos);
-}
-
 //------------------------------------------ NeuronVP member functions ------------------------------------------//
 
 void NeuronVP::setVDPPartition(const char *partitionName)
@@ -51,20 +23,7 @@ void NeuronVP::setVDPPartition(const char *partitionName)
 	videoPubQos.partition.name[0] = DDS_String_dup(partitionName);
 	retCode = pVideoPub->set_qos(videoPubQos);
 	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to set Frame publisher QOS\n");
-	printf("Setting VDPPPP Partition: %s\n",videoPubQos.partition.name[0]);
-}
-
-void NeuronVP::setTMSPartition(const char *partitionName)
-{
-	DDS_SubscriberQos	throtSubQos;
-	DDS_ReturnCode_t	retCode;
-
-	retCode = pThrotSub->get_qos(throtSubQos);
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to get ThrotMsg subscriber QOS\n");
-	throtSubQos.partition.name.ensure_length(1,1);
-	throtSubQos.partition.name[0] = DDS_String_dup(partitionName);
-	retCode = pThrotSub->set_qos(throtSubQos);
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to set ThrotMsg subscriber QOS\n");
+	printf("Setting Publisher Partition: %s\n",videoPubQos.partition.name[0]);
 }
 
 void NeuronVP::startupVideoDataPublisher(void)
@@ -75,6 +34,9 @@ void NeuronVP::startupVideoDataPublisher(void)
     pVideoPub = pDomainParticipant->create_publisher(DDS_PUBLISHER_QOS_DEFAULT,
     												 NULL,DDS_STATUS_MASK_NONE);
     CHECK_HANDLE(pVideoPub,"Unable to create Frame publisher\n");
+
+    //Set publisher's partition name to it's name
+    setVDPPartition(name);
 
     //Create data writer for Frame topic
     gpFrameWriter = pVideoPub->create_datawriter(pTopic[TOPIC_FRAME],DDS_DATAWRITER_QOS_USE_TOPIC_QOS,
@@ -92,26 +54,6 @@ void NeuronVP::startupVideoDataPublisher(void)
     printf("Created Frame publisher\n");
 }
 
-void NeuronVP::startupThrotMsgSubscriber(void)
-{
-	DDSThrotMsgListener	*pThrotMsgListener = new DDSThrotMsgListener();
-
-	//Create ThrotMsg subscriber
-	pThrotSub = pDomainParticipant->create_subscriber(DDS_SUBSCRIBER_QOS_DEFAULT,
-													  NULL,DDS_STATUS_MASK_NONE);
-	CHECK_HANDLE(pThrotSub,"Unable to create ThrotMsg subscriber");
-
-	//Set subscriber partition to video source name
-	setTMSPartition(name);
-
-	//Create data reader for ThrotMsg topic and add listener
-	gpThrotReader = pThrotSub->create_datareader(pTopic[TOPIC_THROTMSG],DDS_DATAREADER_QOS_DEFAULT,
-												 NULL,DDS_STATUS_MASK_NONE);
-	CHECK_HANDLE(gpThrotReader,"Unable to create data reader for ThrotMsg topic\n");
-	gpThrotReader->set_listener(pThrotMsgListener,DDS_DATA_AVAILABLE_STATUS);
-	printf("Created ThrotMsg subscriber\n");
-}
-
 void NeuronVP::publishFrame(unsigned char *pFrameBuf,int bufLen,int lType)
 {
 	DDS_ReturnCode_t	retCode;
@@ -123,16 +65,15 @@ void NeuronVP::publishFrame(unsigned char *pFrameBuf,int bufLen,int lType)
 	CHECK_HANDLE(pFrameWriter,"FrameDataWriter::narrow() error during Frame publishing\n");
 	retCode = pFrameWriter->write(*pFrameInstance,hdlFrameInstance);
 	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to write Frame topic sample\n");
-	printf("Index: %d, LayerType: %d, Size: %d\n",(int)(pFrameInstance->index)
-												 ,(int)(pFrameInstance->layerType)
-												 ,(int)(pFrameInstance->payload.length()));
+//	printf("Index: %d, LayerType: %d, Size: %d\n",(int)(pFrameInstance->index)
+//												 ,(int)(pFrameInstance->layerType)
+//												 ,(int)(pFrameInstance->payload.length()));
 	pFrameInstance->index++;
 }
 
-NeuronVP::NeuronVP(const char *nameParam) : NeuronDP(nameParam,1)
+NeuronVP::NeuronVP(const char *nameParam,const char *vidStats) : NeuronDP(nameParam,1,vidStats)
 {
 	startupVideoDataPublisher();
-	startupThrotMsgSubscriber();
 }
 
 NeuronVP::~NeuronVP(void)
@@ -160,21 +101,9 @@ extern "C"
 {
 #endif
 
-void NVPStartup(const char *name)
+void NVPStartup(const char *name,const char *vidStats)
 {
-	pTheVideoPub = new NeuronVP(name);
-	pTheThrotMode = NULL;
-	vidSinkName[0] = '\0';
-}
-
-void NVPSetThrotModePtr(int *pThrotMode)
-{
-	pTheThrotMode = pThrotMode;
-}
-
-void NVPSetVDPPartition(void)
-{
-	pTheVideoPub->setVDPPartition(vidSinkName);
+	pTheVideoPub = new NeuronVP(name,vidStats);
 }
 
 void NVPPublishFrame(unsigned char *pFrameBuf,int bufLen,int lType)

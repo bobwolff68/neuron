@@ -12,8 +12,6 @@
 #define SPS_STREAM_IDX( gop_len ) \
 		DEFAULT_GOP_SIZE/((gop_len)-((gop_len)==(DEFAULT_GOP_SIZE+1)))
 #define SPS_STREAM_IDX_MODIFY( idx )	((idx) + ((idx)==(DEFAULT_GOP_SIZE>>1)))
-//#define	FRAME_QUERY "layerType < %1"
-//#define LAYER_LIMIT_STR( fps_choice ) ( (fps_choice)=='q' ? "1" : ((fps_choice)=='h' ? "2" : "3") )
 //-------------------------------------------------------------------------------------------------
 int64_t		time_mus;
 SDL_mutex	*mutex;
@@ -37,14 +35,11 @@ typedef struct
 {
 	int						opfd;
 	frameStreamContainer 	fsc;
-//	NeuronDP				ndp;
 	GOPQ					gopq;
 	char					*vfrm_output_fn;
 	int						quit_flag;
 	char					fps_choice;
 	char					new_fps_choice;
-	char					throt_signal;
-	char					*p_pcq_throt_signal;	// Pointer to the PCQ throt signal variable
 	char					*video_src_id_str;
 } VFRModule;
 //------------------------------GOPQ FUNCTIONS-----------------------------------------------------
