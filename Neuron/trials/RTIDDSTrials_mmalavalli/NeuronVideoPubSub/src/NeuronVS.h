@@ -13,11 +13,15 @@
 //Neuron video subscriber class
 class NeuronVS : public NeuronDP
 {
+	char					curLayerChoice;
 	DDSSubscriber		   *pVideoSub;			//Frame topic subscriber
 	DDSDataReader		   *gpFrameReader;		//Generic pointer for Frame data reader
 	DDSWaitSet			   *pWaitSet;			//Waitset for Frame samples
+	DDSQueryCondition	   *pWaitSetQueryCond;	//Query condition for waitsets
 
 	void	setupVDSMulticast			(void);
+	void	setupWaitSet				(void);
+	void	changeWaitSetQueryCond		(char layerChoice);
 	void	startupVideoDataSubscriber	(void);
 
 	public:

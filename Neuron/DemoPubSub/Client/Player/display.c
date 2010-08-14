@@ -201,10 +201,16 @@ int	refresh_display( NeuronGuiObject *pNGObj, void *userdata )
 	
 	if( ptsd->pFmtCtx->streams[ptsd->vid_stream_idx] )
 	{
-		if( ptsd->ppcq->len==0 )
-			SCHED_DISP_REFRESH( ptsd, (int32_t) (cur_pts_delta_mus/10000)*10 );
-		else
-		{
+		while( ptsd->ppcq->len==0 && !ptsd->quit_flag )
+			usleep(10000);
+		if(ptsd->quit_flag)	
+			return 0;
+		//if( ptsd->ppcq->len==0 )
+		//{
+		//	SCHED_DISP_REFRESH( ptsd, 200 );//(int32_t) (2*cur_pts_delta_mus/10000)*10 );
+		//}
+		//else
+		//{
 			// If first frame, store pts reference time as current time
 			if( ptsd->cur_pts_mus==0 )	
 			{
@@ -240,7 +246,7 @@ int	refresh_display( NeuronGuiObject *pNGObj, void *userdata )
 			ptsd->cur_pts_mus += cur_pts_delta_mus;
 			//printf( "q_len_time: %lld ms\n", PCQDequeue( ptsd ) );
 			PCQDequeue( ptsd );
-		}
+		//}
 	}
 	else
 		SCHED_DISP_REFRESH( ptsd, 100 );	
