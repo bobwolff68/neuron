@@ -50,6 +50,7 @@ typedef struct
 	int 	type;
 	int 	streamPtr;
 	int		streamBufSize;
+	int		streamFifoId;
 	uchar_t *streamBuf;
 	vHdr	vh;
 } frameStreamContainer;
@@ -57,9 +58,9 @@ typedef struct
 typedef frameStreamContainer *fscPtr;
 
 int		fscInit( fscPtr );
-int		fscParseVideoHeader( fscPtr, int, uint_t, char );
-int		fscParseFrame( fscPtr, uint_t, char );
-int		fscReadFrame( fscPtr, char );
+int		fscParseVideoHeader( fscPtr, int, uint_t );
+int		fscParseFrame( fscPtr, uint_t );
+int		fscReadFrame( fscPtr );
 int 	fscWriteVideoHeader( fscPtr, int, int );
 int		fscWriteFrame( fscPtr, int );
 void	fscReset( fscPtr );

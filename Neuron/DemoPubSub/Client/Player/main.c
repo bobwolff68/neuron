@@ -127,6 +127,7 @@ void on_video_src_select( GtkWidget *widget, gint row, gint column,GdkEventButto
 		
 		// Start vfr module thread
 		psrud->ptsd->vfrm_thread = SDL_CreateThread( VFRM_thread_run, (void *) psrud->pvfrm );
+		psrud->pvfrm->fsc.streamFifoId = open( psrud->pvfrm->vfrm_input_fn, O_RDONLY );
 		
 		// Register all available file formats and codecs with the library
 		av_register_all();
@@ -214,14 +215,20 @@ int main( int argc, char *argv[] )
 	SDL_Event		event;
 	VFRModule		*pvfrm;
 	char			vfrm_opfn[100] = "../../Fifos/x264vfrmout";
+	char			vfrm_ipfn[100] = "../../Fifos/x264vfrmin";
 	char			*key_press_str;
 	int 			i;
 
 	// Setup communication channel between vfrm and decode/display thread
 	strcat( vfrm_opfn, argv[1] );
+	strcat( vfrm_ipfn, argv[1] );
 	strcat( vfrm_opfn, ".264" );
+	strcat( vfrm_ipfn, ".264" );
+	
 	if( (i = access( vfrm_opfn, F_OK ))<0 )
 		mkfifo( vfrm_opfn, S_IRWXU|S_IRWXG );
+	if( (i = access( vfrm_ipfn, F_OK ))<0 )
+		mkfifo( vfrm_ipfn, S_IRWXU|S_IRWXG );
 		
 	gtk_init( &argc, &argv );
 	ngObj = (NeuronGuiObject *) av_mallocz( sizeof(NeuronGuiObject) );
@@ -231,6 +238,7 @@ int main( int argc, char *argv[] )
 	ptsd->quit_flag = 0;
 	pvfrm = (VFRModule *) av_mallocz( sizeof(VFRModule) );
 	pvfrm->vfrm_output_fn = vfrm_opfn;
+	pvfrm->vfrm_input_fn = vfrm_ipfn;
 
 	VFRM_init( pvfrm, argv[1] );
 	SDLDInit( ngObj, VID_W, VID_H, 

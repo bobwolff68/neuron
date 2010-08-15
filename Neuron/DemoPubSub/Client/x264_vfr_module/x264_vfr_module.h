@@ -34,9 +34,11 @@ typedef struct
 typedef struct
 {
 	int						opfd;
+	int						ipfd;
 	frameStreamContainer 	fsc;
 	GOPQ					gopq;
 	char					*vfrm_output_fn;
+	char					*vfrm_input_fn;
 	int						quit_flag;
 	char					fps_choice;
 	char					new_fps_choice;

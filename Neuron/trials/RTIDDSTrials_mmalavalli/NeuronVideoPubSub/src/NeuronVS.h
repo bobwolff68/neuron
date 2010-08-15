@@ -10,26 +10,28 @@
 
 #include "NeuronDP.h"
 
+class FrameDataListener : public DDSDataReaderListener
+{
+    public:
+        virtual void    on_data_available   (DDSDataReader *pGenericReader);
+};
+
 //Neuron video subscriber class
 class NeuronVS : public NeuronDP
 {
-	char					curLayerChoice;
 	DDSSubscriber		   *pVideoSub;			//Frame topic subscriber
 	DDSDataReader		   *gpFrameReader;		//Generic pointer for Frame data reader
-	DDSWaitSet			   *pWaitSet;			//Waitset for Frame samples
-	DDSReadCondition	   *pWaitSetReadCond;	//Read condition for waitsets
 
 	void	setupVDSMulticast			(void);
-	void	changeVDSPartition(char layerChoice);
-	void	setupWaitSet				(void);
 	void	startupVideoDataSubscriber	(void);
 
 	public:
 		NeuronVS(const char *nameParam);
 		~NeuronVS();
 
-		void	setVDSPartition	(const char *partitionName);
-		void	getFrame		(unsigned char **ppFrameBuf,int *pBufLen,char layerChoice);
+		void	setupFrameListener	(void);
+		void	setVDSPartition		(const char *partitionName);
+		void	changeVDSPartition	(char layerChoice);
 };
 
 NeuronVS	*pTheVideoSub = NULL;
@@ -40,10 +42,11 @@ extern "C"
 #endif
 
 //APIs
-void	NVSStartup			(const char *name);
-void	NVSSetVDSPartition	(const char *partitionName);
-void	NVSGetFrame			(unsigned char **ppFrameBuf,int *pBufLen,char fpsChoice);
-void	NVPDestroy			(void);
+void	NVSStartup				(const char *name);
+void	NVSSetupFrameListener	(void);
+void	NVSSetVDSPartition		(const char *partitionName);
+void	NVSChangeVDSPartition	(char fpsChoice);
+void	NVPDestroy				(void);
 
 #ifdef __cplusplus
 }

@@ -86,7 +86,7 @@ int VFRM_init( VFRModule *pVfm, char *name )
 	proc_time[0] = proc_time[1] = 0;
 
 	pVfm->quit_flag = 0;
-	pVfm->video_src_id_str = (char *) av_mallocz( sizeof(char)*50 );
+	pVfm->video_src_id_str = (char *) av_mallocz( sizeof(char)*256 );
 	strcpy( pVfm->video_src_id_str, "-1" );
 	GOPQ_init( &(pVfm->gopq) );
 	
@@ -96,7 +96,7 @@ int VFRM_init( VFRModule *pVfm, char *name )
 	NVSStartup( name );
 	pVfm->fps_choice = 'f';
 	pVfm->new_fps_choice = 'f';
-	//pVfm->throt_signal = *(pVfm->p_pcq_throt_signal);
+
 	time_mus = av_gettime();
 	mutex = SDL_CreateMutex();
 	cond = SDL_CreateCond();
@@ -116,13 +116,12 @@ int VFRM_thread_run( void *userdata )
 	VFRModule	*pVfm = (VFRModule *) userdata;
 	pid_t		proc_id = getpid();
 
-
+	NVSSetupFrameListener();
 	pVfm->opfd = open( pVfm->vfrm_output_fn, O_WRONLY );
-
 	// Read header info first
 	for( i=0; i<VIDEO_HDR_TYPES; i++ )
 	{
-		if( !fscParseVideoHeader( &(pVfm->fsc), i, 0, pVfm->fps_choice ) )
+		if( !fscParseVideoHeader( &(pVfm->fsc), i, 0 ) )
 			return 0;
 		total_bytes_read += ((double) pVfm->fsc.streamPtr);
 	}
@@ -133,7 +132,7 @@ int VFRM_thread_run( void *userdata )
 		return 0;
 	}
 	// Read first frame
-	if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )	return 0;
+	if( !fscParseFrame( &(pVfm->fsc), 0 ) )	return 0;
 	
 	while( !eos && !pVfm->quit_flag )
 	{
@@ -146,7 +145,7 @@ int VFRM_thread_run( void *userdata )
 			GOPQ_add_frame( &(pVfm->gopq), &(pVfm->fsc) );
 			if( pVfm->fsc.type==X264_TYPE_IDR || pVfm->fsc.type==X264_TYPE_I )
 			{
-				if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )
+				if( !fscParseFrame( &(pVfm->fsc), 0 ) )
 				{
 					eos = 1;
 					break;
@@ -154,7 +153,7 @@ int VFRM_thread_run( void *userdata )
 				total_bytes_read += ((double) pVfm->fsc.streamPtr);
 				GOPQ_add_frame( &(pVfm->gopq), &(pVfm->fsc) );
 			}
-			if( !fscParseFrame( &(pVfm->fsc), 0, pVfm->fps_choice ) )
+			if( !fscParseFrame( &(pVfm->fsc), 0 ) )
 			{
 				eos = 1;
 				break;
@@ -191,7 +190,10 @@ int VFRM_thread_run( void *userdata )
 		}
 		
 		if( pVfm->fps_choice != pVfm->new_fps_choice )
+		{
+			NVSChangeVDSPartition( pVfm->new_fps_choice );
 			pVfm->fps_choice = pVfm->new_fps_choice;
+		}
 
 		new_time_mus = av_gettime();
 		if( (new_time_mus-time_mus)>=STATS_CALC_CLK_PERIOD_MUS )
@@ -209,6 +211,7 @@ int VFRM_thread_run( void *userdata )
 		}
 	}
 
+	pVfm->quit_flag = 1;
 	close( pVfm->opfd );
 	fprintf( stdout, "VFRM finished\n" );
 	return 1;

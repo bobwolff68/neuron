@@ -13,6 +13,7 @@ int fscInit( fscPtr f )
 	
 	f->streamPtr = 0;
 	f->streamBufSize = 0;
+	f->streamFifoId = -1;
 	f->streamBuf = NULL;
 		
 	for( i=0; i<VIDEO_HDR_TYPES; i++ )
@@ -21,14 +22,14 @@ int fscInit( fscPtr f )
 	return 1;
 }
 
-int fscParseVideoHeader( fscPtr f, int hdrStreamIndex, uint_t verbose, char fpsChoice )
+int fscParseVideoHeader( fscPtr f, int hdrStreamIndex, uint_t verbose )
 {
 	size_t	bytesRead;
 	uint_t	nalStartCodePrefix = 0;
 	int		nalRefIdc = 0;
 	int		nalType = 0;
 
-	if( !fscReadFrame( f, fpsChoice ) )
+	if( !fscReadFrame( f ) )
 		return 0;
 	// Bytes 1..4 ==> NAL start code prefix.
 	// Byte 5	  ==> NAL header 0 xx yyyyy ( xx - 2 bit nal_ref_idc, yyyyy - 5 bit nal_type ).	
@@ -73,7 +74,7 @@ int fscParseVideoHeader( fscPtr f, int hdrStreamIndex, uint_t verbose, char fpsC
 }
 
 // Note: x264_stream always points to the start of an NAL AUD.
-int fscParseFrame( fscPtr f, uint_t verbose, char fpsChoice )
+int fscParseFrame( fscPtr f, uint_t verbose )
 {
 	size_t	bytesRead;
 	uint_t	nalStartCodePrefix = 0;
@@ -81,7 +82,7 @@ int fscParseFrame( fscPtr f, uint_t verbose, char fpsChoice )
 	int		nalType = 0;
 	char	frameTypeArray[5] = { 'i', 'I', 'P', 'B', 'b' };
 	
-	if( !fscReadFrame( f, fpsChoice ) )
+	if( !fscReadFrame( f ) )
 		return 0;	
 	// Bytes 1..4 ==> NAL start code prefix.
 	// Byte 5	  ==> NAL header 0 xx yyyyy ( xx - 2 bit nal_ref_idc, yyyyy - 5 bit nal_type ).
@@ -120,18 +121,35 @@ int fscParseFrame( fscPtr f, uint_t verbose, char fpsChoice )
 	return 1;
 }
 
-int	fscReadFrame( fscPtr f, char fpsChoice )
+int	fscReadFrame( fscPtr f )
 {
-	int bytes_read;
-
+	int bytesToRead;
+	int bytesRead;
+	// Read frame size
 	fscReset( f );
-	NVSGetFrame(&(f->streamBuf),&(f->streamPtr),fpsChoice);
-	if( f->streamBufSize<f->streamPtr )
-		f->streamBufSize = f->streamPtr;
-	bytes_read = f->streamPtr;
-	if( bytes_read==1 ) bytes_read--;
+	bytesRead = read( f->streamFifoId, (uchar_t *) &bytesToRead, sizeof(int) );
+	if( bytesRead<=0 || bytesToRead<=1 )
+		return 0;
+	// Allocate buffer memory
+	if( bytesToRead>(f->streamBufSize) )
+	{
+		f->streamBufSize = bytesToRead;
+		f->streamBuf = (uchar_t *) realloc( f->streamBuf, bytesToRead );
+		if( f->streamBuf==NULL )
+		{
+			fprintf( stderr, "Realloc Error\n" );
+			return 0;
+		}
+	}
+	// Read frame
+	if( (bytesRead=read( f->streamFifoId, f->streamBuf, bytesToRead ))<0 )
+	{
+		perror( "fread()" );
+		return 0;
+	}
 	
-	return bytes_read;
+	f->streamPtr += bytesRead;
+	return bytesRead;
 }
 
 int fscWriteVideoHeader( fscPtr f, int hdrStreamIndex, int ofd )
@@ -174,6 +192,7 @@ int	fscClose( fscPtr f )
 		if( f->vh.stream[i]!=NULL )	
 			free( f->vh.stream[i] );
 		
+	close(f->streamFifoId);
 	free( f->streamBuf );
 
 	return 1;

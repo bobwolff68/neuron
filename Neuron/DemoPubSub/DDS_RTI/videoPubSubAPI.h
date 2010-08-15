@@ -9,13 +9,14 @@ extern char	srcVidStats[100][50];
 extern int	srcNameListLen;
 
 //APIs
-void	NVPStartup			(const char *name, const char *vidStats);
-void	NVPPublishFrame		(unsigned char *pFrameBuf,int bufLen,int lType);
-void	NVPDestroy			(void);
-void	NVSStartup			(const char *name);
-void	NVSSetVDSPartition	(const char *partitionName);
-void	NVSGetFrame			(unsigned char **ppFrameBuf,int *pBufLen,char fpsChoice);
-void	NVPDestroy			(void);
+void	NVPStartup				(const char *name, const char *vidStats);
+void	NVPPublishFrame			(unsigned char *pFrameBuf,int bufLen,int lType);
+void	NVPDestroy				(void);
+void	NVSStartup				(const char *name);
+void	NVSSetupFrameListener	(void);
+void	NVSSetVDSPartition		(const char *partitionName);
+void	NVSChangeVDSPartition	(char fpsChoice);
+void	NVPDestroy				(void);
 
 #ifdef __cplusplus
 }

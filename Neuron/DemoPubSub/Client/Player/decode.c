@@ -52,6 +52,7 @@ int decode_thread_run( void *userdata )
 		av_free_packet( &packet );
 	}
 
+	ptsd->quit_flag = 1;
 	fprintf( stderr, "Decode ended...\n" );	
 	return 0;
 }
