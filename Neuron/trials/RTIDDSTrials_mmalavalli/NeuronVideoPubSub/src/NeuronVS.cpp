@@ -20,10 +20,24 @@ void NeuronVS::setVDSPartition(const char *partitionName)
 	DDS_ReturnCode_t	retCode;
 
 	retCode = pVideoSub->get_qos(videoSubQos);
-
 	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to get Frame subscriber QOS\n");
 	videoSubQos.partition.name.ensure_length(1,1);
 	videoSubQos.partition.name[0] = DDS_String_dup(partitionName);
+	retCode = pVideoSub->set_qos(videoSubQos);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to set Frame subscriber QOS\n");
+	printf("Frame Subscriber Partition: %s\n",videoSubQos.partition.name[0]);
+}
+
+void NeuronVS::changeVDSPartition(char layerChoice)
+{
+	DDS_SubscriberQos	videoSubQos;
+	DDS_ReturnCode_t	retCode;
+	int					lenPartitionName;
+
+	retCode = pVideoSub->get_qos(videoSubQos);
+	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to get Frame subscriber QOS\n");
+	lenPartitionName = strlen(videoSubQos.partition.name[0]);
+	videoSubQos.partition.name[0][lenPartitionName-1] = (char) ('0' + (2 - (int)(layerChoice-'0')));
 	retCode = pVideoSub->set_qos(videoSubQos);
 	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to set Frame subscriber QOS\n");
 	printf("Frame Subscriber Partition: %s\n",videoSubQos.partition.name[0]);
@@ -44,44 +58,16 @@ void NeuronVS::setupVDSMulticast(void)
 
 void NeuronVS::setupWaitSet(void)
 {
-	DDS_StringSeq		seqQueryParam(1);
 	DDS_ReturnCode_t	retCode;
-	char				paramStr[2] = {'2','\0'};
 
     pWaitSet = new DDSWaitSet();
-	seqQueryParam.ensure_length(1,1);
-	seqQueryParam[0] = DDS_String_dup(paramStr);
-	pWaitSetQueryCond = gpFrameReader->create_querycondition(DDS_NOT_READ_SAMPLE_STATE,DDS_ANY_VIEW_STATE,
-															 DDS_ALIVE_INSTANCE_STATE,"layerType <= %0",
-															 seqQueryParam);
-	CHECK_HANDLE(pWaitSetQueryCond,"Unable to create query condition for waitset (Frame topic)\n");
+	pWaitSetReadCond = gpFrameReader->create_readcondition(DDS_NOT_READ_SAMPLE_STATE,
+														   DDS_ANY_VIEW_STATE,
+														   DDS_ALIVE_INSTANCE_STATE);
+	CHECK_HANDLE(pWaitSetReadCond,"Unable to create query condition for waitset (Frame topic)\n");
 
 	//Attach read condition to waitset
-	retCode = pWaitSet->attach_condition(pWaitSetQueryCond);
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to attach query condition to waitset (Frame topic)\n");
-}
-
-void NeuronVS::changeWaitSetQueryCond(char layerChoice)
-{
-	DDS_StringSeq		seqQueryParam(1);
-	DDS_ReturnCode_t	retCode;
-	char				paramStr[2] = {layerChoice,'\0'};
-
-	//Detach from waitset and delete old query condition
-	retCode = pWaitSet->detach_condition(pWaitSetQueryCond);
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to detach read condition from waitset (Frame topic)\n");
-	retCode = gpFrameReader->delete_readcondition(pWaitSetQueryCond);
-	pWaitSetQueryCond = NULL;
-	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to delete read condition (Frame topic)\n");
-	//Create query condition with new layerChoice parameter
-	seqQueryParam.ensure_length(1,1);
-	seqQueryParam[0] = DDS_String_dup(paramStr);
-	pWaitSetQueryCond = gpFrameReader->create_querycondition(DDS_NOT_READ_SAMPLE_STATE,DDS_ANY_VIEW_STATE,
-																 DDS_ALIVE_INSTANCE_STATE,"layerType <= %0",
-																 seqQueryParam);
-	CHECK_HANDLE(pWaitSetQueryCond,"Unable to create query condition for waitset (Frame topic)\n");
-	//Attach to waitset the new query condition
-	retCode = pWaitSet->attach_condition(pWaitSetQueryCond);
+	retCode = pWaitSet->attach_condition(pWaitSetReadCond);
 	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to attach query condition to waitset (Frame topic)\n");
 }
 
@@ -111,11 +97,11 @@ void NeuronVS::getFrame(unsigned char **ppFrameBuf,int *pBufLen,char layerChoice
 	DDS_SampleInfoSeq		seqSampleInfos;
 	DDS_ReturnCode_t		retCode;
 
-	//Alter condition parameter if new frame-rate choice is selected
+	//Alter partition parameter if new frame-rate choice is selected
 	if(curLayerChoice!=layerChoice)
 	{
 		curLayerChoice = layerChoice;
-		changeWaitSetQueryCond(layerChoice);
+		changeVDSPartition(layerChoice);
 	}
 
 	//Get pointer to Frame data reader from generic pointer
@@ -129,7 +115,7 @@ void NeuronVS::getFrame(unsigned char **ppFrameBuf,int *pBufLen,char layerChoice
 		CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Waitset wait error (Frame topic)\n");
 
 		//Take the next new sample
-		retCode = pFrameReader->take_w_condition(seqFrames,seqSampleInfos,(DDS_Long)1,pWaitSetQueryCond);
+		retCode = pFrameReader->take_w_condition(seqFrames,seqSampleInfos,(DDS_Long)1,pWaitSetReadCond);
 
 		if(retCode!=DDS_RETCODE_NO_DATA)
 		{
@@ -166,11 +152,12 @@ NeuronVS::~NeuronVS(void)
 {
 	DDS_ReturnCode_t	retCode;
 
-	retCode = pWaitSet->detach_condition(pWaitSetQueryCond);
+	retCode = pWaitSet->detach_condition(pWaitSetReadCond);
 	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to detach read condition from waitset (Frame topic)\n");
-	retCode = gpFrameReader->delete_readcondition(pWaitSetQueryCond);
+	retCode = gpFrameReader->delete_readcondition(pWaitSetReadCond);
 	CHECK_RETCODE(retCode,DDS_RETCODE_OK,"Unable to delete read condition (Frame topic)\n");
 	delete pWaitSet;
+
 	//Destructor of base class NeuronDP is called here
 }
 
@@ -188,7 +175,11 @@ void NVSStartup(const char *name)
 
 void NVSSetVDSPartition(const char *partitionName)
 {
-	pTheVideoSub->setVDSPartition(partitionName);
+	char	partitionStr[2*MAX_NAME_LEN];
+
+	strcpy(partitionStr,partitionName);
+	strcat(partitionStr,"/L0");
+	pTheVideoSub->setVDSPartition(partitionStr);
 }
 
 void NVSGetFrame(unsigned char **ppFrameBuf,int *pBufLen,char fpsChoice)

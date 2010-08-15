@@ -52,13 +52,6 @@ class NeuronDP
 char	srcNameList[100][MAX_NAME_LEN];
 char	srcVidStats[100][50];
 int		srcNameListLen;
-/*char DDS_Errors[13][50] = {
-						    "Success","Error","Unsupported",
-						    "Bad Param","Prec not met","Out of rescs",
-						    "Not enabled","Imm policy","Inc policy",
-						    "Already deleted","Timeout","No data",
-						    "Illegal operation"
-						  };*/
 #else
 extern char	srcNameList[100][MAX_NAME_LEN];
 extern char	srcVidStats[100][50];
