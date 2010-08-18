@@ -1,0 +1,65 @@
+#
+# Drawings created by www.websequencediagrams.com
+#
+# Author: Robert Wolff
+# Date: 8/17/2010
+#
+
+participant "Participant\nHector" as PH
+participant "[TOPIC]\nCall List" as CL
+participant "Moderator\nBob" as MB
+participant "[TOPIC]\nCallX-Ctrl" as CXC
+participant "[TOPIC_SET]\nDomain CallX" as DCX
+
+note over PH, CXC: Control Plane Domain == 100
+note over DCX: The Call - Domain != 100
+#
+# Moderator/Creator registers call name, creates call control, and domain/topics for actual call
+#
+note over MB: Register and create call
+MB->CL: Create CallX in CallList
+activate CL
+MB->CXC: Create
+activate CXC
+MB->DCX: Create topics for actual call
+activate DCX
+
+#
+# New participant finds call, requests to join, and gets approval.
+#
+note over PH: Find call and request to join
+PH->CL: Join/Read
+CL->PH: Give Call List
+note over PH: Process list of calls. Find desired CallX
+PH->CXC: RequestToJoin CallX
+CXC->MB: Hector requesting to Join...
+note over MB: Present Accept/Reject to Bob\nand/or check against invites
+alt Rejected
+  MB->CXC: Hector rejected.
+  CXC->PH: Hector rejected.
+  note over PH, CXC: No Domain/Call to join. Exit.
+else Accepted
+  MB->CXC: Granted + Sends Domain/Topic List
+  CXC->PH: Granted + Domain/Topic List
+end
+
+#
+# Participant joins ongoing call
+#
+note over PH: Join ongoing call
+PH->DCX: Join Topics on Domain CallX
+note over CXC, DCX: ===== Ongoing Call.... =====
+
+#
+# Begin Teardown
+#
+PH->CXC: Announce leaving call
+CXC->MB: Hector is leaving
+note over CXC, DCX: ===== Begin destruction of call =====
+MB->CXC: Announce Call is ending now.
+MB->CL: Kill 'CallX' from list
+MB->CXC: Destroy CallX-Ctrl
+destroy CXC
+MB->DCX: Destroy Domain CallX completely
+destroy DCX
+note over CXC, DCX: ===== CallX is now destroyed. =====
