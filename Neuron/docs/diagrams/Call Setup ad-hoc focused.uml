@@ -6,7 +6,7 @@
 #
 
 participant "Participant\nHector" as PH
-participant "[TOPIC]\nCall List" as CL
+participant "[TOPIC]\nActiveCalls" as CL
 participant "Moderator\nBob" as MB
 participant "[TOPIC]\nCallX-Ctrl" as CXC
 participant "[TOPIC_SET]\nDomain CallX" as DCX
@@ -17,7 +17,7 @@ note over DCX: The Call - Domain != 100
 # Moderator/Creator registers call name, creates call control, and domain/topics for actual call
 #
 note over MB: Register and create call
-MB->CL: Create CallX in CallList
+MB->CL: Create CallX in ActiveCalls
 activate CL
 MB->CXC: Create
 activate CXC
