@@ -2,30 +2,88 @@
 # Drawings created by www.websequencediagrams.com
 #
 # Author: Robert Wolff
-# Date: 8/19/2010
+# Date: 8/17/2010
 #
 
 participant "Participant\nA" as PartA
 participant "[DOMAIN:100]\nGlobal Control" as Ctrl
 participant "[TOPIC]\nActiveCalls" as Acalls
 participant "Local relay\nAppliance+CC" as Lrelay
-participant "Cloud relayMANE" as Crelay
-participant "Cloud Call-Center" as gCC
+participant "Cloud\nrelayMANE" as Crelay
+participant "Cloud\nCall-Center" as gCC
 participant "Participant\nB" as PartB
 
 note over PartA, PartB: Control Plane Domain == 100
 #
+# Appliance (if present) comes up and is ready for incoming participants
+#
+
+Lrelay->Crelay: Are we service-authorized?
+activate Crelay
+activate Lrelay
+Crelay->Lrelay: Answer....
+alt Yes - all set
+  note over Lrelay: Make passthru route for\ngCC to be shown locally as CC
+else No - on your own.
+  note over Lrelay: Activate internal CC
+end
+Lrelay->Ctrl: Join Domain, prep my info,\npublish as a relay/CC to everyone.
+activate Ctrl
+
+#
 # New participant joins directory, finds relay and CC if they exist - else ad-hoc
 #
-PartA->Ctrl: Join Domain, prep my info, publish as a participant to everyone.
-activate Ctrl
-Ctrl->PartA: Reads all participants and sort by their type.
+PartA->Ctrl: Join Domain, prep my info,\npublish as a participant to everyone.
+Ctrl->PartA: Reads all participants\nand sort by their type.
 alt Found relay and CC
-  opt Credentials == service/cloud type
+  note over PartA: Hope we do not need to do this...
+  opt EntityType==gCC (global Call Center)
 	  note over PartA: We have a service-based cloud system.
 	  else Appliance Only
-	  note over PartA: We have a relay but no cloud service.
+	  note over PartA: We have a local relay but no cloud service.
   end
 else Ad-Hoc
   note over PartA: This is ad-hoc only.
 end
+
+#
+# Now read discovery information for all endpoints.
+#
+PartA->Ctrl: Read endpoint\ndiscovery (none yet)
+loop Reading new discovery info
+  note over PartA, Ctrl: Find added and removed entities
+end
+
+#
+# Now bring up Participant B who discovers the same except for finding PartA
+#
+PartB->Ctrl: Join Domain, prep my info,\npublish as a participant to everyone.
+Ctrl->PartB: Reads all participants\nand sort by their type.
+note over PartB: Find appliance/CC as above.
+# Now discover PartA
+PartB->Ctrl: Read endpoint\ndiscovery (A exists)
+note over PartB: Found Participant A!
+loop Reading new discovery info
+  note over PartB, Ctrl: Find added and removed entities
+end
+
+# Now PartA will discover PartB
+note over PartA: Via loop we discover Participant B
+
+#
+# A create a call - and B join it
+#
+note over PartA, PartB: =====  C R E A T E   C A L L  =====
+PartA->Acalls: Join + read call-list.
+Acalls->PartA: No calls yet...
+PartA->Acalls: Write entry for 'StatusCall1' (auth reqd by joiners)
+note over Acalls: Calls:StatusCall1<eof>
+
+PartB->Acalls: Join + read call-list.
+Acalls->PartB: Calls:StatusCall1<eof>
+note over PartB: Reads call details including\ncall-control topic and then\nproceeds to request and join.
+
+#
+# A ring B directly
+#
+
