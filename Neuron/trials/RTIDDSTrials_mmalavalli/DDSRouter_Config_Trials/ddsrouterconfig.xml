@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../resource/schema/rti_routing_service.xsd">
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/home/manjesh/RTIDDS/RTI/RTI_Routing_Service_2.0.1/resource/schema/rti_routing_service.xsd">
 
 <!-- Routing Service 1: Domain Bridge -->
 <routing_service name="domain_bridge_config">
@@ -11,25 +11,247 @@
 			<domain_id>1</domain_id>
 		</participant_2>
 		<session name="Session">
+            <auto_topic_route name="AllForward">
+                <publish_with_original_info>true</publish_with_original_info>
+                <input participant="1">
+                    <creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </input>
+                <output>
+                    <creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+            <auto_topic_route name="AllBackward">
+                <publish_with_original_info>true</publish_with_original_info>
+                <input participant="2">
+                    <creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </input>
+                <output>
+                    <creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+        </session>
+	</domain_route>
+</routing_service>
+
+<!-- Routing Service 2: Subnet Bridge -->
+<routing_service name="subnet_bridge_config_udp_01">
+	<domain_route name="dom0_to_dom1">
+		<participant_1>
+			<domain_id>0</domain_id>
+		</participant_1>
+		<participant_2>
+			<domain_id>1</domain_id>
+			<participant_qos>
+				<discovery>
+					<initial_peers>
+						<element>192.168.99.38</element>
+					</initial_peers>
+				</discovery>
+			</participant_qos>
+		</participant_2>
+		<session name="Session">
     	    <auto_topic_route name="AllForward">
     	    	<publish_with_original_info>true</publish_with_original_info>
             	<input participant="1">
-                	<creation_mode>ON_DOMAIN_AND_ROUTE_MATCH</creation_mode>
+                	<creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </input>
+                <output>
+                	<creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+            <auto_topic_route name="AllBackward">
+                <publish_with_original_info>true</publish_with_original_info>
+                <input participant="2">
+                    <creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </input>
+                <output>
+                    <creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+		</session>
+	</domain_route>
+</routing_service>
+
+<routing_service name="subnet_bridge_config_udp_12">
+	<domain_route name="dom1_to_dom2">
+		<participant_1>
+			<domain_id>1</domain_id>
+			<participant_qos>
+				<discovery>
+					<initial_peers>
+						<element>192.168.99.38</element>
+					</initial_peers>
+				</discovery>
+			</participant_qos>
+		</participant_1>
+		<participant_2>
+			<domain_id>2</domain_id>
+		</participant_2>
+		<session name="Session">
+    	    <auto_topic_route name="AllForward">
+    	    	<publish_with_original_info>true</publish_with_original_info>
+            	<input participant="1">
+                	<creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
                 </input>
                 <output>
                 	<creation_mode>ON_DOMAIN_MATCH</creation_mode>
                 </output>
-                </auto_topic_route>
-                <auto_topic_route name="AllBackward">
-                    <publish_with_original_info>true</publish_with_original_info>
-                    <input participant="2">
-                        <creation_mode>ON_DOMAIN_MATCH</creation_mode>
-                    </input>
-                    <output>
-                        <creation_mode>ON_DOMAIN_AND_ROUTE_MATCH</creation_mode>
-                    </output>
-                </auto_topic_route>
+            </auto_topic_route>
+            <auto_topic_route name="AllBackward">
+                <publish_with_original_info>true</publish_with_original_info>
+                <input participant="2">
+                    <creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </input>
+                <output>
+                    <creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
 		</session>
 	</domain_route>
 </routing_service>
+
+<!-- Routing Service 2: Subnet Bridge (tcp)-->
+<routing_service name="subnet_bridge_config_tcp_01">
+	<domain_route name="dom0_to_dom1">
+		<participant_1>
+			<domain_id>0</domain_id>
+		</participant_1>
+		<participant_2>
+			<domain_id>1</domain_id>
+			<participant_qos>
+				<discovery>
+					<initial_peers>
+						<element>tcpv4_lan://192.168.99.38:7400</element>
+					</initial_peers>
+				</discovery>
+                <transport_builtin>
+	                <mask>MASK_NONE</mask>
+                </transport_builtin>
+                <property>
+                    <value>
+                        <element>
+                            <name>dds.transport.load_plugins</name>
+                            <value>dds.transport.TCPv4.tcp1</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.TCPv4.tcp1.library</name>
+                            <value>libnddstransporttcp.so</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.TCPv4.tcp1.create_function</name>
+                            <value>NDDS_Transport_TCPv4_create</value>
+                        </element>
+                        <element>
+                            <name>
+                                dds.transport.TCPv4.tcp1.parent.classid
+                            </name>
+                            <value>
+                                NDDS_TRANSPORT_CLASSID_TCPV4_LAN
+                            </value>
+                        </element>
+                        <element>
+                            <name>
+                                dds.transport.TCPv4.tcp1.server_bind_port
+                            </name>
+                            <value>7400</value>
+                        </element>
+                    </value>
+                </property>
+			</participant_qos>
+		</participant_2>
+		<session name="Session">
+    	    <auto_topic_route name="AllForward">
+    	    	<publish_with_original_info>true</publish_with_original_info>
+            	<input participant="1">
+                	<creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </input>
+                <output>
+                	<creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+            <auto_topic_route name="AllBackward">
+                <publish_with_original_info>true</publish_with_original_info>
+                <input participant="2">
+                    <creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </input>
+                <output>
+                    <creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+		</session>
+	</domain_route>
+</routing_service>
+
+<routing_service name="subnet_bridge_config_tcp_12">
+	<domain_route name="dom1_to_dom2">
+		<participant_1>
+			<domain_id>1</domain_id>
+			<participant_qos>
+				<discovery>
+					<initial_peers>
+						<element>tcpv4_lan://192.168.99.38:7400</element>
+					</initial_peers>
+				</discovery>
+                <transport_builtin>
+	                <mask>MASK_NONE</mask>
+                </transport_builtin>
+                <property>
+                    <value>
+                        <element>
+                            <name>dds.transport.load_plugins</name>
+                            <value>dds.transport.TCPv4.tcp1</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.TCPv4.tcp1.library</name>
+                            <value>libnddstransporttcp.so</value>
+                        </element>
+                        <element>
+                            <name>dds.transport.TCPv4.tcp1.create_function</name>
+                            <value>NDDS_Transport_TCPv4_create</value>
+                        </element>
+                        <element>
+                            <name>
+                                dds.transport.TCPv4.tcp1.parent.classid
+                            </name>
+                            <value>
+                                NDDS_TRANSPORT_CLASSID_TCPV4_LAN
+                            </value>
+                        </element>
+                        <element>
+                            <name>
+                                dds.transport.TCPv4.tcp1.server_bind_port
+                            </name>
+                            <value>7400</value>
+                        </element>
+                    </value>
+                </property>
+			</participant_qos>
+		</participant_1>
+		<participant_2>
+			<domain_id>2</domain_id>
+		</participant_2>
+		<session name="Session">
+    	    <auto_topic_route name="AllForward">
+    	    	<publish_with_original_info>true</publish_with_original_info>
+            	<input participant="1">
+                	<creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </input>
+                <output>
+                	<creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+            <auto_topic_route name="AllBackward">
+                <publish_with_original_info>true</publish_with_original_info>
+                <input participant="2">
+                    <creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </input>
+                <output>
+                    <creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+		</session>
+	</domain_route>
+</routing_service>
+
+</dds>
 
