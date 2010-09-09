@@ -33,8 +33,8 @@
 	</domain_route>
 </routing_service>
 
-<!-- Routing Service 2: Subnet Bridge -->
-<routing_service name="subnet_bridge_config_udp_01">
+<!-- Routing Service 2: Subnet Bridge (udp lan) -->
+<routing_service name="subnet_bridge_config_udp_lan_01">
 	<domain_route name="dom0_to_dom1">
 		<participant_1>
 			<domain_id>0</domain_id>
@@ -72,7 +72,7 @@
 	</domain_route>
 </routing_service>
 
-<routing_service name="subnet_bridge_config_udp_12">
+<routing_service name="subnet_bridge_config_udp_lan_12">
 	<domain_route name="dom1_to_dom2">
 		<participant_1>
 			<domain_id>1</domain_id>
@@ -110,8 +110,8 @@
 	</domain_route>
 </routing_service>
 
-<!-- Routing Service 2: Subnet Bridge (tcp)-->
-<routing_service name="subnet_bridge_config_tcp_01">
+<!-- Routing Service 3: Subnet Bridge (tcp lan) -->
+<routing_service name="subnet_bridge_config_tcp_lan_01">
 	<domain_route name="dom0_to_dom1">
 		<participant_1>
 			<domain_id>0</domain_id>
@@ -182,7 +182,7 @@
 	</domain_route>
 </routing_service>
 
-<routing_service name="subnet_bridge_config_tcp_12">
+<routing_service name="subnet_bridge_config_tcp_lan_12">
 	<domain_route name="dom1_to_dom2">
 		<participant_1>
 			<domain_id>1</domain_id>
@@ -225,6 +225,137 @@
                         </element>
                     </value>
                 </property>
+			</participant_qos>
+		</participant_1>
+		<participant_2>
+			<domain_id>2</domain_id>
+		</participant_2>
+		<session name="Session">
+    	    <auto_topic_route name="AllForward">
+    	    	<publish_with_original_info>true</publish_with_original_info>
+            	<input participant="1">
+                	<creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </input>
+                <output>
+                	<creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+            <auto_topic_route name="AllBackward">
+                <publish_with_original_info>true</publish_with_original_info>
+                <input participant="2">
+                    <creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </input>
+                <output>
+                    <creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+		</session>
+	</domain_route>
+</routing_service>
+
+<!-- Routing Service 3: Subnet Bridge (udp wan) -->
+<routing_service name="subnet_bridge_config_udp_wan_01">
+	<domain_route name="dom0_to_dom1">
+		<participant_1>
+			<domain_id>0</domain_id>
+		</participant_1>
+		<participant_2>
+			<domain_id>1</domain_id>
+			<participant_qos>
+				<discovery>
+					<initial_peers>
+						<element>wan://::1:192.168.99.38</element>
+					</initial_peers>
+				</discovery>
+				<transport_builtin>
+					<mask>MASK_NONE</mask>
+				</transport_builtin>
+				<property>
+					<value>
+						<element>
+							<name>dds.transport.load_plugins</name>
+							<value>dds.transport.wan_plugin.wan</value>
+						</element>
+						<element>
+							<name>dds.transport.wan_plugin.wan.library</name>
+							<value>libnddstransportwan.so</value>
+						</element>
+						<element>
+							<name>dds.transport.wan_plugin.wan.create_function</name>
+							<value>NDDS_Transport_WAN_create</value>
+						</element>
+						<element>
+							<name>dds.transport.wan_plugin.wan.server</name>
+							<value>207.145.121.125</value>
+						</element>
+						<element>
+							<name>dds.transport.wan_plugin.wan.transport_instance_id</name>
+							<value>2</value>
+						</element>
+					</value>
+				</property>
+			</participant_qos>
+		</participant_2>
+		<session name="Session">
+    	    <auto_topic_route name="AllForward">
+    	    	<publish_with_original_info>true</publish_with_original_info>
+            	<input participant="1">
+                	<creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </input>
+                <output>
+                	<creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+            <auto_topic_route name="AllBackward">
+                <publish_with_original_info>true</publish_with_original_info>
+                <input participant="2">
+                    <creation_mode>ON_DOMAIN_OR_ROUTE_MATCH</creation_mode>
+                </input>
+                <output>
+                    <creation_mode>ON_DOMAIN_MATCH</creation_mode>
+                </output>
+            </auto_topic_route>
+		</session>
+	</domain_route>
+</routing_service>
+
+<routing_service name="subnet_bridge_config_udp_wan_12">
+	<domain_route name="dom1_to_dom2">
+		<participant_1>
+			<domain_id>1</domain_id>
+			<participant_qos>
+				<discovery>
+					<initial_peers>
+						<element>wan://::1:192.168.99.38</element>
+					</initial_peers>
+				</discovery>
+				<transport_builtin>
+					<mask>MASK_NONE</mask>
+				</transport_builtin>
+				<property>
+					<value>
+						<element>
+							<name>dds.transport.load_plugins</name>
+							<value>dds.transport.wan_plugin.wan</value>
+						</element>
+						<element>
+							<name>dds.transport.wan_plugin.wan.library</name>
+							<value>libnddstransportwan.so</value>
+						</element>
+						<element>
+							<name>dds.transport.wan_plugin.wan.create_function</name>
+							<value>NDDS_Transport_WAN_create</value>
+						</element>
+						<element>
+							<name>dds.transport.wan_plugin.wan.server</name>
+							<value>207.145.121.125</value>
+						</element>
+						<element>
+							<name>dds.transport.wan_plugin.wan.transport_instance_id</name>
+							<value>2</value>
+						</element>
+					</value>
+				</property>
 			</participant_qos>
 		</participant_1>
 		<participant_2>
