@@ -246,8 +246,12 @@ extern "C" int publisher_main(int domainId, int sample_count)
     datawriter_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
     datawriter_qos.history.depth = 10;
 
+    //RMW - changed to try best efforts + flow controller. Not sure if this is valid or not.
+    datawriter_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+
     // Set flowcontroller for datawriter
     datawriter_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+//    datawriter_qos.publish_mode.kind = DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
     datawriter_qos.publish_mode.flow_controller_name = DDS_String_dup(cfc_name);
 
     /* To create datawriter with default QoS, use DDS_DATAWRITER_QOS_DEFAULT
@@ -294,9 +298,16 @@ extern "C" int publisher_main(int domainId, int sample_count)
     //
     static char pattern[37] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     unsigned char *pDatum;
+    int offset=0;
+    int chunks=4;
     int bytestosend = bitrate/8;
     pDatum = (unsigned char*) malloc(bytestosend);         // Total memory is bps/8 to get to bytes per second.
 
+    // Need to round-down appropriately the actual number of bytes to send to be mod-4 (mod-chunks).
+    // Otherwise we will have a "straddling problem" at the end of a send that could cause
+    // memory corruption.
+    bytestosend = bytestosend - (bytestosend % chunks);
+      
     // Fill datum buffer with pattern.
     for (int i=0; i<(bytestosend); i++)
       pDatum[i] = pattern[i%36];
@@ -321,9 +332,8 @@ extern "C" int publisher_main(int domainId, int sample_count)
         //// Changes for Custom_Flowcontroller
         // Simulate bursty writer
         NDDSUtility::sleep(send_period);
-
-        int offset=0;
-        int chunks=4;
+	
+	offset = 0;
 
         for (int i = 0; i < chunks; ++i) {
             int sample = count*chunks + i;
@@ -335,7 +345,7 @@ extern "C" int publisher_main(int domainId, int sample_count)
             // Dump the payload chunk - iteratively for each of the 4 chunks.
             instance->payload.from_array(pDatum+offset, bytestosend/chunks);
             sprintf(stamp, "%s - chunk#%d", hostnm, sample);
-            memcpy(pDatum+offset, stamp, strlen(stamp));
+            strncpy(instance->timestamp, stamp, (strlen(stamp)<63)?strlen(stamp):63);
 
             offset += bytestosend/chunks;
 

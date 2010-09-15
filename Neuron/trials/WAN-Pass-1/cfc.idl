@@ -1,1 +1,1 @@
-struct cfc{  long x;  string<1000> str;  string<64> from;  sequence<octet,400000> payload;//  sequence<octet,1000000> payload;};
+struct cfc{  long x;  string<1000> str;  string<64> from;  string<64> timestamp;  sequence<octet,400000> payload;//  sequence<octet,1000000> payload;};
