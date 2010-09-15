@@ -57,14 +57,19 @@ modification history
 #include "ndds/ndds_cpp.h"
 #include "cfc.h"
 #include "cfcSupport.h"
-
+#include "cfc_transport_config.h"
 #include <string.h>
+
+#define TCP_BIND_PORT 7500
 
 extern unsigned long router_ip;
 extern unsigned long domain;
 extern unsigned long bitrate;
 extern char topicname[100];
 extern char partname[100];
+extern char stunLocator[100];
+extern char peerList[10][100];
+extern int  wanID;
 extern bool bUseUDP;
 extern bool parsecmd(char**argv, int argc);
 
@@ -107,6 +112,7 @@ static int publisher_shutdown(
 extern "C" int publisher_main(int domainId, int sample_count)
 {
     DDSDomainParticipant *participant = NULL;
+    DDS_DomainParticipantQos participant_qos;
     DDSPublisher *publisher = NULL;
     DDSTopic *topic = NULL;
     DDSDataWriter *writer = NULL;
@@ -121,8 +127,11 @@ extern "C" int publisher_main(int domainId, int sample_count)
     //// Start changes for Custom_Flowcontroller
 
     /* Get default participant QoS to customize */
-    DDS_DomainParticipantQos participant_qos;
-    retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
+    if(bUseUDP)
+    	participant_qos = DPQos_with_UDPWAN(stunLocator,wanID);
+    else
+    	participant_qos = DPQos_with_TCPLAN(TCP_BIND_PORT);
+    /*retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
     if (retcode != DDS_RETCODE_OK) {
         printf("get_default_participant_qos error\n");
         return -1;
@@ -131,7 +140,7 @@ extern "C" int publisher_main(int domainId, int sample_count)
     // By default, data will be sent via shared memory _and_ UDPv4.  Because
     // the flowcontroller limits writes across all interfaces, this halves the
     // effective send rate.  To avoid this, we enable only the UDPv4 transport
-    participant_qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
+    participant_qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;*/
 
     /* To create participant with default QoS, use DDS_PARTICIPANT_QOS_DEFAULT
        instead of participant_qos */
@@ -144,6 +153,14 @@ extern "C" int publisher_main(int domainId, int sample_count)
         return -1;
     }
 
+	// Add peers from peer list
+	retcode = participant->add_peer(peerList[0]);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("add_peer() error %d\n", retcode);
+        publisher_shutdown(participant);
+        return -1;
+    }
+	
     //// End changes for Custom_Flowcontroller
 
     /* To customize publisher QoS, use

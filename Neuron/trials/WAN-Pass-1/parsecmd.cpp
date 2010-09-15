@@ -18,6 +18,9 @@ unsigned long domain;
 unsigned long bitrate;
 char topicname[100];
 char partname[100];
+char stunLocator[100];
+char peerList[10][100];
+int  wanID;
 bool bUseUDP;
 
 bool parsecmd(char**argv, int argc)
@@ -45,6 +48,10 @@ bool parsecmd(char**argv, int argc)
   opt->addUsage( "                               (default *)");
   opt->addUsage( " -p  --partition <name>        Partition to use - on reception, '*' can be used.");
   opt->addUsage( "                               (default *)");
+  opt->addUsage( " -l  --peerlist <loc>,<loc>,... List of peers to be discovered apart from shmem" );
+  opt->addUsage( "                                and udplan." );
+  opt->addUsage( " -s  --stun <ip>[:<port>]      Address and port of stun server for udpwan." );
+  opt->addUsage( " -w  --wanid <id>              WAN ID in case of UDP transport." );
   opt->addUsage( "" );
 
   opt->setFlag(  "help", 'h' );   /* a flag (takes no argument), supporting long and short form */
@@ -54,6 +61,9 @@ bool parsecmd(char**argv, int argc)
   opt->setOption(  "IP",        'i' ); /* an option (takes an argument), supporting long and short form */
   opt->setOption(  "topic",     't' ); /* an option (takes an argument), supporting long and short form */
   opt->setOption(  "partition", 'p' ); /* an option (takes an argument), supporting long and short form */
+  opt->setOption(  "peerlist",  'l' );
+  opt->setOption(  "stun",      's' );
+  opt->setOption(  "wanid",     'w' );
 
   opt->processCommandArgs( argc, argv );
 
@@ -109,6 +119,44 @@ bool parsecmd(char**argv, int argc)
           cout << "router = " << opt->getValue('r') << endl ;
   }
 
+  // For now, assume only one peer entered
+  if( opt->getValue( 'l' ) != NULL || opt->getValue( "peerlist" ) != NULL )
+  {
+          if(bUseUDP)	
+          {
+          		strcpy(peerList[0],"wan://::");
+  		  		strcat(peerList[0],opt->getValue('l'));
+  		  		//strcat(peerList[0],":127.0.0.1");
+  		  }
+  		  else
+  		  {
+          		strcpy(peerList[0],"tcpv4_lan://");
+  		  		strcat(peerList[0],opt->getValue('l'));
+  		  }
+          cout << "PeerList: " << peerList[0] << endl ;
+  }
+
+  if( opt->getValue( 's' ) != NULL || opt->getValue( "stun" ) != NULL )
+  {
+  		  // For now only default STUN port used
+          if(bUseUDP)	
+          {
+          		strcpy(stunLocator,opt->getValue('s'));
+          		cout << "STUN server ip address: " << stunLocator << endl ;
+          }
+  }
+  
+  if( opt->getValue( 'w' ) != NULL || opt->getValue( "wanid" ) != NULL )
+  {
+  		  // For now only default STUN port used
+          if(bUseUDP)	
+          {
+          		sscanf(opt->getValue('w'),"%d",&wanID);
+          		cout << "WAN ID: " << wanID << endl ;
+          }
+  }
+  
   delete opt;
   return true;
 }
+

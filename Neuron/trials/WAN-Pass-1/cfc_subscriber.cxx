@@ -53,6 +53,7 @@ modification history
 #include "ndds/ndds_cpp.h"
 #include "cfc.h"
 #include "cfcSupport.h"
+#include "cfc_transport_config.h"
 
 //// Changes for Custom_Flowcontroller
 // For timekeeping
@@ -60,12 +61,16 @@ modification history
 clock_t init;
 
 #define CLK_TCK CLOCKS_PER_SEC
+#define TCP_BIND_PORT 7400
 
 extern unsigned long router_ip;
 extern unsigned long domain;
 extern unsigned long bitrate;
 extern char topicname[100];
 extern char partname[100];
+extern char stunLocator[100];
+extern char peerList[10][100];
+extern int  wanID;
 extern bool bUseUDP;
 extern bool parsecmd(char**argv, int argc);
 
@@ -198,7 +203,11 @@ extern "C" int subscriber_main(int domainId, int sample_count)
 
     /* Get default participant QoS to customize */
     DDS_DomainParticipantQos participant_qos;
-    retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
+    if(bUseUDP)
+    	participant_qos = DPQos_with_UDPWAN(stunLocator,wanID);
+    else
+    	participant_qos = DPQos_with_TCPLAN(TCP_BIND_PORT);
+    /*retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
     if (retcode != DDS_RETCODE_OK) {
         printf("get_default_participant_qos error\n");
         return -1;
@@ -207,7 +216,7 @@ extern "C" int subscriber_main(int domainId, int sample_count)
     // By default, discovery will communicate via shared memory for platforms
     // that support it.  Because we disable shared memory on the publishing
     // side, we do so here to ensure the reader and writer discover each other.
-    participant_qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;
+    participant_qos.transport_builtin.mask = DDS_TRANSPORTBUILTIN_UDPv4;*/
 
     /* To create participant with default QoS, use DDS_PARTICIPANT_QOS_DEFAULT
        instead of participant_qos */
@@ -216,6 +225,14 @@ extern "C" int subscriber_main(int domainId, int sample_count)
         NULL /* listener */, DDS_STATUS_MASK_NONE);
     if (participant == NULL) {
         printf("create_participant error\n");
+        subscriber_shutdown(participant);
+        return -1;
+    }
+
+	// Add peers from peer list
+	retcode = participant->add_peer(peerList[0]);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("add_peer() error %d\n", retcode);
         subscriber_shutdown(participant);
         return -1;
     }
