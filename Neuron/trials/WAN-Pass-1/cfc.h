@@ -8,8 +8,8 @@
   or consult the RTI Data Distribution Service manual.
 */
 
-#ifndef cfc_1281397173387_h
-#define cfc_1281397173387_h
+#ifndef cfc_1284594982818_h
+#define cfc_1284594982818_h
 
 #ifndef NDDS_STANDALONE_TYPE
     #ifdef __cplusplus
@@ -43,6 +43,7 @@ typedef struct cfc
     DDS_Long  x;
     char*  str; /* maximum length = (1000) */
     char*  from; /* maximum length = (64) */
+    char*  timestamp; /* maximum length = (64) */
      DDS_OctetSeq  payload;
 
 } cfc;
@@ -91,4 +92,4 @@ RTIBool cfc_copy(
 
 
 
-#endif /* cfc_1281397173387_h */
+#endif /* cfc_1284594982818_h */

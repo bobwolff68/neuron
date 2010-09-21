@@ -8,8 +8,8 @@
   or consult the RTI Data Distribution Service manual.
 */
 
-#ifndef cfcPlugin_1281397173387_h
-#define cfcPlugin_1281397173387_h
+#ifndef cfcPlugin_1284594982818_h
+#define cfcPlugin_1284594982818_h
 
 #include "cfc.h"
 
@@ -252,4 +252,4 @@ cfcPlugin_delete(struct PRESTypePlugin *);
 #endif
         
 
-#endif /* cfcPlugin_1281397173387_h */
+#endif /* cfcPlugin_1284594982818_h */

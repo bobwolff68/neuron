@@ -155,6 +155,14 @@ cfcPluginSupport_print_data(
             sample->from, "from", indent_level + 1);                
     }
             
+    if (&sample->timestamp==NULL) {
+        RTICdrType_printString(
+            NULL, "timestamp", indent_level + 1);                
+    } else {
+        RTICdrType_printString(
+            sample->timestamp, "timestamp", indent_level + 1);                
+    }
+            
     if (&sample->payload == NULL) {
         RTICdrType_printIndent(indent_level+1);
         RTILog_debug("payload: NULL\n");    
@@ -324,6 +332,14 @@ cfcPlugin_serialize(
         return RTI_FALSE;
     }
             
+    if (sample->timestamp == NULL) {
+        return RTI_FALSE;
+    }
+    if (!RTICdrStream_serializeString(
+        stream, sample->timestamp, (64) + 1)) {
+        return RTI_FALSE;
+    }
+            
     if (DDS_OctetSeq_get_contiguous_bufferI(&sample->payload) != NULL) {
         if (!RTICdrStream_serializePrimitiveSequence(
             stream,
@@ -394,6 +410,11 @@ cfcPlugin_deserialize_sample(
             
     if (!RTICdrStream_deserializeString(
         stream, sample->from, (64) + 1)) {
+        return RTI_FALSE;
+    }
+            
+    if (!RTICdrStream_deserializeString(
+        stream, sample->timestamp, (64) + 1)) {
         return RTI_FALSE;
     }
             
@@ -491,6 +512,10 @@ RTIBool cfcPlugin_skip(
         return RTI_FALSE;
     }
             
+    if (!RTICdrStream_skipString(stream, (64) + 1)) {
+        return RTI_FALSE;
+    }
+            
     {
         RTICdrUnsignedLong sequence_length;
 
@@ -550,6 +575,9 @@ cfcPlugin_get_serialized_sample_max_size(
     current_alignment +=  RTICdrType_getStringMaxSizeSerialized(
         current_alignment, (64) + 1);
             
+    current_alignment +=  RTICdrType_getStringMaxSizeSerialized(
+        current_alignment, (64) + 1);
+            
     current_alignment +=  RTICdrType_getPrimitiveSequenceMaxSizeSerialized(
         current_alignment, (400000), RTI_CDR_OCTET_TYPE);
             
@@ -590,6 +618,9 @@ cfcPlugin_get_serialized_sample_min_size(
 
     current_alignment +=  RTICdrType_getLongMaxSizeSerialized(
         current_alignment);
+            
+    current_alignment +=  RTICdrType_getStringMaxSizeSerialized(
+        current_alignment, 1);
             
     current_alignment +=  RTICdrType_getStringMaxSizeSerialized(
         current_alignment, 1);
@@ -650,6 +681,9 @@ cfcPlugin_get_serialized_sample_size(
             
     current_alignment += RTICdrType_getStringSerializedSize(
         current_alignment, sample->from);
+            
+    current_alignment += RTICdrType_getStringSerializedSize(
+        current_alignment, sample->timestamp);
             
     current_alignment += RTICdrType_getPrimitiveSequenceSerializedSize(
         current_alignment, 

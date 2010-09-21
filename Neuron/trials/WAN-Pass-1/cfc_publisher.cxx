@@ -69,8 +69,15 @@ extern char topicname[100];
 extern char partname[100];
 extern char stunLocator[100];
 extern char peerList[10][100];
+extern char stunLivePeriodStr[20];
+extern char stunRetranIntvlStr[20];
+extern char stunNumRetransStr[20];
 extern int  wanID;
 extern bool bUseUDP;
+extern bool bEnableMonitor;
+extern bool bUseDefaultPeers;
+extern bool bUseFlowCtrl;
+extern int	chunks;
 extern bool parsecmd(char**argv, int argc);
 
 /* Delete all entities */
@@ -121,6 +128,7 @@ extern "C" int publisher_main(int domainId, int sample_count)
     DDS_ReturnCode_t retcode;
     DDS_InstanceHandle_t instance_handle = DDS_HANDLE_NIL;
     const char *type_name = NULL;
+    const char* cfc_name = "Custom_Flowcontroller";
     int count = 0;  
     struct DDS_Duration_t send_period = {1,0};
 
@@ -128,9 +136,25 @@ extern "C" int publisher_main(int domainId, int sample_count)
 
     /* Get default participant QoS to customize */
     if(bUseUDP)
-    	participant_qos = DPQos_with_UDPWAN(stunLocator,wanID);
+    	participant_qos = DPQos_with_UDPWAN(stunLocator,wanID,stunLivePeriodStr,stunRetranIntvlStr, 
+    										stunNumRetransStr,bEnableMonitor);
+    else if(bUseDefaultPeers)
+    {
+    	printf("Default Peers Mode...\n");
+    	retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
+    	if (retcode != DDS_RETCODE_OK) 
+    	{
+          	printf("get_default_participant_qos error\n");
+        	return -1;
+    	}
+    	if(bEnableMonitor)
+    	{
+    		if(participant_qos_with_monitoring_enabled(participant_qos)<0)
+    			return -1;
+    	}
+    }
     else
-    	participant_qos = DPQos_with_TCPLAN(TCP_BIND_PORT);
+    	participant_qos = DPQos_with_TCPLAN(TCP_BIND_PORT,bEnableMonitor);
     /*retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
     if (retcode != DDS_RETCODE_OK) {
         printf("get_default_participant_qos error\n");
@@ -144,6 +168,7 @@ extern "C" int publisher_main(int domainId, int sample_count)
 
     /* To create participant with default QoS, use DDS_PARTICIPANT_QOS_DEFAULT
        instead of participant_qos */
+    DDS_DomainParticipantQos_setup_udpv4_message_size_max(participant_qos,MSG_SIZE_MAX_BYTES_STR);
     participant = DDSTheParticipantFactory->create_participant(
         domainId, participant_qos, 
         NULL /* listener */, DDS_STATUS_MASK_NONE);
@@ -154,13 +179,15 @@ extern "C" int publisher_main(int domainId, int sample_count)
     }
 
 	// Add peers from peer list
-	retcode = participant->add_peer(peerList[0]);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("add_peer() error %d\n", retcode);
-        publisher_shutdown(participant);
-        return -1;
+	if(!bUseDefaultPeers)
+	{
+		retcode = participant->add_peer(peerList[0]);
+    	if (retcode != DDS_RETCODE_OK) {
+    	    printf("add_peer() error %d\n", retcode);
+    	    publisher_shutdown(participant);
+    	    return -1;
+    	}
     }
-	
     //// End changes for Custom_Flowcontroller
 
     /* To customize publisher QoS, use
@@ -196,42 +223,42 @@ extern "C" int publisher_main(int domainId, int sample_count)
     }
 
     //// Start changes for Custom_Flowcontroller
-
-    const char* cfc_name = "Custom_Flowcontroller";
-
     // Create and configure flowcontroller properties
-    DDS_FlowControllerProperty_t custom_fcp;
-    retcode = participant->get_default_flowcontroller_property(custom_fcp);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("get_default_flowcontroller_property error \n");
-        return -1;
-    }
+    if(bUseFlowCtrl)
+    {
+    	DDS_FlowControllerProperty_t custom_fcp;
+    	retcode = participant->get_default_flowcontroller_property(custom_fcp);
+    	if (retcode != DDS_RETCODE_OK) {
+    	    printf("get_default_flowcontroller_property error \n");
+    	    return -1;
+    	}
 
-    // Don't allow too many tokens to accumulate
-    custom_fcp.token_bucket.max_tokens = 
-        custom_fcp.token_bucket.tokens_added_per_period = 2;
-    custom_fcp.token_bucket.tokens_leaked_per_period = DDS_LENGTH_UNLIMITED;
+    	// Don't allow too many tokens to accumulate
+    	custom_fcp.token_bucket.max_tokens = 
+    	    custom_fcp.token_bucket.tokens_added_per_period = 1;
+    	custom_fcp.token_bucket.tokens_leaked_per_period = DDS_LENGTH_UNLIMITED;
 
-    // 100ms
-    custom_fcp.token_bucket.period.sec = 0;
-    custom_fcp.token_bucket.period.nanosec = 100000000;
+    	// 100ms
+    	custom_fcp.token_bucket.period.sec = 0;
+    	custom_fcp.token_bucket.period.nanosec = 9000000;
 
-    // The sample size is 1000, but the minimum bytes_per_token is 1024.
-    // Furthermore, we want to allow some overhead.
-    custom_fcp.token_bucket.bytes_per_token = 1024;
+    	// The sample size is 1000, but the minimum bytes_per_token is 1024.
+    	// Furthermore, we want to allow some overhead.
+    	custom_fcp.token_bucket.bytes_per_token = 1024;
 
-    // So, in summary, each token can be used to send about one message,
-    // and we get 2 tokens every 100ms, so this limits transmissions to
-    // about 20 messages per second.
+    	// So, in summary, each token can be used to send about one message,
+    	// and we get 2 tokens every 100ms, so this limits transmissions to
+    	// about 20 messages per second.
 
-    // Create flowcontroller and set properties
-    DDSFlowController* cfc = NULL;
-    cfc = participant->create_flowcontroller(DDS_String_dup(cfc_name), custom_fcp);
-    if (cfc == NULL) {
-        printf("create_flowcontroller error\n");
-        return -1;
-    }
-
+    	// Create flowcontroller and set properties
+    	DDSFlowController* cfc = NULL;
+    	cfc = participant->create_flowcontroller(DDS_String_dup(cfc_name), custom_fcp);
+    	if (cfc == NULL) {
+    	    printf("create_flowcontroller error\n");
+    	    return -1;
+    	}
+	}
+	
     /* Get default datawriter QoS to customize */
     DDS_DataWriterQos datawriter_qos;
     retcode = publisher->get_default_datawriter_qos(datawriter_qos);
@@ -244,16 +271,18 @@ extern "C" int publisher_main(int domainId, int sample_count)
     // set the qos to keep all samples
 //RMW Changed to keep_last    datawriter_qos.history.kind = DDS_KEEP_ALL_HISTORY_QOS;
     datawriter_qos.history.kind = DDS_KEEP_LAST_HISTORY_QOS;
-    datawriter_qos.history.depth = 10;
+    datawriter_qos.history.depth = 50;
 
     //RMW - changed to try best efforts + flow controller. Not sure if this is valid or not.
     datawriter_qos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
-
-    // Set flowcontroller for datawriter
-    datawriter_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
-//    datawriter_qos.publish_mode.kind = DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
-    datawriter_qos.publish_mode.flow_controller_name = DDS_String_dup(cfc_name);
-
+    
+	if(bUseFlowCtrl)
+	{
+    	// Set flowcontroller for datawriter
+    	datawriter_qos.publish_mode.kind = DDS_ASYNCHRONOUS_PUBLISH_MODE_QOS;
+		// datawriter_qos.publish_mode.kind = DDS_SYNCHRONOUS_PUBLISH_MODE_QOS;
+    	datawriter_qos.publish_mode.flow_controller_name = DDS_String_dup(cfc_name);
+	}
     /* To create datawriter with default QoS, use DDS_DATAWRITER_QOS_DEFAULT
        instead of datawriter_qos */
     writer = publisher->create_datawriter(
@@ -299,9 +328,13 @@ extern "C" int publisher_main(int domainId, int sample_count)
     static char pattern[37] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     unsigned char *pDatum;
     int offset=0;
-    int chunks=4;
+    if(chunks>1)
+    {
+    	send_period.sec = 0;
+    	send_period.nanosec = 1000000000/chunks;
+    }
     int bytestosend = bitrate/8;
-    pDatum = (unsigned char*) malloc(bytestosend);         // Total memory is bps/8 to get to bytes per second.
+    pDatum = (unsigned char*) malloc(bytestosend); // Total memory is bps/8 to get to bytes per second.
 
     // Need to round-down appropriately the actual number of bytes to send to be mod-4 (mod-chunks).
     // Otherwise we will have a "straddling problem" at the end of a send that could cause
@@ -331,7 +364,6 @@ extern "C" int publisher_main(int domainId, int sample_count)
 
         //// Changes for Custom_Flowcontroller
         // Simulate bursty writer
-        NDDSUtility::sleep(send_period);
 	
 	offset = 0;
 
@@ -348,7 +380,8 @@ extern "C" int publisher_main(int domainId, int sample_count)
             strncpy(instance->timestamp, stamp, (strlen(stamp)<63)?strlen(stamp):63);
 
             offset += bytestosend/chunks;
-
+			NDDSUtility::sleep(send_period);
+	
             retcode = cfc_writer->write(*instance, instance_handle);
             if (retcode != DDS_RETCODE_OK) {
                 printf("write error %d\n", retcode);

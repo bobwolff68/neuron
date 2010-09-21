@@ -20,8 +20,16 @@ char topicname[100];
 char partname[100];
 char stunLocator[100];
 char peerList[10][100];
+char stunLivePeriodStr[20];
+char stunRetranIntvlStr[20];
+char stunNumRetransStr[20];
+int  chunks;
 int  wanID;
 bool bUseUDP;
+bool bUseDefaultPeers;
+bool bEnableMonitor;
+bool bUseFlowCtrl;
+long sizeSampleWindowForStats;
 
 bool parsecmd(char**argv, int argc)
 {
@@ -30,7 +38,15 @@ bool parsecmd(char**argv, int argc)
   bitrate = 0;
   topicname[0] = 0;
   partname[0] = 0;
-  bUseUDP = true;
+  stunLivePeriodStr[0] = 0;
+  stunRetranIntvlStr[0] = 0;
+  stunNumRetransStr[0] = 0;
+  bUseUDP = false;
+  bEnableMonitor = false;
+  bUseDefaultPeers = true;
+  bUseFlowCtrl = false;
+  chunks = 4;
+  sizeSampleWindowForStats = 100;
 
   AnyOption *opt = new AnyOption();
 
@@ -52,9 +68,18 @@ bool parsecmd(char**argv, int argc)
   opt->addUsage( "                                and udplan." );
   opt->addUsage( " -s  --stun <ip>[:<port>]      Address and port of stun server for udpwan." );
   opt->addUsage( " -w  --wanid <id>              WAN ID in case of UDP transport." );
+  opt->addUsage( " -v  --slp <period>            STUN Liveliness Period (milliseconds)." );
+  opt->addUsage( " -m  --sri <period>            STUN Retransmission Interval (milliseconds)." );
+  opt->addUsage( " -n  --snr <number>            STUN No. of Retransmissions (milliseconds)." );
+  opt->addUsage( " -o  --monitor                 Enable monitoring." );
+  opt->addUsage( " -f  --flowctrl                Enable preconfigured flow controller (Publisher only)." );
+  opt->addUsage( " -c  --chunksize               Set Chunk Size (Publisher only)(Default value: 4). " );
+  opt->addUsage( " -e  --sampwin                 Sample Window Size (Subscriber only)(Default value: 100). " );
   opt->addUsage( "" );
 
   opt->setFlag(  "help", 'h' );   /* a flag (takes no argument), supporting long and short form */
+  opt->setFlag(  "monitor", 'o' );
+  opt->setFlag(  "flowctrl",  'f' );
   opt->setOption(  "domain",    'd' ); /* an option (takes an argument), supporting long and short form */
   opt->setOption(  "bitrate",   'b' ); /* an option (takes an argument), supporting long and short form */
   opt->setOption(  "router",    'r' ); /* an option (takes an argument), supporting long and short form */
@@ -64,14 +89,19 @@ bool parsecmd(char**argv, int argc)
   opt->setOption(  "peerlist",  'l' );
   opt->setOption(  "stun",      's' );
   opt->setOption(  "wanid",     'w' );
-
+  opt->setOption(  "slp",       'v' );
+  opt->setOption(  "sri",       'm' );
+  opt->setOption(  "snr",       'n' );
+  opt->setOption(  "chunksize", 'c' );
+  opt->setOption(  "sampwin",   'e' );
+    
   opt->processCommandArgs( argc, argv );
 
-  if( ! opt->hasOptions()) { /* print usage if no options */
+  /*if( ! opt->hasOptions()) { 
           opt->printUsage();
           delete opt;
           return false;
-  }
+  }*/
 
   /* 6. GET THE VALUES */
   if( opt->getFlag( "help" ) || opt->getFlag( 'h' ) )
@@ -83,6 +113,7 @@ bool parsecmd(char**argv, int argc)
   if( opt->getValue( 'i' ) != NULL  || opt->getValue( "IP" ) != NULL  )
   {
           bUseUDP = !strncasecmp(opt->getValue('i'), "UDP", 3);
+          bUseDefaultPeers = false;
           if (bUseUDP)
             cout << "Using UDP for transport." << endl ;
           else
@@ -124,7 +155,7 @@ bool parsecmd(char**argv, int argc)
   {
           if(bUseUDP)	
           {
-          		strcpy(peerList[0],"wan://::");
+          		strcpy(peerList[0],"0@wan://::");
   		  		strcat(peerList[0],opt->getValue('l'));
   		  		//strcat(peerList[0],":127.0.0.1");
   		  }
@@ -156,6 +187,57 @@ bool parsecmd(char**argv, int argc)
           }
   }
   
+  if( opt->getValue( 'v' )!=NULL || opt->getValue( "slp" ) != NULL )
+  {
+  		if(bUseUDP)
+  		{
+  			strcpy(stunLivePeriodStr,opt->getValue( 'v' ));
+  			cout << "STUN Liveliness Period: " << stunLivePeriodStr << " (milliseconds)" << endl;
+  		}
+  }
+
+  if( opt->getValue( 'm' )!=NULL || opt->getValue( "sri" ) != NULL )
+  {
+  		if(bUseUDP)
+  		{
+  			strcpy(stunRetranIntvlStr,opt->getValue( 'm' ));
+  			cout << "STUN Retransmission Interval: " << stunRetranIntvlStr << " (milliseconds)" << endl;
+  		}
+  }
+
+  if( opt->getValue( 'n' )!=NULL || opt->getValue( "snr" ) != NULL )
+  {
+  		if(bUseUDP)
+  		{
+  			strcpy(stunNumRetransStr,opt->getValue( 'n' ));
+  			cout << "STUN No. of Retransmissions: " << stunNumRetransStr << endl;
+  		}
+  }
+
+  if( opt->getFlag( 'o' ) || opt->getFlag( "monitor" ) )
+  {
+  		bEnableMonitor = true;
+  		cout << "Monitoring Enabled." << endl;
+  }
+
+  if( opt->getFlag( 'f' ) || opt->getFlag( "flowctrl" ) )
+  {
+  		bUseFlowCtrl = true;
+  		cout << "Default Flow Controller Enabled." << endl;
+  }
+
+  if( opt->getValue( 'c' )!=NULL || opt->getValue( "chunksize" ) != NULL )
+  {
+		sscanf(opt->getValue('c'),"%d",&chunks);
+		cout << "Chunk Size: " << chunks << endl;
+  }
+
+  if( opt->getValue( 'e' )!=NULL || opt->getValue( "sampwin" ) != NULL )
+  {
+		sscanf(opt->getValue('e'),"%ld",&sizeSampleWindowForStats);
+		cout << "Sample Window: " << sizeSampleWindowForStats << endl;
+  }
+    
   delete opt;
   return true;
 }

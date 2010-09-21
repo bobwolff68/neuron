@@ -8,8 +8,8 @@
   or consult the RTI Data Distribution Service manual.
 */
 
-#ifndef cfcSupport_1281397173387_h
-#define cfcSupport_1281397173387_h
+#ifndef cfcSupport_1284594982818_h
+#define cfcSupport_1284594982818_h
 
 /* Uses */
 #include "cfc.h"
@@ -80,4 +80,4 @@ DDS_DATAREADER_C(cfcDataReader, cfcSeq, cfc);
 
 
 
-#endif  /* cfcSupport_1281397173387_h */
+#endif  /* cfcSupport_1284594982818_h */

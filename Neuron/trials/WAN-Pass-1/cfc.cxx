@@ -47,9 +47,10 @@ DDS_TypeCode* cfc_get_typecode()
 
     static DDS_TypeCode cfc_g_tc_str_string = DDS_INITIALIZE_STRING_TYPECODE(1000);
     static DDS_TypeCode cfc_g_tc_from_string = DDS_INITIALIZE_STRING_TYPECODE(64);
+    static DDS_TypeCode cfc_g_tc_timestamp_string = DDS_INITIALIZE_STRING_TYPECODE(64);
     static DDS_TypeCode cfc_g_tc_payload_sequence = DDS_INITIALIZE_SEQUENCE_TYPECODE(400000,NULL);
 
-    static DDS_TypeCode_Member cfc_g_tc_members[4]=
+    static DDS_TypeCode_Member cfc_g_tc_members[5]=
     {
         {
             (char *)"x",/* Member name */
@@ -103,6 +104,23 @@ DDS_TypeCode* cfc_get_typecode()
             NULL/* Ignored */
         },
         {
+            (char *)"timestamp",/* Member name */
+            {
+                0,/* Representation ID */
+                DDS_BOOLEAN_FALSE,/* Is a pointer? */
+                -1, /* Bitfield bits */
+                NULL/* Member type code is assigned later */
+            },
+            0, /* Ignored */
+            0, /* Ignored */
+            0, /* Ignored */
+            NULL, /* Ignored */
+            DDS_BOOLEAN_FALSE, /* Is a key? */
+            DDS_PRIVATE_MEMBER,/* Ignored */
+            0,/* Ignored */
+            NULL/* Ignored */
+        },
+        {
             (char *)"payload",/* Member name */
             {
                 0,/* Representation ID */
@@ -131,7 +149,7 @@ DDS_TypeCode* cfc_get_typecode()
         0, /* Ignored */
         0, /* Ignored */
         NULL, /* Ignored */
-        4, /* Number of members */
+        5, /* Number of members */
         cfc_g_tc_members, /* Members */
         DDS_VM_NONE /* Ignored */
     }}; /* Type code for cfc*/
@@ -145,7 +163,8 @@ DDS_TypeCode* cfc_get_typecode()
     cfc_g_tc_members[0]._representation._typeCode = (RTICdrTypeCode *)&DDS_g_tc_long;
     cfc_g_tc_members[1]._representation._typeCode = (RTICdrTypeCode *)&cfc_g_tc_str_string;
     cfc_g_tc_members[2]._representation._typeCode = (RTICdrTypeCode *)&cfc_g_tc_from_string;
-    cfc_g_tc_members[3]._representation._typeCode = (RTICdrTypeCode *)&cfc_g_tc_payload_sequence;
+    cfc_g_tc_members[3]._representation._typeCode = (RTICdrTypeCode *)&cfc_g_tc_timestamp_string;
+    cfc_g_tc_members[4]._representation._typeCode = (RTICdrTypeCode *)&cfc_g_tc_payload_sequence;
 
     is_initialized = RTI_TRUE;
 
@@ -179,6 +198,11 @@ RTIBool cfc_initialize_ex(
         return RTI_FALSE;
     }
             
+    sample->timestamp = DDS_String_alloc((64));
+    if (sample->timestamp == NULL) {
+        return RTI_FALSE;
+    }
+            
     DDS_OctetSeq_initialize(&sample->payload);
                 
     if (!DDS_OctetSeq_set_maximum(&sample->payload,
@@ -204,6 +228,8 @@ void cfc_finalize_ex(
             
     DDS_String_free(sample->from);                
             
+    DDS_String_free(sample->timestamp);                
+            
     DDS_OctetSeq_finalize(&sample->payload);
             
 }
@@ -225,6 +251,11 @@ RTIBool cfc_copy(
             
     if (!RTICdrType_copyString(
         dst->from, src->from, (64) + 1)) {
+        return RTI_FALSE;
+    }
+            
+    if (!RTICdrType_copyString(
+        dst->timestamp, src->timestamp, (64) + 1)) {
         return RTI_FALSE;
     }
             

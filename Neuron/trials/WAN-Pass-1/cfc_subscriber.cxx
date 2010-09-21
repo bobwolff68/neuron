@@ -58,10 +58,12 @@ modification history
 //// Changes for Custom_Flowcontroller
 // For timekeeping
 #include <time.h>
-clock_t init;
+
+clock_t 	init;
 
 #define CLK_TCK CLOCKS_PER_SEC
-#define TCP_BIND_PORT 7400
+#define TCP_BIND_PORT 			7400
+#define MAX_CQ_BUF_SIZE 		1000
 
 extern unsigned long router_ip;
 extern unsigned long domain;
@@ -70,9 +72,80 @@ extern char topicname[100];
 extern char partname[100];
 extern char stunLocator[100];
 extern char peerList[10][100];
+extern char stunLivePeriodStr[20];
+extern char stunRetranIntvlStr[20];
+extern char stunNumRetransStr[20];
 extern int  wanID;
 extern bool bUseUDP;
+extern bool bEnableMonitor;
+extern bool bUseDefaultPeers;
+extern long sizeSampleWindowForStats;
 extern bool parsecmd(char**argv, int argc);
+
+class SampleCQ
+{
+	private:
+			long	x[MAX_CQ_BUF_SIZE];
+			int		frontPos;
+			int		nSamples;
+			
+	public:
+			SampleCQ()	{ frontPos = 0; nSamples = 0; }
+			
+			bool	enqueueSample	(long);
+			bool	dequeueSample	(void);
+			long	nSamplesLost	(void);
+			double	pcSamplesLost	(void)  { return ( 100.0 * ((double) nSamplesLost()) /
+											  ((double) (getTailSample()-getHeadSample()+1)) ); }
+			long	getNSamples		(void)	{ return nSamples; }
+			long	getHeadSample	(void)	{ return x[frontPos]; }
+			long	getTailSample	(void)	{ return x[(frontPos+nSamples-1)%MAX_CQ_BUF_SIZE]; }
+			void	clear			(void)	{ frontPos = 0; nSamples = 0; }
+};
+
+bool SampleCQ::enqueueSample(long new_x)
+{
+	bool	retVal = false;
+	
+	if(nSamples<MAX_CQ_BUF_SIZE)
+	{
+		x[(frontPos+nSamples)%MAX_CQ_BUF_SIZE] = new_x;
+		nSamples++;
+		retVal = true;
+	}
+
+	return retVal;
+}
+
+bool SampleCQ::dequeueSample(void)
+{
+	bool	retVal = false;
+	
+	if(nSamples>0)
+	{
+		nSamples--;
+		frontPos = (frontPos+1) % MAX_CQ_BUF_SIZE;
+		retVal = true;
+	}
+	
+	return retVal;
+}
+
+long SampleCQ::nSamplesLost(void)
+{
+	int	nLost = 0;
+	int nExpectedSamples;
+	
+	if(nSamples>0)
+	{
+		nExpectedSamples = getTailSample() - getHeadSample() + 1;
+		nLost = nExpectedSamples - nSamples;
+	}
+	
+	return nLost;
+}
+
+SampleCQ	scq;
 
 class cfcListener : public DDSDataReaderListener {
   public:
@@ -136,9 +209,16 @@ void cfcListener::on_data_available(DDSDataReader* reader)
             double elapsed_ticks = clock() - init;
             double elapsed_secs = elapsed_ticks/CLK_TCK;
             
-            printf("@ t=%.2fs, got x = %d\n",
-                   elapsed_secs, data_seq[i].x);
-
+            if(data_seq[i].x<=scq.getTailSample())	
+			{
+				scq.clear();
+            	printf("--------------------------- RECEIVE STATS ---------------------------\n");
+            }
+            scq.enqueueSample(data_seq[i].x);
+            if(scq.getNSamples()==(sizeSampleWindowForStats+1))	scq.dequeueSample();
+            printf("x(head) = [%5ld], x(tail) = [%5ld], lost = [%5ld] (%2.3lf%%)\r",
+                   scq.getHeadSample(), (long) data_seq[i].x, scq.nSamplesLost(),scq.pcSamplesLost());
+			fflush(stdout);
             //// End changes for Custom_Flowcontroller
         }
     }
@@ -187,6 +267,7 @@ static int subscriber_shutdown(
 extern "C" int subscriber_main(int domainId, int sample_count)
 {
     DDSDomainParticipant *participant = NULL;
+    DDS_DomainParticipantQos participant_qos;
     DDSSubscriber *subscriber = NULL;
     DDSTopic *topic = NULL;
     cfcListener *reader_listener = NULL; 
@@ -202,11 +283,26 @@ extern "C" int subscriber_main(int domainId, int sample_count)
     init = clock();
 
     /* Get default participant QoS to customize */
-    DDS_DomainParticipantQos participant_qos;
     if(bUseUDP)
-    	participant_qos = DPQos_with_UDPWAN(stunLocator,wanID);
+    	participant_qos = DPQos_with_UDPWAN(stunLocator,wanID,stunLivePeriodStr,stunRetranIntvlStr, 
+    										stunNumRetransStr,bEnableMonitor);
+    else if(bUseDefaultPeers)
+    {
+    	printf("Default Peers Mode...\n");
+    	retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
+    	if (retcode != DDS_RETCODE_OK) 
+    	{
+          	printf("get_default_participant_qos error\n");
+        	return -1;
+    	}
+    	if(bEnableMonitor)
+    	{
+    		if(participant_qos_with_monitoring_enabled(participant_qos)<0)
+    			return -1;
+    	}
+    }
     else
-    	participant_qos = DPQos_with_TCPLAN(TCP_BIND_PORT);
+    	participant_qos = DPQos_with_TCPLAN(TCP_BIND_PORT,bEnableMonitor);
     /*retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
     if (retcode != DDS_RETCODE_OK) {
         printf("get_default_participant_qos error\n");
@@ -220,6 +316,7 @@ extern "C" int subscriber_main(int domainId, int sample_count)
 
     /* To create participant with default QoS, use DDS_PARTICIPANT_QOS_DEFAULT
        instead of participant_qos */
+    DDS_DomainParticipantQos_setup_udpv4_message_size_max(participant_qos,MSG_SIZE_MAX_BYTES_STR);
     participant = DDSTheParticipantFactory->create_participant(
         domainId, participant_qos, 
         NULL /* listener */, DDS_STATUS_MASK_NONE);
@@ -230,13 +327,15 @@ extern "C" int subscriber_main(int domainId, int sample_count)
     }
 
 	// Add peers from peer list
-	retcode = participant->add_peer(peerList[0]);
-    if (retcode != DDS_RETCODE_OK) {
-        printf("add_peer() error %d\n", retcode);
-        subscriber_shutdown(participant);
-        return -1;
-    }
-
+	if(!bUseDefaultPeers)
+	{
+		retcode = participant->add_peer(peerList[0]);
+    	if (retcode != DDS_RETCODE_OK) {
+    	    printf("add_peer() error %d\n", retcode);
+    	    subscriber_shutdown(participant);
+    	    return -1;
+    	}
+	}
     //// End changes for Custom_Flowcontroller
 
     /* To customize subscriber QoS, use
@@ -281,8 +380,27 @@ extern "C" int subscriber_main(int domainId, int sample_count)
 
     /* To customize data reader QoS, use
        subscriber->get_default_datareader_qos() */
+       
+    //----------- PROBLEM--------------------------------------------------------------------   
+    // Data Reader Default Reliability Kind = DDS_BEST_EFFORT_RELIABILITY_QOS
+    // Observed : DDS_RELIABLE_RELIABILITY_QOS
+    // Cannot see where this is being set in the code
+    // For now, forcing best effort
+    DDS_DataReaderQos	rQos;
+    retcode = subscriber->get_default_datareader_qos(rQos);
+    if(retcode!=DDS_RETCODE_OK)
+    {
+    	printf("get_default_datareader_qos() error\n");
+    	subscriber_shutdown(participant);
+    	delete reader_listener;
+    	return -1;
+    }
+    rQos.reliability.kind = DDS_BEST_EFFORT_RELIABILITY_QOS;
+    rQos.history.depth = 10;
+    //---------------------------------------------------------------------------------------
+      
     reader = subscriber->create_datareader(
-        topic, DDS_DATAREADER_QOS_DEFAULT, reader_listener,
+        topic, rQos, reader_listener,
         DDS_STATUS_MASK_ALL);
     if (reader == NULL) {
         printf("create_datareader error\n");
@@ -304,6 +422,7 @@ extern "C" int subscriber_main(int domainId, int sample_count)
     status = subscriber_shutdown(participant);
     delete reader_listener;
 
+	printf("\n");
     return status;
 }
 
