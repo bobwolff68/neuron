@@ -50,7 +50,7 @@ int GOPQ_reset( GOPQ * );
 int GOPQ_add_frame( GOPQ *, fscPtr );
 int GOPQ_flush_to_fifo( GOPQ *, int );
 //------------------------------VFRM FUNCTIONS-----------------------------------------------------
-int 	VFRM_init( VFRModule *, char *name );
+int 	VFRM_init( VFRModule *, char *name, bool bMulticast );
 int 	VFRM_thread_run( void * );
 void	VFRM_get_cpu_usage( pid_t );
 void	VFRM_destroy( VFRModule * );

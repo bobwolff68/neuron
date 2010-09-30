@@ -12,11 +12,11 @@ extern int	srcNameListLen;
 void	NVPStartup				(const char *name, const char *vidStats);
 void	NVPPublishFrame			(unsigned char *pFrameBuf,int bufLen,int lType);
 void	NVPDestroy				(void);
-void	NVSStartup				(const char *name);
+void	NVSStartup				(const char *name, bool bMulticast);
 void	NVSSetupFrameListener	(void);
 void	NVSSetVDSPartition		(const char *partitionName);
 void	NVSChangeVDSPartition	(char fpsChoice);
-void	NVPDestroy				(void);
+void	NVSDestroy				(void);
 
 #ifdef __cplusplus
 }

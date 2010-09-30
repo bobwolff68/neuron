@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "x264_vfr_module.h"
 
 #define PROC_STAT_QUERY		"sed -n '1p' /proc/stat |  tr -s \" \" | cut -d\" \" -f 2-5"
@@ -73,7 +74,7 @@ int GOPQ_flush_to_fifo( GOPQ *pGopq, int ofd )
 	return bytes_written;
 }
 //------------------------------VFRM FUNCTIONS-----------------------------------------------------
-int VFRM_init( VFRModule *pVfm, char *name )
+int VFRM_init( VFRModule *pVfm, char *name, bool bMulticast )
 {	
 	bandwidth = (double *) av_mallocz( sizeof(double) );
 	cpu_usage = (double *) av_mallocz( sizeof(double) );
@@ -93,7 +94,7 @@ int VFRM_init( VFRModule *pVfm, char *name )
 	if( !fscInit( &(pVfm->fsc) ) )
 		return 0;
 	
-	NVSStartup( name );
+	NVSStartup( name, bMulticast );
 	pVfm->fps_choice = 'f';
 	pVfm->new_fps_choice = 'f';
 

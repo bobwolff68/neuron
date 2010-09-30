@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "../../DDS_RTI/videoPubSubAPI.h"
 
 #define STREAM_CHUNK_SIZE 8192

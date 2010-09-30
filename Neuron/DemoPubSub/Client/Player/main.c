@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
 #include "thread_shared_data.h"
 #include "display.h"
 #include "decode.h"
@@ -240,7 +241,7 @@ int main( int argc, char *argv[] )
 	pvfrm->vfrm_output_fn = vfrm_opfn;
 	pvfrm->vfrm_input_fn = vfrm_ipfn;
 
-	VFRM_init( pvfrm, argv[1] );
+	VFRM_init( pvfrm, argv[1], (bool)(argv[2][0]=='m') );
 	SDLDInit( ngObj, VID_W, VID_H, 
 			  SDL_YV12_OVERLAY, PIX_FMT_YUV420P, &(pvfrm->new_fps_choice) );
 	psrud->pvfrm = pvfrm;

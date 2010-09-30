@@ -10,4 +10,4 @@
 #gcc *.c ../../DDS/*.c -g3 -DRTI_STYLE -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT -m64 -I$NDDSHOME/include -I$NDDSHOME/include/ndds -L$NDDSHOME/lib/x64Linux2.6gcc4.1.1 -ldl -lnddscd -lnddscored -o x264mux
 
 #RTI 32-bit
-gcc *.c -g3 -L/usr/local/lib -lNeuronVideoPubSub -L$NDDSHOME/lib/i86Linux2.6gcc4.1.1 -ldl -lnddsc -lnddscpp -lnddscore -o x264mux
+gcc *.c -g3 -m32 -DRTI_UNIX -DRTI_LINUX -L/usr/local/lib -lNeuronVideoPubSub -L$NDDSHOME/lib/i86Linux2.6gcc4.1.1 -ldl -lnddsc -lnddscpp -lnddscore -o x264mux
