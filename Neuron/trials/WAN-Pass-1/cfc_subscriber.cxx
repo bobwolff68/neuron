@@ -303,6 +303,7 @@ extern "C" int subscriber_main(int domainId, int sample_count)
     }
     else
     	participant_qos = DPQos_with_TCPLAN(TCP_BIND_PORT,bEnableMonitor);
+
     /*retcode = DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
     if (retcode != DDS_RETCODE_OK) {
         printf("get_default_participant_qos error\n");

@@ -57,8 +57,11 @@ modification history
 #include "ndds/ndds_cpp.h"
 #include "cfc.h"
 #include "cfcSupport.h"
-#include "cfc_transport_config.h"
 #include <string.h>
+#include "choices.h"
+#include "cfc_transport_config.h"
+
+#include <assert.h>
 
 #define TCP_BIND_PORT 7500
 
@@ -79,6 +82,8 @@ extern bool bUseDefaultPeers;
 extern bool bUseFlowCtrl;
 extern int	chunks;
 extern bool parsecmd(char**argv, int argc);
+
+extern bool isResized;
 
 /* Delete all entities */
 static int publisher_shutdown(
@@ -433,29 +438,145 @@ int wmain(int argc, wchar_t** argv)
 }
  
 #elif !(defined(RTI_VXWORKS) && !defined(__RTP__)) && !defined(RTI_PSOS)
+
 int main(int argc, char *argv[])
 {
     int sample_count = 0; /* infinite loop */
 
-    /* Uncomment this to turn on additional logging
+    // Uncomment this to turn on additional logging
     NDDSConfigLogger::get_instance()->
         set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API, 
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-    */
+#if 0
+    choices kb;
+    updates *screen;
+    screen = new updates;
+#else
+    updates *screen;
+    screen = new updates;
+    nodelay(stdscr, true);
+#endif
+
+
+    sleep(2);
+    screen->LogLine("Hello there. CRLF buried here.\nTest continuation. NOCRLF.");
+    screen->LogLine("3: 2nd log item. No CRLF.");
+    screen->LogLine("4: 3rd log item. With CRLF at end.\n");
+    screen->LogLine("5: 4th NOCRLF.");
+    screen->LogLine("6: 5th NOCRLF.");
+    screen->LogLine("7: 6th NOCRLF.");
+    screen->LogLine("8: 7th with buried CRLf.\nHere's continuation...NOCRLF.");
+    screen->LogLine("10: One to grow on. With CRLF.\n");
+
+    screen->LogLine("Done playing...");
+
+    while (1)
+      {
+      int c;
+      char output[20];
+
+      if (isResized)
+        {
+          char sizes[100];
+          isResized = false;
+
+          screen->ResizeLogWin();
+        }
+
+        screen->Reverse(true);
+        screen->putStringAt(0, screen->getCurMaxY()/2 - 2, "Press a key or (Q/X) to exit.");
+        screen->Reverse(false);
+
+        usleep(250000);
+//        c = screen->processChar(kb.getchar());
+        c = screen->processChar(getch());            // blocking 'get'
+        if (c > 0)
+        {
+          if (c=='q' || c=='Q' || c=='x' || c=='X')
+            break;
+
+          switch(c)
+          {
+          case 'L':
+            screen->LogLine("Logging another line just to show off...");
+            break;
+
+          case 'u':
+          case 'U':
+            screen->LogUp();
+            break;
+
+          case 'd':
+          case 'D':
+            screen->LogDown();
+            break;
+
+          case '1':
+            screen->setItemValue("BigFatHeaderName", 2500000);
+            screen->printItems();
+            break;
+
+          case '2':
+            screen->setItemValue("MediumHeader", 150000);
+            screen->printItems();
+            break;
+
+          case '3':
+            screen->setItemValue("Small", 453);
+            screen->printItems();
+            break;
+
+          case '4':
+            screen->setItemValue("Xsml", 128000);
+            screen->printItems();
+            break;
+
+          case '5':
+            screen->setItemValue("Bitrate", 1024000);
+            screen->printItems();
+            break;
+
+          case '6':
+            screen->setItemValue("Chunks", 4);
+            screen->printItems();
+            break;
+
+          case '7':
+            screen->setItemValue("FlowControl", 32);
+            screen->printItems();
+            break;
+
+          default:
+            break;
+          }
+
+          screen->Standout(true);
+          sprintf(output, "Found: %c", c);
+          screen->putStringAt(0, screen->getCurMaxY()/2 - 1, output);
+          screen->Standout(false);
+        }
+        else
+          screen->putStringAt(0, screen->getCurMaxY()/2 - 1, "None  ");
+      }
+
+    delete screen;
+//    return(1);
 
     if (parsecmd(argv, argc))
+    {
+      // Check for errant command situations.
+      if (!bitrate)
+      {
+        printf("Bitrate setting is REQUIRED for publisher. Please use -b <bitrate> option.\n");
+        return -1;
+      }
+
       return publisher_main(domain, sample_count);
+    }
     else
     {
         printf("Error parsing command line parameters.\n");
         return -1;
-    }
-
-    // Check for errant command situations.
-    if (!bitrate)
-    {
-      printf("Bitrate setting is REQUIRED for publisher. Please use -b <bitrate> option.\n");
-      return -1;
     }
 
 }

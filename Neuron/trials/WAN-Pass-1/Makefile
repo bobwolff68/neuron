@@ -29,7 +29,7 @@ cxx_cc_x64Linux2.6gcc4.1.1 = g++
 cxx_cc_flags_x64Linux2.6gcc4.1.1 = -m64 -g3 -O0
 cxx_ld_x64Linux2.6gcc4.1.1 = g++
 cxx_ld_flags_x64Linux2.6gcc4.1.1 = -m64 -static-libgcc -g3 -O0
-syslibs_x64Linux2.6gcc4.1.1 = -ldl -lnsl -lm -lpthread -lrt
+syslibs_x64Linux2.6gcc4.1.1 = -ldl -lnsl -lm -lncurses -lpthread -lrt
 DEFINES_ARCH_SPECIFIC = -DRTI_UNIX -DRTI_LINUX -DRTI_64BIT
 
 
@@ -38,13 +38,15 @@ DEFINES = $(DEFINES_ARCH_SPECIFIC) $(cxx_DEFINES_ARCH_SPECIFIC)
 INCLUDES = -I. -I$(NDDSHOME)/include -I$(NDDSHOME)/include/ndds
 
 LIBS = -L$(NDDSHOME)/lib/x64Linux2.6gcc4.1.1 \
-        -lnddscppz -lnddscz -lnddscorez $(syslibs_x64Linux2.6gcc4.1.1)
+        -lnddscpp -lnddsc -lnddscore -lrtimonitoring $(syslibs_x64Linux2.6gcc4.1.1)
 
 CDRSOURCES    = cfc.idl
-COMMONSOURCES = cfc.cxx cfcPlugin.cxx cfcSupport.cxx anyoption/anyoption.cpp parsecmd.cpp
+COMMONSOURCES = cfc.cxx cfcPlugin.cxx cfcSupport.cxx
+COMMONSOURCES2 = NeuronBasics/ThreadMultiple.cpp anyoption/anyoption.cpp parsecmd.cpp choices.cpp cfc_transport_config.cpp
+
 EXEC          = cfc_subscriber cfc_publisher
-DIRECTORIES   = objs.dir objs/x64Linux2.6gcc4.1.1.dir
-COMMONOBJS    = $(COMMONSOURCES:%.cxx=objs/x64Linux2.6gcc4.1.1/%.o)
+DIRECTORIES   = objs.dir objs/x64Linux2.6gcc4.1.1.dir objs/x64Linux2.6gcc4.1.1/anyoption.dir objs/x64Linux2.6gcc4.1.1/NeuronBasics.dir
+COMMONOBJS    = $(COMMONSOURCES:%.cxx=objs/x64Linux2.6gcc4.1.1/%.o) $(COMMONSOURCES2:%.cpp=objs/x64Linux2.6gcc4.1.1/%.o)
 
 # We actually stick the objects in a sub directory to keep your directory clean.
 # x64Linux2.6gcc4.1.1 : $(DIRECTORIES) $(COMMONOBJS) \
@@ -55,6 +57,9 @@ all : $(DIRECTORIES) $(COMMONOBJS) \
 
 objs/x64Linux2.6gcc4.1.1/%.out : objs/x64Linux2.6gcc4.1.1/%.o 
 	$(cxx_ld_x64Linux2.6gcc4.1.1) $(cxx_ld_flags_x64Linux2.6gcc4.1.1)  -o $(@:%.out=%) $(@:%.out=%.o) $(COMMONOBJS) $(LIBS)
+
+objs/x64Linux2.6gcc4.1.1/%.o : %.cpp
+	$(cxx_cc_x64Linux2.6gcc4.1.1) $(cxx_cc_flags_x64Linux2.6gcc4.1.1)  -o $@ $(DEFINES) $(INCLUDES) -c $<
 
 objs/x64Linux2.6gcc4.1.1/%.o : %.cxx cfc.h 
 	$(cxx_cc_x64Linux2.6gcc4.1.1) $(cxx_cc_flags_x64Linux2.6gcc4.1.1)  -o $@ $(DEFINES) $(INCLUDES) -c $<
