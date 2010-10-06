@@ -212,11 +212,11 @@ void cfcListener::on_data_available(DDSDataReader* reader)
             if(data_seq[i].x<=scq.getTailSample())	
 			{
 				scq.clear();
-            	printf("--------------------------- RECEIVE STATS ---------------------------\n");
+            	fprintf(stderr,"--------------------------- RECEIVE STATS ---------------------------\n");
             }
             scq.enqueueSample(data_seq[i].x);
             if(scq.getNSamples()==(sizeSampleWindowForStats+1))	scq.dequeueSample();
-            printf("x(head) = [%5ld], x(tail) = [%5ld], lost = [%5ld] (%2.3lf%%)\r",
+            fprintf(stderr,"x(head) = [%5ld], x(tail) = [%5ld], lost = [%5ld] (%2.3lf%%)\r",
                    scq.getHeadSample(), (long) data_seq[i].x, scq.nSamplesLost(),scq.pcSamplesLost());
 			fflush(stdout);
             //// End changes for Custom_Flowcontroller
@@ -440,11 +440,11 @@ int wmain(int argc, wchar_t** argv)
         sample_count = _wtoi(argv[2]);
     }
     
-    /* Uncomment this to turn on additional logging
+#ifndef NDEBUG
     NDDSConfigLogger::get_instance()->
         set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API, 
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-    */
+#endif
                                   
     return subscriber_main(domainId, sample_count);
 }
@@ -454,11 +454,11 @@ int main(int argc, char *argv[])
 {
     int sample_count = 0; /* infinite loop */
 
-    /* Uncomment this to turn on additional logging
+#ifndef NDEBUG
     NDDSConfigLogger::get_instance()->
         set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API, 
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-    */
+#endif
                                   
     if (parsecmd(argv, argc))
       return subscriber_main(domain, sample_count);

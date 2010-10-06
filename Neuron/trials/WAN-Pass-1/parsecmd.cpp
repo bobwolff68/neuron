@@ -54,7 +54,7 @@ bool parsecmd(char**argv, int argc)
   opt->addUsage( "Usage: " );
   opt->addUsage( "" );
   opt->addUsage( " -h  --help                    Prints this help " );
-  opt->addUsage( " -d  --domain <dom_number>     Set Domain# (default 0)" );
+  opt->addUsage( " -d  --domain <dom_number>     Set Domain# (default 0, monitor domain 100)" );
   opt->addUsage( " -b  --bitrate <bitrate>       (For publisher) bitrate target in bits-per-second");
   opt->addUsage( "                               (default is 0)" );
   opt->addUsage( " -r  --router <router_ip>      If routing is required - add this to peers");

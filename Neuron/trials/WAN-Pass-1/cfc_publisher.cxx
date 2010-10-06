@@ -428,11 +428,11 @@ int wmain(int argc, wchar_t** argv)
         sample_count = _wtoi(argv[2]);
     }
 
-     /* Uncomment this to turn on additional logging
+#ifndef NDEBUG
     NDDSConfigLogger::get_instance()->
         set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API, 
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
-    */
+#endif
     
     return publisher_main(domainId, sample_count);
 }
@@ -443,10 +443,12 @@ int main(int argc, char *argv[])
 {
     int sample_count = 0; /* infinite loop */
 
-    // Uncomment this to turn on additional logging
+#ifndef NDEBUG
     NDDSConfigLogger::get_instance()->
         set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API, 
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+#endif
+
 #if 0
     choices kb;
     updates *screen;
@@ -456,7 +458,6 @@ int main(int argc, char *argv[])
     screen = new updates;
     nodelay(stdscr, true);
 #endif
-
 
     sleep(2);
     screen->LogLine("Hello there. CRLF buried here.\nTest continuation. NOCRLF.");
