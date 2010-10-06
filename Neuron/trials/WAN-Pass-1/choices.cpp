@@ -699,9 +699,12 @@ void updates::RefreshAll(void)
 
 void updates::Finalize(void)
 {
+  nl();
+  echo();
   delwin(logborderscr);
   delwin(logscr);
   refresh();
   endwin();
+  stdout = fdopen(STDOUT_FILENO,"a+");
   printf("\n\n");
 }
