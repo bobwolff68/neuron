@@ -12,6 +12,7 @@
 #include <time.h>
 
 //#define STDOUT_REDIR
+#define TOPHEIGHTREQUIRED 12
 
 choices::choices()
 {
@@ -54,62 +55,42 @@ int choices::getchar()
   return c==-1 ? 0 : c;
 };
 
-bool isResized = false;
+updates* pup=0;
+
 void do_resize( int sig_number )
 {
   if (sig_number != SIGWINCH)
     printf("Hmm. Non-sigwinch?");
   else
     {
-    int newx, newy;
-
-      isResized = true;
-      struct winsize window_size;
-
-      if (ioctl (fileno (stdout), TIOCGWINSZ, &window_size) == 0)
-        {
-          newx = (int) window_size.ws_col;
-          newy = (int) window_size.ws_row;
-        }
-
-      assert(newx!=-1 && newy!=-1);
-      resizeterm(newy, newx);
-      redrawwin(stdscr);
-      doupdate();
+      // Now signal the updates class of the need to redraw.
+      if (pup)
+        pup->CursesSignal(RESIZE_NEEDED);
     }
 }
 
-updates::updates() : ThreadMultiple(3)
+#define THREADS_REQD 3
+
+updates::updates() : ThreadMultiple(THREADS_REQD)
 {
   int err;
   incDecAmount = 100000;
   activeItem = "";
+  tempfifoname[0]=0;
 
-  initscr();
-  noecho();
-  nonl();
-  intrflush(stdscr,FALSE);
-  keypad(stdscr,TRUE);
+  signals = 0;
+  bCursesReady = false;
+  saved_stdout = dup(1);
 
-  signal(SIGWINCH, do_resize);
-  clear();
-  // Make double-border around main screen.
-//  border()
-
-  DrawMainWin();
-
-  // Order is important here. Create the log window before starting the threads as the stdout redirector
-  // requires access to logscr.
-  // Lastly - after starting the threads, then it's ok to redirect stdout as the matching other side of the fifo is ready.
-  CreateLogWin();
-  fp_stdout_capture = NULL;
-// Not using the stdout redirection at this time due to troubles with ncurses 'stealing' it.
-#ifdef STDOUT_REDIR
+  // Sleep required - else had problems with ncurses drawing garbage - possibly was an old threading
+  // problem, but sleeping for a second is no big shakes so we do it...
   setupStdoutReader();
-#endif
+
+  sleep(1);
   startAllThreads();
 
-  RefreshMaxXY();
+  while (!bCursesReady)
+    sleep(1);
 
 }
 
@@ -119,19 +100,23 @@ updates::~updates()
   {
     fprintf(fp_stdout_capture, "Closing stdout redirection at this time.\n");
     fclose(fp_stdout_capture);
-    unlink(tempfifoname);
   }
 
   stopAllThreads();
-  Finalize();
+
+  if (strlen(tempfifoname))
+    unlink(tempfifoname);
 }
 
-int updates::processChar(int c)
+int updates::processChar(void)
 {
   itempair::iterator it = items.begin();
   int cur;
+  int c;
   WINDOW *pdialog;
   char tmpstr[10];
+
+  c = getch();
 
   if (c<=0)
     return 0;
@@ -140,17 +125,27 @@ int updates::processChar(int c)
   switch(c)
   {
   case 'p':
-    fprintf(stdout, "Another printf message.\n");
+    fprintf(stdout, "Another **F**printf message.\n");
+    printf("Another SIMPLE printf message WITH fflush().\n");
     fflush(stdout);
-    fprintf(stderr, "STDERR -- Another printf message.\n");
-    fflush(stderr);
+//    fflush(stdout);
     break;
 
   case 'P':
 //    if (!fp_stdout_capture)
 //      printf("Regular printf to say OUCH - cannot redirect stdout in curses.\n");
-    fprintf(stdout, "Another printf message with fflush.\n");
+    fprintf(stdout, "Another **F**printf message WITH fflush.\n");
     fflush(stdout);
+    if (!fp_stdout_capture)
+    {
+      cerr << "CAPTURE of STDOUT didn't work apparently. NULL on our copy." << endl;
+      exit(-1);
+    }
+    else
+    {
+      fprintf(fp_stdout_capture, "SPECIAL - fp_stdout_capture - **F**printf message WITH fflush.\n");
+      fflush(fp_stdout_capture);
+    }
     break;
 
   case '+':
@@ -204,6 +199,10 @@ int updates::processChar(int c)
     }
     break;
 
+  case 12:      // ^L for refresh
+    CursesSignal(RESIZE_NEEDED);
+    break;
+
   case '/':
     // TODO
     // Put up popup dialog to ask for a value.
@@ -228,8 +227,7 @@ int updates::processChar(int c)
     wclear(pdialog);
     wrefresh(pdialog);
     delwin(pdialog);
-    DrawMainWin();
-    printItems();
+    CursesSignal(RESIZE_NEEDED);
     break;
 
     // If no other handler picks it up...then let the process above handle it.
@@ -268,26 +266,26 @@ void updates::setItemValue(const char* name, int value)
 #endif
 int updates::redirectStdout(void)
 {
+#ifdef STDOUT_REDIR
   // Now open fifo for WRITING first (open of reader blocks until writer starts).
   // This requires doing freopen() on stdout.
 
   // Reassign stdout.
     if (!STD)
       exit(-10);
-    fp_stdout_capture = freopen(tempfifoname, "w", STD);
+
+    fp_stdout_capture = freopen(tempfifoname, "w+", STD);
     if (!fp_stdout_capture)
       exit(-5);
 
     assert(fp_stdout_capture);
 
-    if (!fp_stdout_capture)
+    if (!fp_stdout_capture || !stdout)
     {
       cerr << "Error re-assiging stdout to fifo: '" << tempfifoname << "'" << endl;
       return -1;
     }
-
-    fflush(STD);
-
+#endif
     return 0;
 }
 
@@ -301,11 +299,19 @@ void updates::setupStdoutReader(void)
   ptmp = tempnam(NULL, "fifo");
   strcpy(tempfifoname, ptmp);
 
-  // Create fifo
-  err = mkfifo(tempfifoname, S_IRUSR| S_IWUSR);
-  if (err)
+  if (strlen(tempfifoname))
   {
-    cerr << "Error opening fifo: '" << tempfifoname << "'" << endl;
+      // Create fifo
+      err = mkfifo(tempfifoname, S_IRUSR| S_IWUSR);
+      if (err)
+      {
+        cerr << "Error opening fifo: '" << tempfifoname << "'" << endl;
+        exit(-1);
+      }
+  }
+  else
+  {
+    cerr << "Temp name does not exist. tempnam() failed." << endl;
     exit(-1);
   }
 #endif
@@ -314,6 +320,9 @@ void updates::setupStdoutReader(void)
 int updates::StdoutReader(void)
 {
 #ifdef STDOUT_REDIR
+  int fillindex;
+  int ch;
+
   fflush(stdout);
   // Now open the reader.
   fp_read = fopen(tempfifoname, "r");
@@ -323,13 +332,40 @@ int updates::StdoutReader(void)
     exit(-1);
   }
 
+  LogLine("post-fopen(fifo) - thread - ready to read from the fifo/pipe.");
 //  fflush(stdout);
 
+  fillindex = 0;
+  ch = 0;
+
+  while (!bCursesReady)
+    sleep(1);
+
+
+
+
+  return 0;
+
+
+
   // Now read until EOF.
-  while (fp_read && !isStopRequested[0] && !feof(fp_read) && fgets(tmplongline, 199, fp_read))
+//  while (fp_read && !isStopRequested[0] && !feof(fp_read) && fgets(tmplongline, 199, fp_read))
+  while (fp_read && !isStopRequested[0] && !feof(fp_read) && (ch=fgetc(fp_read))!=EOF)
   {
-    LogLine(tmplongline);
-//    fflush(stdout);
+
+    if (ch <= 0)
+      cerr << "ch was zero or less. Value=" << ch << endl;
+    // We need to add the character to the tmplongline.
+    tmplongline[fillindex++] = ch;
+
+    if (ch=='\n' || fillindex==199)
+    {
+      tmplongline[fillindex]=0;         // Terminate null.
+      LogLine(tmplongline);
+//      cerr << tmplongline << endl;
+      fillindex = 0;                    // Start anew.
+    }
+
   }
 
   fclose(fp_read);
@@ -352,6 +388,47 @@ int updates::RealtimeItems(void)
   char loadavg[30];
   double floadavg;
 
+  //
+  // Initialize Curses as we will do all work on curses from this thread.
+  //
+  initscr();
+
+  noecho();
+  nonl();
+  intrflush(stdscr,FALSE);
+  keypad(stdscr,TRUE);
+  nodelay(stdscr, true);
+
+  signal(SIGWINCH, do_resize);
+  clear();
+
+  DrawMainWin();
+
+  // Order is important here. Create the log window before starting the threads as the stdout redirector
+  // requires access to logscr.
+  // Lastly - after starting the threads, then it's ok to redirect stdout as the matching other side of the fifo is ready.
+  CreateLogWin();
+
+  ResizeLogWin();
+
+//  LogLine("pre-redirect.");
+  fp_stdout_capture = NULL;
+// Not using the stdout redirection at this time due to troubles with ncurses 'stealing' it.
+#ifdef STDOUT_REDIR
+  // Must first re-open STDOUT_FILENO since curses has closed it.
+  // Then setup for redirection.
+  stdout = fdopen(STDOUT_FILENO, "a+");
+  if (!stdout)
+  {
+    cerr << "Error re-opening stdout." << endl;
+    exit(-1);
+  }
+#endif
+
+  RefreshMaxXY();
+
+  bCursesReady = true;
+
   time(&start_time);
 
   fp = fopen("/proc/loadavg", "r");
@@ -360,7 +437,43 @@ int updates::RealtimeItems(void)
 
   while (1)
     {
-      // Log any stdout
+      // Cope with any pending signals first thing.
+      if (signals)
+      {
+          if (signals & REDRAW_LOG)
+          {
+            signals &= ~REDRAW_LOG;     // Reset signal. Then process. Allows for another to come in.
+            LogRedraw();
+          }
+
+          if (signals & RESIZE_NEEDED)
+          {
+            int newx, newy;
+            struct winsize window_size;
+
+              signals &= ~RESIZE_NEEDED;     // Reset signal. Then process. Allows for another to come in.
+
+              if (ioctl (fileno (stdout), TIOCGWINSZ, &window_size) == 0)
+              {
+                  newx = (int) window_size.ws_col;
+                  newy = (int) window_size.ws_row;
+              }
+
+              assert(newx!=-1 && newy!=-1);
+              resizeterm(newy, newx);
+
+              redrawwin(stdscr);
+              doupdate();
+              ResizeLogWin();
+          }
+
+          if (signals & REDRAW_ITEMS)
+          {
+            signals &= ~REDRAW_ITEMS;     // Reset signal. Then process. Allows for another to come in.
+            printItems();
+          }
+      }
+
       // Get load average information.
       if (fp)
       {
@@ -414,16 +527,20 @@ int updates::RealtimeItems(void)
       if (isStopRequested[1])
         break;
 
-      sleep(1);
+      usleep(250000);
     }
 
   fclose(fp);
+
+  // Undo all curses items.
+  Finalize();
+
   return 0;
 }
 
 int updates::workerBeeSplitter(int tn)
 {
-   if (tn >= 2) return -1; // Error - more than the orignal desired # of threads. Should never happen.
+   if (tn >= THREADS_REQD) return -1; // Error - more than the orignal desired # of threads. Should never happen.
    switch(tn)
    {
      case 0:
@@ -453,7 +570,7 @@ void updates::DrawMainWin(void)
   Standout(false);
   Bold(true);
   putStringAtCenter(3, "DDS Test Jig");
-  putStringAtCenter(4, "Version 0.45");
+  putStringAtCenter(4, "Version 0.60");
   Bold(false);
 
   Standout(true);
@@ -571,9 +688,12 @@ void updates::CreateLogWin(void)
   int err;
 
   // Calculate the actual LOGGING area (not the border...use +1 / -1 for borders.
-  logstarty = getCurMaxY()/2 + 1;              // If odd height, starts @ same location.
-  logendy = getCurMaxY()-2;
-  logwidth = getCurMaxX()-2;
+  logstarty = LINES/2 + 1;              // If odd height, starts @ same location.
+  logendy = LINES-2;
+  logwidth = COLS-2;
+
+  cerr << "Creating LogWin - logwidth=" << logwidth << " COLS=" << COLS << " LINES=" << LINES << " getCurMaxY=="<<getCurMaxY() << " getCurMaxX()=="<<getCurMaxX()<<endl;
+
   // First create a bogus window just to get borders outside the logscr.
   logborderscr = newwin(logendy-logstarty+3, logwidth+2, logstarty-1, 0);
 //  logborderscr = 0;
@@ -585,12 +705,8 @@ void updates::CreateLogWin(void)
   err = wsetscrreg(logscr, 0, logendy-logstarty);
   assert(!err);
 
-//  refresh();
-  ResizeLogWin();
-
   // Set for logging.
   wmove(logscr, 0, 0);
-//  RefreshAll();
 }
 
 void updates::ResizeLogWin(void)
@@ -612,8 +728,9 @@ void updates::ResizeLogWin(void)
   DrawMainWin();
   printItems();
 
-  // Reduce the standard screen based upone non-overlapping with log screen.
-//  wresize(stdscr, logstarty-1, logwidth);
+  // Now one mod - if minimum screen height is satisfied, then make starty there rather than half vert.
+  if (logstarty > TOPHEIGHTREQUIRED)
+    logstarty = TOPHEIGHTREQUIRED;
 
   // First create a bogus window just to get borders outside the logscr.
   logborderscr->_begy = logstarty-1;
@@ -644,23 +761,28 @@ void updates::LogRedraw(void)
 {
   int height = logscr->_maxy + 1;
   int i;
-  logs::iterator it = loghistory.end();
+  logs::iterator it;
 
+  // Clear log area and prep for drawing items.
+  wclear(logscr);
+  wmove(logscr, 0, 0);
+
+  pthread_mutex_lock (&mutex);
+
+  it = loghistory.end();
   // reverse iterating through the list to get to our highest entry to print out.
   for (i=0 ; i<height && it != loghistory.begin() ; i++)
     --it;
 
   // Ready to start moving forward now
-
-  wclear(logscr);
-  wmove(logscr, 0, 0);
-
   while(it != loghistory.end())
   {
       waddch(logscr, '\n');
       waddstr(logscr, it->c_str());
       it++;
   }
+
+  pthread_mutex_unlock (&mutex);
 
   wrefresh(logscr);
 }
@@ -670,24 +792,25 @@ void updates::LogLine(const char* pstr)
   int ax, ay;
   string to_log;
 
+  pthread_mutex_lock (&mutex);
+
   // We are chopping off any trailing '\n' character to make best use of the scrolling region.
   // Therefore on each next line, we much add a '\n' to pre-scroll prior to printing.
-  waddch(logscr, '\n');
-
-  to_log = pstr;
+  // However this action is taken during the actual redraw. So the log_history is clean.
+  to_log += pstr;
 
   // If trailing '\n' on the pstr input, effectively lop off the trailing item.
   if (pstr[strlen(pstr)-1]=='\n')
     to_log = to_log.substr(0, to_log.length()-1);
 
-  waddstr(logscr, to_log.c_str());
   loghistory.push_back(to_log);
 
   if (loghistory.size()>MAX_LOGSIZE)
     loghistory.pop_front();
 
-  // Refresh around any CRLF crud.
-  wrefresh(logscr);
+  pthread_mutex_unlock (&mutex);
+
+  CursesSignal(REDRAW_LOG);
 }
 
 void updates::RefreshAll(void)
@@ -705,6 +828,10 @@ void updates::Finalize(void)
   delwin(logscr);
   refresh();
   endwin();
-  stdout = fdopen(STDOUT_FILENO,"a+");
+  // Make sure stdout is healthy for exit from curses - restoring if it were closed by curses and not re-directed by us.
+#ifdef STDOUT_REDIR
+  stdout = fdopen(saved_stdout,"a+");
+//  stdout = fdopen(STDOUT_FILENO,"a+");
+#endif
   printf("\n\n");
 }

@@ -83,7 +83,8 @@ extern bool bUseFlowCtrl;
 extern int	chunks;
 extern bool parsecmd(char**argv, int argc);
 
-extern bool isResized;
+// Necessary global without doing some re-vamp to the screen/updates mechanisms in multi threads.
+extern updates* pup;
 
 /* Delete all entities */
 static int publisher_shutdown(
@@ -364,8 +365,89 @@ extern "C" int publisher_main(int domainId, int sample_count)
 
     char stamp[100];
 
+#if 1
+    //    sleep(15);  // Wait for debugger to have time to attach.
+    updates *screen;
+    screen = new updates;
+    int c;              // keyboard input character
+    char scratch[80];
+
+    pup = screen;
+
+    sleep(1);   // May be necessary to let curses get initialized. Also could have been only needed when
+                // threading was not as consistent and controlled as it is now.
+
+    screen->AddItem("Chunk#");
+
+    sprintf(scratch, "Hostname reported as: '%s'", hostnm);
+    screen->LogLine(scratch);
+
+    // Manjesh - setup all columns needed for live data line via calls to:
+    // screen->AddItem("HeaderName");
+    //
+    // Then to display a new number, simply use:
+    // screen->setItemValue("HeaderName", 2500000);
+    // ....
+    // screen->CursesSignal(REDRAW_ITEMS);      // Only need to do this once after all the 'sets' are complete.
+    //
+    // You can log a line item to the log window via screen->LogLine() as well.
+
     /* Main loop */
-    for (count=0; (sample_count == 0) || (count < sample_count); ++count) {
+    for (count=0; (sample_count == 0) || (count < sample_count); ++count)
+    {
+        // Process keyboard input first then samples and output changes.
+      c = screen->processChar();
+      if (c > 0)        // Key pressed if c>0
+      {
+        if (c=='q' || c=='Q' || c=='x' || c=='X')
+          break;
+
+        switch(c)
+        {
+        case 'L':
+          screen->LogLine("Logging another line just to show off...");
+          break;
+
+        case '1':
+          screen->setItemValue("BigFatHeaderName", 2500000);
+          screen->CursesSignal(REDRAW_ITEMS);
+          break;
+
+        case '2':
+          screen->setItemValue("MediumHeader", 150000);
+          screen->CursesSignal(REDRAW_ITEMS);
+          break;
+
+        case '3':
+          screen->setItemValue("Small", 453);
+          screen->CursesSignal(REDRAW_ITEMS);
+          break;
+
+        case '4':
+          screen->setItemValue("Xsml", 128000);
+          screen->CursesSignal(REDRAW_ITEMS);
+          break;
+
+        case '5':
+          screen->setItemValue("Bitrate", 1024000);
+          screen->CursesSignal(REDRAW_ITEMS);
+          break;
+
+        case '6':
+          screen->setItemValue("Chunks", 4);
+          screen->CursesSignal(REDRAW_ITEMS);
+          break;
+
+        case '7':
+          screen->setItemValue("FlowControl", 32);
+          screen->CursesSignal(REDRAW_ITEMS);
+          break;
+
+        default:
+          break;
+        }
+
+      }
 
         //// Changes for Custom_Flowcontroller
         // Simulate bursty writer
@@ -374,7 +456,7 @@ extern "C" int publisher_main(int domainId, int sample_count)
 
         for (int i = 0; i < chunks; ++i) {
             int sample = count*chunks + i;
-            printf("Writing payload 'chunk' # %d - \n", sample);
+//            printf("Writing payload 'chunk' # %d - \n", sample);
             instance->x = sample;
             memset(instance->str, 1, 999);
             instance->str[999] = 0;
@@ -383,6 +465,14 @@ extern "C" int publisher_main(int domainId, int sample_count)
             instance->payload.from_array(pDatum+offset, bytestosend/chunks);
             sprintf(stamp, "%s - chunk#%d", hostnm, sample);
             strncpy(instance->timestamp, stamp, (strlen(stamp)<63)?strlen(stamp):63);
+
+            screen->setItemValue("Chunk#", sample);
+            screen->CursesSignal(REDRAW_ITEMS);
+
+            // Then to display a new number, simply use:
+            // screen->setItemValue("HeaderName", 2500000);
+            // ....
+            // screen->CursesSignal(REDRAW_ITEMS);      // Only need to do this once after all the 'sets' are complete.
 
             offset += bytestosend/chunks;
 			NDDSUtility::sleep(send_period);
@@ -393,6 +483,10 @@ extern "C" int publisher_main(int domainId, int sample_count)
             }
         }
     }
+
+    delete screen;
+    pup = 0;
+#endif
 
     NDDSUtility::sleep(send_period);
     free(pDatum);
@@ -450,23 +544,20 @@ int main(int argc, char *argv[])
 #endif
 
 #if 0
-    choices kb;
+    //    sleep(15);  // Wait for debugger to have time to attach.
     updates *screen;
     screen = new updates;
-#else
-    updates *screen;
-    screen = new updates;
-    nodelay(stdscr, true);
-#endif
 
-    sleep(2);
-    screen->LogLine("Hello there. CRLF buried here.\nTest continuation. NOCRLF.");
+    pup = screen;
+
+    sleep(1);
+    screen->LogLine("1: Hello there. CRLF buried here.\n2: Test continuation. NOCRLF.");
     screen->LogLine("3: 2nd log item. No CRLF.");
     screen->LogLine("4: 3rd log item. With CRLF at end.\n");
     screen->LogLine("5: 4th NOCRLF.");
     screen->LogLine("6: 5th NOCRLF.");
     screen->LogLine("7: 6th NOCRLF.");
-    screen->LogLine("8: 7th with buried CRLf.\nHere's continuation...NOCRLF.");
+    screen->LogLine("8: 7th with buried CRLf.\n9: Here's continuation...NOCRLF.");
     screen->LogLine("10: One to grow on. With CRLF.\n");
 
     screen->LogLine("Done playing...");
@@ -476,21 +567,8 @@ int main(int argc, char *argv[])
       int c;
       char output[20];
 
-      if (isResized)
-        {
-          char sizes[100];
-          isResized = false;
-
-          screen->ResizeLogWin();
-        }
-
-        screen->Reverse(true);
-        screen->putStringAt(0, screen->getCurMaxY()/2 - 2, "Press a key or (Q/X) to exit.");
-        screen->Reverse(false);
-
         usleep(250000);
-//        c = screen->processChar(kb.getchar());
-        c = screen->processChar(getch());            // blocking 'get'
+        c = screen->processChar();
         if (c > 0)
         {
           if (c=='q' || c=='Q' || c=='x' || c=='X')
@@ -502,66 +580,51 @@ int main(int argc, char *argv[])
             screen->LogLine("Logging another line just to show off...");
             break;
 
-          case 'u':
-          case 'U':
-            screen->LogUp();
-            break;
-
-          case 'd':
-          case 'D':
-            screen->LogDown();
-            break;
-
           case '1':
             screen->setItemValue("BigFatHeaderName", 2500000);
-            screen->printItems();
+            screen->CursesSignal(REDRAW_ITEMS);
             break;
 
           case '2':
             screen->setItemValue("MediumHeader", 150000);
-            screen->printItems();
+            screen->CursesSignal(REDRAW_ITEMS);
             break;
 
           case '3':
             screen->setItemValue("Small", 453);
-            screen->printItems();
+            screen->CursesSignal(REDRAW_ITEMS);
             break;
 
           case '4':
             screen->setItemValue("Xsml", 128000);
-            screen->printItems();
+            screen->CursesSignal(REDRAW_ITEMS);
             break;
 
           case '5':
             screen->setItemValue("Bitrate", 1024000);
-            screen->printItems();
+            screen->CursesSignal(REDRAW_ITEMS);
             break;
 
           case '6':
             screen->setItemValue("Chunks", 4);
-            screen->printItems();
+            screen->CursesSignal(REDRAW_ITEMS);
             break;
 
           case '7':
             screen->setItemValue("FlowControl", 32);
-            screen->printItems();
+            screen->CursesSignal(REDRAW_ITEMS);
             break;
 
           default:
             break;
           }
 
-          screen->Standout(true);
-          sprintf(output, "Found: %c", c);
-          screen->putStringAt(0, screen->getCurMaxY()/2 - 1, output);
-          screen->Standout(false);
         }
-        else
-          screen->putStringAt(0, screen->getCurMaxY()/2 - 1, "None  ");
       }
 
     delete screen;
-//    return(1);
+    pup = 0;
+#endif
 
     if (parsecmd(argv, argc))
     {
