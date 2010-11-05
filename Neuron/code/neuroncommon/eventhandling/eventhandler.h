@@ -1,11 +1,11 @@
-#define EVENT_KIND_NEW_SESSION
-#define EVENT_KIND_UPDATE_SESSION
-#define EVENT_KIND_DELETE_SESSION
-#define EVENT_KIND_SESSION_INIT
-#define EVENT_KIND_SESSION_READY
-#define EVENT_KIND_SESSION_DELETE
-#define EVENT_KIND_SESSION_DELETED
-#define EVENT_KIND_FACTORY_SHUTDOWN
+#define EVENT_KIND_NEW_SESSION		0
+#define EVENT_KIND_UPDATE_SESSION	1
+#define EVENT_KIND_DELETE_SESSION	2
+#define EVENT_KIND_SESSION_INIT		3
+#define EVENT_KIND_SESSION_READY	4
+#define EVENT_KIND_SESSION_DELETE	5
+#define EVENT_KIND_SESSION_DELETED	6
+#define EVENT_KIND_FACTORY_SHUTDOWN	7
 
 #define	EVENTQ_SLEEP_MUS	100000
 
@@ -21,10 +21,10 @@ class Event
 		int	GetKind	(void)		{ return kind; }
 };
 
-typedef	void (*EventHandleFunc)(Event *) ;
-
-class EventHandler
+template<typename NeuronEntityType> class EventHandler
 {
+	typedef	void (NeuronEntityType::*EventHandleFunc)(Event *);
+	
 	protected:
 		std::queue<Event *>				EventQueue;
 		std::map<int,EventHandleFunc>	EventHandleFuncList;
@@ -38,6 +38,6 @@ class EventHandler
 		void	SignalEvent		(Event *);
 		void	HandleNextEvent	(void);
 		bool	NoEvents		(void)						{ return EventQueue.empty(); }
-		virtual void	EventHandleLoop (void) = 0;
+virtual void	EventHandleLoop (void) = 0;
 };
 

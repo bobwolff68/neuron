@@ -5,7 +5,8 @@
 #include <pthread.h>
 #include "eventhandler.h"
 
-void EventHandler::AddHandleFunc(EventHandleFunc pHandleFunc,int eventKind)
+template<typename NeuronEntityType> 
+void EventHandler<NeuronEntityType>::AddHandleFunc(EventHandleFunc pHandleFunc,int eventKind)
 {
 	//assert(EventHandleFuncList.find(eventKind)==EventHandleFuncList.end);
 	assert(pHandleFunc==NULL);
@@ -13,7 +14,8 @@ void EventHandler::AddHandleFunc(EventHandleFunc pHandleFunc,int eventKind)
 	return;
 }
 
-void EventHandler::SignalEvent(Event *pEvent)
+template<typename NeuronEntityType> 
+void EventHandler<NeuronEntityType>::SignalEvent(Event *pEvent)
 {
 	assert(pEvent==NULL);
 	pthread_mutex_lock(&eqMutex);
@@ -22,7 +24,8 @@ void EventHandler::SignalEvent(Event *pEvent)
 	return;
 }
 
-void EventHandler::HandleNextEvent(void)
+template<typename NeuronEntityType> 
+void EventHandler<NeuronEntityType>::HandleNextEvent(void)
 {
 	Event	*pEvent;
 	
