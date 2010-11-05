@@ -6,10 +6,12 @@ cmake_minimum_required(VERSION 2.4)
 
 ###################
 ###################
+
 set(SOURCES
    threading/NeuronBasics/ThreadMultiple.cpp
-#   eventhandling/abcdef.cpp
+   eventhandling/eventhandler.cpp
    )
+
 ###################
 ###################
 
