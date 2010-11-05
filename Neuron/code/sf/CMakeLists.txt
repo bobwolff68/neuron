@@ -12,6 +12,7 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
         )
 
 ADD_SUBDIRECTORY( ../control ) # add subdir
+ADD_SUBDIRECTORY( ../neuroncommon ) # add subdir
 
 # INCLUDE_DIRECTORIES( ../cminc ) # add to include path
 
@@ -24,6 +25,7 @@ ADD_EXECUTABLE(
 TARGET_LINK_LIBRARIES(
    sf                            # to foo link
    controlplane                  # library bar which is in vendor/bar
+   neuroncommon
 )
 
 ###################
