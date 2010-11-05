@@ -33,7 +33,7 @@ SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY
         "Single output for all libraries"
         )
 
-# INCLUDE_DIRECTORIES( ../cminc )
+INCLUDE_DIRECTORIES( ../include )
 
 message(STATUS "cmake_system_processor is: ${CMAKE_SYSTEM_PROCESSOR}")
 
