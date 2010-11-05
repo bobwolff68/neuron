@@ -4,6 +4,21 @@ PROJECT( neuroncommon ) # if you want to
 
 cmake_minimum_required(VERSION 2.4)
 
+###################
+###################
+set(SOURCES
+   threading/NeuronBasics/ThreadMultiple.cpp
+   eventhandling/abcdef.cpp
+   )
+###################
+###################
+
+SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
+        ../bin
+        CACHE PATH
+        "Single output for all executables"
+        )
+
 SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY
         ../lib
         CACHE PATH
@@ -32,10 +47,11 @@ else()
         "Specific for compile style")
 endif()
 
-ADD_LIBRARY(
-   neuroncommon
-   threading/NeuronBasics/ThreadMultiple.cpp
-)
+ADD_LIBRARY(neuroncommon ${SOURCES})
+
+find_library(PT_LIB pthread)
+ADD_EXECUTABLE(test1 EXCLUDE_FROM_ALL threading/NeuronBasics/testthreads.cpp)
+TARGET_LINK_LIBRARIES(test1 neuroncommon ${PT_LIB})
 
 ###################
 
