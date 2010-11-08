@@ -1,3 +1,7 @@
+#include <queue>
+#include <map>
+#include <pthread.h>
+
 #define EVENT_KIND_NEW_SESSION		0
 #define EVENT_KIND_UPDATE_SESSION	1
 #define EVENT_KIND_DELETE_SESSION	2
@@ -21,7 +25,19 @@ class Event
 		int	GetKind	(void)		{ return kind; }
 };
 
-template<typename NeuronEntityType> class EventHandler
+class EventHandlerBase
+{
+	protected:
+		std::queue<Event *>	EventQueue;
+		
+	public:
+		EventHandler()	{ };
+		~EventHandler()	{ };
+		
+virtual	void	SignalEvent	(Event *) = 0;
+};
+
+template<typename NeuronEntityType> class EventHandler : public EventHandlerBase
 {
 	typedef	void (NeuronEntityType::*EventHandleFunc)(Event *);
 	

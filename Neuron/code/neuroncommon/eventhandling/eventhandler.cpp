@@ -1,8 +1,4 @@
-#include <queue>
-#include <map>
-
 #include <assert.h>
-#include <pthread.h>
 #include "eventhandler.h"
 
 template<typename NeuronEntityType> 
