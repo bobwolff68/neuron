@@ -2,10 +2,18 @@
 // Include for internal use of neuron common library
 //
 
-#include "../neuroncommon/threading/NeuronBasics/ThreadSingle.h"
-#include "../neuroncommon/threading/NeuronBasics/ThreadMultiple.h"
+//
+// RMW mod to remove relative ../neuroncommon/ pathing.
+//     Must have -I[...]code/neuroncommon/ in command line now (via CMakeLists.txt)
+//
+#include "threading/NeuronBasics/ThreadSingle.h"
+#include "threading/NeuronBasics/ThreadMultiple.h"
 
-#include "../neuroncommon/eventhandling/eventhandler.h"
-#include "../neuroncommon/dds/DDSEvent.h"
+#include "eventhandling/eventhandler.h"
 
-#include "../neuroncommon/anyoption/anyoption.h"
+// When DDS items will only complicate a build...they can be skipped.
+#ifndef SKIP_DDS
+#include "dds/DDSEvent.h"
+#endif
+
+#include "anyoption/anyoption.h"

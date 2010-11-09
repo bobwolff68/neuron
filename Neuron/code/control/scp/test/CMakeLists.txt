@@ -19,7 +19,7 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
         "Single output for all executables"
         )
 
-INCLUDE_DIRECTORIES( .. ../idl ../../idl ../.. ../../../include)
+INCLUDE_DIRECTORIES( .. ../idl ../../idl ../.. ../../../include ../../../neuroncommon)
 INCLUDE_DIRECTORIES( $ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds )
 add_definitions(-DRTI_LINUX)
 add_definitions(-DRTI_UNIX)

@@ -20,7 +20,7 @@ SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY
 
 # INCLUDE_DIRECTORIES( ../cminc )
 
-INCLUDE_DIRECTORIES(. ../include idl scp/idl)
+INCLUDE_DIRECTORIES(. ../include ../neuroncommon idl scp/idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 
 #add_definitions(-DRTI_DARWIN)

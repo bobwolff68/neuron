@@ -14,7 +14,7 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
 ADD_SUBDIRECTORY( ../control ) # add subdir
 ADD_SUBDIRECTORY( ../neuroncommon ) # add subdir
 
-# INCLUDE_DIRECTORIES( ../cminc ) # add to include path
+INCLUDE_DIRECTORIES( ../include ../neuroncommon ) # add to include path
 
 ADD_EXECUTABLE(
    sf                                          # build executable foo
