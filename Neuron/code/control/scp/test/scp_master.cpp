@@ -101,24 +101,24 @@ public:
     	session = new Session(sm,25);
         
         // Same function handles all events
-        AddHandleFunc(&SCPMasterTester::MyEventHandler,STATE_SESSION_EVENT_ID);
-        AddHandleFunc(&SCPMasterTester::MyEventHandler,METRICS_SESSION_EVENT_ID);
-        AddHandleFunc(&SCPMasterTester::MyEventHandler,EVENT_SESSION_EVENT_ID);
+        AddHandleFunc(&SCPMasterTester::MyEventHandler,SCP_EVENT_SESSION_STATE_UPDATE);
+        AddHandleFunc(&SCPMasterTester::MyEventHandler,SCP_EVENT_SESSION_METRICS_UPDATE);
+        AddHandleFunc(&SCPMasterTester::MyEventHandler,SCP_EVENT_SESSION_EVENT);
     }
 
     void MyEventHandler(Event *e) 
     {
         switch (e->GetKind()) {
-            case STATE_SESSION_EVENT_ID:
-                state = (reinterpret_cast<SessionStateEvent*>(e))->GetData();
+            case SCP_EVENT_SESSION_STATE_UPDATE:
+                state = (reinterpret_cast<SCPEventSessionStateUpdate*>(e))->GetData();
                 printf("State update: sf: %d, session: %d, state=%d\n",state->srcId,state->sessionId,state->state);
                 break;
-            case METRICS_SESSION_EVENT_ID:
-                metrics = (reinterpret_cast<SessionMetricsEvent*>(e))->GetData();
+            case SCP_EVENT_SESSION_METRICS_UPDATE:
+                metrics = (reinterpret_cast<SCPEventSessionMetricsUpdate*>(e))->GetData();
                 printf("Metrics update: sf: %d, session: %d, entityCount=%d,bytesSent=%d,bytesReceived=%d\n",metrics->srcId,metrics->sessionId,metrics->entityCount,metrics->bytesSent,metrics->bytesReceived);
                 break;
-            case EVENT_SESSION_EVENT_ID:
-                event = (reinterpret_cast<SessionEventEvent*>(e))->GetData();
+            case SCP_EVENT_SESSION_EVENT:
+                event = (reinterpret_cast<SCPEventSessionEvent*>(e))->GetData();
                 printf("Event update: sf: %d, session: %d, eventCode=%d\n",event->srcId,event->sessionId,event->eventCode);
                 break;
             default:

@@ -82,30 +82,30 @@ public:
     {
         sl = new SCPSlave(this,10,0,"SCP");
         session = NULL;
-        AddHandleFunc(&SCPSlaveTester::MyEventHandler,NEW_SESSION_EVENT_ID);
-        AddHandleFunc(&SCPSlaveTester::MyEventHandler,UPDATE_SESSION_EVENT_ID);
-        AddHandleFunc(&SCPSlaveTester::MyEventHandler,DELETE_SESSION_EVENT_ID);
+        AddHandleFunc(&SCPSlaveTester::MyEventHandler,SCP_EVENT_NEW_SESSION);
+        AddHandleFunc(&SCPSlaveTester::MyEventHandler,SCP_EVENT_UPDATE_SESSION);
+        AddHandleFunc(&SCPSlaveTester::MyEventHandler,SCP_EVENT_DELETE_SESSION);
     }
     
     void MyEventHandler(Event *e) 
     {
         // Check queue for events 
         switch (e->GetKind()) {
-            case NEW_SESSION_EVENT_ID:
+            case SCP_EVENT_NEW_SESSION:
             {
-                NewSessionEvent* se = reinterpret_cast<NewSessionEvent*>(e);
+                SCPEventNewSession* se = reinterpret_cast<SCPEventNewSession*>(e);
                 session = new Session(sl,(SCPSlaveObject*)se->GetSession());
                 printf("New session: %d\n",((SCPSlaveObject*)se->GetSession())->GetSessionId());
             }
                 break;
-            case UPDATE_SESSION_EVENT_ID:
-                control = reinterpret_cast<SessionUpdateEvent*>(e)->GetData();
+            case SCP_EVENT_UPDATE_SESSION:
+                control = reinterpret_cast<SCPEventUpdateSession*>(e)->GetData();
                 printf("Update session: %d\n",control->sessionId);
                 session->Update(control);
                 break;
-            case DELETE_SESSION_EVENT_ID:
+            case SCP_EVENT_DELETE_SESSION:
                 printf("Delete session: %d\n",
-                       reinterpret_cast<SessionDeleteEvent*>(e)->GetSessionId());
+                       reinterpret_cast<SCPEventDeleteSession*>(e)->GetSessionId());
                 delete session;
                 session = NULL;
                 break;
