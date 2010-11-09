@@ -2,7 +2,7 @@
 #include "eventhandler.h"
 
 template<typename NeuronEntityType> 
-void EventHandler<NeuronEntityType>::AddHandleFunc(EventHandleFunc pHandleFunc,int eventKind)
+void EventHandlerT<NeuronEntityType>::AddHandleFunc(EventHandleFunc pHandleFunc,int eventKind)
 {
 	//assert(EventHandleFuncList.find(eventKind)==EventHandleFuncList.end);
 	assert(pHandleFunc==NULL);
@@ -11,7 +11,7 @@ void EventHandler<NeuronEntityType>::AddHandleFunc(EventHandleFunc pHandleFunc,i
 }
 
 template<typename NeuronEntityType> 
-void EventHandler<NeuronEntityType>::SignalEvent(Event *pEvent)
+void EventHandlerT<NeuronEntityType>::SignalEvent(Event *pEvent)
 {
 	assert(pEvent==NULL);
 	pthread_mutex_lock(&eqMutex);
@@ -21,7 +21,7 @@ void EventHandler<NeuronEntityType>::SignalEvent(Event *pEvent)
 }
 
 template<typename NeuronEntityType> 
-void EventHandler<NeuronEntityType>::HandleNextEvent(void)
+void EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
 {
 	Event	*pEvent;
 	

@@ -1,6 +1,12 @@
+#ifndef EVENTHANDLER_H_
+#define EVENTHANDLER_H_
+
 #include <queue>
 #include <map>
+
+#include <assert.h>
 #include <pthread.h>
+#include "eventhandler.h"
 
 #define EVENT_KIND_NEW_SESSION		0
 #define EVENT_KIND_UPDATE_SESSION	1
@@ -25,7 +31,7 @@ class Event
 		int	GetKind	(void)		{ return kind; }
 };
 
-class EventHandlerBase
+class EventHandler
 {
 	protected:
 		std::queue<Event *>	EventQueue;
@@ -37,9 +43,9 @@ class EventHandlerBase
 virtual	void	SignalEvent	(Event *) = 0;
 };
 
-template<typename NeuronEntityType> class EventHandler : public EventHandlerBase
+template<typename NeuronEntityType> class EventHandlerT : public EventHandler
 {
-	typedef	void (NeuronEntityType::*EventHandleFunc)(Event *);
+	public: typedef	void (NeuronEntityType::*EventHandleFunc)(Event *);
 	
 	protected:
 		std::queue<Event *>				EventQueue;
@@ -47,8 +53,8 @@ template<typename NeuronEntityType> class EventHandler : public EventHandlerBase
 		pthread_mutex_t					eqMutex;
 		
 	public:
-		EventHandler()	{ pthread_mutex_init(&eqMutex, NULL); }
-		~EventHandler()	{ }
+		EventHandlerT()	{ pthread_mutex_init(&eqMutex, NULL); }
+		~EventHandlerT()	{ }
 		
 		void	AddHandleFunc	(EventHandleFunc,int);
 		void	SignalEvent		(Event *);
@@ -57,3 +63,45 @@ template<typename NeuronEntityType> class EventHandler : public EventHandlerBase
 virtual void	EventHandleLoop (void) = 0;
 };
 
+template<typename NeuronEntityType>
+void EventHandlerT<NeuronEntityType>::AddHandleFunc(EventHandleFunc pHandleFunc,int eventKind)
+{
+        //assert(EventHandleFuncList.find(eventKind)==EventHandleFuncList.end);
+        assert(pHandleFunc!=NULL);
+        EventHandleFuncList[eventKind] = pHandleFunc;
+        return;
+}
+
+template<typename NeuronEntityType>
+void EventHandlerT<NeuronEntityType>::SignalEvent(Event *pEvent)
+{
+        assert(pEvent!=NULL);
+        pthread_mutex_lock(&eqMutex);
+        EventQueue.push(pEvent);
+        pthread_mutex_unlock(&eqMutex);
+        return;
+}
+
+template<typename NeuronEntityType>
+void EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
+{
+        Event   *pEvent=NULL;
+
+	if (EventQueue.empty())
+		return;
+
+        pthread_mutex_lock(&eqMutex);
+        pEvent = EventQueue.front();
+	if (pEvent != NULL) {
+       	    EventQueue.pop();
+            pthread_mutex_unlock(&eqMutex);
+	    (((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
+	} 
+	else
+	{
+	    pthread_mutex_unlock(&eqMutex);
+	}
+
+        return;
+}
+#endif
