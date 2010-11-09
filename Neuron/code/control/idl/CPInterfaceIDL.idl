@@ -1,0 +1,16 @@
+module com {
+    module xvd {
+        module neuron {
+            const long MAX_SCRIPT_LENGTH = 1024;
+
+            enum ObjectState {
+                OBJECT_STATE_INIT,
+                OBJECT_STATE_STANDBY,
+                OBJECT_STATE_READY,
+                OBJECT_STATE_UPDATE,
+                OBJECT_STATE_DELETE,
+                OBJECT_STATE_DELETED
+            };
+        };
+    };
+};
