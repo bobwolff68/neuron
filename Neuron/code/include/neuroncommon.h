@@ -7,3 +7,5 @@
 
 #include "../neuroncommon/eventhandling/eventhandler.h"
 #include "../neuroncommon/dds/DDSEvent.h"
+
+#include "../neuroncommon/anyoption/anyoption.h"
