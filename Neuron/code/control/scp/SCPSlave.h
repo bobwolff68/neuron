@@ -55,7 +55,10 @@ private:
     com::xvd::neuron::session::ControlDataReader *controlReader;
     com::xvd::neuron::session::StateDataWriter *stateWriter;
     com::xvd::neuron::session::EventDataWriter *eventWriter;
-    com::xvd::neuron::session::MetricsDataWriter *metricsWriter;    
+    com::xvd::neuron::session::MetricsDataWriter *metricsWriter;
+    com::xvd::neuron::session::State *state;
+    com::xvd::neuron::session::Event *event;
+    com::xvd::neuron::session::Metrics *metrics;    
 };
 
 #endif

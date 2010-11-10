@@ -81,6 +81,38 @@ com::xvd::neuron::session::MetricsTypeSupport>(domainId,_srcId,qosProfile)
         return;
     }
     
+    state = com::xvd::neuron::session::StateTypeSupport::create_data();
+    
+    if (state == NULL)
+    {
+        //TODO: Error handling
+        return;
+    }
+    
+    event = com::xvd::neuron::session::EventTypeSupport::create_data();
+    
+    if (event == NULL)
+    {
+        //TODO: Error handling
+        return;
+    }
+    
+    metrics = com::xvd::neuron::session::MetricsTypeSupport::create_data();    
+    
+    if (metrics == NULL)
+    {
+        //TODO: Error handling
+        return;
+    }
+    
+    control = com::xvd::neuron::session::ControlTypeSupport::create_data();
+    
+    if (control == NULL) 
+    {
+        //TODO: Error handling
+        return;
+    }
+    
     srcId = _srcId;
     upper = q;
 }
@@ -119,93 +151,11 @@ SCPMaster::~SCPMaster()
         {
             delete metricsListener;
         }
-    }    
-}
-
-SCPMasterObject* SCPMaster::CreateMasterObject(int sid)
-{
-    SCPMasterObject *s = NULL;
-    DDS_InstanceHandle_t h1 = DDS_HANDLE_NIL,
-                         h2 = DDS_HANDLE_NIL,
-                         h3 = DDS_HANDLE_NIL,
-                         h4 = DDS_HANDLE_NIL;
-    com::xvd::neuron::session::Control *control = NULL;
-    com::xvd::neuron::session::State *state = NULL;
-    com::xvd::neuron::session::Event *event = NULL;
-    com::xvd::neuron::session::Metrics *metrics = NULL;
-    
-    state = com::xvd::neuron::session::StateTypeSupport::create_data();
-    if (state == NULL)
-    {
-        //TODO: Error handling
-        goto done;
     }
     
-    event = com::xvd::neuron::session::EventTypeSupport::create_data();
-    if (event == NULL) 
+    if (metrics != NULL)
     {
-        //TODO: Error handling
-        goto done;
-    }
-    
-    metrics = com::xvd::neuron::session::MetricsTypeSupport::create_data();
-    if (metrics == NULL)
-    {
-        //TODO: Error handling
-        goto done;
-    }
-    
-    control = com::xvd::neuron::session::ControlTypeSupport::create_data();
-    if (control == NULL)
-    {
-        //TODO: Error handling
-        goto done;
-    }
-
-    control->srcId = srcId;
-    control->sessionId = sid;
-    h1 = controlWriter->register_instance(*control);
-    if (DDS_InstanceHandle_is_nil(&h1)) 
-    {
-        //TODO: Error handling
-        goto done;
-    }
-#if 0
-    state->srcId = srcId;
-    state->sessionId = sid;
-    h2 = stateReader->lookup_instance(*state);
-    if (DDS_InstanceHandle_is_nil(&h2)) 
-    {
-        //TODO: Error handling
-        goto done;
-    }
-
-    event->srcId = srcId;
-    event->sessionId = sid;
-    h3 = eventReader->lookup_instance(*event);
-    if (DDS_InstanceHandle_is_nil(&h3)) 
-    {
-        //TODO: Error handling
-        goto done;
-    }
-
-    metrics->srcId = srcId;
-    metrics->sessionId = sid;
-    h4 = metricsReader->lookup_instance(*metrics);
-    if (DDS_InstanceHandle_is_nil(&h4)) 
-    {
-        //TODO: Error handling
-        goto done;
-    }
-#endif
-    
-    s = new SCPMasterObject(this,srcId,sid,h1,h2,h3,h4);
-    
-done:
-    
-    if (control != NULL)
-    {
-        com::xvd::neuron::session::ControlTypeSupport::delete_data(control);
+        com::xvd::neuron::session::MetricsTypeSupport::delete_data(metrics);
     }
     
     if (state != NULL)
@@ -218,11 +168,33 @@ done:
         com::xvd::neuron::session::EventTypeSupport::delete_data(event);
     }
     
-    if (metrics != NULL)
+    if (control != NULL) 
     {
-        com::xvd::neuron::session::MetricsTypeSupport::delete_data(metrics);
+        com::xvd::neuron::session::ControlTypeSupport::delete_data(control);
+    }
+}
+
+SCPMasterObject* SCPMaster::CreateMasterObject(int sid)
+{
+    SCPMasterObject *s = NULL;
+    DDS_InstanceHandle_t h1 = DDS_HANDLE_NIL,
+                         h2 = DDS_HANDLE_NIL,
+                         h3 = DDS_HANDLE_NIL,
+                         h4 = DDS_HANDLE_NIL;
+    
+    control->srcId = srcId;
+    control->sessionId = sid;
+    h1 = controlWriter->register_instance(*control);
+    if (DDS_InstanceHandle_is_nil(&h1)) 
+    {
+        //TODO: Error handling
+        goto done;
     }
     
+    s = new SCPMasterObject(this,srcId,sid,h1,h2,h3,h4);
+    
+done:
+        
     return s;
 }
 
@@ -230,16 +202,7 @@ bool SCPMaster::DeleteMasterObject(SCPMasterObject* aSession)
 {
     
     DDS_ReturnCode_t retcode;
-    com::xvd::neuron::session::Control *control = NULL;
     bool retval = false;
-    
-    control = com::xvd::neuron::session::ControlTypeSupport::create_data();
-
-    if (control == NULL) 
-    {
-        //TODO: Error handling
-        goto done;
-    }
     
     retcode = controlWriter->get_key_value(*control,aSession->GetControlInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
@@ -259,11 +222,6 @@ bool SCPMaster::DeleteMasterObject(SCPMasterObject* aSession)
     retval = true;
     
 done:
-    
-    if (control != NULL) 
-    {
-        com::xvd::neuron::session::ControlTypeSupport::delete_data(control);
-    }
     
     return retval;
 }
@@ -286,9 +244,10 @@ bool SCPMaster::GetMasterObjectState(DDS_InstanceHandle_t instance,com::xvd::neu
     DDS_SampleInfoSeq info_seq;
     DDS_ReturnCode_t retcode;
     
-    data_seq.maximum(1);
-    data_seq.length(1);
-    retcode = stateReader->read_instance(data_seq,info_seq,
+    data_seq.ensure_length(1,1);
+    info_seq.ensure_length(1,1);
+    retcode = stateReader->read_instance(data_seq,
+                                         info_seq,
                                          1,
                                          instance,
                                          DDS_READ_SAMPLE_STATE,
@@ -351,6 +310,8 @@ bool SCPMaster::GetMasterObjectEvents(DDS_InstanceHandle_t instance,
     
     *eventSeq = result_seq;
     
+    eventReader->return_loan(result_seq,info_seq);
+
     return true;
 }
 
@@ -383,7 +344,46 @@ bool SCPMaster::GetMasterObjectMetrics(DDS_InstanceHandle_t instance,
     
     *metricsSeq = result_seq;
     
+    metricsReader->return_loan(result_seq,info_seq);
+    
     return true;    
+}
+
+DDS_InstanceHandle_t SCPMaster::GetMasterObjectStateHandle(int dstId,int sid)
+{
+    DDS_InstanceHandle_t ih = DDS_HANDLE_NIL;
+    
+    state->srcId = dstId;
+    state->sessionId = sid;
+        
+    ih = stateReader->lookup_instance(*state);
+    
+    return ih;
+}
+
+DDS_InstanceHandle_t SCPMaster::GetMasterObjectEventHandle(int dstId, int sid)
+{
+    DDS_InstanceHandle_t ih = DDS_HANDLE_NIL;
+    
+    
+    event->srcId = dstId;
+    event->sessionId = sid;
+    
+    ih = eventReader->lookup_instance(*event);
+        
+    return ih;
+}
+
+DDS_InstanceHandle_t SCPMaster::GetMasterObjectMetricsHandle(int dstId,int sid)
+{
+    DDS_InstanceHandle_t ih = DDS_HANDLE_NIL;
+    
+    metrics->srcId = dstId;
+    metrics->sessionId = sid;
+    
+    ih = metricsReader->lookup_instance(*metrics);
+    
+    return ih;
 }
 
 bool SCPMaster::PostEvent(Event *ev)

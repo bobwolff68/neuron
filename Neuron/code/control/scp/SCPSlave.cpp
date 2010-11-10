@@ -129,7 +129,29 @@ com::xvd::neuron::session::MetricsTypeSupport>(domainId,_srcId,qosProfile)
     if (metricsWriter == NULL) 
     {
         return;
-    }        
+    }
+    
+    state = com::xvd::neuron::session::StateTypeSupport::create_data();
+    if (state == NULL)
+    {
+        //TODO: Error log
+        return;
+    }
+    
+    event = com::xvd::neuron::session::EventTypeSupport::create_data();
+    if (event == NULL) 
+    {
+        //TODO: Error log
+        return;
+    }
+    
+    metrics = com::xvd::neuron::session::MetricsTypeSupport::create_data();
+    if (metrics == NULL)
+    {
+        //TODO: Error log
+        return;
+    }
+    
     srcId = _srcId;
     upper = q;
     
@@ -149,6 +171,21 @@ SCPSlave::~SCPSlave()
             delete controlListener;
         }
     }
+    
+    if (state != NULL)
+    {
+        com::xvd::neuron::session::StateTypeSupport::delete_data(state);
+    }
+    
+    if (event != NULL)
+    {
+        com::xvd::neuron::session::EventTypeSupport::delete_data(event);
+    }
+    
+    if (metrics != NULL)
+    {
+        com::xvd::neuron::session::MetricsTypeSupport::delete_data(metrics);
+    }    
 }
 
 // TODO: Allocate the session object
@@ -158,30 +195,7 @@ SCPSlaveObject* SCPSlave::CreateSlaveObject(int sid)
     DDS_InstanceHandle_t h1 = DDS_HANDLE_NIL,
                          h2 = DDS_HANDLE_NIL,
                          h3 = DDS_HANDLE_NIL;    
-    com::xvd::neuron::session::State *state = NULL;
-    com::xvd::neuron::session::Event *event = NULL;
-    com::xvd::neuron::session::Metrics *metrics = NULL;
     
-    state = com::xvd::neuron::session::StateTypeSupport::create_data();
-    if (state == NULL)
-    {
-        //TODO: Error log
-        goto done;
-    }
-    
-    event = com::xvd::neuron::session::EventTypeSupport::create_data();
-    if (event == NULL) 
-    {
-        //TODO: Error log
-        goto done;
-    }
-    
-    metrics = com::xvd::neuron::session::MetricsTypeSupport::create_data();
-    if (metrics == NULL)
-    {
-        //TODO: Error log
-        goto done;
-    }
     
     state->sessionId = sid;
     state->srcId = srcId;
@@ -216,18 +230,6 @@ SCPSlaveObject* SCPSlave::CreateSlaveObject(int sid)
     s = new SCPSlaveObject(this,srcId,sid,h1,h2,h3);
     
 done:
-    if (state != NULL)
-    {
-        com::xvd::neuron::session::StateTypeSupport::delete_data(state);
-    }
-    if (event != NULL)
-    {
-        com::xvd::neuron::session::EventTypeSupport::delete_data(event);
-    }
-    if (metrics != NULL)
-    {
-        com::xvd::neuron::session::MetricsTypeSupport::delete_data(metrics);
-    }
     return s;
 }
 
@@ -266,33 +268,9 @@ bool SCPSlave::Send(com::xvd::neuron::session::Metrics *metrics, DDS_InstanceHan
 
 bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession) 
 {
-    com::xvd::neuron::session::State *state = NULL;
-    com::xvd::neuron::session::Event *event = NULL;
-    com::xvd::neuron::session::Metrics *metrics = NULL;    
     DDS_ReturnCode_t retcode;
     bool retval = false;
     
-    state = com::xvd::neuron::session::StateTypeSupport::create_data();
-    if (state == NULL)
-    {
-        //TODO: Error log
-        goto done;
-    }
-    
-    event = com::xvd::neuron::session::EventTypeSupport::create_data();
-    if (event == NULL) 
-    {
-        //TODO: Error log
-        goto done;
-    }
-    
-    metrics = com::xvd::neuron::session::MetricsTypeSupport::create_data();
-    if (metrics == NULL)
-    {
-        //TODO: Error log
-        goto done;
-    }
-
     retcode = eventWriter->get_key_value(*event,aSession->GetEventInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
     {
@@ -341,22 +319,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     retval = true;
     
 done:
-    
-    if (state != NULL)
-    {
-        com::xvd::neuron::session::StateTypeSupport::delete_data(state);
-    }
-
-    if (event != NULL)
-    {
-        com::xvd::neuron::session::EventTypeSupport::delete_data(event);
-    }
-
-    if (metrics != NULL)
-    {
-        com::xvd::neuron::session::MetricsTypeSupport::delete_data(metrics);
-    }
-    
+        
     return retval;
 }
 

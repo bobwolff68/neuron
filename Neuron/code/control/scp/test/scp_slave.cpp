@@ -78,9 +78,9 @@ public:
     com::xvd::neuron::session::Metrics *metrics;
     SCPSlave *sl;
     
-    SCPSlaveTester() : EventHandlerT<SCPSlaveTester>()
+    SCPSlaveTester(int appId,int domainId) : EventHandlerT<SCPSlaveTester>()
     {
-        sl = new SCPSlave(this,10,0,"SCP");
+        sl = new SCPSlave(this,appId,domainId,"SCP");
         session = NULL;
         AddHandleFunc(&SCPSlaveTester::MyEventHandler,SCP_EVENT_NEW_SESSION);
         AddHandleFunc(&SCPSlaveTester::MyEventHandler,SCP_EVENT_UPDATE_SESSION);
@@ -132,8 +132,56 @@ public:
 int 
 main(int argc, char **argv)
 {
-    SCPSlaveTester tester;
-	tester.run();
-	return 0;
+    int domainId = 67;
+    int appId = getpid();
+	SCPSlaveTester *tester = NULL;
+    int i;
     
+    for (i = 0; i < argc; ++i)
+    {
+        if (!strcmp("-appId",argv[i]))
+        {
+            ++i;
+            if (i == argc)
+            {
+                printf("-appId <appId>\n");
+                break;
+            }
+            appId = strtol(argv[i],NULL,0);
+        }
+        else if (!strcmp("-domainId",argv[i]))
+        {
+            ++i;
+            if (i == argc)
+            {
+                printf("-domainId <domainId>\n");
+                break;
+            }
+            domainId = strtol(argv[i],NULL,0);
+        }
+        else if (!strcmp("-appId",argv[i]))
+        {
+            ++i;
+            if (i == argc)
+            {
+                printf("-appId <appId>\n");
+                break;
+            }
+        }
+    }        
+    
+    if (i < argc) {
+        return -1;
+    }
+    
+    tester = new SCPSlaveTester(appId,domainId);
+    
+    if (tester == NULL)
+    {
+        return -1;
+    }
+    
+    tester->run();
+    
+	return 0;
 }

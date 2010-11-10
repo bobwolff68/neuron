@@ -35,7 +35,7 @@ bool SCPMasterObject::Send(com::xvd::neuron::session::Control* _c, int dstId)
     return sm->Send(_c,controlHandle);
 }
 
-com::xvd::neuron::session::State* SCPMasterObject::GetState(void)
+com::xvd::neuron::session::State* SCPMasterObject::GetState(int dstId)
 {
     
     if (state == NULL)
@@ -43,23 +43,43 @@ com::xvd::neuron::session::State* SCPMasterObject::GetState(void)
         //TODO: Error logging
         return NULL;
     }
+    stateHandle = sm->GetMasterObjectStateHandle(dstId,sessionId);
+    if (!DDS_InstanceHandle_is_nil(&stateHandle))
+    {
+        sm->GetMasterObjectState(stateHandle,this->state);
+        return this->state;
+    }
+    return NULL;
+}
+
+com::xvd::neuron::session::EventSeq* SCPMasterObject::GetEvents(int dstId)
+{
+    //NOTE: Data is _not_ loaned from DDS
+    this->eventSeq.length(0);
+    this->eventSeq.maximum(0);
     
-    sm->GetMasterObjectState(stateHandle,this->state);
-    return this->state;
+    eventHandle = sm->GetMasterObjectEventHandle(dstId,sessionId);
+    if (!DDS_InstanceHandle_is_nil(&eventHandle))
+    {   
+        sm->GetMasterObjectEvents(eventHandle,&this->eventSeq);
+        return &this->eventSeq;
+    }
+    return NULL;
 }
 
-com::xvd::neuron::session::EventSeq* SCPMasterObject::GetEvents(void)
+com::xvd::neuron::session::MetricsSeq* SCPMasterObject::GetMetrics(int dstId)
 {
-    //NOTE: Data is _not_ loaned from DDS
-    sm->GetMasterObjectEvents(eventHandle,&this->eventSeq);
-    return &this->eventSeq;
-}
+    this->metricsSeq.length(0);
+    this->metricsSeq.maximum(0);
 
-com::xvd::neuron::session::MetricsSeq* SCPMasterObject::GetMetrics(void)
-{
     //NOTE: Data is _not_ loaned from DDS
-    sm->GetMasterObjectMetrics(metricsHandle,&this->metricsSeq);
-    return &this->metricsSeq;
+    metricsHandle = sm->GetMasterObjectMetricsHandle(dstId,sessionId);
+    if (!DDS_InstanceHandle_is_nil(&metricsHandle))
+    {
+        sm->GetMasterObjectMetrics(metricsHandle,&this->metricsSeq);
+        return &this->metricsSeq;
+    }
+    return NULL;
 }
 
 DDS_InstanceHandle_t SCPMasterObject::GetControlInstanceHandle()

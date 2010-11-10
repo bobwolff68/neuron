@@ -45,13 +45,13 @@ public:
     bool Send(com::xvd::neuron::session::Control *control,int);
     
     //! Get the current state of the session
-    com::xvd::neuron::session::State* GetState(void);
+    com::xvd::neuron::session::State* GetState(int dstId);
 
     //! Get the current events for the session
-    com::xvd::neuron::session::EventSeq* GetEvents(void);
+    com::xvd::neuron::session::EventSeq* GetEvents(int dstId);
     
     //! Get the current metrics for the session
-    com::xvd::neuron::session::MetricsSeq* GetMetrics(void);
+    com::xvd::neuron::session::MetricsSeq* GetMetrics(int dstId);
         
     //! Internal function
     DDS_InstanceHandle_t GetControlInstanceHandle();

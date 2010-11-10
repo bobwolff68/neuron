@@ -5,6 +5,8 @@
 #include "SCPMaster.h"
 #include "SCPEvent.h"
 
+#include <set>
+
 // Application Session object. This class defines what a session is from an 
 // application point of view.
 class Session 
@@ -24,15 +26,8 @@ public:
         
         // This data-types defines the interrface to the SCPMasterObject.
         control = com::xvd::neuron::session::ControlTypeSupport::create_data();
-        state = com::xvd::neuron::session::StateTypeSupport::create_data();
-        event = com::xvd::neuron::session::EventTypeSupport::create_data();
-        metrics = com::xvd::neuron::session::MetricsTypeSupport::create_data();
         
-        sprintf(control->script,"Created session %d",scp->GetSessionId());
-        
-        // A session object can be sent to a single destination, in this case
-        // THe destination ID is 10
-        scp->Send(control,10);
+        sprintf(control->script,"Created session %d",scp->GetSessionId());        
     }
         
     ~Session()
@@ -42,45 +37,126 @@ public:
         
         // Delete local memory to store control and state
         com::xvd::neuron::session::ControlTypeSupport::delete_data(control);
-        com::xvd::neuron::session::StateTypeSupport::delete_data(state);
-        com::xvd::neuron::session::EventTypeSupport::delete_data(event);
-        com::xvd::neuron::session::MetricsTypeSupport::delete_data(metrics);        
+    }
+    
+    // Add a slave to the session. When a slave is added, we send an empty
+    // command (create) to trigger a state update from the slave
+    void AddSlave(int slaveId)
+    {
+        slaves.insert(slaveId);
+        sprintf(control->script,"create session %d",scp->GetSessionId());
+        if (!scp->Send(control,slaveId))
+        {
+            printf("failed to send create command to slave %d\n",slaveId);
+        }
+    }
+
+    void RemoveSlave(int slaveId)
+    {
+        sprintf(control->script,"delete session %d",scp->GetSessionId());
+        if (!scp->Send(control,slaveId))
+        {
+            printf("failed to send remove command to slave %d\n",slaveId);
+        }
+        else
+        {
+            slaves.erase(slaveId);
+        }
+    }
+    
+    bool SlavesAreReady(set<int> *pending)
+    {
+        com::xvd::neuron::session::State *state=NULL;
+        set<int>::iterator it;        
+        for (it = pending->begin(); it != pending->end(); ++it)
+        {
+            state = scp->GetState(*it);
+            if (state == NULL)
+            {
+                continue;
+            }
+            if (state->state != com::xvd::neuron::OBJECT_STATE_READY)
+            {
+                continue;
+            }
+            pending->erase(*it);
+        }
+        return pending->empty();
     }
     
     // Example commands
-    void AddEntity(const char *script)
+    bool SendCommand(const char *script,int slaveId)
     {
-        sprintf(control->script,"add script for session(%d): %s\n",
+        set<int>::iterator it;
+        it = slaves.find(slaveId);
+        
+        if (it == slaves.end())
+        {
+            printf("slave %d is not valid\n",slaveId);
+            return false;
+        }
+        
+        sprintf(control->script,"execute session %d: %s\n",
                 scp->GetSessionId(),script);
-        scp->Send(control,10);
-    }
-
-    void RemoveEntity(const char *script)
-    {
-        sprintf(control->script,"remove script for session(%d): %s\n",
-                scp->GetSessionId(),script);
-        scp->Send(control,10);
+        
+        return scp->Send(control,slaveId);
     }
     
     void ReportSessionStatus(void)
     {
-        com::xvd::neuron::session::State *state;
-        com::xvd::neuron::session::EventSeq *events;
-        com::xvd::neuron::session::MetricsSeq *metrics;
-#if 0
-        state = scp->GetState();
-        events = scp->GetEvents();
-        metrics = scp->GetMetrics();
-#endif
+        printf("Session Status\n");
+
+        com::xvd::neuron::session::State *state=NULL;
+        com::xvd::neuron::session::EventSeq *events=NULL;
+        com::xvd::neuron::session::MetricsSeq *metrics=NULL;
+        
+        set<int>::iterator it;
+        
+        for (it = slaves.begin(); it != slaves.end(); ++it)
+        {            
+            printf("checking state for %d\n",*it);
+            state = scp->GetState(*it);
+            events = scp->GetEvents(*it);
+            metrics = scp->GetMetrics(*it);
+            
+            if (state != NULL)
+            {
+                printf("State: %d, %d,%d\n",state->srcId,state->sessionId,state->state);
+            }
+            
+            if (events != NULL)
+            {
+                for (int i = 0; i < events->length(); ++i)
+                {
+                    printf("Event[%d]: %d, %d,%d\n",
+                           i,
+                           (*events)[i].srcId,
+                           (*events)[i].sessionId,
+                           (*events)[i].eventCode);
+                }
+            }
+            
+            if (metrics != NULL)
+            {
+                for (int i = 0; i < metrics->length(); ++i)
+                {
+                    printf("Metrics[%d]: %d, %d,%d,%d,%d\n",
+                           i,
+                           (*metrics)[i].srcId,
+                           (*metrics)[i].sessionId,
+                           (*metrics)[i].entityCount,
+                           (*metrics)[i].bytesSent,
+                           (*metrics)[i].bytesReceived);
+                }
+            }
+        }
     }
         
 private:
     SCPMaster *sm;
     SCPMasterObject *scp;
     com::xvd::neuron::session::Control *control;
-    com::xvd::neuron::session::State *state;
-    com::xvd::neuron::session::Event *event;
-    com::xvd::neuron::session::Metrics *metrics;
+    std::set<int> slaves;
 };
 
 // The SCPMaster EventHandler
@@ -93,10 +169,10 @@ public:
     com::xvd::neuron::session::Metrics *metrics;
     SCPMaster *sm;
 
-    SCPMasterTester() : EventHandlerT<SCPMasterTester>()
+    SCPMasterTester(int appId, int domaindId) : EventHandlerT<SCPMasterTester>()
     { 
     	// Create a SCP Master, appID = 0, doman = 0, Profile = "SCP"
-    	sm = new SCPMaster(this,0,0,"SCP");
+    	sm = new SCPMaster(this,appId,domaindId,"SCP");
     
     	// Create a session with Session ID 25
     	session = new Session(sm,25);
@@ -109,6 +185,7 @@ public:
 
     void MyEventHandler(Event *e) 
     {
+#if 0
         switch (e->GetKind()) {
             case SCP_EVENT_SESSION_STATE_UPDATE:
                 state = (reinterpret_cast<SCPEventSessionStateUpdate*>(e))->GetData();
@@ -125,13 +202,51 @@ public:
             default:
                 printf("Unknown event: %d\n",e->GetKind());
         }
+#endif
     }
 	
     void run() 
 	{
+        int tryCount = 60;
+        set<int> pending;
+        set<int>::iterator it;        
+        
+        // This session uses 3 slaves, id=10,11,12
+        session->AddSlave(10);
+        session->AddSlave(11);
+        session->AddSlave(12);
+        pending.insert(10);
+        pending.insert(11);
+        pending.insert(12);
 
-    	sleep(10);
-    
+        printf("Waiting for slaves to be ready: ");
+        for (it = pending.begin(); it != pending.end(); ++it)
+        {
+            printf("%d ",*it);
+        }
+        printf("\n");
+        while (!session->SlavesAreReady(&pending) && --tryCount)
+        {            
+            sleep(1);
+            printf("Waiting for slaves to be ready: ");
+            for (it = pending.begin(); it != pending.end(); ++it)
+            {
+                printf("%d ",*it);
+                session->AddSlave(*it);
+            }
+            printf("\n");
+        }
+        
+        if (!tryCount)
+        {
+            printf("Failed to detect slaves, bailing out\n");
+            return;
+        }
+
+        session->SendCommand("create srcMANE",10);
+        session->SendCommand("create RP",11);
+        session->SendCommand("create sinkMANE",12);
+        
     	int not_done = 60;
     
     	while (not_done) {
@@ -139,24 +254,22 @@ public:
         	not_done--;
         	if (not_done == 55) 
         	{
-            		session->AddEntity("{e0,e1,e2 ....}\n");
+                session->SendCommand("reduce RP B/W",11);
         	}
         	if (not_done == 50) 
         	{
-            		session->AddEntity("{e4,e5,e6 ....}\n");
+                session->SendCommand("reduce RP B/W",11);
         	}
-        	if (not_done == 30) 
+        	if (not_done == 45) 
         	{
-            		session->RemoveEntity("{e0,e1,e2,e3 ....}\n");
+                session->SendCommand("increase RP B/W",11);
         	}
-        	if (not_done == 20) 
+        	if (not_done == 40) 
         	{
-            		session->RemoveEntity("{e5,e6 ....}\n");
+                session->SendCommand("increase RP B/W",11);
         	}
-        	if (not_done % 10) {
-            		session->ReportSessionStatus();
-       		} 
-            HandleNextEvent();
+            session->ReportSessionStatus();
+            //HandleNextEvent();                
     	}
     
     	delete session;
@@ -170,8 +283,57 @@ public:
 int 
 main(int argc, char **argv)
 {
-	SCPMasterTester tester;
-	tester.run();
+    int domainId = 67;
+    int appId = 0;
+	SCPMasterTester *tester = NULL;
+    int i;
+    
+    for (i = 0; i < argc; ++i)
+    {
+        if (!strcmp("-appId",argv[i]))
+        {
+            ++i;
+            if (i == argc)
+            {
+                printf("-appId <appId>\n");
+                break;
+            }
+            appId = strtol(argv[i],NULL,0);
+        }
+        else if (!strcmp("-domainId",argv[i]))
+        {
+            ++i;
+            if (i == argc)
+            {
+                printf("-domainId <domainId>\n");
+                break;
+            }
+            domainId = strtol(argv[i],NULL,0);
+        }
+        else if (!strcmp("-appId",argv[i]))
+        {
+            ++i;
+            if (i == argc)
+            {
+                printf("-appId <appId>\n");
+                break;
+            }
+        }
+    }        
+    
+    if (i < argc) {
+        return -1;
+    }
+    
+    tester = new SCPMasterTester(appId,domainId);
+    
+    if (tester == NULL)
+    {
+        return -1;
+    }
+    
+    tester->run();
+    
 	return 0;
 }
 

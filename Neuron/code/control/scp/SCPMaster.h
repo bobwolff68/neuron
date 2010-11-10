@@ -91,6 +91,12 @@ public:
     //! \todo. This method should not be exposed to applications            
     bool GetMasterObjectMetrics(DDS_InstanceHandle_t instance,com::xvd::neuron::session::MetricsSeq*);
 
+    DDS_InstanceHandle_t GetMasterObjectStateHandle(int dstId,int sid);
+
+    DDS_InstanceHandle_t GetMasterObjectEventHandle(int dstId,int sid);
+
+    DDS_InstanceHandle_t GetMasterObjectMetricsHandle(int dstId,int sid);
+
     //! Return the current state for a particular session
     //!
     //! \param[in] ev new event
@@ -122,6 +128,23 @@ private:
     //! \var metricsReader
     //! \brief DDS reader for metrics data
     com::xvd::neuron::session::MetricsDataReader *metricsReader;
+
+    //! \var metrics
+    //! \brief scratch to lookup instance handles
+    com::xvd::neuron::session::Metrics *metrics;
+
+    //! \var event
+    //! \brief scratch to lookup instance handles
+    com::xvd::neuron::session::Event *event;
+
+    //! \var state
+    //! \brief scratch to lookup instance handles
+    com::xvd::neuron::session::State *state;
+    
+    //! \var control
+    //! \brief scratch to lookup instance handles
+    com::xvd::neuron::session::Control *control;
+
 };
 
 template<class DataSeq, class Reader,class EventKind>

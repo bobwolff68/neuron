@@ -1,7 +1,7 @@
 //!
 //! \file CPInterface.h
 //!
-//! \brief Defintion of Control Plane (SCP) events
+//! \brief Defintion of Control Plane DDS events
 //!
 //! \author Tron Kindseth (tron@rti.com)
 //! \date Created on: Nov 1, 2010
