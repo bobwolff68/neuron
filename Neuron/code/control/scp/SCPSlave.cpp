@@ -4,54 +4,12 @@
 #include "SCPSlaveObject.h"
 #include "SCPSlave.h"
 
-class SCPSlaveReaderListener : public DDSDataReaderListener 
+SCPSlaveControlReaderListener::SCPSlaveControlReaderListener(SCPSlave *_sl,
+            com::xvd::neuron::session::ControlDataReader *reader) :CPDataReaderListener(_sl)    
 {
-public:
-    virtual void on_requested_deadline_missed(
-                        DDSDataReader* /*reader*/,
-                        const DDS_RequestedDeadlineMissedStatus& /*status*/) {}
-    
-    virtual void on_requested_incompatible_qos(
-                        DDSDataReader* /*reader*/,
-                        const DDS_RequestedIncompatibleQosStatus& /*status*/) {}
-    
-    virtual void on_sample_rejected(
-                        DDSDataReader* /*reader*/,
-                        const DDS_SampleRejectedStatus& /*status*/) {}
-    
-    virtual void on_liveliness_changed(
-                        DDSDataReader* /*reader*/,
-                        const DDS_LivelinessChangedStatus& /*status*/) {}
-    
-    virtual void on_sample_lost(
-                        DDSDataReader* /*reader*/,
-                        const DDS_SampleLostStatus& /*status*/) {}
-    
-    virtual void on_subscription_matched(
-                        DDSDataReader* /*reader*/,
-                        const DDS_SubscriptionMatchedStatus& status) 
-    {
-        new DDSEventSubscriptionMatched(&status);
-    }
-};
-
-class SCPSlaveControlReaderListener : public SCPSlaveReaderListener
-{
-    
-public:
-    SCPSlaveControlReaderListener(SCPSlave *_sl,
-                    com::xvd::neuron::session::ControlDataReader *reader)    
-    {
-        m_reader = reader;
-        sl = _sl;
-    }
-    
-    virtual void on_data_available(DDSDataReader* reader);
-    
-private:
-    com::xvd::neuron::session::ControlDataReader *m_reader;
-    SCPSlave *sl;
-};
+    m_reader = reader;
+    sl = _sl;
+}
 
 void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
 {
@@ -59,7 +17,7 @@ void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     DDS_SampleInfoSeq info_seq;
     DDS_ReturnCode_t retcode;
     int i;
-    SCPSlaveObject *foo;
+    SCPSlaveObject *slave;
     Event *ev;
     com::xvd::neuron::session::Control *control;
     
@@ -77,14 +35,15 @@ void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
         // TODO: Error logging
         return;
     }
+    
     for (i = 0; i < data_seq.length(); ++i) {
         switch (info_seq[i].view_state) {
             case DDS_NEW_VIEW_STATE:
                 if (!info_seq[i].valid_data) {
                     // TODO: Error logging
                 }   
-                foo = sl->CreateSlaveObject(data_seq[i].sessionId);
-                ev = new SCPEventNewSession(foo);
+                slave = sl->CreateSlaveObject(data_seq[i].sessionId);
+                ev = new SCPEventNewSession(slave);
                 sl->PostEvent(ev);
                 break;
             case DDS_NOT_NEW_VIEW_STATE:
@@ -96,6 +55,7 @@ void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                 }
                 break;
             default:
+                    // TODO: Error logging
                 break;
         }
 
@@ -128,6 +88,7 @@ void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                 }
                 break;
             default:
+                // TODO: Error logging
                 break;
         }
     }
@@ -173,6 +134,21 @@ com::xvd::neuron::session::MetricsTypeSupport>(domainId,_srcId,qosProfile)
     upper = q;
     
     // The Slave should enter a state of INIT when it is done
+}
+
+SCPSlave::~SCPSlave()
+{
+    SCPSlaveControlReaderListener *controlListener = NULL;
+    
+    if (m_controlReader)
+    {
+        controlListener = (SCPSlaveControlReaderListener*)m_controlReader->get_listener();
+        m_controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
+        if (controlListener != NULL)
+        {
+            delete controlListener;
+        }
+    }
 }
 
 // TODO: Allocate the session object
@@ -255,10 +231,10 @@ done:
     return s;
 }
 
-bool SCPSlave::Send(com::xvd::neuron::session::State *state)
+bool SCPSlave::Send(com::xvd::neuron::session::State *state, DDS_InstanceHandle_t ih)
 {
     DDS_ReturnCode_t retcode;
-    retcode = stateWriter->write(*state, DDS_HANDLE_NIL);
+    retcode = stateWriter->write(*state, ih);
     if (retcode != DDS_RETCODE_OK)
     {
         return false;
@@ -266,10 +242,10 @@ bool SCPSlave::Send(com::xvd::neuron::session::State *state)
     return true;
 }
 
-bool SCPSlave::Send(com::xvd::neuron::session::Event *event)
+bool SCPSlave::Send(com::xvd::neuron::session::Event *event,DDS_InstanceHandle_t ih)
 {
     DDS_ReturnCode_t retcode;
-    retcode = eventWriter->write(*event, DDS_HANDLE_NIL);
+    retcode = eventWriter->write(*event, ih);
     if (retcode != DDS_RETCODE_OK)
     {
         return false;
@@ -277,10 +253,10 @@ bool SCPSlave::Send(com::xvd::neuron::session::Event *event)
     return true;
 }
 
-bool SCPSlave::Send(com::xvd::neuron::session::Metrics *metrics)
+bool SCPSlave::Send(com::xvd::neuron::session::Metrics *metrics, DDS_InstanceHandle_t ih)
 {
     DDS_ReturnCode_t retcode;
-    retcode = metricsWriter->write(*metrics, DDS_HANDLE_NIL);
+    retcode = metricsWriter->write(*metrics, ih);
     if (retcode != DDS_RETCODE_OK)
     {
         return false;
@@ -294,33 +270,55 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     com::xvd::neuron::session::Event *event = NULL;
     com::xvd::neuron::session::Metrics *metrics = NULL;    
     DDS_ReturnCode_t retcode;
+    bool retval = false;
     
+    state = com::xvd::neuron::session::StateTypeSupport::create_data();
+    if (state == NULL)
+    {
+        //TODO: Error log
+        goto done;
+    }
+    
+    event = com::xvd::neuron::session::EventTypeSupport::create_data();
+    if (event == NULL) 
+    {
+        //TODO: Error log
+        goto done;
+    }
+    
+    metrics = com::xvd::neuron::session::MetricsTypeSupport::create_data();
+    if (metrics == NULL)
+    {
+        //TODO: Error log
+        goto done;
+    }
+
     retcode = eventWriter->get_key_value(*event,aSession->GetEventInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
-        return false;
+        goto done;
     }
     
     retcode = eventWriter->dispose(*event,aSession->GetEventInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
-        return false;
+        goto done;
     }
     
     retcode = stateWriter->get_key_value(*state,aSession->GetStateInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
-        return false;
+        goto done;
     }
     
     retcode = stateWriter->dispose(*state,aSession->GetStateInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
-        return false;
+        goto done;
     }
 
     retcode = metricsWriter->get_key_value(*metrics,
@@ -328,7 +326,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
-        return false;
+        goto done;
     }
     
     retcode = metricsWriter->dispose(*metrics,
@@ -336,11 +334,30 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
-        return false;
+        goto done;
     }
     
     delete aSession;
-    return true;
+    retval = true;
+    
+done:
+    
+    if (state != NULL)
+    {
+        com::xvd::neuron::session::StateTypeSupport::delete_data(state);
+    }
+
+    if (event != NULL)
+    {
+        com::xvd::neuron::session::EventTypeSupport::delete_data(event);
+    }
+
+    if (metrics != NULL)
+    {
+        com::xvd::neuron::session::MetricsTypeSupport::delete_data(metrics);
+    }
+    
+    return retval;
 }
 
 bool SCPSlave::PostEvent(Event *ev)

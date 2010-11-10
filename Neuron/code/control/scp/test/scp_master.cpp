@@ -67,10 +67,11 @@ public:
         com::xvd::neuron::session::State *state;
         com::xvd::neuron::session::EventSeq *events;
         com::xvd::neuron::session::MetricsSeq *metrics;
-        
+#if 0
         state = scp->GetState();
         events = scp->GetEvents();
         metrics = scp->GetMetrics();
+#endif
     }
         
 private:

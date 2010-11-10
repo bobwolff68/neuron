@@ -27,10 +27,7 @@ public:
 
 protected:
     int sessionId;
-    int srcId;
-    
-    // These objects go on the bus, depending on which Method is used.
-    com::xvd::neuron::session::Control *control;
+    int srcId;    
 };
 
 #endif

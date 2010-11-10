@@ -18,7 +18,7 @@ bool SCPSlaveObject::Send(com::xvd::neuron::session::State *state)
     state->sessionId = sessionId;
     state->srcId = srcId;
     
-    sl->Send(state);
+    sl->Send(state,stateHandle);
     
     return true;
 }
@@ -28,7 +28,7 @@ bool SCPSlaveObject::Send(com::xvd::neuron::session::Event *event)
     event->sessionId = sessionId;
     event->srcId = srcId;
     
-    sl->Send(event);
+    sl->Send(event,eventHandle);
     
     return true;
 }
@@ -38,7 +38,7 @@ bool SCPSlaveObject::Send(com::xvd::neuron::session::Metrics *metrics)
     metrics->sessionId = sessionId;
     metrics->srcId = srcId;
     
-    sl->Send(metrics);
+    sl->Send(metrics,metricsHandle);
     
     return true;
 }

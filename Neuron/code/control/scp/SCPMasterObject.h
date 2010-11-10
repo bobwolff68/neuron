@@ -29,8 +29,16 @@ public:
     //! \param[in] sm         Owner        
     //! \param[in]            srcId
     //! \param[in] instance Instance handle
-    SCPMasterObject(SCPMaster *_sm,int sfId,int _sessionId,DDS_InstanceHandle_t);
+    SCPMasterObject(SCPMaster *_sm,int sfId,int _sessionId,
+                    DDS_InstanceHandle_t,
+                    DDS_InstanceHandle_t _stateH,
+                    DDS_InstanceHandle_t _eventH,
+                    DDS_InstanceHandle_t _metricsH);
 
+    //! Deconstructor a SCPMasterObject
+    //!
+    ~SCPMasterObject();
+    
     //! Create/Update a session
     //!
     //! \param[in] sessionId   Session ID    

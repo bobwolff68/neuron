@@ -43,6 +43,10 @@ public:
     //! \param[in] qosProfile  RTI DDS QoS profile to use
     SCPMaster(EventHandler *eh,int srcId, int domainId, const char *qosProfile);
     
+    //! Desstructor for the SCPMaster object
+    //!
+    ~SCPMaster();
+    
     //! Create a new Session Object
     //!
     //! \param[in] sessionId   Session ID
@@ -58,7 +62,7 @@ public:
     //! \param[in] control control data to send on the SCP
     //!
     //! \todo. This method should not be exposed to applications
-    bool Send(com::xvd::neuron::session::Control*);
+    bool Send(com::xvd::neuron::session::Control*,DDS_InstanceHandle_t ih);
     
     //! Return the current state for a particular session
     //!
@@ -92,7 +96,7 @@ public:
     //! \param[in] ev new event
     //!
     //! \todo. This method should not be exposed to applications                
-    bool PostEvent(Event *ev);
+    virtual bool PostEvent(Event *ev);
 
 private:
     //! \var srcId
@@ -119,5 +123,105 @@ private:
     //! \brief DDS reader for metrics data
     com::xvd::neuron::session::MetricsDataReader *metricsReader;
 };
+
+template<class DataSeq, class Reader,class EventKind>
+class SCPMasterReaderListenerT : public CPDataReaderListener
+{
+public:
+    SCPMasterReaderListenerT(SCPMaster *_sm,Reader *reader) : CPDataReaderListener(_sm)
+    {
+        m_reader = reader;
+        sm = _sm;
+    }
+    
+    void on_data_available(DDSDataReader* reader)
+    {
+        DataSeq data_seq;
+        DDS_SampleInfoSeq info_seq;
+        DDS_ReturnCode_t retcode;
+        int i;
+        Event *ev;
+        
+        retcode = m_reader->read(data_seq, 
+                                 info_seq, 
+                                 DDS_LENGTH_UNLIMITED,
+                                 DDS_NOT_READ_SAMPLE_STATE, 
+                                 DDS_ANY_VIEW_STATE,
+                                 DDS_ANY_INSTANCE_STATE);
+        
+        if (retcode == DDS_RETCODE_NO_DATA) {
+            // TODO: Error logging
+            return;
+        } else if (retcode != DDS_RETCODE_OK) {
+            // TODO: Error logging
+            return;
+        }
+        
+        for (i = 0; i < data_seq.length(); ++i) {
+            switch (info_seq[i].view_state) {
+                case DDS_NEW_VIEW_STATE:
+                    if (!info_seq[i].valid_data) {
+                        // TODO: Error logging
+                    }   
+                    break;
+                case DDS_NOT_NEW_VIEW_STATE:
+                    if (!info_seq[i].valid_data) {
+                        // TODO: Error logging
+                    } else {
+                    }
+                    break;
+                default:
+                    break;
+            }
+            
+            switch (info_seq[i].instance_state) {
+                case DDS_ALIVE_INSTANCE_STATE:
+                    if (info_seq[i].valid_data) {
+                        // TODO: Error logging
+                    }
+                    break;
+                case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
+                    if (info_seq[i].valid_data) {
+                        // TODO 
+                    }
+                    break;
+                case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
+                    if (info_seq[i].valid_data) {
+                        // TODO: Error logging
+                    }
+                    break;
+                default:
+                    break;
+            }
+            
+            if (info_seq[i].valid_data) 
+            {
+                ev = new EventKind(&data_seq[i]);
+                sm->PostEvent(ev);
+            }
+        }
+        
+        retcode = m_reader->return_loan(data_seq, info_seq);
+        if (retcode != DDS_RETCODE_OK) {
+            // TODO: Error logging
+        }
+    };
+    
+private:
+    Reader *m_reader;
+    SCPMaster *sm;    
+};
+
+typedef SCPMasterReaderListenerT<com::xvd::neuron::session::StateSeq,
+com::xvd::neuron::session::StateDataReader,
+SCPEventSessionStateUpdate> SCPMasterStateReaderListener;
+
+typedef SCPMasterReaderListenerT<com::xvd::neuron::session::EventSeq,
+com::xvd::neuron::session::EventDataReader,
+SCPEventSessionEvent> SCPMasterEventReaderListener;
+
+typedef SCPMasterReaderListenerT<com::xvd::neuron::session::MetricsSeq,
+com::xvd::neuron::session::MetricsDataReader,
+SCPEventSessionMetricsUpdate> SCPMasterMetricsReaderListener;
 
 #endif

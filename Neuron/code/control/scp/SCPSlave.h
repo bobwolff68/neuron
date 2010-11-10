@@ -13,6 +13,20 @@
 #include "CPInterfaceT.h"
 #include "SCPSlaveObject.h"
 
+class SCPSlaveControlReaderListener : public CPDataReaderListener
+{
+    
+public:
+    SCPSlaveControlReaderListener(SCPSlave *_sl,
+                                  com::xvd::neuron::session::ControlDataReader *reader);
+    
+    virtual void on_data_available(DDSDataReader* reader);
+    
+private:
+    com::xvd::neuron::session::ControlDataReader *m_reader;
+    SCPSlave *sl;
+};
+
 class SCPSlave : public CPSlaveT<com::xvd::neuron::session::ControlTypeSupport,
                                  com::xvd::neuron::session::EventTypeSupport,
                                  com::xvd::neuron::session::StateTypeSupport,
@@ -21,17 +35,19 @@ class SCPSlave : public CPSlaveT<com::xvd::neuron::session::ControlTypeSupport,
 public:
     SCPSlave(EventHandler *q,int _sfId,int domainId,const char *qosProfile);
     
+    ~SCPSlave();
+    
     SCPSlaveObject* CreateSlaveObject(int sid);
 
     bool DeleteSlaveObject(SCPSlaveObject* aSession);
         
-    bool Send(com::xvd::neuron::session::State *state);
+    bool Send(com::xvd::neuron::session::State *state, DDS_InstanceHandle_t ih);
     
-    bool Send(com::xvd::neuron::session::Event *event);
+    bool Send(com::xvd::neuron::session::Event *event, DDS_InstanceHandle_t ih);
     
-    bool Send(com::xvd::neuron::session::Metrics *metrics);
+    bool Send(com::xvd::neuron::session::Metrics *metrics, DDS_InstanceHandle_t ih);
     
-    bool PostEvent(Event *ev);
+    virtual bool PostEvent(Event *ev);
     
 private:
     int srcId;
@@ -41,4 +57,5 @@ private:
     com::xvd::neuron::session::EventDataWriter *eventWriter;
     com::xvd::neuron::session::MetricsDataWriter *metricsWriter;    
 };
+
 #endif

@@ -9,20 +9,12 @@
 #ifndef CPINTERFACET_H_
 #define CPINTERFACET_H_
 
-// Empty base-class for a CP Master/Slave object
-class CPInterface 
-{
-};
-
-// Empty base-class for a CPObject
-class CPObject {
-};
-
+#include "CPInterface.h"
 
 template <typename ControlTypeSupport,
 typename EventTypeSupport,
 typename StateTypeSupport,
-typename MetricsTypeSupport> class CPInterfaceT
+typename MetricsTypeSupport> class CPInterfaceT : public CPInterface
 {
 public:
     CPInterfaceT(int domainId,const char *qosProfile = NULL) : 
@@ -318,8 +310,7 @@ typename ControlTypeSupport,
 typename EventTypeSupport,
 typename StateTypeSupport,
 typename MetricsTypeSupport>
-class CPSlaveT : public CPInterfaceT<ControlTypeSupport,EventTypeSupport,StateTypeSupport,MetricsTypeSupport> 
-{
+class CPSlaveT : public CPInterfaceT<ControlTypeSupport,EventTypeSupport,StateTypeSupport,MetricsTypeSupport> {
 public:
     CPSlaveT(int domainId,int appId, const char *qosProfile) : CPInterfaceT<ControlTypeSupport,EventTypeSupport,StateTypeSupport,MetricsTypeSupport>(domainId,qosProfile),
     m_controlReader(NULL),
@@ -441,5 +432,6 @@ protected:
     DDSDataWriter *m_eventWriter;
     DDSDataWriter *m_metricsWriter;    
 };
+
 #endif
 
