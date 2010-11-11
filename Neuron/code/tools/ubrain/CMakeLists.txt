@@ -14,6 +14,9 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
 #ADD_SUBDIRECTORY( ../../control ) # add subdir
 #ADD_SUBDIRECTORY( ../../neuroncommon ) # add subdir
 
+# Hack for survival at the moment...just find and link the library. No true dependencies yet.
+find_library(COMMON libneuroncommon.a ../../lib)
+
 INCLUDE_DIRECTORIES( ../../include ../../neuroncommon ) # add to include path
 #INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 
@@ -30,7 +33,7 @@ ADD_EXECUTABLE(
 TARGET_LINK_LIBRARIES(
    ubrain                            # to foo link
 #   controlplane                  # library bar which is in vendor/bar
-   neuroncommon
+   ${COMMON}		# neuroncommon
 )
 
 ###################
