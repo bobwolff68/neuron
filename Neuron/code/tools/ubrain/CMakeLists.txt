@@ -29,7 +29,7 @@ ADD_EXECUTABLE(
 
 TARGET_LINK_LIBRARIES(
    ubrain                            # to foo link
-   controlplane                  # library bar which is in vendor/bar
+#   controlplane                  # library bar which is in vendor/bar
    neuroncommon
 )
 

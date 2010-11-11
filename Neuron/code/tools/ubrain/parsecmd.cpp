@@ -20,7 +20,7 @@ static class options {
 	string logoutfile;
 
 
-};
+} gOpts;
 
 unsigned long router_ip;
 unsigned long domain;
