@@ -1,21 +1,20 @@
+//!
+//! \file 	eventhandler.h
+//!
+//! \brief	Definition of the Event Handler Template
+//!
+//! \author Manjesh Malavalli (mmalavalli@xvdth.com)
+//! \date  	11/01/2010
+//!
+
 #ifndef EVENTHANDLER_H_
 #define EVENTHANDLER_H_
 
 #include <queue>
 #include <map>
-
 #include <assert.h>
 #include <pthread.h>
 #include "eventhandler.h"
-
-/*#define EVENT_KIND_NEW_SESSION		0
-#define EVENT_KIND_UPDATE_SESSION	1
-#define EVENT_KIND_DELETE_SESSION	2
-#define EVENT_KIND_SESSION_INIT		3
-#define EVENT_KIND_SESSION_READY	4
-#define EVENT_KIND_SESSION_DELETE	5
-#define EVENT_KIND_SESSION_DELETED	6
-#define EVENT_KIND_FACTORY_SHUTDOWN	7*/
 
 #define	EVENTQ_SLEEP_MUS	100000
 
@@ -75,48 +74,53 @@ virtual void	EventHandleLoop (void) = 0;
 template<typename NeuronEntityType>
 void EventHandlerT<NeuronEntityType>::AddHandleFunc(EventHandleFunc pHandleFunc,int eventKind)
 {
-        //assert(EventHandleFuncList.find(eventKind)==EventHandleFuncList.end);
-        assert(pHandleFunc!=NULL);
-        EventHandleFuncList[eventKind] = pHandleFunc;
-        return;
+	if(pHandleFunc!=NULL)
+		EventHandleFuncList[eventKind] = pHandleFunc;
+	else
+		std::cout << "Can't add null event handle function" << endl;
+		
+	return;
 }
 
 template<typename NeuronEntityType>
 void EventHandlerT<NeuronEntityType>::SignalEvent(Event *pEvent)
 {
-        assert(pEvent!=NULL);
-        pthread_mutex_lock(&eqMutex);
-        EventQueue.push(pEvent);
-        pthread_mutex_unlock(&eqMutex);
-        return;
+	if(pEvent!=NULL)
+	{
+		pthread_mutex_lock(&eqMutex);
+		EventQueue.push(pEvent);
+		pthread_mutex_unlock(&eqMutex);
+	}
+	else
+		std::cout << "Can't enqueue null event" << endl;
+		
+	return;
 }
 
 template<typename NeuronEntityType>
 void EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
 {
-    Event   *pEvent=NULL;
+    Event   *pEvent = NULL;
 
-	if (EventQueue.empty())
-		return;
-
-    pthread_mutex_lock(&eqMutex);
-    pEvent = EventQueue.front();
+	if (!NoEvents())
+	{
+    	pthread_mutex_lock(&eqMutex);
+    	pEvent = EventQueue.front();
+   	    EventQueue.pop();
+   	    pthread_mutex_unlock(&eqMutex);
         
-	if (pEvent != NULL) 
-	{
-        EventQueue.pop();
-        pthread_mutex_unlock(&eqMutex);
-        if(EventHandleFuncList.find(pEvent->GetKind())!=EventHandleFuncList.end())
-		    (((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
+		if (pEvent != NULL) 
+		{
+    	    if(EventHandleFuncList.find(pEvent->GetKind())!=EventHandleFuncList.end())
+			    (((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
+			else
+				std::cout << "Handle undefined for event type " << pEvent->GetKind() << endl;
+		}
 		else
-			std::cout << "Handle undefined for event type " << pEvent->GetKind() << endl;
-	} 
-	else
-	{
-	    pthread_mutex_unlock(&eqMutex);
+			std::cout << "Can't handle null event" << endl;
 	}
 
-        return;
+	return;
 }
 
 #endif /* EVENTHANDLER_H_ */
