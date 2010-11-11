@@ -14,7 +14,6 @@
 #include <map>
 #include <assert.h>
 #include <pthread.h>
-#include "eventhandler.h"
 
 #define	EVENTQ_SLEEP_MUS	100000
 
