@@ -16,18 +16,33 @@
 #include "SCPSlave.h"
 #include "SCPEvent.h"
 #include "neuroncommon.h"
-//#include "sessionleader.h"
+#include "sessionleader.h"
 
-#define DOMAIN_ID_SCP 10
+#define DOMAIN_ID_SCP 	10
+#define NEW_SL_THREAD 	1
+#define NEW_SL_PROCESS	2
 
 typedef	long long IDType;
+
+class SessionLeaderRef
+{
+	public:
+	
+		SessionLeader	*pSL;
+		//Process ID
+		//Thread Object
+		
+		SessionLeaderRef()		{ pSL = NULL; }
+		~SessionLeaderRef()		{ }
+};
 
 class SessionSF
 {
 	private:
 		
-		SCPSlave   	   *pSCSlave;
-		SCPSlaveObject *pSCSlaveObj;
+		SCPSlave		   *pSCSlave;
+		SCPSlaveObject 	   *pSCSlaveObj;
+		SessionLeaderRef   slRef;
 		
 		com::xvd::neuron::session::Control *control;
     	com::xvd::neuron::session::State   *state;
@@ -36,10 +51,16 @@ class SessionSF
     	
     public:
     	
-    	SessionSF(SCPSlave *pSCSlaveParam,SCPSlaveObject *pSCSlaveObjParam)
+    	SessionSF(SCPSlave *pSCSlaveParam,SCPSlaveObject *pSCSlaveObjParam,int slCreateMode)
     	{
 		    pSCSlave = pSCSlaveParam;
 		    pSCSlaveObj = pSCSlaveObjParam;
+		    
+		    if(slCreateMode==NEW_SL_THREAD)
+		    {
+		    	slRef.pSL = new SessionLeader(pSCSlaveObj->GetSessionId());
+		    	(slRef.pSL)->startThread();
+		    }
 		    
 		    control = com::xvd::neuron::session::ControlTypeSupport::create_data();
 		    state = com::xvd::neuron::session::StateTypeSupport::create_data();
@@ -51,7 +72,11 @@ class SessionSF
     	
     	~SessionSF()
     	{
+			(slRef.pSL)->stopThread();
+			delete slRef.pSL;
+			
 			pSCSlave->DeleteSlaveObject(pSCSlaveObj);
+			
 		    com::xvd::neuron::session::ControlTypeSupport::delete_data(control);
 		    com::xvd::neuron::session::StateTypeSupport::delete_data(state);
 		    com::xvd::neuron::session::EventTypeSupport::delete_data(event);
@@ -61,18 +86,21 @@ class SessionSF
     	void Update(com::xvd::neuron::session::Control *control)
     	{
 		    strcpy(this->control->script,control->script);
+		    return;
     	}
     	
     	void SetStateReady(void)
     	{
     		state->state = com::xvd::neuron::OBJECT_STATE_READY;
 		    pSCSlaveObj->Send(state);
+		    return;
     	}
     	
     	void SetStateUpdate(void)
     	{
     		state->state = com::xvd::neuron::OBJECT_STATE_UPDATE;
 		    pSCSlaveObj->Send(state);    	
+		    return;
     	}
     	
     	int GetId(void)	

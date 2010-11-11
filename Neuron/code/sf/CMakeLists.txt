@@ -12,8 +12,8 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
         "Single output for all executables"
         )
 
-INCLUDE_DIRECTORIES( ../include ../neuroncommon)
-INCLUDE_DIRECTORIES(../control ../control/scp )
+INCLUDE_DIRECTORIES( ../include ../neuroncommon ../sl)
+INCLUDE_DIRECTORIES(../control ../control/scp)
 INCLUDE_DIRECTORIES(../control/idl ../control/scp/idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 
@@ -35,7 +35,7 @@ ADD_EXECUTABLE(
    sf                                          # build executable foo
    sessionfactory.cpp			# from these sources
    sf.cpp
-#   ../sl/sessionleader.cpp
+   ../sl/sessionleader.cpp
 )
 
 TARGET_LINK_LIBRARIES(

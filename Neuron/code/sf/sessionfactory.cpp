@@ -47,7 +47,7 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
 
 		try
 		{
-			pSession = new SessionSF(pSCSlave,(SCPSlaveObject *)(pNewSessEvt->GetSession()));
+			pSession = new SessionSF(pSCSlave,(SCPSlaveObject *)(pNewSessEvt->GetSession()),NEW_SL_THREAD);
 		}
 		catch(bad_alloc &baObj)
 		{
@@ -68,7 +68,7 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
 			// 4. Send ready state to brain
 			pSession->SetStateReady();
 			
-			std::cout << "New Session with ID " << pSession->GetId() << " created." << endl; 
+			std::cout << "New SessionSF with ID " << pSession->GetId() << " created." << endl; 
 		}
 	}
 	else
@@ -98,7 +98,7 @@ void SessionFactory::HandleUpdateSessionEvent(Event *pEvent)
 			pSession->Update(pUpSessEvt->GetData());
 			// 4. Send it to the appropriate session leader
 			pSession->SetStateReady();
-			std::cout << "Update to Session " << pSession->GetId() << ": " << 
+			std::cout << "Update to SessionSF " << pSession->GetId() << ": " << 
 				pUpSessEvt->GetData()->script << endl;
 		}
 	}
@@ -125,7 +125,7 @@ void SessionFactory::HandleDeleteSessionEvent(Event *pEvent)
 			pSession = SessionList[pDelSessEvt->GetSessionId()];
 			SessionList.erase(pDelSessEvt->GetSessionId());
 			delete pSession;
-			std::cout << "Session " << pDelSessEvt->GetSessionId() << " deleted." << endl;	
+			std::cout << "SessionSF " << pDelSessEvt->GetSessionId() << " deleted." << endl;	
 		}
 	}
 	else
@@ -176,5 +176,7 @@ void SessionFactory::EventHandleLoop(void)
 		
 		HandleNextEvent();
 	}
+	
+	return;
 }
 
