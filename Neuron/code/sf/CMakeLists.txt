@@ -4,6 +4,7 @@
 PROJECT(sf) # project name
 
 cmake_minimum_required(VERSION 2.4)
+find_library(PT_LIB pthread)
 
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
         ../bin
@@ -11,21 +12,42 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
         "Single output for all executables"
         )
 
-ADD_SUBDIRECTORY( ../control ) # add subdir
-ADD_SUBDIRECTORY( ../neuroncommon ) # add subdir
+INCLUDE_DIRECTORIES( ../include ../neuroncommon)
+INCLUDE_DIRECTORIES(../control ../control/scp )
+INCLUDE_DIRECTORIES(../control/idl ../control/scp/idl)
+INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 
-INCLUDE_DIRECTORIES( ../include ../neuroncommon ) # add to include path
+add_definitions(-DRTI_LINUX)
+add_definitions(-DRTI_UNIX)
+#add_definitions(-g3)
+
+find_library(COMMON libneuroncommon.a ../lib)
+find_library(CONTROL libcontrolplane.a ../lib)
+find_library(NDDSCPP libnddscppzd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSC libnddsczd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSCORE libnddscorezd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+#ADD_SUBDIRECTORY( ../control ) # add subdir
+#ADD_SUBDIRECTORY( ../neuroncommon ) # add subdir
+
+# INCLUDE_DIRECTORIES( ../cminc ) # add to include path
 
 ADD_EXECUTABLE(
    sf                                          # build executable foo
-   sf.cpp			# from these sources
-   sfactory.cpp
+   sessionfactory.cpp			# from these sources
+   sf.cpp
+#   ../sl/sessionleader.cpp
 )
 
 TARGET_LINK_LIBRARIES(
    sf                            # to foo link
-   controlplane                  # library bar which is in vendor/bar
-   neuroncommon
+   ${COMMON}                  # library bar which is in vendor/bar
+   ${CONTROL}
+   ${NDDSCPP}
+   ${NDDSC}
+   ${NDDSCORE}
+   ${PT_LIB}
+   -ldl
+   -lrt
 )
 
 ###################
