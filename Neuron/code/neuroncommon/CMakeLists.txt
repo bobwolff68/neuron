@@ -38,22 +38,24 @@ INCLUDE_DIRECTORIES( ../include ../neuroncommon )
 
 message(STATUS "cmake_system_processor is: ${CMAKE_SYSTEM_PROCESSOR}")
 
-if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+add_definitions(-m32)
+add_definitions("-arch i386")
+#if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   SET (COMPILE_FLAGS "-m32 -arch i386")
   SET (CMAKE_EXE_LINKER_FLAGS "-m32 -arch i386")
-else()
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-  SET (COMPILE_FLAGS 
-        "-m64"
-        CACHE PATH
-        "Specific for compile style")
-else()
-  SET (COMPILE_FLAGS
-        "-m32"
-        CACHE PATH
-        "Specific for compile style")
-endif()
-endif()
+#else()
+#if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+#  SET (COMPILE_FLAGS 
+#        "-m64"
+#        CACHE PATH
+#        "Specific for compile style")
+#else()
+#  SET (COMPILE_FLAGS
+#        "-m32"
+#        CACHE PATH
+#        "Specific for compile style")
+#endif()
+#endif()
 
 
 ADD_LIBRARY(neuroncommon ${SOURCES})

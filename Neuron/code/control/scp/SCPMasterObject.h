@@ -15,7 +15,7 @@ class SCPMaster;
 //!
 //! \class SCPMasterObject
 //!
-//! \brief The SCPMasterObject represents a unique session on the SCP.
+//! \brief The SCPMasterObject represents a unique scp on the SCP.
 //!
 //! Details:
 //!
@@ -29,7 +29,7 @@ public:
     //! \param[in] sm         Owner        
     //! \param[in]            srcId
     //! \param[in] instance Instance handle
-    SCPMasterObject(SCPMaster *_sm,int sfId,int _sessionId,
+    SCPMasterObject(SCPMaster *_sm,int sfId,int _scpId,
                     DDS_InstanceHandle_t,
                     DDS_InstanceHandle_t _stateH,
                     DDS_InstanceHandle_t _eventH,
@@ -39,19 +39,19 @@ public:
     //!
     ~SCPMasterObject();
     
-    //! Create/Update a session
+    //! Create/Update a scp
     //!
-    //! \param[in] sessionId   Session ID    
-    bool Send(com::xvd::neuron::session::Control *control,int);
+    //! \param[in] scpId   Session ID    
+    bool Send(com::xvd::neuron::scp::Control *control,int);
     
-    //! Get the current state of the session
-    com::xvd::neuron::session::State* GetState(int dstId);
+    //! Get the current state of the scp
+    com::xvd::neuron::scp::State* GetState(int dstId);
 
-    //! Get the current events for the session
-    com::xvd::neuron::session::EventSeq* GetEvents(int dstId);
+    //! Get the current events for the scp
+    com::xvd::neuron::scp::EventSeq* GetEvents(int dstId);
     
-    //! Get the current metrics for the session
-    com::xvd::neuron::session::MetricsSeq* GetMetrics(int dstId);
+    //! Get the current metrics for the scp
+    com::xvd::neuron::scp::MetricsSeq* GetMetrics(int dstId);
         
     //! Internal function
     DDS_InstanceHandle_t GetControlInstanceHandle();
@@ -79,15 +79,15 @@ private:
 
     //! \var state 
     //! \brief contains current state
-    com::xvd::neuron::session::State* state;
+    com::xvd::neuron::scp::State* state;
     
     //! \var event 
     //! \brief contains current events
-    com::xvd::neuron::session::EventSeq eventSeq;
+    com::xvd::neuron::scp::EventSeq eventSeq;
     
     //! \var metrics
     //! \brief contains current metrics
-    com::xvd::neuron::session::MetricsSeq metricsSeq;
+    com::xvd::neuron::scp::MetricsSeq metricsSeq;
 };
 
 #endif

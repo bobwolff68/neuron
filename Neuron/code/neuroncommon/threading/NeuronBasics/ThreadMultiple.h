@@ -29,6 +29,9 @@ using namespace std;
 //! \todo REPORT_ERROR furthermore does not allow for flexible use of variable args lists currently. To change
 //!       this would be quite helpful as well.
 //!
+#ifdef REPORT_ERROR
+#undef REPORT_ERROR
+#endif
 #define REPORT_ERROR(a,b) printf(a,b)
 //! Maximum allowed # of threads. This can be changed, but is a sane ceiling item for the moment.
 #define MAXTHREADS 20

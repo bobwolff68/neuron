@@ -101,7 +101,20 @@ void EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
 {
     Event   *pEvent = NULL;
 
-	if (!NoEvents())
+	if (EventQueue.empty())
+		return;
+
+        pthread_mutex_lock(&eqMutex);
+        pEvent = EventQueue.front();
+	if (pEvent != NULL) {
+       	    EventQueue.pop();
+            pthread_mutex_unlock(&eqMutex);
+	    if (EventHandleFuncList[pEvent->GetKind()])
+		{
+	    		(((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
+		}
+	} 
+	else
 	{
     	pthread_mutex_lock(&eqMutex);
     	pEvent = EventQueue.front();

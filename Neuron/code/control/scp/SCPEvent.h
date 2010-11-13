@@ -24,21 +24,23 @@
 
 //! \class SCPEventNewSession
 //!
-//! \brief New session detected on the SCP.
+//! \brief New scp detected on the SCP.
 //!
-//! Details: A SCPSlave attachment to the SCP detects new sessions using
+//! Details: A SCPSlave attachment to the SCP detects new scps using
 //!          DDS key life-cycle management. In case a new instance is detected
-//!          a new session created by the SCPSlave object and posted to the
+//!          a new scp created by the SCPSlave object and posted to the
 //!          upper layer protocol
 //!
 class SCPEventNewSession : public Event {
     
 public:
-    SCPEventNewSession(SCPObject *_session);
+    SCPEventNewSession(SCPObject *_scp,com::xvd::neuron::scp::Control *_data);
     SCPObject* GetSession();
-    
+    com::xvd::neuron::scp::Control *GetData();
+    ~SCPEventNewSession();
 private:
     SCPObject *session;
+    com::xvd::neuron::scp::Control *data;
 };
 
 class SCPEventDeleteSession : public Event {
@@ -55,7 +57,7 @@ private:
 //!
 //! \brief Template for Session Update, State and Metrics events
 //!
-//! Details: This template defines events for a session update (seen instance),
+//! Details: This template defines events for a scp update (seen instance),
 //!          state changes and metrics updates. Each event carries the IDL
 //!          for the event
 //!
@@ -84,33 +86,33 @@ private:
 
 //! \class SCPEventUpdateSession
 //!
-//! \brief SCP session update event. This event is generated for not new 
+//! \brief SCP scp update event. This event is generated for not new 
 //!        instances. The payload
-typedef SCPEventT<com::xvd::neuron::session::Control,
-                  com::xvd::neuron::session::ControlTypeSupport,
+typedef SCPEventT<com::xvd::neuron::scp::Control,
+                  com::xvd::neuron::scp::ControlTypeSupport,
                   SCP_EVENT_UPDATE_SESSION> SCPEventUpdateSession;
 
 //! \class SCPEventSessionStateUpdate
 //!
-//! \brief SCP session state event. This event is generated when a state
+//! \brief SCP scp state event. This event is generated when a state
 //!        udpate is detected
-typedef SCPEventT<com::xvd::neuron::session::State,
-                  com::xvd::neuron::session::StateTypeSupport,
+typedef SCPEventT<com::xvd::neuron::scp::State,
+                  com::xvd::neuron::scp::StateTypeSupport,
                   SCP_EVENT_SESSION_STATE_UPDATE> SCPEventSessionStateUpdate;
 
 //! \class SCPEventSessionEvent
 //!
-//! \brief SCP session event event. This event is generated when a new event
+//! \brief SCP scp event event. This event is generated when a new event
 //!        on a sesssion is detected
-typedef SCPEventT<com::xvd::neuron::session::Event,
-                  com::xvd::neuron::session::EventTypeSupport,
+typedef SCPEventT<com::xvd::neuron::scp::Event,
+                  com::xvd::neuron::scp::EventTypeSupport,
                   SCP_EVENT_SESSION_EVENT> SCPEventSessionEvent;
 
 //! \class SCPEventSessionMetricsUpdate
 //!
-//! \brief SCP session metrics event. This event is generated when a new metrics
+//! \brief SCP scp metrics event. This event is generated when a new metrics
 //!        on a sesssion is detected
-typedef SCPEventT<com::xvd::neuron::session::Metrics,
-                  com::xvd::neuron::session::MetricsTypeSupport,
+typedef SCPEventT<com::xvd::neuron::scp::Metrics,
+                  com::xvd::neuron::scp::MetricsTypeSupport,
                   SCP_EVENT_SESSION_METRICS_UPDATE> SCPEventSessionMetricsUpdate;
 #endif

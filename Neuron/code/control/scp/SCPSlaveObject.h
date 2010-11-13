@@ -15,15 +15,15 @@ class SCPSlave;
 class SCPSlaveObject : public SCPObject {
 public:
     
-    SCPSlaveObject(SCPSlave *_sl,int _sfId, int _sessionId,DDS_InstanceHandle_t,DDS_InstanceHandle_t,DDS_InstanceHandle_t);
+    SCPSlaveObject(SCPSlave *_sl,int _sfId, int _scpId,DDS_InstanceHandle_t,DDS_InstanceHandle_t,DDS_InstanceHandle_t);
     
     ~SCPSlaveObject();
     
-    bool Send(com::xvd::neuron::session::State *state);
+    bool Send(com::xvd::neuron::scp::State *state);
     
-    bool Send(com::xvd::neuron::session::Event *event);
+    bool Send(com::xvd::neuron::scp::Event *event);
     
-    bool Send(com::xvd::neuron::session::Metrics *metrics);
+    bool Send(com::xvd::neuron::scp::Metrics *metrics);
     
     DDS_InstanceHandle_t GetStateInstanceHandle();
 
@@ -37,6 +37,8 @@ protected:
     DDS_InstanceHandle_t stateHandle;
     DDS_InstanceHandle_t eventHandle;
     DDS_InstanceHandle_t metricsHandle;
+    
+    int epoch;
 };
 
 #endif

@@ -18,47 +18,40 @@ class SCPSlaveControlReaderListener : public CPDataReaderListener
     
 public:
     SCPSlaveControlReaderListener(SCPSlave *_sl,
-                                  com::xvd::neuron::session::ControlDataReader *reader);
+                                  com::xvd::neuron::scp::ControlDataReader *reader);
     
     virtual void on_data_available(DDSDataReader* reader);
     
 private:
-    com::xvd::neuron::session::ControlDataReader *m_reader;
+    com::xvd::neuron::scp::ControlDataReader *m_reader;
     SCPSlave *sl;
 };
 
-class SCPSlave : public CPSlaveT<com::xvd::neuron::session::ControlTypeSupport,
-                                 com::xvd::neuron::session::EventTypeSupport,
-                                 com::xvd::neuron::session::StateTypeSupport,
-                                 com::xvd::neuron::session::MetricsTypeSupport> 
+class SCPSlave : public CPSlaveT<SCPSlaveObject,
+                                 com::xvd::neuron::scp::ControlDataReader,
+                                 com::xvd::neuron::scp::StateDataWriter,
+                                 com::xvd::neuron::scp::EventDataWriter,
+                                 com::xvd::neuron::scp::MetricsDataWriter,
+                                 com::xvd::neuron::scp::State,
+                                 com::xvd::neuron::scp::Event,
+                                 com::xvd::neuron::scp::Metrics,
+                                 com::xvd::neuron::scp::ControlTypeSupport,
+                                 com::xvd::neuron::scp::EventTypeSupport,
+                                 com::xvd::neuron::scp::StateTypeSupport,
+                                 com::xvd::neuron::scp::MetricsTypeSupport> 
 {
 public:
     SCPSlave(EventHandler *q,int _sfId,int domainId,const char *qosProfile);
     
     ~SCPSlave();
     
-    SCPSlaveObject* CreateSlaveObject(int sid);
+    virtual SCPSlaveObject* CreateSlaveObject(int sid);
 
-    bool DeleteSlaveObject(SCPSlaveObject* aSession);
-        
-    bool Send(com::xvd::neuron::session::State *state, DDS_InstanceHandle_t ih);
-    
-    bool Send(com::xvd::neuron::session::Event *event, DDS_InstanceHandle_t ih);
-    
-    bool Send(com::xvd::neuron::session::Metrics *metrics, DDS_InstanceHandle_t ih);
-    
-    virtual bool PostEvent(Event *ev);
+    virtual bool DeleteSlaveObject(SCPSlaveObject* aSession);      
     
 private:
-    int srcId;
-    EventHandler *upper;
-    com::xvd::neuron::session::ControlDataReader *controlReader;
-    com::xvd::neuron::session::StateDataWriter *stateWriter;
-    com::xvd::neuron::session::EventDataWriter *eventWriter;
-    com::xvd::neuron::session::MetricsDataWriter *metricsWriter;
-    com::xvd::neuron::session::State *state;
-    com::xvd::neuron::session::Event *event;
-    com::xvd::neuron::session::Metrics *metrics;    
+    
+    SCPSlaveControlReaderListener *controlListener;
 };
 
 #endif

@@ -4,7 +4,7 @@
 #include "neuroncommon.h"
 #include "ndds_cpp.h"
 
-#define DDS_EVENT_BASE                             0x00000200
+#define DDS_EVENT_BASE                             0x80000000
 #define DDS_EVENT_REQUESTED_DEADLINE_MISSED        (DDS_EVENT_BASE+0)
 #define DDS_EVENT_LIVELINESS_CHANGED               (DDS_EVENT_BASE+1)
 #define DDS_EVENT_REQUSTED_INCOMPATIBLE_QOS        (DDS_EVENT_BASE+2)

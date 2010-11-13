@@ -19,20 +19,33 @@
 //! \brief SCP Master. This class attaches to the SCP plane as a master.
 //!
 //! Details: A SCP Master implements the following functions:
-//!          - It is allowed to manage a session through the Control interface
-//!          - It tracks the state of a session through the State, Event and
+//!          - It is allowed to manage a scp through the Control interface
+//!          - It tracks the state of a scp through the State, Event and
 //!            Metrics interface.
-//!          An application that wishes to create a new session must create it
-//!          using the CreateMasterObject. This object represents a session in
-//!          the SCP. Conversely, a session must be deleted from the SCP using 
+//!          An application that wishes to create a new scp must create it
+//!          using the CreateMasterObject. This object represents a scp in
+//!          the SCP. Conversely, a scp must be deleted from the SCP using 
 //!          the DeleteMasterObject.
 //!
 //! \todo GetMasterObjectNNN is not to be called directly.
 //!
-class SCPMaster : public CPMasterT<com::xvd::neuron::session::ControlTypeSupport,
-                                   com::xvd::neuron::session::EventTypeSupport,
-                                   com::xvd::neuron::session::StateTypeSupport,
-                                   com::xvd::neuron::session::MetricsTypeSupport> 
+class SCPMaster : public CPMasterT<
+SCPMasterObject,
+com::xvd::neuron::scp::ControlDataWriter,
+com::xvd::neuron::scp::StateDataReader,
+com::xvd::neuron::scp::EventDataReader,
+com::xvd::neuron::scp::MetricsDataReader,
+com::xvd::neuron::scp::EventSeq,
+com::xvd::neuron::scp::StateSeq,
+com::xvd::neuron::scp::MetricsSeq,
+com::xvd::neuron::scp::Metrics,
+com::xvd::neuron::scp::Event,
+com::xvd::neuron::scp::State,
+com::xvd::neuron::scp::Control,
+com::xvd::neuron::scp::ControlTypeSupport,
+com::xvd::neuron::scp::EventTypeSupport,
+com::xvd::neuron::scp::StateTypeSupport,
+com::xvd::neuron::scp::MetricsTypeSupport> 
 {
 public:
     
@@ -47,104 +60,15 @@ public:
     //!
     ~SCPMaster();
     
-    //! Create a new Session Object
-    //!
-    //! \param[in] sessionId   Session ID
-    SCPMasterObject* CreateMasterObject(int sessionId);
-
-    //! Delete a Session object created with CreateMasterObject
-    //!
-    //! \param[in] so Session object to delete
-    bool DeleteMasterObject(SCPMasterObject* so);
-
-    //! Send a control topic
-    //!
-    //! \param[in] control control data to send on the SCP
-    //!
-    //! \todo. This method should not be exposed to applications
-    bool Send(com::xvd::neuron::session::Control*,DDS_InstanceHandle_t ih);
+    virtual SCPMasterObject* CreateMasterObject(int sid);
     
-    //! Return the current state for a particular session
-    //!
-    //! \param[in] instance Session instance to retrieve state for
-    //! \param[out] state Contains state on succcessful return
-    //! \return true on success, false on failure
-    //!
-    //! \todo. This method should not be exposed to applications    
-    bool GetMasterObjectState(DDS_InstanceHandle_t instance,com::xvd::neuron::session::State*);
-
-    //! Return the current state for a particular session
-    //!
-    //! \param[in] instance Session instance to retrieve Events for
-    //! \param[out] events Contains events on succcessful return
-    //! \return true on success, false on failure
-    //!
-    //! \todo. This method should not be exposed to applications        
-    bool GetMasterObjectEvents(DDS_InstanceHandle_t instance,com::xvd::neuron::session::EventSeq*);
-
-    //! Return the current state for a particular session
-    //!
-    //! \param[in] instance Session instance to retrieve Metrics for
-    //! \param[out] metrics Contains events on succcessful return
-    //! \return true on success, false on failure
-    //!
-    //! \todo. This method should not be exposed to applications            
-    bool GetMasterObjectMetrics(DDS_InstanceHandle_t instance,com::xvd::neuron::session::MetricsSeq*);
-
-    DDS_InstanceHandle_t GetMasterObjectStateHandle(int dstId,int sid);
-
-    DDS_InstanceHandle_t GetMasterObjectEventHandle(int dstId,int sid);
-
-    DDS_InstanceHandle_t GetMasterObjectMetricsHandle(int dstId,int sid);
-
-    //! Return the current state for a particular session
-    //!
-    //! \param[in] ev new event
-    //!
-    //! \todo. This method should not be exposed to applications                
-    virtual bool PostEvent(Event *ev);
-
-private:
-    //! \var srcId
-    //! \brief Unique ID for the SCPMaster in the SCP
-    int srcId;
-
-    //! \var upper
-    //! \brief Upper-layer event handle
-    EventHandler *upper;
+    virtual bool DeleteMasterObject(SCPMasterObject* aSession);
     
-    //! \var controlWriter
-    //! \brief DDS writer for control data
-    com::xvd::neuron::session::ControlDataWriter *controlWriter;
-
-    //! \var stateReader
-    //! \brief DDS reader for state data
-    com::xvd::neuron::session::StateDataReader *stateReader;
-
-    //! \var eventReader
-    //! \brief DDS reader for event data
-    com::xvd::neuron::session::EventDataReader *eventReader;
+    virtual DDS_InstanceHandle_t GetMasterObjectStateHandle(int dstId,int sid);
     
-    //! \var metricsReader
-    //! \brief DDS reader for metrics data
-    com::xvd::neuron::session::MetricsDataReader *metricsReader;
-
-    //! \var metrics
-    //! \brief scratch to lookup instance handles
-    com::xvd::neuron::session::Metrics *metrics;
-
-    //! \var event
-    //! \brief scratch to lookup instance handles
-    com::xvd::neuron::session::Event *event;
-
-    //! \var state
-    //! \brief scratch to lookup instance handles
-    com::xvd::neuron::session::State *state;
+    virtual DDS_InstanceHandle_t GetMasterObjectEventHandle(int dstId, int sid);
     
-    //! \var control
-    //! \brief scratch to lookup instance handles
-    com::xvd::neuron::session::Control *control;
-
+    virtual DDS_InstanceHandle_t GetMasterObjectMetricsHandle(int dstId,int sid);    
 };
 
 template<class DataSeq, class Reader,class EventKind>
@@ -229,22 +153,22 @@ public:
             // TODO: Error logging
         }
     };
-    
+        
 private:
     Reader *m_reader;
     SCPMaster *sm;    
 };
 
-typedef SCPMasterReaderListenerT<com::xvd::neuron::session::StateSeq,
-com::xvd::neuron::session::StateDataReader,
+typedef SCPMasterReaderListenerT<com::xvd::neuron::scp::StateSeq,
+com::xvd::neuron::scp::StateDataReader,
 SCPEventSessionStateUpdate> SCPMasterStateReaderListener;
 
-typedef SCPMasterReaderListenerT<com::xvd::neuron::session::EventSeq,
-com::xvd::neuron::session::EventDataReader,
+typedef SCPMasterReaderListenerT<com::xvd::neuron::scp::EventSeq,
+com::xvd::neuron::scp::EventDataReader,
 SCPEventSessionEvent> SCPMasterEventReaderListener;
 
-typedef SCPMasterReaderListenerT<com::xvd::neuron::session::MetricsSeq,
-com::xvd::neuron::session::MetricsDataReader,
+typedef SCPMasterReaderListenerT<com::xvd::neuron::scp::MetricsSeq,
+com::xvd::neuron::scp::MetricsDataReader,
 SCPEventSessionMetricsUpdate> SCPMasterMetricsReaderListener;
 
 #endif

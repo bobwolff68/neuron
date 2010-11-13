@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:noNamespaceSchemaLocation="/Users/tron/RTI/Projects/DDS/BRANCH_NDDS46A/modules/ndds.4.1/scripts/../resource/rtiddsgen/../qos_profiles_4.6a/schema/rti_dds_qos_profiles.xsd"
+     version="4.4d">
+     
+    <qos_library name="NEURON">
+    
+        <qos_profile name="CP">
+                    <!-- Event profile -->
+            <datawriter_qos topic_filter="*Event*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>60</sec>
+                    </max_blocking_time>
+                </reliability>                
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+                <resource_limits>
+                    <max_samples>50</max_samples>
+                </resource_limits>
+            </datawriter_qos>
+
+            <datareader_qos topic_filter="*Event*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>                
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+            </datareader_qos>
+
+            <!-- Control profile -->
+            <datawriter_qos topic_filter="*Control*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>60</sec>
+                    </max_blocking_time>
+                </reliability>                
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+                <resource_limits>
+                    <max_samples>50</max_samples>
+                </resource_limits>
+            </datawriter_qos>
+            
+            <datareader_qos topic_filter="*Control*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>                
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+            </datareader_qos>
+
+            <!-- State profile -->
+            <datawriter_qos topic_filter="*State*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>60</sec>
+                    </max_blocking_time>
+                </reliability>                
+
+		<durability>
+			<kind> TRANSIENT_LOCAL_DURABILITY_QOS  </kind>
+		</durability>
+
+                <history>
+                    <kind>KEEP_LAST_HISTORY_QOS</kind>
+		    <depth> 1 </depth>
+                </history>
+
+                <resource_limits>
+                    <max_samples>50</max_samples>
+                </resource_limits>
+            </datawriter_qos>
+
+            <datareader_qos topic_filter="*State*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>                
+
+                <history>
+                    <kind>KEEP_LAST_HISTORY_QOS</kind>
+                    <depth> 1 </depth>
+                </history>
+
+                <durability>
+                        <kind> TRANSIENT_LOCAL_DURABILITY_QOS  </kind>
+                </durability>
+            </datareader_qos>
+
+            <!-- Metrics Profile -->
+            <datawriter_qos topic_filter="*Metrics*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>60</sec>
+                    </max_blocking_time>
+                </reliability>                
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+                <resource_limits>
+                    <max_samples>50</max_samples>
+                </resource_limits>
+            </datawriter_qos>
+
+            <datareader_qos topic_filter="*Metrics*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>                
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+            </datareader_qos>
+            
+        </qos_profile>
+    
+        <qos_profile name="SCP" base_name="CP">
+        
+        </qos_profile>
+
+        <qos_profile name="ACP" base_name="CP">
+        
+        </qos_profile>
+    
+        <qos_profile name="ECP" base_name="CP">
+        
+        </qos_profile>
+
+        <qos_profile name="LSCP" base_name="CP">
+        
+        </qos_profile>
+
+    </qos_library>
+</dds>

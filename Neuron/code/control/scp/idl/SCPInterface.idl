@@ -3,11 +3,12 @@
 module com {
     module xvd {
         module neuron {
-            module session {
+            module scp {
                 struct Control {
                     long srcId;//@key
                     long dstId;
                     long sessionId;//@key
+                    long actionId;
                     string<MAX_SCRIPT_LENGTH> script;
                 };
                 
@@ -21,6 +22,9 @@ module com {
                     long srcId;//@key
                     long sessionId;//@key
                     ObjectState state;
+                    long epoch;
+                    long lastControlSrcId;
+                    long lastControlActionId;
                 };
                 
                 struct Metrics {

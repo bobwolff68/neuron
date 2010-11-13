@@ -16,18 +16,18 @@ SCPMasterObject::SCPMasterObject(SCPMaster *_sm,
     eventHandle = _eventH;
     stateHandle = _stateH;
     
-    state = com::xvd::neuron::session::StateTypeSupport::create_data();    
+    state = com::xvd::neuron::scp::StateTypeSupport::create_data();    
 };
 
 SCPMasterObject::~SCPMasterObject()
 {
     if (state != NULL)
     {
-        com::xvd::neuron::session::StateTypeSupport::delete_data(state);
+        com::xvd::neuron::scp::StateTypeSupport::delete_data(state);
     }
 }
 
-bool SCPMasterObject::Send(com::xvd::neuron::session::Control* _c, int dstId)
+bool SCPMasterObject::Send(com::xvd::neuron::scp::Control* _c, int dstId)
 {
     _c->sessionId = sessionId;
     _c->srcId = srcId;
@@ -35,7 +35,7 @@ bool SCPMasterObject::Send(com::xvd::neuron::session::Control* _c, int dstId)
     return sm->Send(_c,controlHandle);
 }
 
-com::xvd::neuron::session::State* SCPMasterObject::GetState(int dstId)
+com::xvd::neuron::scp::State* SCPMasterObject::GetState(int dstId)
 {
     
     if (state == NULL)
@@ -52,7 +52,7 @@ com::xvd::neuron::session::State* SCPMasterObject::GetState(int dstId)
     return NULL;
 }
 
-com::xvd::neuron::session::EventSeq* SCPMasterObject::GetEvents(int dstId)
+com::xvd::neuron::scp::EventSeq* SCPMasterObject::GetEvents(int dstId)
 {
     //NOTE: Data is _not_ loaned from DDS
     this->eventSeq.length(0);
@@ -67,7 +67,7 @@ com::xvd::neuron::session::EventSeq* SCPMasterObject::GetEvents(int dstId)
     return NULL;
 }
 
-com::xvd::neuron::session::MetricsSeq* SCPMasterObject::GetMetrics(int dstId)
+com::xvd::neuron::scp::MetricsSeq* SCPMasterObject::GetMetrics(int dstId)
 {
     this->metricsSeq.length(0);
     this->metricsSeq.maximum(0);
