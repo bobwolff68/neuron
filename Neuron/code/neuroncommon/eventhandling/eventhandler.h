@@ -131,7 +131,8 @@ void EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
 		else
 			std::cout << "Can't handle null event" << endl;
 	}
-
+	
+	delete pEvent;
 	return;
 }
 
