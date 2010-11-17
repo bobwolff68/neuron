@@ -12,9 +12,9 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
         "Single output for all executables"
         )
 
-INCLUDE_DIRECTORIES( ../include ../neuroncommon ../sl)
-INCLUDE_DIRECTORIES(../control ../control/scp)
-INCLUDE_DIRECTORIES(../control/idl ../control/scp/idl)
+INCLUDE_DIRECTORIES( ../include ../neuroncommon ../sl ../control/include)
+INCLUDE_DIRECTORIES(../control ../control/scp ../control/lscp ../control/acp ../control/ecp)
+INCLUDE_DIRECTORIES(../control/idl ../control/scp/idl ../control/lscp/idl ../control/acp/idl ../control/ecp/idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 
 add_definitions(-DRTI_LINUX)
@@ -36,6 +36,7 @@ ADD_EXECUTABLE(
    sessionfactory.cpp			# from these sources
    sf.cpp
    ../sl/sessionleader.cpp
+#   ../control/CPInterface.cpp
 )
 
 TARGET_LINK_LIBRARIES(

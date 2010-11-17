@@ -71,8 +71,13 @@
                     </max_blocking_time>
                 </reliability>                
 
+		<durability>
+			<kind> TRANSIENT_LOCAL_DURABILITY_QOS  </kind>
+		</durability>
+
                 <history>
-                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                    <kind>KEEP_LAST_HISTORY_QOS</kind>
+		    <depth> 1 </depth>
                 </history>
 
                 <resource_limits>
@@ -86,8 +91,13 @@
                 </reliability>                
 
                 <history>
-                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                    <kind>KEEP_LAST_HISTORY_QOS</kind>
+                    <depth> 1 </depth>
                 </history>
+
+                <durability>
+                        <kind> TRANSIENT_LOCAL_DURABILITY_QOS  </kind>
+                </durability>
             </datareader_qos>
 
             <!-- Metrics Profile -->
@@ -123,6 +133,18 @@
         <qos_profile name="SCP" base_name="CP">
         
         </qos_profile>
+
+        <qos_profile name="ACP" base_name="CP">
+        
+        </qos_profile>
     
+        <qos_profile name="ECP" base_name="CP">
+        
+        </qos_profile>
+
+        <qos_profile name="LSCP" base_name="CP">
+        
+        </qos_profile>
+
     </qos_library>
 </dds>
