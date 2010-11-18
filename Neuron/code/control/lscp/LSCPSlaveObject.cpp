@@ -29,9 +29,7 @@ bool LSCPSlaveObject::Send(com::xvd::neuron::lscp::Event *event)
     event->sessionId = sessionId;
     event->srcId = srcId;
     
-    sl->Send(event,eventHandle);
-    
-    return true;
+    return sl->Send(event,eventHandle);
 }
 
 bool LSCPSlaveObject::Send(com::xvd::neuron::lscp::Metrics *metrics)
@@ -39,9 +37,7 @@ bool LSCPSlaveObject::Send(com::xvd::neuron::lscp::Metrics *metrics)
     metrics->sessionId = sessionId;
     metrics->srcId = srcId;
     
-    sl->Send(metrics,metricsHandle);
-    
-    return true;
+    return sl->Send(metrics,metricsHandle);
 }
 
 DDS_InstanceHandle_t LSCPSlaveObject::GetStateInstanceHandle()

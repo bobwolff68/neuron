@@ -65,10 +65,11 @@ private:
 template<class T,typename TypeSupport,int E>
 class LSCPEventT : public Event {
 public:
-    LSCPEventT(T *_d) : Event(E)
+    LSCPEventT(T *_d,DDS_SampleInfo *_i) : Event(E)
     {
         d = TypeSupport::create_data();
         TypeSupport::copy_data(d,_d);
+        info = *_i;
     }
     
     T* GetData()
@@ -76,6 +77,11 @@ public:
         return d;
     }
     
+    DDS_SampleInfo* GetSampleInfo()
+    {
+        return &info;
+    }
+
     ~LSCPEventT()
     {
         TypeSupport::delete_data(d);
@@ -83,6 +89,7 @@ public:
     
 private:
     T *d;
+    DDS_SampleInfo info;
 };
 
 //! \class LSCPEventUpdateSession

@@ -1,3 +1,11 @@
+//!
+//! \file ACPSlave.cpp
+//!
+//! \brief Defintion of ACP Slave Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
 #include "LSCPEvent.h"
@@ -30,9 +38,10 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     
     if (retcode == DDS_RETCODE_NO_DATA) {
         // TODO: Error logging
-        return;
+        ControlLogError("Failed to take ECP contorl data\n");
+        return;        
     } else if (retcode != DDS_RETCODE_OK) {
-        // TODO: Error logging
+        ControlLogError("ECP take failed with %d\n",retcode);        
         return;
     }
     
@@ -50,7 +59,7 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                 if (!info_seq[i].valid_data) {
                     // TODO: Error logging
                 } else {
-                    ev = new LSCPEventUpdateSession(&data_seq[i]);
+                    ev = new LSCPEventUpdateSession(&data_seq[i],&info_seq[i]);
                     sl->PostEvent(ev);                    
                 }
                 break;
@@ -95,11 +104,11 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     
     retcode = m_reader->return_loan(data_seq, info_seq);
     if (retcode != DDS_RETCODE_OK) {
-        // TODO: Error logging
+        ControlLogError("LSCP return_loan failed with %d\n",retcode);
     }
 };
 
-LSCPSlave::LSCPSlave(EventHandler *q,int _srcId, int domainId, const char *qosProfile) : 
+LSCPSlave::LSCPSlave(EventHandler *q,int _srcId, int domainId, const char* name,const char *qosProfile) : 
 CPSlaveT<
 LSCPSlaveObject,
 com::xvd::neuron::lscp::ControlDataReader,
@@ -112,19 +121,23 @@ com::xvd::neuron::lscp::Metrics,
 com::xvd::neuron::lscp::ControlTypeSupport,
 com::xvd::neuron::lscp::EventTypeSupport,
 com::xvd::neuron::lscp::StateTypeSupport,
-com::xvd::neuron::lscp::MetricsTypeSupport>(q,_srcId,domainId,_srcId,qosProfile)
+com::xvd::neuron::lscp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
 {
-    m_controlReader->set_listener(new LSCPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
+    controlReader->set_listener(new LSCPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
+    controlReader->enable();
+    stateWriter->enable();
+    eventWriter->enable();
+    metricsWriter->enable();    
 }
 
 LSCPSlave::~LSCPSlave()
 {
     LSCPSlaveControlReaderListener *controlListener = NULL;
     
-    if (m_controlReader)
+    if (controlReader)
     {
-        controlListener = (LSCPSlaveControlReaderListener*)m_controlReader->get_listener();
-        m_controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
+        controlListener = (LSCPSlaveControlReaderListener*)controlReader->get_listener();
+        controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
         if (controlListener != NULL)
         {
             delete controlListener;
@@ -147,7 +160,7 @@ LSCPSlaveObject* LSCPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h1)) 
     {
         //TODO: Error log
-        printf("h1 is nil\n");
+        ControlLogError("h1 is NILL\n");
         goto done;
     }
     
@@ -157,7 +170,7 @@ LSCPSlaveObject* LSCPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h2)) 
     {
         //TODO: Error log
-        printf("h2 is nil\n");
+        ControlLogError("h2 is NILL\n");
         goto done;
     }
     
@@ -167,7 +180,7 @@ LSCPSlaveObject* LSCPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h3)) 
     {
         //TODO: Error log
-        printf("h3 is nil\n");
+        ControlLogError("h3 is NILL\n");
         goto done;
     }
     
@@ -186,6 +199,7 @@ bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("eventWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -193,6 +207,7 @@ bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("eventWriter->dispose returned %d\n",retcode);
         goto done;
     }
     
@@ -200,6 +215,7 @@ bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("stateWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -207,6 +223,7 @@ bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("stateWriter->dispose returned %d\n",retcode);
         goto done;
     }
 
@@ -215,6 +232,7 @@ bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("metricsWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -223,6 +241,7 @@ bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("metricsWriter->dispose returned %d\n",retcode);
         goto done;
     }
     

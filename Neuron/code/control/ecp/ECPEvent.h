@@ -64,7 +64,7 @@ private:
 template<class T,typename TypeSupport,int E>
 class ECPEventT : public Event {
 public:
-    ECPEventT(T *_d) : Event(E)
+    ECPEventT(T *_d,DDS_SampleInfo *_i) : Event(E)
     {
         d = TypeSupport::create_data();
         TypeSupport::copy_data(d,_d);
@@ -75,6 +75,11 @@ public:
         return d;
     }
     
+    DDS_SampleInfo* GetSampleInfo()
+    {
+        return &info;
+    }
+    
     ~ECPEventT()
     {
         TypeSupport::delete_data(d);
@@ -82,6 +87,7 @@ public:
     
 private:
     T *d;
+    DDS_SampleInfo info;
 };
 
 //! \class ECPEventUpdateSession

@@ -11,7 +11,11 @@
 
 class SCPInterface 
 {
-    public:
+public:
+    
+    SCPInterface()
+    {
+    }
 };
 
 #endif

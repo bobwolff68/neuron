@@ -19,9 +19,8 @@ bool ECPSlaveObject::Send(com::xvd::neuron::ecp::State *state)
     state->sessionId = sessionId;
     state->srcId = srcId;
     state->epoch = ++epoch;
-    sl->Send(state,stateHandle);
     
-    return true;
+    return sl->Send(state,stateHandle);
 }
 
 bool ECPSlaveObject::Send(com::xvd::neuron::ecp::Event *event)
@@ -29,9 +28,7 @@ bool ECPSlaveObject::Send(com::xvd::neuron::ecp::Event *event)
     event->sessionId = sessionId;
     event->srcId = srcId;
     
-    sl->Send(event,eventHandle);
-    
-    return true;
+    return sl->Send(event,eventHandle);
 }
 
 bool ECPSlaveObject::Send(com::xvd::neuron::ecp::Metrics *metrics)
@@ -39,9 +36,7 @@ bool ECPSlaveObject::Send(com::xvd::neuron::ecp::Metrics *metrics)
     metrics->sessionId = sessionId;
     metrics->srcId = srcId;
     
-    sl->Send(metrics,metricsHandle);
-    
-    return true;
+    return sl->Send(metrics,metricsHandle);
 }
 
 DDS_InstanceHandle_t ECPSlaveObject::GetStateInstanceHandle()

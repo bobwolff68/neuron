@@ -54,7 +54,7 @@ public:
     //! \param[in] eh          Event-handler for all events received
     //! \param[in] srcId       Unique ID for the ECPMaster in the ECP
     //! \param[in] qosProfile  RTI DDS QoS profile to use
-    ECPMaster(EventHandler *eh,int srcId, int domainId, const char *qosProfile);
+    ECPMaster(EventHandler *eh,int srcId, int domainId, const char *name,const char *qosProfile);
     
     //! Desstructor for the ECPMaster object
     //!
@@ -92,9 +92,11 @@ public:
         
         if (retcode == DDS_RETCODE_NO_DATA) {
             // TODO: Error logging
+            ControlLogError("Failed to read ECP data\n");
             return;
         } else if (retcode != DDS_RETCODE_OK) {
             // TODO: Error logging
+            ControlLogError("ECP read failed with return code 5d\n",retcode);
             return;
         }
         
@@ -137,7 +139,7 @@ public:
             
             if (info_seq[i].valid_data) 
             {
-                ev = new EventKind(&data_seq[i]);
+                ev = new EventKind(&data_seq[i],&info_seq[i]);
                 sm->PostEvent(ev);
             }
         }
@@ -145,6 +147,7 @@ public:
         retcode = m_reader->return_loan(data_seq, info_seq);
         if (retcode != DDS_RETCODE_OK) {
             // TODO: Error logging
+            ControlLogError("ECP return_loan failed with return code %d\n",retcode);
         }
     };
     
@@ -152,10 +155,6 @@ private:
     Reader *m_reader;
     ECPMaster *sm;    
 };
-
-typedef ECPMasterReaderListenerT<com::xvd::neuron::ecp::StateSeq,
-com::xvd::neuron::ecp::StateDataReader,
-ECPEventSessionStateUpdate> ECPMasterStateReaderListener;
 
 typedef ECPMasterReaderListenerT<com::xvd::neuron::ecp::EventSeq,
 com::xvd::neuron::ecp::EventDataReader,

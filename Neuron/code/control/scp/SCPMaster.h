@@ -54,21 +54,45 @@ public:
     //! \param[in] eh          Event-handler for all events received
     //! \param[in] srcId       Unique ID for the SCPMaster in the SCP
     //! \param[in] qosProfile  RTI DDS QoS profile to use
-    SCPMaster(EventHandler *eh,int srcId, int domainId, const char *qosProfile);
+    SCPMaster(EventHandler *eh,int srcId, int domainId, const char *name,const char *qosProfile);
     
-    //! Desstructor for the SCPMaster object
+    //!Desstructor for the SCPMaster object
     //!
     ~SCPMaster();
     
+    //! Create a session master object
+    //! \param[in] sid  SessionID of session to create
+    //!
     virtual SCPMasterObject* CreateMasterObject(int sid);
-    
+
+    //! Delete a session master object create with CreateMasterObject
+    //! \param[in] sid  SessionID of session to create
+    //!    
     virtual bool DeleteMasterObject(SCPMasterObject* aSession);
     
+    //! Return the State instance handle for a slave
+    //! \param[in] dstId  Slave ID of session
+    //! \param[in] sid    SessionID of session
+    //!        
     virtual DDS_InstanceHandle_t GetMasterObjectStateHandle(int dstId,int sid);
-    
+
+    //! Return the Event instance handle for a slave
+    //! \param[in] dstId  Slave ID of session
+    //! \param[in] sid    SessionID of session
+    //!            
     virtual DDS_InstanceHandle_t GetMasterObjectEventHandle(int dstId, int sid);
+
+    //! Return the Metrics instance handle for a slave
+    //! \param[in] dstId  Slave ID of session
+    //! \param[in] sid    SessionID of session
+    //!                
+    virtual DDS_InstanceHandle_t GetMasterObjectMetricsHandle(int dstId,int sid);
     
-    virtual DDS_InstanceHandle_t GetMasterObjectMetricsHandle(int dstId,int sid);    
+    //! Add a peer to the SCP 
+    //! \param[in] dstId  Slave ID of session
+    //! \param[in] sid    SessionID of session
+    //!                
+    bool AddPeer(const char*);    
 };
 
 template<class DataSeq, class Reader,class EventKind>
@@ -88,7 +112,8 @@ public:
         DDS_ReturnCode_t retcode;
         int i;
         Event *ev;
-        
+
+        // NOTE: We do not track instance state for metrics/event
         retcode = m_reader->read(data_seq, 
                                  info_seq, 
                                  DDS_LENGTH_UNLIMITED,
@@ -98,52 +123,18 @@ public:
         
         if (retcode == DDS_RETCODE_NO_DATA) {
             // TODO: Error logging
+            ControlLogError("Failed to read SCP data\n");
             return;
         } else if (retcode != DDS_RETCODE_OK) {
             // TODO: Error logging
+            ControlLogError("SCP read failed with return code 5d\n",retcode);
             return;
         }
         
-        for (i = 0; i < data_seq.length(); ++i) {
-            switch (info_seq[i].view_state) {
-                case DDS_NEW_VIEW_STATE:
-                    if (!info_seq[i].valid_data) {
-                        // TODO: Error logging
-                    }   
-                    break;
-                case DDS_NOT_NEW_VIEW_STATE:
-                    if (!info_seq[i].valid_data) {
-                        // TODO: Error logging
-                    } else {
-                    }
-                    break;
-                default:
-                    break;
-            }
-            
-            switch (info_seq[i].instance_state) {
-                case DDS_ALIVE_INSTANCE_STATE:
-                    if (info_seq[i].valid_data) {
-                        // TODO: Error logging
-                    }
-                    break;
-                case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
-                    if (info_seq[i].valid_data) {
-                        // TODO 
-                    }
-                    break;
-                case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
-                    if (info_seq[i].valid_data) {
-                        // TODO: Error logging
-                    }
-                    break;
-                default:
-                    break;
-            }
-            
+        for (i = 0; i < data_seq.length(); ++i) {            
             if (info_seq[i].valid_data) 
             {
-                ev = new EventKind(&data_seq[i]);
+                ev = new EventKind(&data_seq[i],&info_seq[i]);
                 sm->PostEvent(ev);
             }
         }
@@ -151,6 +142,7 @@ public:
         retcode = m_reader->return_loan(data_seq, info_seq);
         if (retcode != DDS_RETCODE_OK) {
             // TODO: Error logging
+            ControlLogError("SCP return_loan failed with return code 5d\n",retcode);
         }
     };
         
@@ -158,10 +150,6 @@ private:
     Reader *m_reader;
     SCPMaster *sm;    
 };
-
-typedef SCPMasterReaderListenerT<com::xvd::neuron::scp::StateSeq,
-com::xvd::neuron::scp::StateDataReader,
-SCPEventSessionStateUpdate> SCPMasterStateReaderListener;
 
 typedef SCPMasterReaderListenerT<com::xvd::neuron::scp::EventSeq,
 com::xvd::neuron::scp::EventDataReader,

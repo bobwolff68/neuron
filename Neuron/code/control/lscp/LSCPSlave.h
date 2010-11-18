@@ -41,7 +41,7 @@ class LSCPSlave : public CPSlaveT<LSCPSlaveObject,
                                  com::xvd::neuron::lscp::MetricsTypeSupport> 
 {
 public:
-    LSCPSlave(EventHandler *q,int _sfId,int domainId,const char *qosProfile);
+    LSCPSlave(EventHandler *q,int _sfId,int domainId,const char *,const char *qosProfile);
     
     ~LSCPSlave();
     

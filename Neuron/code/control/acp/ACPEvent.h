@@ -19,8 +19,10 @@
 #define ACP_EVENT_UPDATE_SESSION            (ACP_EVENT_BASE+1)
 #define ACP_EVENT_DELETE_SESSION            (ACP_EVENT_BASE+2)
 #define ACP_EVENT_SESSION_STATE_UPDATE      (ACP_EVENT_BASE+3)
-#define ACP_EVENT_SESSION_EVENT             (ACP_EVENT_BASE+4)
-#define ACP_EVENT_SESSION_METRICS_UPDATE    (ACP_EVENT_BASE+5)
+#define ACP_EVENT_SESSION_STATE_LOST        (ACP_EVENT_BASE+4)
+#define ACP_EVENT_SESSION_STATE_DISPOSED    (ACP_EVENT_BASE+5)
+#define ACP_EVENT_SESSION_EVENT             (ACP_EVENT_BASE+6)
+#define ACP_EVENT_SESSION_METRICS_UPDATE    (ACP_EVENT_BASE+7)
 
 //! \class ACPEventNewSession
 //!
@@ -54,6 +56,16 @@ private:
     int sessionId;
 };
 
+class ACPEventSessionStateLost : public Event {
+public:
+    ACPEventSessionStateLost(int dstId);
+    int GetDstId();
+    ~ACPEventSessionStateLost();
+    
+private:
+    int dstId;
+};
+
 //! \class ACPEventT
 //!
 //! \brief Template for Session Update, State and Metrics events
@@ -65,15 +77,22 @@ private:
 template<class T,typename TypeSupport,int E>
 class ACPEventT : public Event {
 public:
-    ACPEventT(T *_d) : Event(E)
+    ACPEventT(T *_d,DDS_SampleInfo *_i) : Event(E)
     {
         d = TypeSupport::create_data();
         TypeSupport::copy_data(d,_d);
+        info = *_i;
+        
     }
     
     T* GetData()
     {
         return d;
+    }
+    
+    DDS_SampleInfo* GetSampleInfo()
+    {
+        return &info;
     }
     
     ~ACPEventT()
@@ -83,6 +102,7 @@ public:
     
 private:
     T *d;
+    DDS_SampleInfo info;
 };
 
 //! \class ACPEventUpdateSession

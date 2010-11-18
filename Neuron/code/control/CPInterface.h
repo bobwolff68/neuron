@@ -21,7 +21,16 @@ class CPInterface
 {
 public:
     virtual bool PostEvent(Event*) = 0;
+ 
+public:
+    
 };
+
+void ControlLogInfo(const char *logfmt,...);
+
+void ControlLogWarning(const char *logfmt,...);
+
+void ControlLogError(const char *logfmt,...);
 
 class CPDataReaderListener :  public DDSDataReaderListener
 {

@@ -1,9 +1,23 @@
+//!
+//! \file SCPSlave.cpp
+//!
+//! \brief Defintion of SCP Master Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
 #include "SCPEvent.h"
 #include "SCPSlaveObject.h"
 #include "SCPSlave.h"
 
+//! \class SCPMasterStateReaderListener
+//!
+//! \brief DDS on_data_available callback for the Slave control data-reader
+//!        This callback is handled differently because we want to track
+//!        disposal of a control
+//!
 SCPSlaveControlReaderListener::SCPSlaveControlReaderListener(SCPSlave *_sl,
             com::xvd::neuron::scp::ControlDataReader *reader) :CPDataReaderListener(_sl)    
 {
@@ -11,6 +25,10 @@ SCPSlaveControlReaderListener::SCPSlaveControlReaderListener(SCPSlave *_sl,
     sl = _sl;
 }
 
+//! \brief on_data_available
+//!
+//! \param[in] reader - Reader with available data
+//!       
 void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
 {
     com::xvd::neuron::scp::ControlSeq data_seq;
@@ -30,76 +48,64 @@ void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     
     if (retcode == DDS_RETCODE_NO_DATA) {
         // TODO: Error logging
+        ControlLogError("Failed to take SCP contorl data\n");
         return;
     } else if (retcode != DDS_RETCODE_OK) {
         // TODO: Error logging
+        ControlLogError("SCP take failed with %d\n",retcode);        
         return;
     }
     
     for (i = 0; i < data_seq.length(); ++i) {
         switch (info_seq[i].view_state) {
             case DDS_NEW_VIEW_STATE:
-                if (!info_seq[i].valid_data) {
-                    // TODO: Error logging
-                }   
                 slave = sl->CreateSlaveObject(data_seq[i].sessionId);
                 ev = new SCPEventNewSession(slave,&data_seq[i]);
                 sl->PostEvent(ev);
                 break;
             case DDS_NOT_NEW_VIEW_STATE:
-                if (!info_seq[i].valid_data) {
-                    // TODO: Error logging
-                } else {
-                    ev = new SCPEventUpdateSession(&data_seq[i]);
-                    sl->PostEvent(ev);                    
-                }
+                ev = new SCPEventUpdateSession(&data_seq[i],&info_seq[i]);
+                sl->PostEvent(ev);                    
                 break;
             default:
-                    // TODO: Error logging
+                // TODO: Error logging
+                ControlLogError("Unknown view state %d\n",info_seq[i].view_state);
                 break;
         }
 
         switch (info_seq[i].instance_state) {
             case DDS_ALIVE_INSTANCE_STATE:
-                if (info_seq[i].valid_data) {
-                    // TODO: Error logging
-                } else {
-                }
+                // This is typically only interesting if a key is disposed and 
+                // comes back
                 break;
             case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
+                // TODO: This should be handled, what if the session master goes away?
                 if (info_seq[i].valid_data) {
                     // TODO 
                 } else {
                 }
                 break;
             case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
-                if (info_seq[i].valid_data) {
-                    // TODO: Error logging
-                } else {
-                    control = com::xvd::neuron::scp::ControlTypeSupport::create_data();
-
-                    m_reader->get_key_value(*control,info_seq[i].instance_handle);
-                    
-                    ev = new SCPEventDeleteSession(control->sessionId);
-                    
-                    com::xvd::neuron::scp::ControlTypeSupport::delete_data(control);
-
-                    sl->PostEvent(ev);
-                }
+                control = com::xvd::neuron::scp::ControlTypeSupport::create_data();
+                m_reader->get_key_value(*control,info_seq[i].instance_handle);
+                ev = new SCPEventDeleteSession(control->sessionId);                
+                com::xvd::neuron::scp::ControlTypeSupport::delete_data(control);
+                sl->PostEvent(ev);
                 break;
             default:
                 // TODO: Error logging
+                ControlLogError("Unknown instance state %d\n",info_seq[i].view_state);
                 break;
         }
     }
     
     retcode = m_reader->return_loan(data_seq, info_seq);
     if (retcode != DDS_RETCODE_OK) {
-        // TODO: Error logging
+        ControlLogError("return_loan failed with %d\n",retcode);
     }
 };
 
-SCPSlave::SCPSlave(EventHandler *q,int _srcId, int domainId, const char *qosProfile) : 
+SCPSlave::SCPSlave(EventHandler *q,int _srcId, int domainId, const char *name,const char *qosProfile) : 
 CPSlaveT<
 SCPSlaveObject,
 com::xvd::neuron::scp::ControlDataReader,
@@ -112,19 +118,23 @@ com::xvd::neuron::scp::Metrics,
 com::xvd::neuron::scp::ControlTypeSupport,
 com::xvd::neuron::scp::EventTypeSupport,
 com::xvd::neuron::scp::StateTypeSupport,
-com::xvd::neuron::scp::MetricsTypeSupport>(q,_srcId,domainId,_srcId,qosProfile)
+com::xvd::neuron::scp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
 {
-    m_controlReader->set_listener(new SCPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
+    controlReader->set_listener(new SCPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
+    controlReader->enable();
+    stateWriter->enable();
+    eventWriter->enable();
+    metricsWriter->enable();
 }
 
 SCPSlave::~SCPSlave()
 {
     SCPSlaveControlReaderListener *controlListener = NULL;
     
-    if (m_controlReader)
+    if (controlReader)
     {
-        controlListener = (SCPSlaveControlReaderListener*)m_controlReader->get_listener();
-        m_controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
+        controlListener = (SCPSlaveControlReaderListener*)controlReader->get_listener();
+        controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
         if (controlListener != NULL)
         {
             delete controlListener;
@@ -132,7 +142,14 @@ SCPSlave::~SCPSlave()
     }
 }
 
-// TODO: Allocate the session object
+//!
+//! \brief Create a SCP slave object, managing _one_ session on the SCP. Note that 
+//!        no check is made if the session id already exists
+//!
+//! \param [in] sid - Session ID
+//!
+//! \return new session object on success, NULL on failure
+//!
 SCPSlaveObject* SCPSlave::CreateSlaveObject(int sid)
 {
     SCPSlaveObject *s = NULL;
@@ -147,7 +164,7 @@ SCPSlaveObject* SCPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h1)) 
     {
         //TODO: Error log
-        printf("h1 is nil\n");
+        ControlLogError("h1 is NILL\n");
         goto done;
     }
     
@@ -157,7 +174,7 @@ SCPSlaveObject* SCPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h2)) 
     {
         //TODO: Error log
-        printf("h2 is nil\n");
+        ControlLogError("h2 is NILL\n");
         goto done;
     }
     
@@ -167,7 +184,7 @@ SCPSlaveObject* SCPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h3)) 
     {
         //TODO: Error log
-        printf("h3 is nil\n");
+        ControlLogError("h3 is NILL\n");
         goto done;
     }
     
@@ -177,6 +194,13 @@ done:
     return s;
 }
 
+//!
+//! \brief Delete a SCP slave Object create with CreateMasterObject
+//!
+//! \param [in] session - Session object allocated with CreateSlaveObject
+//!
+//! \return true on success, false on faliure
+//!
 bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession) 
 {
     DDS_ReturnCode_t retcode;
@@ -186,6 +210,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("eventWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -193,6 +218,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("eventWriter->dispose returned %d\n",retcode);
         goto done;
     }
     
@@ -200,6 +226,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("stateWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -207,6 +234,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("stateWriter->dispose returned %d\n",retcode);
         goto done;
     }
 
@@ -215,6 +243,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("metricsWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -223,6 +252,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("metricsWriter->dispose returned %d\n",retcode);
         goto done;
     }
     

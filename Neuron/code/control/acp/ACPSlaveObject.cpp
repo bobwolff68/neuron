@@ -1,3 +1,11 @@
+//!
+//! \file ACPSlaveObject.cpp
+//!
+//! \brief Defintion of ACP Slave Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ACPSlaveObject.h"
 #include "ACPSlave.h"
 
@@ -18,27 +26,21 @@ bool ACPSlaveObject::Send(com::xvd::neuron::acp::State *state)
 {
     state->srcId = srcId;
     state->epoch = ++epoch;
-    sl->Send(state,stateHandle);
-    
-    return true;
+    return sl->Send(state,stateHandle);
 }
 
 bool ACPSlaveObject::Send(com::xvd::neuron::acp::Event *event)
 {
     event->srcId = srcId;
     
-    sl->Send(event,eventHandle);
-    
-    return true;
+    return sl->Send(event,eventHandle);
 }
 
 bool ACPSlaveObject::Send(com::xvd::neuron::acp::Metrics *metrics)
 {
     metrics->srcId = srcId;
     
-    sl->Send(metrics,metricsHandle);
-    
-    return true;
+    return sl->Send(metrics,metricsHandle);
 }
 
 DDS_InstanceHandle_t ACPSlaveObject::GetStateInstanceHandle()

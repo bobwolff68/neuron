@@ -1,3 +1,11 @@
+//!
+//! \file ACPSlave.cpp
+//!
+//! \brief Defintion of ECP Slave Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
 #include "ACPEvent.h"
@@ -21,7 +29,6 @@ void ACPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     Event *ev;
     com::xvd::neuron::acp::Control *control;
     
-    printf("data rx\n");
     retcode = m_reader->take(data_seq, 
                              info_seq, 
                              DDS_LENGTH_UNLIMITED,
@@ -30,10 +37,10 @@ void ACPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                              DDS_ANY_INSTANCE_STATE);
     
     if (retcode == DDS_RETCODE_NO_DATA) {
-        // TODO: Error logging
-        return;
+        ControlLogError("Failed to take ECP contorl data\n");
+        return;       
     } else if (retcode != DDS_RETCODE_OK) {
-        // TODO: Error logging
+        ControlLogError("ECP take failed with %d\n",retcode);        
         return;
     }
     
@@ -51,7 +58,7 @@ void ACPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                 if (!info_seq[i].valid_data) {
                     // TODO: Error logging
                 } else {
-                    ev = new ACPEventUpdateSession(&data_seq[i]);
+                    ev = new ACPEventUpdateSession(&data_seq[i],&info_seq[i]);
                     sl->PostEvent(ev);                    
                 }
                 break;
@@ -62,31 +69,25 @@ void ACPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
 
         switch (info_seq[i].instance_state) {
             case DDS_ALIVE_INSTANCE_STATE:
-                if (info_seq[i].valid_data) {
-                    // TODO: Error logging
-                } else {
-                }
-                break;
+                 break;
             case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
-                if (info_seq[i].valid_data) {
-                    // TODO 
-                } else {
-                }
-                break;
             case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
-                if (info_seq[i].valid_data) {
-                    // TODO: Error logging
-                } else {
-                    control = com::xvd::neuron::acp::ControlTypeSupport::create_data();
-
-                    m_reader->get_key_value(*control,info_seq[i].instance_handle);
-                    
-                    ev = new ACPEventDeleteSession(control->srcId);
-                    
-                    com::xvd::neuron::acp::ControlTypeSupport::delete_data(control);
-
-                    sl->PostEvent(ev);
+                control = com::xvd::neuron::acp::ControlTypeSupport::create_data();
+                
+                m_reader->get_key_value(*control,info_seq[i].instance_handle);
+                
+                if (info_seq[i].instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+                {
+                    ev = new ACPEventSessionStateLost(control->srcId);
                 }
+                else
+                {
+                    ev = new ACPEventDeleteSession(control->srcId);
+                }
+                
+                com::xvd::neuron::acp::ControlTypeSupport::delete_data(control);
+
+                sl->PostEvent(ev);
                 break;
             default:
                 // TODO: Error logging
@@ -96,11 +97,11 @@ void ACPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     
     retcode = m_reader->return_loan(data_seq, info_seq);
     if (retcode != DDS_RETCODE_OK) {
-        // TODO: Error logging
+        ControlLogError("LSCP return_loan failed with %d\n",retcode);
     }
 };
 
-ACPSlave::ACPSlave(EventHandler *q,int _srcId, int domainId, const char *qosProfile) : 
+ACPSlave::ACPSlave(EventHandler *q,int _srcId, int domainId, const char *name,const char *qosProfile) : 
 CPSlaveT<
 ACPSlaveObject,
 com::xvd::neuron::acp::ControlDataReader,
@@ -113,19 +114,23 @@ com::xvd::neuron::acp::Metrics,
 com::xvd::neuron::acp::ControlTypeSupport,
 com::xvd::neuron::acp::EventTypeSupport,
 com::xvd::neuron::acp::StateTypeSupport,
-com::xvd::neuron::acp::MetricsTypeSupport>(q,_srcId,domainId,_srcId,qosProfile)
+com::xvd::neuron::acp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
 {
-    m_controlReader->set_listener(new ACPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
+    controlReader->set_listener(new ACPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
+    controlReader->enable();
+    stateWriter->enable();
+    eventWriter->enable();
+    metricsWriter->enable();    
 }
 
 ACPSlave::~ACPSlave()
 {
     ACPSlaveControlReaderListener *controlListener = NULL;
     
-    if (m_controlReader)
+    if (controlReader)
     {
-        controlListener = (ACPSlaveControlReaderListener*)m_controlReader->get_listener();
-        m_controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
+        controlListener = (ACPSlaveControlReaderListener*)controlReader->get_listener();
+        controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
         if (controlListener != NULL)
         {
             delete controlListener;
@@ -146,7 +151,7 @@ ACPSlaveObject* ACPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h1)) 
     {
         //TODO: Error log
-        printf("h1 is nil\n");
+        ControlLogError("h1 is NILL\n");
         goto done;
     }
     
@@ -155,7 +160,7 @@ ACPSlaveObject* ACPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h2)) 
     {
         //TODO: Error log
-        printf("h2 is nil\n");
+        ControlLogError("h2 is NILL\n");
         goto done;
     }
     
@@ -164,7 +169,7 @@ ACPSlaveObject* ACPSlave::CreateSlaveObject(int sid)
     if (DDS_InstanceHandle_is_nil(&h3)) 
     {
         //TODO: Error log
-        printf("h3 is nil\n");
+        ControlLogError("h3 is NILL\n");
         goto done;
     }
     
@@ -183,6 +188,7 @@ bool ACPSlave::DeleteSlaveObject(ACPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("eventWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -190,6 +196,7 @@ bool ACPSlave::DeleteSlaveObject(ACPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("eventWriter->dispose returned %d\n",retcode);
         goto done;
     }
     
@@ -197,6 +204,7 @@ bool ACPSlave::DeleteSlaveObject(ACPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("stateWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -204,7 +212,8 @@ bool ACPSlave::DeleteSlaveObject(ACPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
-        goto done;
+        ControlLogError("stateWriter->dispose returned %d\n",retcode);
+        goto done;        
     }
 
     retcode = metricsWriter->get_key_value(*metrics,
@@ -212,6 +221,7 @@ bool ACPSlave::DeleteSlaveObject(ACPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("metricsWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
     
@@ -220,6 +230,7 @@ bool ACPSlave::DeleteSlaveObject(ACPSlaveObject* aSession)
     if (retcode != DDS_RETCODE_OK) 
     {
         //TODO: Error log
+        ControlLogError("metricsWriter->dispose returned %d\n",retcode);
         goto done;
     }
     

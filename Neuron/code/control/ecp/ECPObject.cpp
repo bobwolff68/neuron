@@ -1,3 +1,11 @@
+//!
+//! \file ECPObject.cpp
+//!
+//! \brief Defintion of ECP Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ndds_cpp.h"
 #include "ECPObject.h"
 #include "ECPInterface.h"

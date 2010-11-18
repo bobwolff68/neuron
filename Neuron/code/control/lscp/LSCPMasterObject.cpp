@@ -1,3 +1,11 @@
+//!
+//! \file LSCPMasterObject.cpp
+//!
+//! \brief Defintion of SCP Master Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "LSCPMasterObject.h"
 #include "LSCPMaster.h"
 
@@ -41,6 +49,7 @@ com::xvd::neuron::lscp::State* LSCPMasterObject::GetState(int dstId)
     if (state == NULL)
     {
         //TODO: Error logging
+        ControlLogError("state == NULL");
         return NULL;
     }
     stateHandle = sm->GetMasterObjectStateHandle(dstId,sessionId);

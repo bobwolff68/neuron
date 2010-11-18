@@ -1,3 +1,11 @@
+//!
+//! \file LSCPEvent.cpp
+//!
+//! \brief Implementation of LSCP Events.
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "LSCPEvent.h"
 #include "LSCPObject.h"
 

@@ -1,3 +1,16 @@
+//!
+//! \file controller.cpp
+//!
+//! \brief An example controller
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
+//! The purpose of this example is to illustrate how an Controller may function 
+//!
+//! Specifically. this code is provided "as is", without warranty, expressed
+//! or implied.
+//!
 #include <stdio.h>
 #include <stdlib.h>
 #include <readline/readline.h>
@@ -10,10 +23,10 @@
 #include <map>
 #include <list>
 
-#include "ep.cpp"
-#include "sl.cpp"
-#include "sf.cpp"
-
+//! \brief Naive function to break a string into an argv list. 
+//!
+//! Everything betweem " is considered a single argument
+//!
 void CreateArgvList(char *string,int *argc,char **argv)
 {
     char *c = string;
@@ -43,7 +56,8 @@ void CreateArgvList(char *string,int *argc,char **argv)
                 {
                     *c = 0;
                     s = 0;
-                }             
+                }    
+                break;
             case 2:
                 if (*c == '"')
                 {
@@ -61,18 +75,22 @@ class Controller
 {
     
 public:
+    
+    //! \brief Create a new Controller
     Controller(int appId, int domaindId)
     { 
         pSessionEventHandler = new ControllerEventHandler(this);
                 
-        // The Controller manages sessions
-    	pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"SCP");
+        // The Controller manages sessions, thus connect to the SCP as master
+    	pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster","SCP");
 
-        // The Controller serves as the admin master for all SFs. 
-        pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"ACP");
+        // The Controller serves as the admin master for all SFs, thus connect as master
+        pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP","ACP");
         
         m_domainId = domaindId;
         
+        // This is using RTI APIs to spawn an event handler thread. Please
+        // replace with something more appropriate
         eventThread = RTIOsapiThread_new("controlThread", 
                                          RTI_OSAPI_THREAD_PRIORITY_NORMAL, 
                                          0, 
@@ -83,6 +101,7 @@ public:
     }
     
     
+    //! \brief Destroy this Controller
     ~Controller()
     {
         pACPMaster->DeleteMasterObject(pACPMasterObject);
@@ -91,68 +110,138 @@ public:
         delete pSessionEventHandler;
     }
 
-    void RemoteSessionUpdate(com::xvd::neuron::scp::State *state)
+    //! \brief Handle events detetecd on the SCP
+    void RemoteSessionUpdate(com::xvd::neuron::scp::State *state,DDS_SampleInfo *info)
     {
         printf("State update: sf: %d, scp: %d, state=%d\n",state->srcId,state->sessionId,state->state);
     }
     
-    void RemoteSFUpdate(com::xvd::neuron::acp::State *state)
+    //! \brief Handle state updates from a SF
+    void RemoteSFUpdate(com::xvd::neuron::acp::State *state,DDS_SampleInfo *info)
     {
         RemoteSessionFactoryMap::iterator it;
         RemoteSessionFactory *rsf;
         
         it = remoteSF.find(state->srcId);
+        
         if (it == remoteSF.end())
         {
-            ACPMasterObject *pACPMasterObject;
+            // A new SF has been detected (it was either created manually or by the
+            // sf create ... command. In either case it will be added as a managed
+            // SF.
             printf("New SF detected\n");
-            pACPMasterObject = pACPMaster->CreateMasterObject(state->srcId);
-            rsf = new RemoteSessionFactory(state->srcId,pACPMasterObject);
+            rsf = new RemoteSessionFactory(state->srcId,
+                                           info->disposed_generation_count,
+                                           pACPMaster);
             remoteSF[state->srcId] = rsf;
+            if (state->state == com::xvd::neuron::OBJECT_STATE_STANDBY)
+            {
+                // This is the state we would expect if the SF is running
+                // and has not been enabled by someone else
+                rsf->enable();
+            }
+            else if (state->state == com::xvd::neuron::OBJECT_STATE_READY)
+            {
+                // This is the state we would expect if the SF is already running
+                // and has been enabled by someone else. However, if the SF is running
+                // and no-one is managing it, we ping it to make sure that it "discover"
+                // this master (we currently only support have shared ownership). If
+                // It has not discovered the master, a dispose will be ignored. In this
+                // application there is no real different between a enable and ping,
+                // but in a real application there likely is a difference
+                rsf->ping();
+            }
+            else
+            {
+                // If it is being deleted or in another state we don't
+                // want to deal with it as a valid SF
+            }
         }
         else
         {
-            printf("Update to SF detected, state = %d\n",state->state);
+            // We already know about this SF. In this case we act upon the 
+            // state change. If it has been deleted, we remove it from 
+            // our list of remote eSFs. If we initiated the delete,
+            // isShutdown() returns true, it is all good. However, if someone
+            // exited it we not this but still remove it from out list
+            // of remote SFs.
+            //
+            // TODO: In this case we need to go through all the current sessions
+            //       using using this SF and determine what to do.
+            printf("Update to SF detected, state = %d/%d\n",state->state,info->disposed_generation_count);
+            RemoteSessionFactoryMap::iterator rsfit;
+            rsfit = remoteSF.find(state->srcId);
             if (state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
             {
-                RemoteSessionFactoryMap::iterator rsfit;
-                SessionFactory *sf;
-                rsfit = remoteSF.find(state->srcId);
                 if (rsfit != remoteSF.end())
                 {
-                    //pACPMaster->DeleteMasterObject(rsfit->second->GetSCPMasterObject());
-                    //delete rsfit->second;
+                    if (!rsfit->second->isShutdown()) {
+                        printf("Unexpected delete received\n");
+                    }
+                    delete rsfit->second;
                     remoteSF.erase(state->srcId);
-                    //sf = SFList[sId]
-                    //(*argc)++;
+                    SFList.erase(state->srcId);
                 }
                 else 
                 {
+                    // If by some chance we detect the 
                     printf("SessionFactory %d does not exist\n",state->srcId);
                 }                
             }
-            
+            else if ((state->state == com::xvd::neuron::OBJECT_STATE_STANDBY) ||
+                     (state->state == com::xvd::neuron::OBJECT_STATE_READY)) 
+            {
+                if (!rsfit->second->isSame(info->disposed_generation_count))
+                {
+                    // This is the state we would expect if the SF was started 
+                    // clean again after we have discovered it or it has been been 
+                    // enabled by someone else after being restarted. We would
+                    // expect that this is a different incarnation, so we check 
+                    // for that.                    
+                    printf("A new incarnation of SF %d was expected!!\n",state->srcId);
+                } 
+                else 
+                {
+                    if (state->state == com::xvd::neuron::OBJECT_STATE_STANDBY)
+                    {
+                        rsfit->second->enable();
+                    }
+                    else
+                    {
+                        // If it already ready, just ping it in case the previous
+                        // controller was restarted. In that case we want to 
+                        // ensure the key is rediscovered
+                        rsfit->second->ping();
+                    }
+                }
+            }
+            else 
+            {
+               // Currently there is no error state, this should be added
+            }
         }
     }
     
+    //! \brief Handle help command
     void CmdHelp()
     {
-        printf("Available commands:\n\n");        
-        printf("acp ls\n");
-        printf("acp shutdown <id>\n");
-        printf("acp send <sfId>+ <script>\n");
-        printf("scp create <sessionId> <id>+ <script>\n");
-        printf("scp send <sessionId> <id>+ <script>\n");
-        printf("scp delete <sessionId>\n");
-        printf("scp ls\n");
-        printf("sf create <id>\n");
-        printf("sf delete <id>\n");
-        printf("sf ls\n");
+        printf("Interactive controller shell:\n\n");        
+        printf("acp ls                           - List detected SFs\n");
+        printf("acp shutdown <sfId>+             - Shutdown listed SFs\n");
+        printf("acp send <sfId>+ <script>        - Send script to SFs\n");
+        printf("scp create <sId> <id>+ <script>  - Create a new session\n");
+        printf("scp updatea <sId> <id>+ <script> - Update session \n");
+        printf("scp delete <sId>                 - Delete a session\n");
+        printf("scp ls                           - List known sessions\n");
+        printf("sf create <sId>                  - Spawn a new SF\n");
+        printf("sf delete <sId>                  - Delete a SF\n");
+        printf("sf ls                            - List locally created SFs\n");
         printf("\n");        
-        printf("quit\n");
+        printf("quit                             - Exit with no cleanup\n");
         printf("\n");
     }
     
+    //! \brief Handle acp <..> commands
     void CmdACP(int *argc,int max_argc,char **argv)
     {
         ++(*argc);
@@ -168,14 +257,24 @@ public:
         else if (!strcmp(argv[*argc],"shutdown"))
         {
             int sfId;
+            set<int> ids;
+            set<int>::iterator it;
             ++(*argc);
             if (*argc == max_argc)
             {
-                printf("usage: acp shutdown <id>\n");
+                printf("usage: acp shutdown <id>+\n");
                 return;
             }
-            sfId = strtol(argv[*argc],NULL,0);
-            ShutdownRemoteSF(sfId);
+            while (*argc < max_argc)
+            {
+                sfId = strtol(argv[*argc],NULL,0);
+                ids.insert(sfId);
+                (*argc)++;
+            }
+            for (it = ids.begin(); it != ids.end(); ++it)
+            {
+                ShutdownRemoteSF(*it);
+            }
         }                                
         else if (!strcmp(argv[*argc],"send"))
         {
@@ -183,7 +282,6 @@ public:
             set<int> ids;
             set<int>::iterator it;
             RemoteSessionFactoryMap::iterator rsfit;
-            
             ++(*argc);
             if (*argc == max_argc)
             {
@@ -218,6 +316,7 @@ public:
         }        
     }
     
+    //! \brief Handle scp <..> commands
     void CmdSCP(int *argc,int max_argc,char **argv)
     {
         ++(*argc);
@@ -236,7 +335,7 @@ public:
             ++(*argc);
             if (*argc == max_argc)
             {
-                printf("usage: scp [create | update] <sessionId>+ <cmd>\n");
+                printf("usage: scp [create | update] <sessionId>+ <script>\n");
                 return;
             }
             sId = strtol(argv[*argc],NULL,0);
@@ -282,10 +381,11 @@ public:
 
     }
     
+    //! \brief Handle sf <..> commands
     void CmdSF(int *argc,int max_argc,char **argv)
     {
         int sId;
-        SessionFactory *aSF;
+        //SessionFactory *aSF;
         
         ++(*argc);
         if (*argc == max_argc)
@@ -303,10 +403,26 @@ public:
             }
             while (*argc < max_argc)
             {
+                pid_t pid;
                 sId = strtol(argv[*argc],NULL,0);
-                aSF = new SessionFactory(sId,m_domainId);
-                SFList[sId] = aSF;                        
-                (*argc)++;
+                char did[10];
+                sprintf(did,"%d",m_domainId);
+                pid = fork();
+                if (pid != 0)   
+                {
+                    printf("Created SF: %d/%d\n",sId,pid);
+                    SFList[sId] = pid;                        
+                    (*argc)++;
+                } 
+                else
+                {
+                     execl("bin/sf",
+                           "bin/sf",
+                           "-appId",
+                           argv[*argc],
+                           "-domainId",
+                           did,(char *)0);
+                }
             }            
         }
         else if (!strcmp(argv[*argc],"ls"))
@@ -315,7 +431,7 @@ public:
         }
         else if (!strcmp(argv[*argc],"delete"))
         {
-            std::map<int,SessionFactory*>::iterator it;
+            std::map<int,pid_t>::iterator it;
             ++(*argc);
             if (*argc == max_argc)
             {
@@ -324,11 +440,12 @@ public:
             }                        
             sId = strtol(argv[*argc],NULL,0);
             it = SFList.find(sId);
-            delete it->second;
+            //delete it->second;
             SFList.erase(sId);
         }                    
     }
     
+    //! \brief List detected SFs
     void ListRemoteSF()
     {
         RemoteSessionFactoryMap::iterator it;
@@ -342,52 +459,33 @@ public:
         printf("\n");
     }
 
+    //! \brief List locally created SFs
     void ListSF()
     {
-        map<int,SessionFactory*>::iterator it;
+        map<int,pid_t>::iterator it;
         
         printf("\nLocal SessionFactories\n");
         printf("======================\n");
         for (it = SFList.begin(); it != SFList.end(); ++it)
         {
-            it->second->PrintInfo();
+            printf("SF %d/%d\n",it->first,it->second);
+            //it->second->PrintInfo();
         }
         printf("\n");
     }
 
-    void ListSL()
-    {
-        map<int,SessionLeader*>::iterator it;
-        
-        printf("SessionLeaders:\n");
-        for (it = SL.begin(); it != SL.end(); ++it)
-        {
-            it->second->PrintInfo();
-        }        
-    }
-    
-    void ListMANE()
-    {
-        std::map<int,MANE*>::iterator it;
-        
-        printf("MANE's:\n");
-        for (it = MANEList.begin(); it != MANEList.end(); ++it)
-        {
-            it->second->PrintInfo();
-        }        
-    }
-    
+    //! \brief Shutdown a detected SF.
+    //! 
+    //! Under the hood, this function disposed of the MasterObject
     void ShutdownRemoteSF(int sfId)
     {
-        printf("Shutting down SessionFactory %d ....\n",sfId);
         RemoteSessionFactoryMap::iterator rsfit;
         
         rsfit = remoteSF.find(sfId);
         if (rsfit != remoteSF.end())
         {
-            pACPMaster->DeleteMasterObject(rsfit->second->GetSCPMasterObject());
-            //delete rsfit->second;
-            //remoteSF.erase(sfId);
+            printf("Shutting down SessionFactory %d ....\n",sfId);
+            rsfit->second->Shutdown();
         }
         else 
         {
@@ -395,6 +493,7 @@ public:
         }
     }
     
+    //! \brief Create of update a session
     void CreateOrUpdateSession(int sessionId, set<int> *_sfs,const char *script,bool update)
     {
         set<int>::iterator it;
@@ -403,7 +502,7 @@ public:
         Session *session;
         
         sit = sessions.find(sessionId);
-        if (sit != sessions.end())
+        if ((sit != sessions.end()) && !update)
         {
             printf("Session %d already exists\n",sessionId);
             return;
@@ -412,12 +511,14 @@ public:
         if (!update)
         {
             printf("Create session %d using SF ",sessionId);
+            session = new Session(pSCPMaster,sessionId);
+            sessions[sessionId] = session;
         }
         else 
         {
+            session = sit->second;
             printf("Update session %d using SF ",sessionId);
         }
-        session = new Session(pSCPMaster,sessionId);
         for (it = _sfs->begin(); it != _sfs->end(); ++it)
         {
             rsfit = remoteSF.find(*it);
@@ -431,8 +532,17 @@ public:
                 printf("ERROR: SF %d is not available\n",rsfit->first);
                 return;
             }
-            session->AddSlave(*it);
-            printf("%d ",*it);
+            if (!update)
+            {
+                session->AddSlave(*it,script);
+            } 
+            else
+            {
+                if (!session->UpdateSF(*it,script))
+                {
+                    printf("ERROR: Failed to update SF %d\n",*it);
+                }
+            }
         }
         if (script != NULL)
         {
@@ -442,9 +552,9 @@ public:
         {
             printf("\n");
         }
-        sessions[sessionId] = session;
     }
     
+    //! \brief List active sessions
     void ListSession()
     {
         SessionMap::iterator it;
@@ -459,6 +569,7 @@ public:
         printf("\n");
     }
     
+    //! \brief Delete a session
     void DeleteSession(int sId)
     {
         SessionMap::iterator it;
@@ -530,6 +641,13 @@ public:
         
 private:
 
+    //! \class RemoteSessionFactory
+    //!
+    //! \brief Manage sessions
+    //!
+    //! This class represents a session from a controllers point of view
+    //! Each session object creates a SCPMasterObject that manages one
+    //! session. Note that a MasterObect can send to multiple SF.
     class Session 
     {
     public:
@@ -563,16 +681,41 @@ private:
             com::xvd::neuron::scp::ControlTypeSupport::delete_data(control);
         }
         
-        // Add a slave to the session. When a slave is added, we send an empty
-        // command (create) to trigger a state update from the slave
-        void AddSlave(int slaveId)
+        // Add a slave to the session
+        void AddSlave(int slaveId,const char *script)
         {
             sfs.insert(slaveId);
-            sprintf(control->script,"create session %d",scp->GetSessionId());
+            if (script != NULL) 
+            {
+                sprintf(control->script,"%s",script);
+            } 
+            else 
+            {
+                sprintf(control->script,"end");
+            }
             if (!scp->Send(control,slaveId))
             {
                 printf("failed to send create command to slave %d\n",slaveId);
             }
+        }
+
+        // Limitation: Can only send to a subset of the SFs the session was created with
+        bool UpdateSF(int slaveId,const char *script)
+        {
+            std::set<int>::iterator it;
+            
+            it = sfs.find(slaveId);
+            if (it == sfs.end())
+            {
+                return false;
+            }
+            sprintf(control->script,"%s",script);
+            if (!scp->Send(control,slaveId))
+            {
+                printf("failed to update SF %d\n",slaveId);
+                return false;
+            }
+            return true;
         }
         
         void RemoveSlave(int slaveId)
@@ -683,21 +826,40 @@ private:
         std::set<int> sfs;
     };
     
+    //! \class RemoteSessionFactory
+    //!
+    //! \brief Manage remote session factories
+    //!
+    //! This class represents the controllers view of the state of 
+    //! SFs. A session factory is managed via the ACP control
+    //! plane. Each RemoteSessionFactory entity create a ACPMasterObject, and
+    //! this object is used to manage exactly one SF. This class must handle
+    //! cases where an SF may already exist (created manually) or forked by
+    //! the controller. It must also handle the case where the controller
+    //! itself is restarted. Note the very little information is kept in this
+    //! object, all the state is accessed via the MasterObject, and the
+    //! state itself is stored in DDS.
+    //!
     class RemoteSessionFactory
     {
     public:
-        RemoteSessionFactory(int appId,ACPMasterObject *p)
+        RemoteSessionFactory(int appId,DDS_Long _rank,ACPMaster *_pACPMaster)
         {
             m_appId = appId;
-            pACPMasterObject = p;
             control = com::xvd::neuron::acp::ControlTypeSupport::create_data();
-            // As soon as we detect a new SF, start it
-            sprintf(control->script,"start");
-            pACPMasterObject->Send(control,appId);
+            pACPMaster = _pACPMaster;
+            pACPMasterObject = pACPMaster->CreateMasterObject(appId);
+            shutDown = false;
+            localState = INIT;
+            rank = _rank;
         }
         
         ~RemoteSessionFactory()
         {
+            if (pACPMasterObject != NULL)
+            {
+                pACPMaster->DeleteMasterObject(pACPMasterObject);
+            }
             com::xvd::neuron::acp::ControlTypeSupport::delete_data(control);
         }
         
@@ -765,7 +927,7 @@ private:
             return true;
         }
         
-        ACPMasterObject *GetSCPMasterObject()
+        ACPMasterObject *GetACPMasterObject()
         {
             return pACPMasterObject;
         }
@@ -776,14 +938,54 @@ private:
             pACPMasterObject->Send(control,m_appId);
         }
         
-    private:
-        int m_appId;
+        void Shutdown()
+        {
+            pACPMaster->DeleteMasterObject(pACPMasterObject);
+            pACPMasterObject = NULL;
+            shutDown = true;
+        }
+
+        bool isShutdown()
+        {
+            return shutDown;
+        }
         
+        void enable()
+        {
+            sprintf(control->script,"start");
+            pACPMasterObject->Send(control,m_appId);
+        }
+
+        void ping()
+        {
+            sprintf(control->script,"ping");
+            pACPMasterObject->Send(control,m_appId);
+        }
+        
+        bool isSame(DDS_Long _rank)
+        {
+            return _rank == rank;
+        }
+        
+    private:
+        enum {
+            INIT,
+            DETECTED,            
+            READY
+        } localState;
+        
+        int m_appId;
+        bool shutDown;
         ACPMasterObject *pACPMasterObject;
+        ACPMaster *pACPMaster;
         com::xvd::neuron::acp::Control *control;
+        DDS_Long rank;
     };
     
-
+    //! \class ControllerEventHandler
+    //!
+    //! \brief Handle ACP and SCP Events
+    //!    
     class ControllerEventHandler : public EventHandlerT<ControllerEventHandler>
     {
     public:
@@ -811,7 +1013,7 @@ private:
             switch (e->GetKind()) {
                 case SCP_EVENT_SESSION_STATE_UPDATE:
                     state = (reinterpret_cast<SCPEventSessionStateUpdate*>(e))->GetData();
-                    controller->RemoteSessionUpdate(state);
+                    controller->RemoteSessionUpdate(state,(reinterpret_cast<SCPEventSessionStateUpdate*>(e))->GetSampleInfo());
                     break;
                 case SCP_EVENT_SESSION_METRICS_UPDATE:
                     metrics = (reinterpret_cast<SCPEventSessionMetricsUpdate*>(e))->GetData();
@@ -823,13 +1025,11 @@ private:
                     break;
                 case ACP_EVENT_SESSION_STATE_UPDATE:
                     pACstate = (reinterpret_cast<ACPEventSessionStateUpdate*>(e))->GetData();
-                    controller->RemoteSFUpdate(pACstate);
+                    controller->RemoteSFUpdate(pACstate,(reinterpret_cast<ACPEventSessionStateUpdate*>(e))->GetSampleInfo());
                     break;
                 case ACP_EVENT_SESSION_METRICS_UPDATE:
-                    printf("Received ACP metrics update\n");
                     break;
                 case ACP_EVENT_SESSION_EVENT:
-                    printf("Received ACP event update\n");
                     break;                    
                 default:
                     printf("Unknown event: %d\n",e->GetKind());
@@ -840,7 +1040,11 @@ private:
         {
         }    
     };
-
+    
+    //! \class ControllerEventHandler
+    //!
+    //! \brief Main eventloop
+    //!   
     static void* eventLoop(void *param)
     {
         ControllerEventHandler *ev = (ControllerEventHandler*)param;
@@ -857,16 +1061,8 @@ private:
 
     //! \var pSCPMaster 
     //! \brief Attachment to the SCP plane
-    std::map<int,class SessionFactory*> SFList;
-    
-    //! \var pSCPMaster 
-    //! \brief Attachment to the SCP plane
-    std::map<int,SessionLeader*> SL;
-    
-    //! \var pSCPMaster 
-    //! \brief Attachment to the SCP plane
-    std::map<int,MANE*> MANEList;
-    
+    std::map<int,pid_t> SFList;
+        
     //! \var pSCPMaster 
     //! \brief Attachment to the SCP plane
     SCPMaster *pSCPMaster;
@@ -895,6 +1091,7 @@ private:
     RTIOsapiThread *eventThread;
 };
 
+//! \brief Main entry point
 int 
 main(int argc, char **argv)
 {

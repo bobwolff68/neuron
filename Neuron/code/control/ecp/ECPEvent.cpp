@@ -1,3 +1,11 @@
+//!
+//! \file ECPEvent.cpp
+//!
+//! \brief Defintion of SCP Master Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ECPEvent.h"
 #include "ECPObject.h"
 

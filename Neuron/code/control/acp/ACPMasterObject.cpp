@@ -1,3 +1,11 @@
+//!
+//! \file ACPMasterObject.cpp
+//!
+//! \brief Defintion of ACP Master Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ACPMasterObject.h"
 #include "ACPMaster.h"
 
@@ -40,6 +48,7 @@ com::xvd::neuron::acp::State* ACPMasterObject::GetState(int dstId)
     if (state == NULL)
     {
         //TODO: Error logging
+        ControlLogError("state == NULL");
         return NULL;
     }
     stateHandle = sm->GetMasterObjectStateHandle(dstId,sessionId);

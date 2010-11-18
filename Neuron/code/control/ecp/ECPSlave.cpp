@@ -1,3 +1,11 @@
+//!
+//! \file ECPSlave.cpp
+//!
+//! \brief Defintion of ECP Slave Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
 #include "ECPEvent.h"
@@ -30,9 +38,10 @@ void ECPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     
     if (retcode == DDS_RETCODE_NO_DATA) {
         // TODO: Error logging
+        ControlLogError("Failed to take ECP contorl data\n");
         return;
     } else if (retcode != DDS_RETCODE_OK) {
-        // TODO: Error logging
+        ControlLogError("ECP take failed with %d\n",retcode);        
         return;
     }
     
@@ -50,7 +59,7 @@ void ECPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                 if (!info_seq[i].valid_data) {
                     // TODO: Error logging
                 } else {
-                    ev = new ECPEventUpdateSession(&data_seq[i]);
+                    ev = new ECPEventUpdateSession(&data_seq[i],&info_seq[i]);
                     sl->PostEvent(ev);                    
                 }
                 break;
@@ -95,11 +104,11 @@ void ECPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     
     retcode = m_reader->return_loan(data_seq, info_seq);
     if (retcode != DDS_RETCODE_OK) {
-        // TODO: Error logging
+        ControlLogError("ECP return_loan failed with %d\n",retcode);
     }
 };
 
-ECPSlave::ECPSlave(EventHandler *q,int _srcId, int domainId, const char *qosProfile) : 
+ECPSlave::ECPSlave(EventHandler *q,int _srcId, int domainId, const char*name,const char *qosProfile) : 
 CPSlaveT<
 ECPSlaveObject,
 com::xvd::neuron::ecp::ControlDataReader,
@@ -112,19 +121,23 @@ com::xvd::neuron::ecp::Metrics,
 com::xvd::neuron::ecp::ControlTypeSupport,
 com::xvd::neuron::ecp::EventTypeSupport,
 com::xvd::neuron::ecp::StateTypeSupport,
-com::xvd::neuron::ecp::MetricsTypeSupport>(q,_srcId,domainId,_srcId,qosProfile)
+com::xvd::neuron::ecp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
 {
-    m_controlReader->set_listener(new ECPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
+    controlReader->set_listener(new ECPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
+    controlReader->enable();
+    stateWriter->enable();
+    eventWriter->enable();
+    metricsWriter->enable();
 }
 
 ECPSlave::~ECPSlave()
 {
     ECPSlaveControlReaderListener *controlListener = NULL;
     
-    if (m_controlReader)
+    if (controlReader)
     {
-        controlListener = (ECPSlaveControlReaderListener*)m_controlReader->get_listener();
-        m_controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
+        controlListener = (ECPSlaveControlReaderListener*)controlReader->get_listener();
+        controlReader->set_listener(NULL,DDS_STATUS_MASK_NONE);
         if (controlListener != NULL)
         {
             delete controlListener;

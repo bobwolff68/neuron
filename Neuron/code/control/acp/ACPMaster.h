@@ -54,7 +54,7 @@ public:
     //! \param[in] eh          Event-handler for all events received
     //! \param[in] srcId       Unique ID for the ACPMaster in the ACP
     //! \param[in] qosProfile  RTI DDS QoS profile to use
-    ACPMaster(EventHandler *eh,int srcId, int domainId, const char *qosProfile);
+    ACPMaster(EventHandler *eh,int srcId, int domainId, const char*name,const char *qosProfile);
     
     //! Desstructor for the ACPMaster object
     //!
@@ -91,10 +91,10 @@ public:
                                  DDS_ANY_INSTANCE_STATE);
         
         if (retcode == DDS_RETCODE_NO_DATA) {
-            // TODO: Error logging
+            ControlLogError("Failed to read ACP data\n");
             return;
         } else if (retcode != DDS_RETCODE_OK) {
-            // TODO: Error logging
+            ControlLogError("ACP read failed with return code 5d\n",retcode);
             return;
         }
         
@@ -137,7 +137,7 @@ public:
             
             if (info_seq[i].valid_data) 
             {
-                ev = new EventKind(&data_seq[i]);
+                ev = new EventKind(&data_seq[i],&info_seq[i]);
                 sm->PostEvent(ev);
             }
         }
@@ -145,6 +145,7 @@ public:
         retcode = m_reader->return_loan(data_seq, info_seq);
         if (retcode != DDS_RETCODE_OK) {
             // TODO: Error logging
+            ControlLogError("ACP return_loan failed with return code %d\n",retcode);
         }
     };
     
@@ -152,10 +153,6 @@ private:
     Reader *m_reader;
     ACPMaster *sm;    
 };
-
-typedef ACPMasterReaderListenerT<com::xvd::neuron::acp::StateSeq,
-com::xvd::neuron::acp::StateDataReader,
-ACPEventSessionStateUpdate> ACPMasterStateReaderListener;
 
 typedef ACPMasterReaderListenerT<com::xvd::neuron::acp::EventSeq,
 com::xvd::neuron::acp::EventDataReader,

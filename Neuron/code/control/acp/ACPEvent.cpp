@@ -1,3 +1,11 @@
+//!
+//! \file ACPEvent.cpp
+//!
+//! \brief Implementation of ACP Events.
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ACPEvent.h"
 #include "ACPObject.h"
 
@@ -34,3 +42,18 @@ int ACPEventDeleteSession::GetSessionId()
 {
     return sessionId;
 }
+
+//! \brief State disposed event
+//!
+ACPEventSessionStateLost::ACPEventSessionStateLost(int _dstId) : Event(ACP_EVENT_SESSION_STATE_UPDATE)
+{
+    dstId = _dstId;
+}
+
+//! \brief Get instance if state disposed event
+//!
+int ACPEventSessionStateLost::GetDstId()
+{
+    return dstId;
+}
+

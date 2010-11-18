@@ -54,7 +54,7 @@ public:
     //! \param[in] eh          Event-handler for all events received
     //! \param[in] srcId       Unique ID for the LSCPMaster in the LSCP
     //! \param[in] qosProfile  RTI DDS QoS profile to use
-    LSCPMaster(EventHandler *eh,int srcId, int domainId, const char *qosProfile);
+    LSCPMaster(EventHandler *eh,int srcId, int domainId, const char*, const char *qosProfile);
     
     //! Desstructor for the LSCPMaster object
     //!
@@ -92,9 +92,11 @@ public:
         
         if (retcode == DDS_RETCODE_NO_DATA) {
             // TODO: Error logging
+            ControlLogError("Failed to read LSCP data\n");
             return;
         } else if (retcode != DDS_RETCODE_OK) {
             // TODO: Error logging
+            ControlLogError("LSCP read failed with return code 5d\n",retcode);
             return;
         }
         
@@ -137,14 +139,16 @@ public:
             
             if (info_seq[i].valid_data) 
             {
-                ev = new EventKind(&data_seq[i]);
+                ev = new EventKind(&data_seq[i],&info_seq[i]);
                 sm->PostEvent(ev);
             }
         }
         
         retcode = m_reader->return_loan(data_seq, info_seq);
-        if (retcode != DDS_RETCODE_OK) {
+        if (retcode != DDS_RETCODE_OK) 
+        {
             // TODO: Error logging
+            ControlLogError("ECP return_loan failed with return code %d\n",retcode);
         }
     };
     
@@ -152,10 +156,6 @@ private:
     Reader *m_reader;
     LSCPMaster *sm;    
 };
-
-typedef LSCPMasterReaderListenerT<com::xvd::neuron::lscp::StateSeq,
-com::xvd::neuron::lscp::StateDataReader,
-LSCPEventSessionStateUpdate> LSCPMasterStateReaderListener;
 
 typedef LSCPMasterReaderListenerT<com::xvd::neuron::lscp::EventSeq,
 com::xvd::neuron::lscp::EventDataReader,

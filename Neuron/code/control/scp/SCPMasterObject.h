@@ -24,36 +24,40 @@ class SCPMaster;
 class SCPMasterObject : public SCPObject {
 public:
     
-    //! Constructor a SCPMasterObject
+    //! \brief Constructor a SCPMasterObject
     //!
-    //! \param[in] sm         Owner        
-    //! \param[in]            srcId
-    //! \param[in] instance Instance handle
+    //! \param[in] sm       - Owner        
+    //! \param[in]          - srcId
+    //! \param[in] instance - Instance handle
     SCPMasterObject(SCPMaster *_sm,int sfId,int _scpId,
                     DDS_InstanceHandle_t,
                     DDS_InstanceHandle_t _stateH,
                     DDS_InstanceHandle_t _eventH,
                     DDS_InstanceHandle_t _metricsH);
 
-    //! Deconstructor a SCPMasterObject
+    //! \brief Deconstructor a SCPMasterObject
     //!
     ~SCPMasterObject();
     
-    //! Create/Update a scp
+    //! \brief Create/Update a scp
     //!
-    //! \param[in] scpId   Session ID    
-    bool Send(com::xvd::neuron::scp::Control *control,int);
+    //! \param[in] control - Session ID    
+    //! \param[in] dstId   - destination ID    
+    bool Send(com::xvd::neuron::scp::Control *control,int dstId);
     
-    //! Get the current state of the scp
+    //! \brief Get the current state of the scp
+    //! \param[in] dstId - destination ID    
     com::xvd::neuron::scp::State* GetState(int dstId);
 
-    //! Get the current events for the scp
+    //! \brief Get the current events for the scp
+    //! \param[in] dstId - destination ID    
     com::xvd::neuron::scp::EventSeq* GetEvents(int dstId);
     
-    //! Get the current metrics for the scp
+    //! \brief Get the current metrics for the scp
+    //! \param[in] dstId - destination ID    
     com::xvd::neuron::scp::MetricsSeq* GetMetrics(int dstId);
         
-    //! Internal function
+    //! \brief Internal function
     DDS_InstanceHandle_t GetControlInstanceHandle();
 
 private:

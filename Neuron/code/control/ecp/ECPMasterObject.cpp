@@ -1,3 +1,11 @@
+//!
+//! \file ECPMasterObject.cpp
+//!
+//! \brief Defintion of ECP Master Object
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ECPMasterObject.h"
 #include "ECPMaster.h"
 
@@ -40,7 +48,7 @@ com::xvd::neuron::ecp::State* ECPMasterObject::GetState(int dstId)
     
     if (state == NULL)
     {
-        //TODO: Error logging
+        ControlLogError("state == NULL");
         return NULL;
     }
     stateHandle = sm->GetMasterObjectStateHandle(dstId,sessionId);

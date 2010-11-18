@@ -19,8 +19,10 @@
 #define SCP_EVENT_UPDATE_SESSION            (SCP_EVENT_BASE+1)
 #define SCP_EVENT_DELETE_SESSION            (SCP_EVENT_BASE+2)
 #define SCP_EVENT_SESSION_STATE_UPDATE      (SCP_EVENT_BASE+3)
-#define SCP_EVENT_SESSION_EVENT             (SCP_EVENT_BASE+4)
-#define SCP_EVENT_SESSION_METRICS_UPDATE    (SCP_EVENT_BASE+5)
+#define SCP_EVENT_SESSION_STATE_LOST        (SCP_EVENT_BASE+4)
+#define SCP_EVENT_SESSION_STATE_DISPOSED    (SCP_EVENT_BASE+5)
+#define SCP_EVENT_SESSION_EVENT             (SCP_EVENT_BASE+6)
+#define SCP_EVENT_SESSION_METRICS_UPDATE    (SCP_EVENT_BASE+7)
 
 //! \class SCPEventNewSession
 //!
@@ -43,6 +45,10 @@ private:
     com::xvd::neuron::scp::Control *data;
 };
 
+//! \class SCPEventDeleteSession
+//!
+//! \brief Deleted session detected on the SCP.
+//!
 class SCPEventDeleteSession : public Event {
 public:
     SCPEventDeleteSession(int _sessionId);
@@ -52,6 +58,35 @@ public:
 private:
     int sessionId;
 };
+
+//! \class SCPEventSessionStateDisposed
+//!
+//! \brief Deleted session state detected on the SCP.
+//!
+class SCPEventSessionStateDisposed : public Event {
+public:
+    SCPEventSessionStateDisposed(int dstId);
+    int GetDstId();
+    ~SCPEventSessionStateDisposed();
+    
+private:
+    int dstId;
+};
+
+//! \class SCPEventSessionStateDisposed
+//!
+//! \brief Lost session state detected on the SCP.
+//!
+class SCPEventSessionStateLost : public Event {
+public:
+    SCPEventSessionStateLost(int dstId);
+    int GetDstId();
+    ~SCPEventSessionStateLost();
+    
+private:
+    int dstId;
+};
+
 
 //! \class SCPEventT
 //!
@@ -64,7 +99,7 @@ private:
 template<class T,typename TypeSupport,int E>
 class SCPEventT : public Event {
 public:
-    SCPEventT(T *_d) : Event(E)
+    SCPEventT(T *_d,DDS_SampleInfo *_i) : Event(E)
     {
         d = TypeSupport::create_data();
         TypeSupport::copy_data(d,_d);
@@ -75,6 +110,11 @@ public:
         return d;
     }
     
+    DDS_SampleInfo* GetSampleInfo()
+    {
+        return &info;
+    }
+    
     ~SCPEventT()
     {
         TypeSupport::delete_data(d);
@@ -82,6 +122,7 @@ public:
     
 private:
     T *d;
+    DDS_SampleInfo info;
 };
 
 //! \class SCPEventUpdateSession

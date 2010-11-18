@@ -1,3 +1,11 @@
+//!
+//! \file SCPObject.cpp
+//!
+//! \brief Defintion of SCPObject
+//!
+//! \author Tron Kindseth (tron@rti.com)
+//! \date Created on: Nov 1, 2010
+//!
 #include "ndds_cpp.h"
 #include "SCPObject.h"
 #include "SCPInterface.h"
