@@ -15,19 +15,21 @@
 #include <string.h>
 #include "parsecmd.h"
 
-static class options {
-	string scriptname;
-	string logoutfile;
-
-
-} gOpts;
+//static class options {
+//public:
+	static string stunserver = "207.145.121.125";	// XVD T1-line direct connect server in 2010
+	static string startupscript;
+	static string logoutfile;
+//
+//};
+//
+//options options::_gOpts;
 
 unsigned long router_ip;
 unsigned long domain;
 unsigned long bitrate;
 char topicname[100];
 char partname[100];
-char stunLocator[100];
 char peerList[10][100];
 char stunLivePeriodStr[20];
 char stunRetranIntvlStr[20];
@@ -64,6 +66,14 @@ bool parsecmd(char**argv, int argc)
 	opt->addUsage("");
 	opt->addUsage(" -h  --help                    Prints this help ");
 	opt->addUsage(
+			" --stun <ip>[:<port>]      Address and port of stun server for udpwan.");
+	opt->addUsage(
+			" --script <scriptname>     Macro script file to run upon startup.");
+
+
+
+
+	opt->addUsage(
 			" -d  --domain <dom_number>     Set Domain# (default 0, monitor domain 100)");
 	opt->addUsage(
 			" -b  --bitrate <bitrate>       (For publisher) bitrate target in bits-per-second");
@@ -82,8 +92,6 @@ bool parsecmd(char**argv, int argc)
 	opt->addUsage(
 			" -l  --peerlist <loc>,<loc>,... List of peers to be discovered apart from shmem");
 	opt->addUsage("                                and udplan.");
-	opt->addUsage(
-			" -s  --stun <ip>[:<port>]      Address and port of stun server for udpwan.");
 	opt->addUsage(
 			" -w  --wanid <id>              WAN ID in case of UDP transport.");
 	opt->addUsage(
@@ -133,6 +141,26 @@ bool parsecmd(char**argv, int argc)
 		opt->printUsage();
 		exit(1);
 	}
+
+	if (opt->getValue("stun") != NULL)
+	{
+		// For now only default STUN port used
+		if (bUseUDP)
+		{
+			stunserver = opt->getValue("stun");
+			cout << "STUN server ip address: " << stunserver << endl;
+		}
+	}
+
+	if (opt->getValue("script") != NULL)
+	{
+		startupscript = opt->getValue("script");
+		cout << "Initial script is: " << startupscript << endl;
+	}
+
+
+
+
 
 	if (opt->getValue('i') != NULL || opt->getValue("IP") != NULL)
 	{
@@ -190,16 +218,6 @@ bool parsecmd(char**argv, int argc)
 			strcat(peerList[0], opt->getValue('l'));
 		}
 		cout << "PeerList: " << peerList[0] << endl;
-	}
-
-	if (opt->getValue('s') != NULL || opt->getValue("stun") != NULL)
-	{
-		// For now only default STUN port used
-		if (bUseUDP)
-		{
-			strcpy(stunLocator, opt->getValue('s'));
-			cout << "STUN server ip address: " << stunLocator << endl;
-		}
 	}
 
 	if (opt->getValue('w') != NULL || opt->getValue("wanid") != NULL)

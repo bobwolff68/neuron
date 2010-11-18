@@ -12,6 +12,12 @@ SSHManagement::SSHManagement()
 {
 	// TODO Auto-generated constructor stub
 
+	// Setup deflocation.
+	deflocation = getenv("HOME");
+	deflocation += "/.ssh/id_rsa";
+
+	// If default location is modified, ssh must authenticate using this as well.
+	bUseIdentityLocation = false;
 }
 
 SSHManagement::~SSHManagement()
@@ -19,15 +25,17 @@ SSHManagement::~SSHManagement()
 	// TODO Auto-generated destructor stub
 }
 
-bool SSHManagement::hasLocalKeypair(string in_name)
+bool SSHManagement::hasLocalKeypair(string location)
 {
 	ifstream testin;
 	string fname;
 
-	if (in_name=="")
-		fname = "~/.ssh/id_rsa.pub";
+	if (!location.empty())
+		fname = location;
 	else
-		fname = in_name;
+		fname = deflocation;
+
+	fname += ".pub";
 
 	testin.open(fname.c_str(), ifstream::in);
 	if( testin.is_open() )
@@ -81,13 +89,53 @@ bool SSHManagement::nameToIP(const string& name, long& long_ip_out, string& stri
     return true;
 }
 
-bool SSHManagement::generateLocalKeypair(void)
+bool SSHManagement::generateLocalKeypair(string location)
 {
+	string mylocation;
 
+	if (!location.empty())
+		mylocation = location;
+	else
+		mylocation = deflocation;
+
+	// Now we check for a local keypair...
+	if (hasLocalKeypair(mylocation))
+	{
+		cout << "Error: Local keypair already exists. You may now push keypair to remote location." << endl;
+		return false;
+	}
+
+	cout << "Generating an RSA keypair." << endl;
+
+	//
+	// ssh-keygen -b 2048 -t rsa -q -N "" -f ~/.ssh/id_rsa
+	//
+	string sshnow;
+
+	sshnow = "ssh-keygen -b 2048 -t rsa -q -N \"\" -f ";
+	sshnow += mylocation;
+	system( sshnow.c_str() );
+
+	// Now we check for a local keypair...
+	if (!hasLocalKeypair(mylocation))
+	{
+		cout << "Error: Keypair does NOT exist. Generating keypair FAILED." << endl
+				<< "PLEASE CHECK MANUALLY BEFORE PROCEEDING." << endl;
+		return false;
+	}
+
+	cout << "Success. Keypair created. You may now push the public key to the remote site(s)." << endl;
+	return true;
 }
 
-bool SSHManagement::pushLocalKeypair(const string ipdest)
+bool SSHManagement::pushLocalPublicKey(const string ipdest, string location)
 {
+	string mylocation;
+
+	if (!location.empty())
+		mylocation = location;
+	else
+		mylocation = deflocation;
 
 	if (ipdest == "" || !validateIpAddress(ipdest))
 	{
@@ -96,29 +144,71 @@ bool SSHManagement::pushLocalKeypair(const string ipdest)
 	}
 
 	// Now we check for a local keypair...
-	if (!hasLocalKeypair())
+	if (!hasLocalKeypair(mylocation))
 	{
 		cout << "Error: No local keypair exists. Use generateKeypair()." << endl;
 		return false;
 	}
 
 	// Now we push the information to the new machine to allow for authenticated logins.
-	cout << "Beginning connection to " << ipdest << " and a password will be required for this attempt." << endl;
+	cout << "Beginning connection to " << ipdest << "." << endl
+			<< " A password will be required if no prior authentication has been setup." << endl;
 
 	string sshnow;
-	sshnow = "awk '{ print $1 \" \" $2 }' ~/.ssh/id_rsa.pub | ssh ";
+	sshnow = "cat ";
+	sshnow += mylocation;
+	sshnow += ".pub | ssh ";
+	if (bUseIdentityLocation)
+	{
+		sshnow += " -i ";
+		sshnow += mylocation;
+		sshnow += " ";
+	}
 	sshnow += ipdest;
 	sshnow += " \"cat >>~/.ssh/authorized_keys\"";
 
+	cout << "*********************" << endl;
 	system( sshnow.c_str() );
+	cout << "*********************" << endl;
 
-	cout << "Public key sent to remote server. Testing for ssh with NO PASSWORD." << endl;
-	cout << "Should not request a password and simply echo back 'Remote Hello from <hostname-remote>'" << endl;
+	cout << endl << "Public key sent to remote server. Testing for ssh with NO PASSWORD." << endl;
+	cout << " Should not request a password and simply echo back..." << endl
+			<< "    'Remote Hello from <hostname-of-remote-server>'" << endl;
 
 	sshnow = "ssh ";
-	sshnow += ipdest;
-	sshnow += " \"echo -n \"Remote Hello from \";cat /etc/hostname";
-	system( sshnow.c_str() );
+	if (bUseIdentityLocation)
+	{
+		sshnow += " -i ";
+		sshnow += mylocation;
+		sshnow += " ";
+	}
 
-	cout << "Complete. If you were asked for a password on the test-run, then there are problems with automatic authentication." << endl;
+	sshnow += ipdest;
+	sshnow += " \"echo -n 'Remote Hello from ';cat /etc/hostname\"";
+
+	cout << "*********************" << endl;
+	system( sshnow.c_str() );
+	cout << "*********************" << endl;
+
+	// TODO - Must test that 'sf' exists remotely - execute "sf --version".
+	cout << endl << "Final test -- execution of 'sf' remotely." << endl
+			<< " Should echo the version of sf on success. Else 'bash: sf: command not found'" << endl;
+
+	sshnow = "ssh ";
+	if (bUseIdentityLocation)
+	{
+		sshnow += " -i ";
+		sshnow += mylocation;
+		sshnow += " ";
+	}
+
+	sshnow += ipdest;
+	sshnow += " \"sf --version\"";
+
+	cout << "*********************" << endl;
+	system( sshnow.c_str() );
+	cout << "*********************" << endl;
+
+	cout << endl << "Complete. If you were asked for a password on the test-run," << endl
+			<< " then there are problems with automatic authentication." << endl;
 }
