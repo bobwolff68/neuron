@@ -16,9 +16,12 @@ class StdOutOutputObject : public MediaOutputObject
         ~StdOutOutputObject()
         { }
 
-        void Write(void *data)
+        void Write(void)
+        { }
+
+        void Write(int data)
         {
-            std::cout << MOO_LOG_PROMPT(ownerId) << ": Data=" << *((int *)data) << endl;
+            std::cout << MOO_LOG_PROMPT(ownerId) << ": Data=" << data << std::endl;
 
             return;
         }

@@ -13,7 +13,7 @@ class MediaOutputObject : public MediaObject
         ~MediaOutputObject()
         { }
 
-        virtual void Write(void *) = 0;
+        virtual void Write(void) = 0;
 };
 
 #endif // MEDIAOUTPUTOBJECT_H_

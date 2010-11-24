@@ -1,0 +1,20 @@
+module com
+{
+    module xvd
+    {
+        module neuron
+        {
+            module media
+            {
+                const long ML_MAX_PAYLOAD_SIZE = 100000;
+
+                struct DataUnit
+                {
+                    long				seqNum;
+                    sequence<octet,ML_MAX_PAYLOAD_SIZE> payload;
+                };
+            };
+        };
+    };
+};
+

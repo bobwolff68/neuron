@@ -2,6 +2,7 @@
 #define NATNUMSTREAMINPUTOBJECT_H_
 
 #include <unistd.h>
+#include "MediaEvent.h"
 #include "MediaInputObject.h"
 #include "ThreadSingle.h"
 
