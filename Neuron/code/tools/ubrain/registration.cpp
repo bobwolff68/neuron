@@ -6,6 +6,7 @@
  */
 
 #include "registration.h"
+#include <sstream>
 
 // Our static refcount being initialized for CurlGlobal::
 int CurlGlobal::refCount = 0;
@@ -13,13 +14,20 @@ int CurlGlobal::refCount = 0;
 RegistrationClient::RegistrationClient(const char* pIp_address, int portnum)
 {
 	// TODO Auto-generated constructor stub
+	stringstream intconv;
 
 	ip_address = pIp_address;
 	port_to_use = portnum;
 
 	// Form URL
 	url = "http://" + ip_address;
-	url += "/index.html";
+	url += ":";
+	intconv << portnum;
+
+	url += intconv.str();
+	url += "/cgi/register.cgi?username=rwolff&password=mypass";
+
+	cout << "URL being formed is:" << endl << "  '" << url << "'" << endl;
 
 	if (!setupNetwork())
 		throw;
