@@ -1,9 +1,24 @@
+//!
+//! \file DDSOutputObject.h
+//!
+//! \brief Definition of the DDS Output Object
+//!
+//! \author Manjesh Malavalli (mmalavalli@xvdth.com)
+//!
+
 #ifndef DDSOUTPUTOBJECT_H_
 #define DDSOUTPUTOBJECT_H_
 
 #include "MediaOutputObject.h"
 #include "MediaWriter.h"
 
+//!
+//! \class DDSOutputObject
+//!
+//! \brief DDS media output object.
+//!
+//! Details:
+//!
 class DDSOutputObject : public MediaOutputObject
 {
     private:
@@ -14,10 +29,10 @@ class DDSOutputObject : public MediaOutputObject
 
         DDSOutputObject(int                     ownerIdP,
                         DDSDomainParticipant   *pOwnerDPP,
-                        const char             *topicName):
+                        DDSTopic               *pTopicP):
         MediaOutputObject(ownerIdP)
         {
-            pMediaWriter = new MediaWriter(pOwnerDPP,topicName);
+            pMediaWriter = new MediaWriter(pOwnerDPP,pTopicP);
         }
 
         ~DDSOutputObject()

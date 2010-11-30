@@ -18,31 +18,11 @@ class MediaReader
 
         MediaReader(EventHandler            *pOwnerEventHandlerP,
                     DDSDomainParticipant    *pOwnerDPP,
-                    const char              *topicName)
+                    DDSTopic                *pTopicP)
         {
-            const char         *typeName = NULL;
-            DDS_ReturnCode_t    retCode;
-
             pOwnerDP = pOwnerDPP;
             pOwnerEventHandler = pOwnerEventHandlerP;
-
-            //Register type with domain participant
-            typeName = com::xvd::neuron::media::DataUnitTypeSupport::get_type_name();
-            retCode = com::xvd::neuron::media::DataUnitTypeSupport::register_type(pOwnerDP,typeName);
-            if(retCode!=DDS_RETCODE_OK)
-            {
-                std::cout << "Cannot register type" << std::endl;
-                exit(0);
-            }
-
-            //Create topic for specified topic name
-            pTopic = pOwnerDP->create_topic(topicName,typeName,DDS_TOPIC_QOS_DEFAULT,
-                                            NULL,DDS_STATUS_MASK_NONE);
-            if(pTopic==NULL)
-            {
-                std::cout << "Cannot create topic" << std::endl;
-                exit(0);
-            }
+            pTopic = pTopicP;
         }
 
         ~MediaReader()
@@ -54,14 +34,6 @@ class MediaReader
             for(it=LayerReaders.begin(); it!=LayerReaders.end(); it++)
                 delete it->second;
             LayerReaders.clear();
-
-            //Delete the topic
-            retCode = pOwnerDP->delete_topic(pTopic);
-            if(retCode!=DDS_RETCODE_OK)
-            {
-                std::cout << "Cannot delete topic" << std::endl;
-                exit(0);
-            }
         }
 
         bool AddLayerReader(const char *layerPartitionRegExp)

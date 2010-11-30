@@ -15,10 +15,10 @@ class DDSInputObject : public MediaInputObject
         DDSInputObject(int                      ownerIdP,
                        EventHandler            *pOwnerEventHandlerP,
                        DDSDomainParticipant    *pOwnerDPP,
-                       const char              *topicName):
+                       DDSTopic                *pTopic):
         MediaInputObject(pOwnerEventHandler,ownerIdP)
         {
-            pMediaReader = new MediaReader(pOwnerEventHandlerP,pOwnerDPP,topicName);
+            pMediaReader = new MediaReader(pOwnerEventHandlerP,pOwnerDPP,pTopic);
         }
 
         ~DDSInputObject()

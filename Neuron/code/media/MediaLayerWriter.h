@@ -1,3 +1,11 @@
+//!
+//! \file MediaLayerWriter.h
+//!
+//! \brief Object to transmit a media layer over DDS
+//!
+//! \author Manjesh Malavalli (mmalavalli@xvdth.com)
+//!
+
 #ifndef MEDIALAYERWRITER_H_
 #define MEDIALAYERWRITER_H_
 
@@ -5,18 +13,66 @@
 #include "media.h"
 #include "mediaSupport.h"
 
+//!
+//! \class MediaLayerWriter
+//!
+//! \brief Writes a media layer over DDS
+//!
+//! Details: This is basically a publisher-datawriter pair that
+//! outputs data over DDS on a single partition. Partitions are used
+//! to differentiate among different media layers.
+//!
 class MediaLayerWriter
 {
     private:
 
-        DDSDomainParticipant                *pOwnerDP;
-        DDSTopic                            *pTopic;
-        DDSPublisher                        *pPub;
-        DDSDataWriter                       *pGenericWriter;
-        com::xvd::neuron::media::DataUnit   *pDataUnitSample;
+        //!
+        //! \var pOwnerDP
+        //!
+        //! \brief Pointer to the domain participant to which the owner session entity belongs.
+        //!
+        //! \a NOTE: Memory is not freed in destructor, because it is owned by the session
+        //!    leader to which the owner session entity belongs.
+        //!
+        DDSDomainParticipant *pOwnerDP;
+
+        //!
+        //! \var pTopic
+        //!
+        //! \brief Pointer to the DDS topic whose samples are to be written by the object.
+        //!
+        DDSTopic *pTopic;
+
+        //!
+        //! \var pPub
+        //!
+        //! \brief Pointer to the publisher which is configured to publish in a particular partition.
+        //!
+        DDSPublisher *pPub;
+
+        //!
+        //! \var pGenericWriter
+        //!
+        //! \brief Pointer to the generic data writer created to write media data.
+        //!
+        DDSDataWriter *pGenericWriter;
+
+        //!
+        //! \var pDataUnitSample
+        //!
+        //! \brief For internal use only.
+        //!
+        com::xvd::neuron::media::DataUnit *pDataUnitSample;
 
     public:
 
+        //!
+        //! \brief Constructor.
+        //!
+        //! \param [in] pOwnerDPP - Pointer to the domain participant to which the owner session entity belongs.
+        //! \param [in] pTopicP - Pointer to the DDS topic whose samples are to be written by the object.
+        //! \param [in] layerPartitionName - Partition on which a particular media layer is published.
+        //!
         MediaLayerWriter(DDSDomainParticipant *pOwnerDPP,
                          DDSTopic             *pTopicP,
                          const char           *layerPartitionName)
@@ -58,11 +114,16 @@ class MediaLayerWriter
                 std::cout << "Cannot create data writer" << std::endl;
                 exit(0);
             }
+            //Ignore local data writer at domian participant
+            pOwnerDP->ignore_publication(pGenericWriter->get_instance_handle());
 
             pDataUnitSample = com::xvd::neuron::media::DataUnitTypeSupport::create_data();
             pDataUnitSample->payload.maximum(0);
         }
 
+        //!
+        //! \brief Destructor.
+        //!
         ~MediaLayerWriter()
         {
             DDS_ReturnCode_t    retCode;
@@ -83,6 +144,15 @@ class MediaLayerWriter
             }
         }
 
+        //!
+        //! \brief Encapsulates media layer data in a DataUnit sample and writes it over DDS.
+        //!
+        //! \param [in] seqNum - Sequence number of the sample to be written.
+        //! \param [in] payloadBuf - Pointer to the payload to be written.
+        //! \param [in] payloadSize - Size of the payload.
+        //!
+        //! \return true if write successful, false if not.
+        //!
         bool Write(long seqNum,unsigned char *payloadBuf,int payloadSize)
         {
             if(payloadBuf!=NULL)
@@ -121,6 +191,13 @@ class MediaLayerWriter
             return true;
         }
 
+        //!
+        //! \brief Writes a DataUnit sample over DDS.
+        //!
+        //! \param [in] datUnitSample - A sample of DataUnit type that is to be written.
+        //!
+        //! \return true of write successful, false if not.
+        //!
         bool Write(com::xvd::neuron::media::DataUnit &dataUnitSample)
         {
             com::xvd::neuron::media::DataUnitDataWriter    *pWriter = NULL;

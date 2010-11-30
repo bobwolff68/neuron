@@ -1,3 +1,11 @@
+//!
+//! \file MediaLayerReader.h
+//!
+//! \brief Object to read samples of multiple media layers from DDS.
+//!
+//! \author Manjesh Malavalli (mmalavalli@xvdth.com)
+//!
+
 #ifndef MEDIALAYERREADER_H_
 #define MEDIALAYERREADER_H_
 
@@ -31,6 +39,15 @@ class DataSampleSet
     }
 };
 
+//!
+//! \class MediaLayerReader
+//!
+//! \brief Reads samples from one or more media layers for processing by the owner session entity.
+//!
+//! Details: This is basically a subscriber-datareader pair that subscribes to data from
+//! one or more partitions, each representing a media layer. Partitions are used
+//! to differentiate among different media layers.
+//!
 class MediaLayerReader
 {
     class DataUnitDataListener : public DDSDataReaderListener
@@ -95,15 +112,61 @@ class MediaLayerReader
 
     private:
 
-        EventHandler                        *pOwnerEventHandler;
-        DDSDomainParticipant                *pOwnerDP;
-        DDSTopic                            *pTopic;
-        DDSSubscriber                       *pSub;
-        DDSDataReader                       *pGenericReader;
-        DataUnitDataListener                *pListener;
+        //!
+        //! \var pOwnerEventHandler
+        //!
+        //! \brief Pointer to the owner session entity's event handler.
+        //!
+        EventHandler *pOwnerEventHandler;
+
+        //!
+        //! \var pOwnerDP
+        //!
+        //! \brief Pointer to the domain participant to which the owner session entity belongs.
+        //!
+        //! \a NOTE: Memory is not freed in destructor, because it is owned by the session
+        //!    leader to which the owner session entity belongs.
+        //!
+        DDSDomainParticipant *pOwnerDP;
+
+        //!
+        //! \var pTopic
+        //!
+        //! \brief Pointer to the DDS topic whose samples are to be read by the object.
+        //!
+        DDSTopic *pTopic;
+
+        //!
+        //! \var pSub
+        //!
+        //! \brief Pointer to the subscriber which is configured to subscribe to one or more layer partitions.
+        //!
+        DDSSubscriber *pSub;
+
+        //!
+        //! \var pGenericReader
+        //!
+        //! \brief Pointer to the generic data reader created to read media data.
+        //!
+        DDSDataReader *pGenericReader;
+
+        //!
+        //! \var pListener
+        //!
+        //! \brief Pointer to a listener that attaches to the data reader to listen for media data.
+        //!
+        DataUnitDataListener *pListener;
 
     public:
 
+        //!
+        //! \brief Constructor.
+        //!
+        //! \param [in] pOwnerEventHandlerP - Pointer to the owner session entity's event handler.
+        //! \param [in] pOwnerDPP - Pointer to the domain participant to which the owner session entity belongs.
+        //! \param [in] pTopicP - Pointer to the DDS topic whose samples are to be read by the object.
+        //! \param [in] layerPartitionRegExp - Indicates the media layer(s) to which the object subscribes.
+        //!
         MediaLayerReader(EventHandler         *pOwnerEventHandlerP,
                          DDSDomainParticipant *pOwnerDPP,
                          DDSTopic             *pTopicP,
@@ -156,6 +219,9 @@ class MediaLayerReader
             pReader->set_listener(pListener,DDS_STATUS_MASK_ALL);
         }
 
+        //!
+        //! \brief Destructor
+        //!
         ~MediaLayerReader()
         {
             DDS_ReturnCode_t    retCode;
@@ -176,6 +242,13 @@ class MediaLayerReader
             }
         }
 
+        //!
+        //! \brief Function to change the media layer(s) to which the object subscribes.
+        //!
+        //! \param [in] regExp - Indicates the new media layer(s) to which the object subscribes.
+        //!
+        //! \return true if successful, false if not.
+        //!
         bool SetLayerPartitionRegExp(const char *regExp)
         {
             DDS_SubscriberQos   subQos;
