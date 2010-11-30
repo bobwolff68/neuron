@@ -3,20 +3,30 @@
 #include <unistd.h>
 #include "sessionfactory.h"
 
-SessionFactory::SessionFactory(IDType sfIdParam,int domId) : EventHandlerT<SessionFactory>()
+SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType ownerIdParam,
+							   int domId) : EventHandlerT<SessionFactory>()
 {
+	char	SCPSlaveName[100];
+	char	ACPSlaveName[100];
+	char	LSCPMasterName[100];
+
 	id = sfIdParam;
 	stop = false;
 	this->domId = domId;
+	strcpy(name,nameParam);
+	ownerId = ownerIdParam;
 	
 	// Create Session Control Object (SCO) slave
-	pSCSlave = new SCPSlave(this,id,domId,"SCP");
+	GEN_CP_INTERFACE_NAME(SCPSlaveName,name,SCP_SLAVE_NAME);
+	pSCSlave = new SCPSlave(this,id,domId,SCPSlaveName,"SCP");
 	
 	// Create Local Session Control Plane (LSCP) master
-	pLSCMaster = new LSCPMaster(this,id,domId,"LSCP");
+	GEN_CP_INTERFACE_NAME(LSCPMasterName,name,LSCP_MASTER_NAME);
+	pLSCMaster = new LSCPMaster(this,id,domId,LSCPMasterName,"LSCP");
 	
 	// Create Admin Control Plane (ACP) slave
-	pACSlave = new ACPSlave(this,id,domId,"ACP");	
+	GEN_CP_INTERFACE_NAME(ACPSlaveName,name,ACP_SLAVE_NAME);
+	pACSlave = new ACPSlave(this,id,domId,ACPSlaveName,"ACP");	
 	pACSlaveObj = pACSlave->CreateSlaveObject(id);
 	
 	// Initialize ACP Instances
@@ -51,6 +61,7 @@ SessionFactory::~SessionFactory()
 		delete it->second;
 	}
 	
+	SessionList.clear();
 	delete pLSCMaster;
 	delete pSCSlave;
 	SetStateDeleted();
@@ -60,65 +71,78 @@ SessionFactory::~SessionFactory()
 
 void SessionFactory::HandleNewSessionEvent(Event *pEvent)
 {
-	RemoteSessionSF			*pSession = NULL;
+	RemoteSessionSF		*pSession = NULL;
 	SCPEventNewSession 	*pNewSessEvt = NULL;
+	SCPSlaveObject		*pSCSlaveObjLocal = NULL;
 	
 	if(pEvent!=NULL)
 	{
 		pNewSessEvt = reinterpret_cast<SCPEventNewSession *>(pEvent);
+		pSCSlaveObjLocal = (SCPSlaveObject *)(pNewSessEvt->GetSession());
 
-		// Creating a new RemoteSessionSF Object will create an SL for that session
-		pSession = new RemoteSessionSF(pSCSlave,(SCPSlaveObject *)(pNewSessEvt->GetSession()),
-									   pLSCMaster,domId,NEW_SL_THREAD);
-	
-		if(SessionList.find(pSession->GetId())!=SessionList.end())
+		if(pSCSlaveObjLocal!=NULL)
 		{
-			// Error, session already present
-			std::cout << SF_LOG_PROMPT(id) << "(NEWSESSION): Session " << pSession->GetId() << 
-				" already present" << endl;
-			delete pSession;
+			std::cout << "srcId: " << pSCSlaveObjLocal->GetSrcId() << endl;
+			if(pSCSlaveObjLocal->GetSrcId()==id)
+			{
+				if(SessionList.find(pSCSlaveObjLocal->GetSessionId())!=SessionList.end())
+				{
+					// Error, session already present
+					std::cout << SF_LOG_PROMPT(id) << "(NEWSESSION): Session " << 
+						pSession->GetId() << " already present" << endl;
+				}
+				else
+				{
+					// Creating a new RemoteSessionSF Object will create an SL for that session
+					pSession = new RemoteSessionSF(pSCSlave,pSCSlaveObjLocal,pLSCMaster,domId,id,
+												   NEW_SL_THREAD);
+					SessionList[pSession->GetId()] = pSession;
+					std::cout << SF_LOG_PROMPT(id) << ": New Session(" << pSession->GetId() << 
+						")" << endl; 
+				}
+			}
 		}
 		else
-		{
-			SessionList[pSession->GetId()] = pSession;
-			std::cout << SF_LOG_PROMPT(id) << ": New Session(" << pSession->GetId() << ")" << endl; 
-		}
+			std::cout << SF_LOG_PROMPT(id) << 
+				": (New Session): Can't handle null SCPSlaveObject" << endl;
 	}
 	else
-	{
-		std::cout << "New Session: Can't handle null event" << endl;
-	}
+		std::cout << SF_LOG_PROMPT(id) << ": (New Session): Can't handle null event" << endl;
 	
 	return;
 }
 
 void SessionFactory::HandleUpdateSessionEvent(Event *pEvent)
 {
-	RemoteSessionSF				*pSession = NULL;
+	RemoteSessionSF			*pSession = NULL;
 	SCPEventUpdateSession	*pUpSessEvt = NULL;
 	
 	//Get the session object for the requested session id
 	if(pEvent!=NULL)
 	{
 		pUpSessEvt = reinterpret_cast<SCPEventUpdateSession *>(pEvent);
-	
-		if(SessionList.find(pUpSessEvt->GetData()->sessionId)==SessionList.end())
-		{
-			//TError, session not found
-			std::cout << SF_LOG_PROMPT(id) << "(UPSESSION): Session " << 
-				pUpSessEvt->GetData()->sessionId << " not found" << endl;
-		}
-		else
-		{
-			pSession = SessionList[pUpSessEvt->GetData()->sessionId];
-			pSession->SetStateUpdate();
-			pSession->Update(pUpSessEvt->GetData());
-			std::cout << SF_LOG_PROMPT(id) << ": Session Update(" << pSession->GetId() << "): " 
-				<< pUpSessEvt->GetData()->script << endl;
+		
+		std::cout << "srcId: " << pUpSessEvt->GetData()->srcId << endl;
+		if(pUpSessEvt->GetData()->srcId==ownerId)
+		{	
+			if(SessionList.find(pUpSessEvt->GetData()->sessionId)==SessionList.end())
+			{
+				//TError, session not found
+				std::cout << SF_LOG_PROMPT(id) << "(UPSESSION): Session " << 
+					pUpSessEvt->GetData()->sessionId << " not found" << endl;
+			}
+			else
+			{
+				pSession = SessionList[pUpSessEvt->GetData()->sessionId];
+				pSession->SetStateUpdate();
+				pSession->Update(pUpSessEvt->GetData());
+				std::cout << SF_LOG_PROMPT(id) << ": Session Update(" << pSession->GetId() << "): " 
+					<< pUpSessEvt->GetData()->script << endl;
+			}
 		}
 	}
 	else
-		std::cout << "Update Session: Can't handle null event" << endl;
+		std::cout << SF_LOG_PROMPT(id) << ": (Update Session): Can't handle null event" << endl;
 	
 	return;
 }
@@ -147,7 +171,7 @@ void SessionFactory::HandleDeleteSessionEvent(Event *pEvent)
 		}
 	}
 	else
-		std::cout << "Delete Session: Can't handle null event" << endl;
+		std::cout << SF_LOG_PROMPT(id) << ": (Delete Session): Can't handle null event" << endl;
 		
 	return;	
 }
@@ -163,20 +187,24 @@ void SessionFactory::HandleSessionUpdateStateEvent(Event *pEvent)
 	{
 		pUpStateEvt = reinterpret_cast<LSCPEventSessionStateUpdate*>(pEvent);
 		lscState = pUpStateEvt->GetData();
-		if(SessionList.find(lscState->sessionId)==SessionList.end())
+
+		if(lscState->srcId==id)
 		{
-			//Error, session not found
-			std::cout << SF_LOG_PROMPT(id) << "(UPSTSESSION): Session " << lscState->sessionId << 
-				" not found" << endl;
-		}
-		else
-		{
-			pSession = SessionList[lscState->sessionId];
-			pSession->HandleSLState(lscState);
+			if(SessionList.find(lscState->sessionId)==SessionList.end())
+			{
+				//Error, session not found
+				std::cout << SF_LOG_PROMPT(id) << "(UPSTSESSION): Session " << lscState->sessionId << 
+					" not found" << endl;
+			}
+			else
+			{
+				pSession = SessionList[lscState->sessionId];
+				pSession->HandleSLState(lscState);
+			}
 		}
 	}
 	else
-		std::cout << "Update State: Can't handle null event" << endl;
+		std::cout << SF_LOG_PROMPT(id) << ": (Update State): Can't handle null event" << endl;
 		
 	return;	
 }

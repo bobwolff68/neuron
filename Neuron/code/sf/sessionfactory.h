@@ -16,14 +16,11 @@
 #include "controlplane.h"
 #include "sessionleader.h"
 
-#define DOMAIN_ID_SCP 	10
-#define DOMAIN_ID_ACP	12
-
 #define NEW_SL_THREAD 	1
 #define NEW_SL_PROCESS	2
 
-#define SF_LOG_PROMPT(id)	"SF(" << id << ")"
-#define SO_LOG_PROMPT(id)	"SO(" << id << ")"
+#define SF_LOG_PROMPT(id)		"SF(" << id << ")"
+#define SO_LOG_PROMPT(oId,id)	SF_LOG_PROMPT(oId) << "->SO(" << id << ")"
 
 typedef	long long IDType;
 
@@ -52,6 +49,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 
 		private:
 		
+			IDType				ownerId;
 			SCPSlave		   *pSCSlave;
 			SCPSlaveObject 	   *pSCSlaveObj;
 			LSCPMaster		   *pLSCMaster;
@@ -71,8 +69,10 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 		public:
 			
 			RemoteSessionSF(SCPSlave *pSCSlaveParam,SCPSlaveObject *pSCSlaveObjParam,
-					  		LSCPMaster *pLSCMasterParam,int domId,int slCreateMode)
+					  		LSCPMaster *pLSCMasterParam,int domIdParam,int ownerIdParam,
+					  		int slCreateMode)
 			{
+				ownerId = ownerIdParam;
 				pSCSlave = pSCSlaveParam;
 				pSCSlaveObj = pSCSlaveObjParam;
 				pLSCMaster = pLSCMasterParam;
@@ -97,7 +97,18 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 				// Create a new SL
 				if(slCreateMode==NEW_SL_THREAD)
 				{
-					slRef.pSL = new SessionLeader(GetId(),GetId(),domId);
+					char slName[100];
+					char idStr[20];
+					
+					strcpy(slName,"SF(");
+					sprintf(idStr,"%lld",ownerId);
+					strcat(slName,idStr);
+					strcat(slName,")::SL(");
+					sprintf(idStr,"%lld",GetId());
+					strcat(slName,idStr);
+					strcat(slName,")");
+					
+					slRef.pSL = new SessionLeader(ownerId,GetId(),slName,domIdParam,ownerId);
 					(slRef.pSL)->startThread();
 				}
 				else
@@ -106,7 +117,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 					char	lscpSessIdStr[50];
 					
 					slRef.pSL = NULL;
-					sprintf(lscpSessIdStr,"%d",GetId());
+					sprintf(lscpSessIdStr,"%lld",GetId());
 
 					if((pId=fork())==0)
 					{
@@ -114,7 +125,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 						exit(0);
 					}
 					else if(pId<0)
-						std::cout << SO_PROMPT(GetId) << ": Fork fail" << endl;
+						std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": Fork fail" << endl;
 				}
 				
 				// Set state to INIT until SL is successfully created
@@ -122,17 +133,16 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 			}
 			
 			~RemoteSessionSF()
-			{
+			{			
 				if(slRef.createMode==NEW_SL_THREAD)
 				{
-					(slRef.pSL)->stopThread();
 					delete slRef.pSL;
 				}
 				else
 				{
 					;// Send termination message
 				}
-			
+
 				pSCSlave->DeleteSlaveObject(pSCSlaveObj);
 				pLSCMaster->DeleteMasterObject(pLSCMasterObj);
 
@@ -153,8 +163,8 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 			{
 				strcpy(this->control->script,control->script);
 				strcpy(lscControl->script,control->script);
-				pLSCMasterObj->Send(lscControl,GetId());
-				std::cout << SO_LOG_PROMPT(GetId()) << ": " << control->script << endl;
+				pLSCMasterObj->Send(lscControl,ownerId);
+				std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": " << control->script << endl;
 				return;
 			}
 			
@@ -162,7 +172,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 			{
 				state->state = com::xvd::neuron::OBJECT_STATE_INIT;
 				pSCSlaveObj->Send(state);
-				std::cout << SO_LOG_PROMPT(GetId()) << ": INIT (SCP)" << endl; 
+				std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": INIT (SCP)" << endl; 
 				
 				return;
 			}
@@ -171,7 +181,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 			{
 				state->state = com::xvd::neuron::OBJECT_STATE_READY;
 				pSCSlaveObj->Send(state);
-				std::cout << SO_LOG_PROMPT(GetId()) << ": READY (SCP)" << endl; 
+				std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": READY (SCP)" << endl; 
 				
 				return;
 			}
@@ -180,7 +190,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 			{
 				state->state = com::xvd::neuron::OBJECT_STATE_UPDATE;
 				pSCSlaveObj->Send(state);
-				std::cout << SO_LOG_PROMPT(GetId()) << ": UPDATE (SCP)" << endl; 
+				std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": UPDATE (SCP)" << endl; 
 				
 				return;
 			}
@@ -196,26 +206,39 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 						break;
 						
 					case com::xvd::neuron::OBJECT_STATE_STANDBY:
-						strcpy(lscControl->script,"PING");
-						pLSCMasterObj->Send(lscControl,GetId());
-						std::cout << SO_LOG_PROMPT(GetId()) << ": " << lscControl->script << endl;
+						if(state->state==com::xvd::neuron::OBJECT_STATE_INIT)
+						{
+							strcpy(lscControl->script,"PING");
+							pLSCMasterObj->Send(lscControl,ownerId);
+							std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": " << 
+								lscControl->script << " @ STANDBY" << endl;
+						}
+						else
+							std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": NOT INIT" << endl;
 						break;
 				}
 				
 				return;
 			}
 			
-			int GetId(void)	
+			IDType GetId(void)	
 			{ 
 				return pSCSlaveObj->GetSessionId(); 
+			}
+			
+			IDType GetOwnerId(void)
+			{
+				return ownerId;
 			}
 	};
 
 	private:
 	
 		IDType						id;
+		IDType						ownerId;
 		bool						stop;
-		int							domId; 
+		int							domId;
+		char					   	name[100];
 		SCPSlave   				   *pSCSlave;
 		LSCPMaster			   	   *pLSCMaster;
 		ACPSlave				   *pACSlave;
@@ -247,7 +270,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 				
 	public:
 
-		SessionFactory(IDType,int);
+		SessionFactory(IDType,const char *,IDType,int);
 		~SessionFactory();
 		
 		IDType	GetId(void)		{ return id; }
@@ -269,6 +292,15 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 		    
 		    return;		
 		}
+		
+		void SetStateUpdate(void)
+		{
+    		acState->state = com::xvd::neuron::OBJECT_STATE_UPDATE;
+		    pACSlaveObj->Send(acState);
+		    std::cout << SF_LOG_PROMPT(id) << ": UPDATE (ACP)" << endl; 
+		    
+		    return;		
+		}		
 		
 		void SetStateDeleted(void)
 		{
