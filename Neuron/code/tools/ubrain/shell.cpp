@@ -73,12 +73,15 @@ void Shell::parse(istream& input)
 	stringstream attrstream;
 	bool eol;
 
-	cout << endl << "uBrain >" << flush;
+	cout << endl << "uBrain > " << flush;
 
-	while (getline(input, line)){
+	while (getline(input, line))
+	{
+		namevalues.clear();
+
 		if (line=="" || line == "\n" || line == "\r")
 		{
-			cout << "uBrain >" << flush;
+			cout << "uBrain > " << flush;
 			continue;
 		}
 
@@ -123,9 +126,7 @@ void Shell::parse(istream& input)
 			while (attr[st]==' ')
 				st++;
 
-			attrstream.str(string(&attr[st]));
-
-			parseAttributes(attrstream);
+			parseAttributes(&attr[st]);
 
 			eol=true;
 		}
@@ -136,7 +137,7 @@ void Shell::parse(istream& input)
 		if (cmd!="")
 			processCommand(cmd, subcmd);
 
-		cout << "uBrain >" << flush;
+		cout << "uBrain > " << flush;
 	}
 
 }
@@ -159,18 +160,22 @@ void Shell::strtoupper(string &s)
 ///			Care is taken to parse odd situations, but this is intended to be a well behaved input either from
 ///			a machine-written xml generator or a careful human inputting line-oriented commands.
 ///
-bool Shell::parseAttributes(stringstream& input)
+bool Shell::parseAttributes(const char* inputstr)
 {
 	string w;
 	char buff[100];
 	string name;
 	string value;
+	stringstream input;
+
+	input << inputstr;
+	cout << "Input has contents:'" << input.str() << "'." << endl;
 
 	// Erase all from the list.
 	namevalues.clear();
 
 	// Indicator that we're at the end.
-	while (input && !(input.rdstate() & ifstream::eofbit))
+	do
 	{
 		// Eat pre-run-whitespace
 		while (input.peek()==' ')
@@ -182,7 +187,10 @@ bool Shell::parseAttributes(stringstream& input)
 
 		// If we have a failure here, it may just mean we're in a non-sense attrib list or at the end of a list.
 		// Dont fail...just break so that the length of the name/value pair list will determine success.
-		if (input.rdstate() & ifstream::eofbit)
+
+		ios::iostate st;
+		st = input.rdstate();
+		if (st & ifstream::eofbit)
 			break;
 
 //		cout << "RAW:'" << buff << "'" << endl;
@@ -224,15 +232,13 @@ bool Shell::parseAttributes(stringstream& input)
 		else
 			input >> value;
 
-		if (input.rdstate() & ifstream::eofbit)
-			return false;
-
 //		cout << "RAW:'" << buff << "'" << endl;
 
 //		cout << "Processed:'" << buff << "'" << endl;
 
 		namevalues[name] = value;
-	}
+	} 	while (input && !(input.rdstate() & ifstream::eofbit));
+
 
 	// Now iterate the list and print them.
 	if (!namevalues.empty())
@@ -245,6 +251,39 @@ bool Shell::parseAttributes(stringstream& input)
 	}
 	// If we have a name/value pair, then we assume we're good. At least one.
 	return !namevalues.empty();
+}
+
+bool Shell::requiredAttributesPresent(string& subcmd, const char* attr1, const char* attr2, const char* attr3, const char* attr4)
+{
+	// extract the destination server
+	if (namevalues.empty())
+		return false;
+
+	if (namevalues[attr1]=="")
+	{
+		cout << subcmd << " Error. Requires attribute '" << attr1 << "'" << endl;
+		return false;
+	}
+
+	if (attr2!="" && namevalues[attr2]=="")
+	{
+		cout << subcmd << " Error. Requires attribute '" << attr2 << "'" << endl;
+		return false;
+	}
+
+	if (attr3!="" && namevalues[attr3]=="")
+	{
+		cout << subcmd << " Error. Requires attribute '" << attr3 << "'" << endl;
+		return false;
+	}
+
+	if (attr4!="" && namevalues[attr4]=="")
+	{
+		cout << subcmd << " Error. Requires attribute '" << attr4 << "'" << endl;
+		return false;
+	}
+
+	return true;
 }
 
 bool Shell::processLocal(string& cmd, string& subcmd)
@@ -269,25 +308,95 @@ bool Shell::processLocal(string& cmd, string& subcmd)
 			}
 		}
 	}
-	return true;
-
-	if (subcmd=="SENDPUBLICKEY")
+	else if (subcmd=="SENDPUBLICKEY" || subcmd=="TESTAUTHENTICATION")
 	{
-		assert(namevalues.empty());
-		// extract the destination server
+		if (!requiredAttributesPresent(subcmd, "sfipaddress"))
+		{
+			cout << "ERROR: Required attribute 'sfipaddress' not found." << endl;
+			return false;
+		}
 
 		string ipaddr;
 
-		cout << "Enter IP address of remote site to receive public key ---> ";
-		cin >> ipaddr;
+		ipaddr = namevalues["sfipaddress"];
 
-		cout << "IP address = '" << ipaddr << "'. Pushing public key..." << endl;
+		cout << "IP address = '" << ipaddr << "'" << endl;;
 
-		return ssh.pushLocalPublicKey(ipaddr);
+		if (subcmd=="SENDPUBLICKEY")
+		{
+			cout << " Pushing public key to remote server..." << endl;
+			return ssh.pushLocalPublicKey(ipaddr);
+		}
+		else
+		{
+			cout << " Testing secure connection and authentication with remote server..." << endl;
+			return ssh.testAuthentication(ipaddr);
+		}
 
 	}
+	else if (subcmd=="CREATESESSION" || subcmd=="REMOVESESSION")
+	{
+		if (!requiredAttributesPresent(subcmd, "sessid"))
+		{
+			cout << "ERROR: Required attribute 'sessid' not found." << endl;
+			return false;
+		}
 
-	if (subcmd=="")
+		stringstream sess_str;
+		sess_str.str(namevalues["sessid"]);
+		int sess_id;
+
+		sess_str >> sess_id;
+		ios::iostate st;
+
+		st = sess_str.rdstate();
+
+		if (st & (ifstream::badbit | ifstream::failbit))		// An error of some sort occured. Likely sess_id has no valid id due to contents.
+		{
+			cout << "In " << subcmd << " sessid='" << sess_str.str() << "' is not a number. Error." << endl;
+			return false;
+		}
+
+		if (subcmd=="CREATESESSION")
+		{
+			int ret;
+
+			cout << "Creating session ID=" << sess_id << endl;
+			ret = local.AddSession(sess_id);
+			if (ret)
+			{
+				switch(ret)
+				{
+				case ID_IN_USE:
+					cout << "ERROR: Session create of id=" << sess_id << " failed. ID IN USE." << endl;
+					break;
+				default:
+					cout << "ERROR: Session create of id=" << sess_id << " failed with errno=" << ret << endl;
+					break;
+				}
+			}
+			else
+				cout << "Session create successful." << endl;
+		}
+		else
+		{
+			int ret;
+
+			cout << "Deleting session ID=" << sess_id << endl;
+			ret = local.RemoveSession(sess_id);
+			if (ret)
+				cout << "ERROR: Removal of session " << sess_id << " failed with errno=" << ret << endl;
+			else
+				cout << "Session removal successful." << endl;
+		}
+	}
+	else
+	{
+		cout << "ERROR: LOCAL sub-command '" << subcmd << "' is unknown." << endl;
+		return false;
+	}
+
+	// We're good if we just 'drop' to here.
 	return true;
 }
 
@@ -300,10 +409,9 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 
 //	switch(cmd.c_str())
 	{
-		if (cmd=="HELP")
+		if (cmd=="HELP" || cmd=="?")
 		{
-		cout << endl << "uBrain -- Valid Commands are:" << endl
-			<< "HELP -- This message." << endl
+		cout << endl << "uBrain -- Valid Commands are:" << endl << endl
 			<< "QUIT|EXIT" << endl
 			<< endl
 			<< "STATUS FACTORIES|ENTITIES|ENDPOINTS" << endl
@@ -316,14 +424,14 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 			<< "SF DELETESESSION" << endl
 			<< "SF DELETEFACTORY" << endl
 			<< endl
-			<< "LOCAL CREATESF sfipaddress=<ipaddress> sfid=<sf-id> sfname=<human-readable-referencename>"
-			<< "LOCAL CREATESESSION"
-			<< "LOCAL REMOVESESSION"
-			<< "LOCAL REMOVESF"
-			<< "LOCAL KILLSF"
-			<< "LOCAL CREATEKEYPAIR"
-			<< "LOCAL SENDPUBLICKEY serveripaddress=<ipaddress>"
-			<< "LOCAL TESTAUTHENTICATION serveripaddress=<ipaddress>"
+			<< "LOCAL CREATESF sfipaddress=<ipaddress> sfid=<sf-id>" << endl << "               [sfname=<human-readable-referencename>]" << endl
+			<< "LOCAL CREATESESSION sessid=<sessionid>" << endl
+			<< "LOCAL REMOVESESSION sessid=<sessionid>" << endl
+			<< "LOCAL REMOVESF sfid=<sf-id>" << endl
+			<< "LOCAL KILLSF sfid=<sf-id>" << endl
+			<< "LOCAL CREATEKEYPAIR" << endl
+			<< "LOCAL SENDPUBLICKEY sfipaddress=<ipaddress>" << endl
+			<< "LOCAL TESTAUTHENTICATION sfipaddress=<ipaddress>" << endl
 			<< endl
 			<< "SETUP VERBOSITY level=<0-10>"
 			<< endl << endl;
@@ -334,7 +442,15 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 			exit(0);
 
 		if (cmd=="LOCAL")
-			processLocal(cmd, subcmd);
+		{
+			if (!processLocal(cmd, subcmd))
+			{
+				cout << "Error executing: LOCAL " << subcmd << endl;
+				return false;
+			}
+			else
+				return true;
+		}
 
 //	case "STATUS": case "CONNECT": case "SF": case "SETUP":
 		if (cmd=="STATUS" || cmd=="CONNECT" || cmd=="SF" || cmd=="SETUP")

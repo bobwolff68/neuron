@@ -171,8 +171,36 @@ bool SSHManagement::pushLocalPublicKey(const string ipdest, string location)
 	system( sshnow.c_str() );
 	cout << "*********************" << endl;
 
-	cout << endl << "Public key sent to remote server. Testing for ssh with NO PASSWORD." << endl;
-	cout << " Should not request a password and simply echo back..." << endl
+	cout << endl << "Public key sent to remote server." << endl;
+
+	return true;
+}
+
+bool SSHManagement::testAuthentication(const string ipdest, string location)
+{
+	string mylocation;
+	string sshnow;
+
+	if (!location.empty())
+		mylocation = location;
+	else
+		mylocation = deflocation;
+
+	if (ipdest == "" || !validateIpAddress(ipdest))
+	{
+		cout << "Error: Invalid or missing IP address for keypair." << endl;
+		return false;
+	}
+
+	// Now we check for a local keypair...
+	if (!hasLocalKeypair(mylocation))
+	{
+		cout << "Error: No local keypair exists. Use generateKeypair()." << endl;
+		return false;
+	}
+
+	cout << "Testing for ssh connection with NO PASSWORD." << endl;
+	cout << " Should NOT request a password and simply echo back the following:" << endl
 			<< "    'Remote Hello from <hostname-of-remote-server>'" << endl;
 
 	sshnow = "ssh ";
@@ -211,4 +239,6 @@ bool SSHManagement::pushLocalPublicKey(const string ipdest, string location)
 
 	cout << endl << "Complete. If you were asked for a password on the test-run," << endl
 			<< " then there are problems with automatic authentication." << endl;
+
+	return true;
 }

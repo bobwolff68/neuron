@@ -17,6 +17,7 @@ SET (SOURCES ubrain.cpp
    shell.cpp
    registration.cpp
    serverbase.cpp
+   localitems.cpp
 )
 
 #ADD_SUBDIRECTORY( ../../control ) # add subdir

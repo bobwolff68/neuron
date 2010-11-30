@@ -37,6 +37,7 @@ public:
 
 	bool generateLocalKeypair(string location="");
 	bool pushLocalPublicKey(const string ipdest, string location="");
+	bool testAuthentication(const string ipdest, string location="");
 
 	bool validateIpAddress(const string ipAddress);
 	bool nameToIP(const string& name, long& long_ip_out, string& string_ip_out);
