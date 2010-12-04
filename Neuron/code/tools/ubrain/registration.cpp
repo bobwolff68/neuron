@@ -11,7 +11,7 @@
 // Our static refcount being initialized for CurlGlobal::
 int CurlGlobal::refCount = 0;
 
-RegistrationClient::RegistrationClient(const char* pIp_address, int portnum)
+RegistrationClient::RegistrationClient(const char* pIp_address, int portnum, bool bIsEndpoint, const char* friendlyname)
 {
 	// TODO Auto-generated constructor stub
 	stringstream intconv;
@@ -25,9 +25,20 @@ RegistrationClient::RegistrationClient(const char* pIp_address, int portnum)
 	intconv << portnum;
 
 	url += intconv.str();
-	url += "/cgi/register.cgi?username=rwolff&password=mypass";
 
-	cout << "URL being formed is:" << endl << "  '" << url << "'" << endl;
+	if (bIsEndpoint)
+	{
+		assert(friendlyname);
+		url += "/neuron-ep?ep_friendly_name=\"";
+		url += friendlyname;
+		url += "\"";
+	}
+	else
+	{
+		url += "/neuron-sf";
+	}
+
+//	cout << "URL being formed is:" << endl << "  '" << url << "'" << endl;
 
 	if (!setupNetwork())
 		throw;
@@ -88,20 +99,3 @@ bool RegistrationClient::setupNetwork(void)
 
 	return true;
 }
-
-
-
-RegistrationServer::RegistrationServer()
-{
-	// TODO Auto-generated constructor stub
-
-}
-
-RegistrationServer::~RegistrationServer()
-{
-	// TODO Auto-generated destructor stub
-}
-
-
-
-

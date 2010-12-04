@@ -20,28 +20,46 @@
 
 #define GENERIC_ERROR	-99
 
-typedef struct SF_s {
+//typedef struct SF_s {
+//} SFInfo, *pSFInfo;
+class SFInfo
+{
+public:
+	SFInfo() { };
+	virtual ~SFInfo() { };
 	int sf_id;
 	string sf_ipaddress;
-} SFInfo, *pSFInfo;
+	string sf_name;
+};
 
+typedef SFInfo* pSFInfo;
 typedef map<int, pSFInfo> SFList;
 
-typedef struct Sess_s {
+class SessInfo
+{
+public:
+	SessInfo() { };
+	virtual ~SessInfo() { };
 	int sess_id;
 	SFList session_in_these_sfs;
-} SessInfo, *pSessInfo;
+};
 
+typedef SessInfo* pSessInfo;
 typedef map<int, pSessInfo> SessList;
 
-typedef struct Ent_s {
+class EntInfo
+{
+public:
+	EntInfo() { };
+	virtual ~EntInfo() { };
 	int ent_id;
 	int sf_id;
 	int sess_id;
 	int type;		// To be re-defined as enum?
 	// Other data needed for an entity?
-} EntInfo, *pEntInfo;
+};
 
+typedef EntInfo* pEntInfo;
 typedef map<int, pEntInfo> EntList;
 
 class LocalItems
@@ -57,7 +75,7 @@ public:
 	int RemoveSessionFromSF(int sessID, int sfID);
 	void ListSessions(void);
 
-	int AddSF(int sfID, const char* ip);
+	int AddSF(int sfID, const char* ip, const char* name);
 	int RemoveSF(int sfID);
 	void ListSFs(void);
 
@@ -69,6 +87,8 @@ protected:
 	SFList sfList;
 	SessList sessList;
 	EntList entList;
+	string inoutnull;
+	string innull;
 };
 
 #endif /* LOCALITEMS_H_ */

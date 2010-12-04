@@ -112,11 +112,11 @@ void Shell::parse(istream& input)
 
 			linestream >> cmd;
 			// Command with no subcommand nor attributes
-			if (linestream.rdstate() & ifstream::eofbit)
+			if (linestream.eof())
 				break;
 
 			linestream >> subcmd;
-			if (linestream.rdstate() & ifstream::eofbit)
+			if (linestream.eof())
 				break;
 
 			lentoeol = linestream.readsome(attr, 99);
@@ -169,7 +169,7 @@ bool Shell::parseAttributes(const char* inputstr)
 	stringstream input;
 
 	input << inputstr;
-	cout << "Input has contents:'" << input.str() << "'." << endl;
+//	cout << "Input has contents:'" << input.str() << "'." << endl;
 
 	// Erase all from the list.
 	namevalues.clear();
@@ -188,9 +188,7 @@ bool Shell::parseAttributes(const char* inputstr)
 		// If we have a failure here, it may just mean we're in a non-sense attrib list or at the end of a list.
 		// Dont fail...just break so that the length of the name/value pair list will determine success.
 
-		ios::iostate st;
-		st = input.rdstate();
-		if (st & ifstream::eofbit)
+		if (input.eof())
 			break;
 
 //		cout << "RAW:'" << buff << "'" << endl;
@@ -216,7 +214,7 @@ bool Shell::parseAttributes(const char* inputstr)
 			while (input.peek()=='\"')
 			{
 				input.get();
-				if (input.rdstate() & ifstream::eofbit)
+				if (input.eof())
 					return false;
 			}
 
@@ -237,10 +235,11 @@ bool Shell::parseAttributes(const char* inputstr)
 //		cout << "Processed:'" << buff << "'" << endl;
 
 		namevalues[name] = value;
-	} 	while (input && !(input.rdstate() & ifstream::eofbit));
+	} 	while (input.good());
 
 
 	// Now iterate the list and print them.
+#if 0
 	if (!namevalues.empty())
 	{
 		  attrNameValuePairs::iterator it;
@@ -249,6 +248,8 @@ bool Shell::parseAttributes(const char* inputstr)
 		    cout << (*it).first << " => " << (*it).second << endl;
 
 	}
+#endif
+
 	// If we have a name/value pair, then we assume we're good. At least one.
 	return !namevalues.empty();
 }
@@ -286,9 +287,82 @@ bool Shell::requiredAttributesPresent(string& subcmd, const char* attr1, const c
 	return true;
 }
 
+bool Shell::processDDSOriented(string& cmd, string& subcmd)
+{
+
+	if (cmd=="STATUS")
+	{
+		if (subcmd=="FACTORIES")
+		{
+
+		}
+		else if (subcmd=="ENTITIES")
+		{
+
+		}
+		else if (subcmd=="ENDPOINTS")
+		{
+
+		}
+		else
+		{
+			cout << "Unrecognized Command: " << cmd << " " << subcmd << endl;
+			return false;
+		}
+	}
+	else if (cmd=="CONNECT")
+	{
+
+	}
+	else if (cmd=="SF")
+	{
+
+	}
+	else if (cmd=="SETUP")
+	{
+
+	}
+	else
+	{
+		cout << "We should never arrive here - bad command in processDDSOriented()" << endl;
+		assert("We should never arrive here - bad command in processDDSOriented()"==NULL);
+		return false;
+	}
+
+	return true;
+}
+
+bool Shell::StreamToInt(stringstream& sstream, int& outInt)
+{
+	sstream >> outInt;
+
+	if (!sstream)		// An error of some sort occured. Likely sess_id has no valid id due to contents.
+	{
+		cout << "Syntax Error: '" << sstream.str() << "' is not a number." << endl;
+		return false;
+	}
+	else
+		return true;
+}
+
 bool Shell::processLocal(string& cmd, string& subcmd)
 {
+	stringstream sstr;
+	int sess_id;
+	int sf_id;
+
+	string sfip = namevalues["sfipaddress"];
+	string sfname = namevalues["sfname"];
+
 	assert(cmd=="LOCAL");
+
+	sstr.str(namevalues["sessid"]);
+	if (!StreamToInt(sstr, sess_id))
+		 return false;
+
+	sstr.str(namevalues["sf_id"]);
+	if (!StreamToInt(sstr, sf_id))
+		 return false;
 
 	if (subcmd=="GENERATEKEYPAIR")
 	{
@@ -316,21 +390,15 @@ bool Shell::processLocal(string& cmd, string& subcmd)
 			return false;
 		}
 
-		string ipaddr;
-
-		ipaddr = namevalues["sfipaddress"];
-
-		cout << "IP address = '" << ipaddr << "'" << endl;;
-
 		if (subcmd=="SENDPUBLICKEY")
 		{
 			cout << " Pushing public key to remote server..." << endl;
-			return ssh.pushLocalPublicKey(ipaddr);
+			return ssh.pushLocalPublicKey(sfip);
 		}
 		else
 		{
 			cout << " Testing secure connection and authentication with remote server..." << endl;
-			return ssh.testAuthentication(ipaddr);
+			return ssh.testAuthentication(sfip);
 		}
 
 	}
@@ -339,21 +407,6 @@ bool Shell::processLocal(string& cmd, string& subcmd)
 		if (!requiredAttributesPresent(subcmd, "sessid"))
 		{
 			cout << "ERROR: Required attribute 'sessid' not found." << endl;
-			return false;
-		}
-
-		stringstream sess_str;
-		sess_str.str(namevalues["sessid"]);
-		int sess_id;
-
-		sess_str >> sess_id;
-		ios::iostate st;
-
-		st = sess_str.rdstate();
-
-		if (st & (ifstream::badbit | ifstream::failbit))		// An error of some sort occured. Likely sess_id has no valid id due to contents.
-		{
-			cout << "In " << subcmd << " sessid='" << sess_str.str() << "' is not a number. Error." << endl;
 			return false;
 		}
 
@@ -382,12 +435,122 @@ bool Shell::processLocal(string& cmd, string& subcmd)
 		{
 			int ret;
 
-			cout << "Deleting session ID=" << sess_id << endl;
+			cout << "Deleting Session ID=" << sess_id << endl;
 			ret = local.RemoveSession(sess_id);
 			if (ret)
-				cout << "ERROR: Removal of session " << sess_id << " failed with errno=" << ret << endl;
+			{
+				switch(ret)
+				{
+				case ID_NOT_FOUND:
+					cout << "ERROR: Removal of session id=" << sess_id << " failed. ID NOT FOUND." << endl;
+					break;
+				default:
+					cout << "ERROR: Removal of session id=" << sess_id << " failed with errno=" << ret << endl;
+					break;
+				}
+			}
 			else
 				cout << "Session removal successful." << endl;
+		}
+	}
+	else if (subcmd=="CREATESF" || subcmd=="REMOVESF")
+	{
+		if (subcmd=="CREATESF" && !requiredAttributesPresent(subcmd, "sfipaddress", "sfid"))
+		{
+			cout << "ERROR: Required attributes 'sfipaddress' and/or 'sfid' not found." << endl;
+			return false;
+		}
+
+		if (subcmd=="REMOVESF" && !requiredAttributesPresent(subcmd, "sfid"))
+		{
+			cout << "ERROR: Required attribute 'sfid' not found." << endl;
+			return false;
+		}
+
+		if (subcmd=="CREATESF")
+		{
+			int ret;
+
+			cout << "Creating Factory ID=" << sf_id << endl;
+			ret = local.AddSF(sf_id, sfip.c_str(), sfname.c_str());
+			if (ret)
+			{
+				switch(ret)
+				{
+				case ID_IN_USE:
+					cout << "ERROR: Factory create of id=" << sf_id << " failed. ID IN USE." << endl;
+					break;
+				case GENERIC_ERROR:
+					cout << "ERROR: Factory create of id=" << sf_id << " failed. Likely call to ssh failed." << endl;
+					break;
+				default:
+					cout << "ERROR: Factory create of id=" << sf_id << " failed with errno=" << ret << endl;
+					break;
+				}
+			}
+			else
+				cout << "Factory create successful. Launch successful." << endl;
+		}
+		else
+		{
+			int ret;
+
+			cout << "Deleting Factory ID=" << sf_id << endl;
+			ret = local.RemoveSF(sf_id);
+			if (ret)
+			{
+				switch(ret)
+				{
+				case ID_NOT_FOUND:
+					cout << "ERROR: Removal of factory id=" << sf_id << " failed. ID NOT FOUND." << endl;
+					break;
+				default:
+					cout << "ERROR: Removal of factory id=" << sf_id << " failed with errno=" << ret << endl;
+					break;
+				}
+			}
+			else
+				cout << "Factory removal successful. (Remote launch was not killed via this command.)" << endl;
+		}
+	}
+	else if (subcmd=="KILLSF")
+	{
+		if (!requiredAttributesPresent(subcmd, "sfid"))
+		{
+			cout << "ERROR: Required attribute 'sfid' not found." << endl;
+			return false;
+		}
+
+		// Now kill the remote and remove the factory afterwards.
+		// TODO - need to implement an ssh with sed/awk to get the process id or send 'killall' ??
+		//        This doesn't seem perfect by any means. Maybe it shouldn't be implemented.
+
+		cout << "****" << endl << "  KILLSF is not implemented yet. Use REMOVESF for local only." << endl << "****" << endl;
+		return false;
+	}
+	else if (subcmd == "SAVESCRIPT")
+	{
+		if (!requiredAttributesPresent(subcmd, "filename"))
+		{
+			cout << "ERROR: Required attribute 'filename' not found." << endl;
+			return false;
+		}
+
+		if (!xml.SaveScript(namevalues["filename"].c_str()))
+		{
+			cout << "ERROR: Saving script failed." << endl;
+			return false;
+		}
+	}
+	else if (subcmd == "GETGROUP")
+	{
+		string out;
+		if (xml.GetGroup(out))
+			cout << "Group:" << endl << "'" << out << "'" << endl;
+		else
+		{
+			cout << "ERROR: Could not get last group." << endl;
+			return false;
 		}
 	}
 	else
@@ -418,11 +581,11 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 			<< endl
 			<< "CONNECT srcname=<name> srcip=<ipaddress> destip=<ipaddress>" << endl
 			<< endl
-			<< "SF ADDSESSION" << endl
-			<< "SF ADDENTITY" << endl
-			<< "SF DELETEENTITY" << endl
-			<< "SF DELETESESSION" << endl
-			<< "SF DELETEFACTORY" << endl
+			<< "SF ADDSESSION sessid=<sessid> sfid=<sfid>" << endl
+			<< "SF ADDENTITY entid=<entid> sfid=<sfid> sessid=<sessid> enttype=<RP|FILESOURCE|DECODESINK> [entname=<entityname>]" << endl
+			<< "SF DELETEENTITY entid=<entid>" << endl
+			<< "SF DELETESESSION sessid=<sessid>" << endl
+			<< "SF DELETEFACTORY sfid=<sfid>" << endl
 			<< endl
 			<< "LOCAL CREATESF sfipaddress=<ipaddress> sfid=<sf-id>" << endl << "               [sfname=<human-readable-referencename>]" << endl
 			<< "LOCAL CREATESESSION sessid=<sessionid>" << endl
@@ -432,6 +595,7 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 			<< "LOCAL CREATEKEYPAIR" << endl
 			<< "LOCAL SENDPUBLICKEY sfipaddress=<ipaddress>" << endl
 			<< "LOCAL TESTAUTHENTICATION sfipaddress=<ipaddress>" << endl
+			<< "LOCAL SAVESCRIPT filename=<filename>" << endl
 			<< endl
 			<< "SETUP VERBOSITY level=<0-10>"
 			<< endl << endl;
@@ -455,11 +619,28 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 //	case "STATUS": case "CONNECT": case "SF": case "SETUP":
 		if (cmd=="STATUS" || cmd=="CONNECT" || cmd=="SF" || cmd=="SETUP")
 		{
-		cout << "Temporarily not executing Command: " << cmd << " <no implementation>." << endl;
+			cout << "Temporarily NOT executing Command: " << cmd << " <no implementation>." << endl;
 
-		addToXML(cmd, subcmd);
+			// Turn into XML and write to our in-memory document for saving to a script.
+			addToXML(cmd, subcmd);
 
-		return true;
+			if (!processDDSOriented(cmd, subcmd))
+			{
+				cout << "Error executing DDS commands: " << cmd << " " << subcmd << endl;
+				return false;
+			}
+			else
+				return true;
+
+			// TODO We eventually want execution to come from the XML directly and not from my feeble parser I think.
+			// TODO Currently we would have to read an xml script, turn it into cmd, subcmd, namevalues[] and processCommand()
+/*
+			string tags;
+			if (!xml.GetGroup(tags))
+				return false;
+
+			return ProcessSingleCommand(tags.c_str());
+*/
 		}
 
 //	default:
@@ -477,91 +658,54 @@ bool Shell::addToXML(string& cmd, string& subcmd)
     int rc;
     xmlTextWriterPtr writer;
     xmlBufferPtr buf;
-    xmlChar *tmp;
 
-    /* Create a new XML buffer, to which the XML document will be
-     * written */
-    buf = xmlBufferCreate();
-    if (buf == NULL) {
-        printf("testXmlwriterMemory: Error creating the xml buffer\n");
-        return false;
-    }
-
-    /* Create a new XmlWriter for memory, with no compression.
-     * Remark: there is no compression for this kind of xmlTextWriter */
-    writer = xmlNewTextWriterMemory(buf, 0);
-    if (writer == NULL) {
-        printf("testXmlwriterMemory: Error creating the xml writer\n");
-        return false;
-    }
-
-    /* Start the document with the xml default for the version,
-     * encoding ISO 8859-1 and the default for the standalone
-     * declaration. */
-    rc = xmlTextWriterStartDocument(writer, NULL, "ISO-8859-1", NULL);
-    if (rc < 0) {
-        printf
-            ("testXmlwriterMemory: Error at xmlTextWriterStartDocument\n");
-        return false;
-    }
-
-    /* Start an element named "EXAMPLE". Since thist is the first
-     * element, this will be the root element of the document. */
-    rc = xmlTextWriterStartElement(writer, BAD_CAST cmd.c_str());
-    if (rc < 0) {
-        printf
-            ("testXmlwriterMemory: Error at start of CMD element\n");
-        return false;
-    }
-
-    rc = xmlTextWriterStartElement(writer, BAD_CAST subcmd.c_str());
-    if (rc < 0) {
-        printf
-            ("testXmlwriterMemory: Error at start of SUBCMD element\n");
-        return false;
-    }
-
-    //
-    // TODO BOGUS attribute being written. Must parse entire 'attributes' string for name/value with '"' marks as well.
-    //
-    /* Add an attribute with name "xml:lang" and value "de" to ORDER. */
-    if (!namevalues.empty())
-    {
-		  attrNameValuePairs::iterator it;
-
-		  for ( it=namevalues.begin() ; it != namevalues.end(); it++ )
-		  {
-		    cout << (*it).first << " => " << (*it).second << endl;
-
-		    rc = xmlTextWriterWriteAttribute(writer, BAD_CAST (*it).first.c_str(),
-		                                     BAD_CAST (*it).second.c_str());
-		    if (rc < 0) {
-		        printf
-		            ("testXmlwriterMemory: Error at xmlTextWriterWriteAttribute\n");
-		        return false;
-		    }
-		  }
-    }
-
-    //
-    // Wrap it up...
-    //
-
-    /* Here we could close the elements ORDER and EXAMPLE using the
-     * function xmlTextWriterEndElement, but since we do not want to
-     * write any other elements, we simply call xmlTextWriterEndDocument,
-     * which will do all the work. */
-    rc = xmlTextWriterEndDocument(writer);
-    if (rc < 0) {
-        printf("testXmlwriterMemory: Error at xmlTextWriterEndDocument\n");
-        return false;
-    }
-
-    // Now print it or write it...
-    printf("XML Command:\n%s\n", (const char *) buf->content);
-
-    xmlFreeTextWriter(writer);
-    xmlBufferFree(buf);
+    if (!xml.AddCommand(cmd, subcmd, namevalues))
+    	return false;
 
 	return true;
+}
+
+bool Shell::ProcessSingleCommand(const char* tags)
+{
+	xmlTextReaderPtr reader;
+	int ret;
+
+//#define VALIDATEDTD
+#ifdef VALIDATEDTD
+    /*
+     * Pass some special parsing options to activate DTD attribute defaulting,
+     * entities substitution and DTD validation
+     */
+    reader = xmlReaderForMemory(tags, strlen(tags), NULL, NULL,
+                 XML_PARSE_DTDATTR |  /* default DTD attributes */
+		 XML_PARSE_NOENT |    /* substitute entities */
+		 XML_PARSE_DTDVALID); /* validate with the DTD */
+#else
+    reader = xmlReaderForMemory(tags, strlen(tags), NULL, NULL, 0);
+#endif
+    if (reader != NULL) {
+
+        ret = xmlTextReaderRead(reader);
+        while (ret == 1) {
+            ProcessNode(reader);
+            ret = xmlTextReaderRead(reader);
+        }
+
+        xmlFreeTextReader(reader);
+
+        // From final ReaderRead() return value...
+        if (ret != 0) {
+        	cout << "Failed to parse tags buffer" << endl;
+        	return false;
+        }
+    } else {
+        cout << "Unable to create reader from tags buffer." << endl;
+        return false;
+    }
+    return true;
+}
+
+void Shell::ProcessNode(xmlTextReaderPtr reader)
+{
+
 }
