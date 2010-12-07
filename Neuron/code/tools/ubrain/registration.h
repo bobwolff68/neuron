@@ -39,9 +39,14 @@ public:
 	virtual ~RegistrationClient();
 	bool setupNetwork(void);
 	bool registerClient(void);
+	// Accessed from 'outside' via the write callback
+	char response[1000];
+	int respLength;
+	map<string, string> publicPairs;
 
 protected:
-	CURL* hCurl;
+    static size_t CURLWriteCallback(void *ptr, size_t size, size_t nmemb, void *ourpointer);
+    CURL* hCurl;
 	string ip_address;
 	int port_to_use;
 	string url;

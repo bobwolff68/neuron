@@ -13,44 +13,51 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
+	int gstun_id_ubrain;
 	Shell shell;
 	uBrainManager ubrain;
 	map<string, string> respvals;
 
+	RegServer regSrv(&ubrain, respvals);
+	gstun_id_ubrain = regSrv.getBrainGStun();
+
 	// Static items -- I think they are static?
+
+	// Should come from command line.
 	respvals["stun_ip"] = "207.145.121.125";
 	respvals["brain_id"] = "wan://1@blah blah";
 	respvals["wan_id"] = "wan://1@ubrain-ip-address::blah blah";
 
-	RegServer regSrv(&ubrain, respvals);
 
 #define TRYCLIENT
 #ifdef  TRYCLIENT
 #if 0
-	cout << "Requesting client (SF) registration in 2 seconds..." << endl;
-	sleep(4);
+	cout << "Requesting client (SF) registration in 1 second..." << endl;
+	sleep(1);
+	//
+	// NON-endpoint registration. No additional parameters. Even '8181' is not required
+	//
 	RegistrationClient client("192.168.46.78",8181);
 	client.registerClient();
+	cout << endl << endl << "uBrain:: response of gstun_id==" << client.publicPairs["gstun_id"] << endl;
 #endif
-
 	cout << "Requesting client (EP) registration in 1 second." << endl;
 	sleep(1);
+	//
+	// Endpoint registration 'true' and friendly name passed.
+	//
 	RegistrationClient client2("192.168.46.78", 8181, true, "BobClient Test Computer");
 	client2.registerClient();
-
-	cout << "Exiting application in 4 seconds..." << endl;
-	sleep(4);
-	exit(2);
+	cout << endl << endl << "uBrain:: response of gstun_id==" << client2.publicPairs["gstun_id"] << endl;
 #endif
 
 	//
 	//
 	//
-	shell.parse(cin);
+	while (!cin.eof() && shell.parseLine(cin))
+		;
 
 	cout << "\nAnd we are done." << endl;
-	exit(1);
-
 	//
 	//
 	//	ssh.setDefaultLocation("/home/rwolff/.ssh/id_rsa_test2");

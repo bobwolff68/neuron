@@ -15,7 +15,8 @@ class uBrainManager : ThreadSingle
 public:
 	uBrainManager();
 	virtual ~uBrainManager();
-	bool GetUniqueSFidAndMarkSFAsCreated(int& sfIdOut, const char* clientIPAddress, string& friendlyName, const char* tempID);
+	bool GetUniqueSFidAndMarkSFAsCreated(int& sfIdOut);
+	bool RegistrationComplete(int sfid, const char* clientIPAddress, const char* friendlyName, int globalID);
 private:
 	int workerBee(void);
 };

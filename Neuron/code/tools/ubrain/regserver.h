@@ -27,6 +27,7 @@ public:
 	RegServer(uBrainManager* initBrain, map<string, string> rvals, int initport=8181);
 	virtual ~RegServer();
 	int workerBee(void);
+	int getBrainGStun(void) { return globalID++; };
 private:
 	bool bIsEndpoint;
 	bool bIsServerUp;
@@ -40,10 +41,14 @@ private:
 	string tempID;		// Used specifically for endpoints to 'give' a semi-unique sfid to start.
 
 	void Init();
+	int setNonblocking(int fd);
 	void ShutdownServer(void);
 	bool HConnection(int csock);
 	void ParseRequest(const char* req);
 	void AddToStream(stringstream& outstream, const char* respname);
+	//  Now we have a sigint handler simply for the blocking accept() to avoid non-blocking I/O for now.
+	static void sighandler(int sig)	{ /*printf("   Signal catcher called for signal %d", sig);*/ return; };
+	static void SigIgnore(int sig)	{ printf("   IGNORE Signal for signal %d", sig); return; };
 };
 
 #endif /* REGSERVER_H_ */

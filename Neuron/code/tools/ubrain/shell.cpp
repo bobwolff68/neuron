@@ -65,25 +65,33 @@ Shell::~Shell()
 //		- Internal list for uBrain to maintain of sessions. Can be caused by script or indirectly
 //		  by an Endpoint who wants to create a new session/call.
 //
-void Shell::parse(istream& input)
+bool Shell::parseLine(istream& input)
 {
 	string line;
 	stringstream linestream;
 	string cmd, subcmd;
 	stringstream attrstream;
-	bool eol;
 
 	cout << endl << "uBrain > " << flush;
 
+#if 0
 	while (getline(input, line))
 	{
+#else
+		if (!getline(input, line))
+			return false;
+#endif
+
 		namevalues.clear();
 
-		if (line=="" || line == "\n" || line == "\r")
+		while (line=="" || line == "\n" || line == "\r")
 		{
 			cout << "uBrain > " << flush;
-			continue;
+			if (!getline(input, line))
+				return false;
 		}
+
+		cout << "uBrain > " << flush;
 
 //		cout << "line: " << line << endl;
 
@@ -104,42 +112,48 @@ void Shell::parse(istream& input)
 		//
 		// All commands are of the form <cmd> [<subcmd> [attributes]]
 		//
-		eol = false;
-		while (!eol)
-		{
-			static char attr[100];
-			int lentoeol;
+		static char attr[100];
 
-			linestream >> cmd;
-			// Command with no subcommand nor attributes
-			if (linestream.eof())
-				break;
+		linestream >> cmd;
+		strtoupper(cmd);
+
+		// Command with no subcommand nor attributes will be !.good()
+		if (linestream.good())
+		{
+			// Read the sub command now.
 
 			linestream >> subcmd;
-			if (linestream.eof())
-				break;
+			strtoupper(subcmd);
 
-			lentoeol = linestream.readsome(attr, 99);
-			attr[lentoeol] = 0;
+			// Again - subcommand with no attributes will be !.good() here
+			if (linestream.good())
+			{
+				// read rest of line into attr for further processing.
+				linestream.getline(attr, 99);
 
-			int st=0;
-			while (attr[st]==' ')
-				st++;
+				int st=0;
+				while (attr[st]==' ')
+					st++;
 
-			parseAttributes(&attr[st]);
-
-			eol=true;
+				parseAttributes(&attr[st]);
+			}
 		}
 
 //		cout << "Command: " << cmd << " -- SubCommand: " << subcmd << " -- Attributes: " << attributes << endl;
 
 		// Now process.
+		if (cmd=="EXIT" || cmd=="QUIT")
+			return false;
+
 		if (cmd!="")
 			processCommand(cmd, subcmd);
 
-		cout << "uBrain > " << flush;
+		return true;
+#if 0
 	}
+#endif
 
+	return false;		// eof reached.
 }
 
 void Shell::strtoupper(string &s)

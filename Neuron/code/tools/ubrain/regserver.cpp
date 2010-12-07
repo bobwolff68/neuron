@@ -9,6 +9,10 @@
 
 #include "string.h"
 
+#include <signal.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+
 #define MAXCLIENTCON 10
 
 RegServer::RegServer(uBrainManager* initBrain, map<string, string> rvals, int initport)
@@ -29,12 +33,35 @@ RegServer::RegServer(uBrainManager* initBrain, map<string, string> rvals, int in
 
 	respvalues = rvals;
 
+#if 0
+	// Setup parent process/thread to have an 'ignore' handler so its getlin() doesnt get interrupted.
+	struct sigaction sact;
+	sigemptyset(&sact.sa_mask);
+	sact.sa_flags = 0;
+	sact.sa_handler = SIG_IGN;
+	sigaction(SIGALRM, &sact, NULL);
+#endif
+
 	startThread();
 }
 
 RegServer::~RegServer()
 {
+	cout << "RegServer: Shutting down...please wait..." << flush;
+
+	// Fake-out thread stop just for this odd blocking accept() problem (to avoid non-blocking code at this time)
+	isStopRequested = true;
+
+	// Now formulate a 'wget' to handle the last (current) blocking accept()
+	string syscmd("wget -q http://localhost:");
+	stringstream finalget;
+	finalget << port;
+	syscmd += finalget.str();
+	system(syscmd.c_str());
+
 	stopThread();
+
+	cout << "Complete." << endl;
 
 	ShutdownServer();			// Should be done but just for completeness sake.
 
@@ -52,7 +79,17 @@ void RegServer::ShutdownServer(void)
 
 int RegServer::workerBee(void)
 {
+//	struct sigaction sact;
+
 	Init();
+
+#if 0
+	// Pre-setup of sig handler due to alarm() being used for breaking out of blocking i/o
+	sigemptyset(&sact.sa_mask);
+	sact.sa_flags = 0;
+	sact.sa_handler = sighandler;
+	sigaction(SIGALRM, &sact, NULL);
+#endif
 
 	while (serversock != -1)
 	{
@@ -68,15 +105,36 @@ int RegServer::workerBee(void)
 			return 0;
 		}
 
+#if 0
+		// Setup timer for 5 seconds to interrupt the blocking accept() call.
+		alarm(5);
+#endif
+
 		// TODO This item is synchronous inside the thread. So quitting the thread won't happen
 		//      unless one more connection comes in AFTER the quit is signalled.
 		//      Change to async.
+//		cout << "Prepping to wait (block) for an incoming connection right now." << endl;
 		accept_sock = accept(serversock, (struct sockaddr*) &remAddress, &remAddress_len);
+//		cout << "   accept() completed.  returned = " << accept_sock << ", errno = " << errno << endl;
 
-		if (accept_sock > 0)
+		if (accept_sock >= 0)
 		{
+//			cout << "   Incoming connection was recevied" << endl;
 			HConnection(accept_sock);
 			close(accept_sock);
+		}
+		else
+		{
+			if (errno == EINTR)
+			{
+				cout << "Alarm went off. Continuing to see if we need to quit or try again." << endl;
+				continue;
+			}
+			else
+			{
+				  perror("   errno string");
+				  return EINTR;
+			}
 		}
 
 	}
@@ -113,11 +171,13 @@ void RegServer::Init(void)
 	{
 		serverError = 2;
 		cout << "Error: Unable to bind on " << port << ". errno=" << errno << endl;
+		perror("Error: errno description:");
 	}
 	else if (listen(serversock, MAXCLIENTCON) == -1)
 	{
 		serverError = 3;
 		cout << "Error: Unable to listen on " << port << ". errno=" << errno << endl;
+		perror("Error: errno description:");
 	}
 	else
 	{
@@ -133,6 +193,7 @@ bool RegServer::HConnection(int csock)
 	char clientIpAddress[INET6_ADDRSTRLEN];
 	int bytesRead;
 	char request[100];
+	int temp_gid;
 
 	stringstream header;
 	string headerString;
@@ -178,8 +239,7 @@ bool RegServer::HConnection(int csock)
 	int sf_id=0;
 
 	// Prep the body after grabbing final needed items.
-	if (bIsEndpoint && theBrain->GetUniqueSFidAndMarkSFAsCreated(sf_id, clientIpAddress,
-							reqParameters["ep_friendly_name"], tempID.c_str()))
+	if (bIsEndpoint && theBrain->GetUniqueSFidAndMarkSFAsCreated(sf_id))
 	{
 		stringstream sfid_sstr;
 
@@ -192,8 +252,11 @@ bool RegServer::HConnection(int csock)
 
 	respvalues["client_pub_ip"]=clientIpAddress;
 	stringstream tempstream;
-	tempstream << globalID++;
+	temp_gid = globalID++;				// Must increment immediately to avoid a conflict.
+	tempstream << temp_gid;
 	respvalues["gstun_id"] = tempstream.str();
+
+//	cout << "SPECIAL: gstun_id='" << respvalues["gstun_id"] << "'" << endl;
 
 	// Prep the 'static' and recently determined items.
 	AddToStream(body, "client_pub_ip");
@@ -224,6 +287,11 @@ bool RegServer::HConnection(int csock)
 	send(csock, headerString.c_str(), headerString.size(), 0);
 	// Send body.
 	send(csock, bodyString.c_str(), bodyString.size(), 0);
+
+	// Now it's complete....let the uBrainManager:: know this fact.
+	// GlobalID-1 is used since it was post-incremented above for safety.
+	// And the actual 'globalID' is not used for safety in case it has been changed already.
+	theBrain->RegistrationComplete(sf_id, respvalues["client_pub_ip"].c_str(), respvalues["ep_friendly_name"].c_str(), temp_gid-1);
 
 	return true;
 }
@@ -258,27 +326,24 @@ void RegServer::ParseRequest(const char* req)
 	pos = chopped_req.find("neuron-");
 	if (pos==string::npos)
 	{
-		cout << "Error: URI Input fail. No 'neuron-' - instead='" << req << "'" << endl;
+//		cout << "Error: URI Input fail. No 'neuron-' - instead='" << req << "'" << endl;
 		return;
 	}
 
 	// Advance pointer beyond neuron-
 	chopped_req = chopped_req.substr(pos+strlen("neuron-"), string::npos);
 
-	cout << "RegServer:: Pre-lopping-HTTP/ we have:" << chopped_req << endl;
+//	cout << "RegServer:: Pre-lop-of-HTTP/ we have:" << chopped_req << endl;
 
 	// Now lop off the ending from "HTTP/"
 	pos = chopped_req.find("HTTP/");
-	if (pos==string::npos)
+	if (pos!=string::npos)
 	{
-		cout << "Error: URI Input fail. No 'HTTP/1' found in request. Currently=" << chopped_req << endl;
-		return;
+		// Take front end of string until HTTP/
+		chopped_req = chopped_req.substr(0, pos);
 	}
 
-	// Take front end of string until HTTP/
-	chopped_req = chopped_req.substr(0, pos);
-
-	cout << "RegServer:: After lopping-HTTP/ we have:" << chopped_req << endl;
+//	cout << "RegServer:: After lopping-of-HTTP/ we have:" << chopped_req << endl;
 
 	if (chopped_req.substr(0,2)=="sf")
 	{
@@ -356,4 +421,30 @@ void RegServer::ParseRequest(const char* req)
 		return;
 	}
 
+}
+
+/*----------------------------------------------------------------------
+ Portable function to set a socket into nonblocking mode.
+ Calling this on a socket causes all future read() and write() calls on
+ that socket to do only as much as they can immediately, and return
+ without waiting.
+ If no data can be read or written, they return -1 and set errno
+ to EAGAIN (or EWOULDBLOCK).
+ Thanks to Bjorn Reese for this code.
+----------------------------------------------------------------------*/
+int RegServer::setNonblocking(int fd)
+{
+    int flags;
+
+    /* If they have O_NONBLOCK, use the Posix way to do it */
+#if defined(O_NONBLOCK)
+    /* Fixme: O_NONBLOCK is defined but broken on SunOS 4.1.x and AIX 3.2.5. */
+    if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
+        flags = 0;
+    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+#else
+    /* Otherwise, use the old way of doing it */
+    flags = 1;
+    return ioctl(fd, FIOBIO, &flags);
+#endif
 }

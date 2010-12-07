@@ -21,7 +21,7 @@ class Shell
 public:
 	Shell();
 	virtual ~Shell();
-	void parse(istream& input);
+	bool parseLine(istream& input);
 	XMLInOut xml;
 	LocalItems local;
 protected:
