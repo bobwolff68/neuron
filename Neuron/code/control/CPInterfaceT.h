@@ -49,7 +49,8 @@ public:
             throw DDS_RETCODE_BAD_PARAMETER;
         }
         // Ensure all DPs have a name
-        snprintf(dpQos.participant_name.name,255,"%s",name);
+        //snprintf(dpQos.participant_name.name,255,"%s",name);
+	dpQos.participant_name.name = DDS_String_dup(name);
         
         retcode = pFactory->get_publisher_qos_from_profile(pubQos, "NEURON", qosProfile);
         if (retcode != DDS_RETCODE_OK)
@@ -256,7 +257,8 @@ class CPMasterT : public CPInterfaceT<ControlTypeSupport,
                                       StateTypeSupport,
                                       MetricsTypeSupport> {
 public:
-    CPMasterT(EventHandler *eh,int srcId,int domainId, const char *name,int appId, const char *qosProfile) : CPInterfaceT<ControlTypeSupport,
+    //CPMasterT(EventHandler *eh,int srcId,int domainId, const char *name,int appId, const char *qosProfile) : CPInterfaceT<ControlTypeSupport,
+    CPMasterT(EventHandler *eh,int _srcId,int domainId, const char *name,int appId, const char *qosProfile) : CPInterfaceT<ControlTypeSupport,
                                     EventTypeSupport,
                                     StateTypeSupport,
                                     MetricsTypeSupport>(domainId,name,qosProfile),
@@ -503,7 +505,8 @@ public:
             throw DDS_RETCODE_BAD_PARAMETER;            
         }
         
-        srcId = srcId;
+        //srcId = srcId;
+        srcId = _srcId;
         upper = eh;        
     }
     

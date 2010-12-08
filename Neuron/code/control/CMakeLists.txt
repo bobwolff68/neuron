@@ -17,14 +17,14 @@ SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY
 	)
 
 # ADD_SUBDIRECTORY(scp)
-
 # INCLUDE_DIRECTORIES( ../cminc )
 
-INCLUDE_DIRECTORIES(. ../include ../neuroncommon idl scp/idl)
+INCLUDE_DIRECTORIES(. ../include ../neuroncommon idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 
-#add_definitions(-DRTI_DARWIN)
-#add_definitions(-DRTI_UNIX)
+add_definitions(-DRTI_LINUX)
+add_definitions(-DRTI_UNIX)
+#add_definitions(-g3)
 #add_definitions(-m32 -arch i386)
 
 set(IDL_SOURCES idl/CPInterfaceIDL.idl)
@@ -47,7 +47,7 @@ foreach(idl_file ${IDL_SOURCES})
     list (APPEND SOURCES ${basename}.cxx ${basename}Plugin.cxx ${basename}Support.cxx)
 endforeach()
 
-list (APPEND SOURCES
+list(APPEND SOURCES
 	CPInterfaceT.h
 	CPInterface.h
 	CPInterface.cpp

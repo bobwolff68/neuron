@@ -9,6 +9,7 @@
 #ifndef CPINTERFACE_H_
 #define CPINTERFACE_H_
 
+#include <stdarg.h>
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
 
