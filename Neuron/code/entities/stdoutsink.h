@@ -32,7 +32,9 @@ class StdOutSink : public SessionEntity,public EventHandlerT<StdOutSink>,public 
                 if(count%10==0)
                 {
                     pInputObj->SetLayerReaderPartition(layerPartitions[(i-1)%4],layerPartitions[i%4]);
-                    std::cout << "Changing partition from " << layerPartitions[(i-1)%4] << " to " << layerPartitions[i%4] << std::endl;
+#ifdef VERBOSE_OUTPUT
+                    std::cout << MOO_LOG_PROMPT(id) << ": " << layerPartitions[(i-1)%4] << "-->" << layerPartitions[i%4] << std::endl;
+#endif
                     i++;
                 }
             }

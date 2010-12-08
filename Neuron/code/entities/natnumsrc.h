@@ -40,7 +40,7 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
 
             sprintf(layerPartitionName,"%d",num%numLayers);
 #ifdef VERBOSE_OUTPUT
-                std::cout << "Writing " << num << std::endl;
+            std::cout << MOO_LOG_PROMPT(id) << ": (data=" << num << ",layer=" << layerPartitionName << ")" << std::endl;
 #endif
             pOutputObj->Write((const char *)layerPartitionName,seqNum++,
                               (unsigned char *)&num,(int)sizeof(int));
