@@ -10,6 +10,7 @@
 #ifndef EVENTHANDLER_H_
 #define EVENTHANDLER_H_
 
+#include <iostream>
 #include <queue>
 #include <map>
 #include <assert.h>
@@ -43,7 +44,7 @@ class EventHandler
 	public:
 	
 		EventHandler()	{ };
-		~EventHandler()	{ };
+		~EventHandler()	{ while(!EventQueue.empty())	EventQueue.pop(); };
 		
 virtual	void	SignalEvent	(Event *) = 0;
 };
@@ -76,7 +77,7 @@ void EventHandlerT<NeuronEntityType>::AddHandleFunc(EventHandleFunc pHandleFunc,
 	if(pHandleFunc!=NULL)
 		EventHandleFuncList[eventKind] = pHandleFunc;
 	else
-		std::cout << "Can't add null event handle function" << endl;
+		std::cout << "Can't add null event handle function" << std::endl;
 		
 	return;
 }
@@ -91,7 +92,7 @@ void EventHandlerT<NeuronEntityType>::SignalEvent(Event *pEvent)
 		pthread_mutex_unlock(&eqMutex);
 	}
 	else
-		std::cout << "Can't enqueue null event" << endl;
+		std::cout << "Can't enqueue null event" << std::endl;
 		
 	return;
 }
@@ -126,10 +127,10 @@ void EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
     	    if(EventHandleFuncList.find(pEvent->GetKind())!=EventHandleFuncList.end())
 			    (((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
 			else
-				std::cout << "Handle undefined for event type " << pEvent->GetKind() << endl;
+				std::cout << "Handle undefined for event type " << pEvent->GetKind() << std::endl;
 		}
 		else
-			std::cout << "Can't handle null event" << endl;
+			std::cout << "Can't handle null event" << std::endl;
 	}
 	
 	delete pEvent;
