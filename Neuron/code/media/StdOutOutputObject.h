@@ -4,8 +4,6 @@
 #include <iostream>
 #include "MediaOutputObject.h"
 
-#define MOO_LOG_PROMPT(ownerId) "MOO(" << ownerId << ")"
-
 class StdOutOutputObject : public MediaOutputObject
 {
     public:

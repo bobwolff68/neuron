@@ -24,8 +24,8 @@ class MediaWriter
 
         ~MediaWriter()
         {
-            std::map<std::string,MediaLayerWriter*>::iterator    it;
-            DDS_ReturnCode_t                           retCode;
+            std::map<std::string,MediaLayerWriter*>::iterator   it;
+            DDS_ReturnCode_t                                    retCode;
 
             //Delete all the layer writers
             for(it=LayerWriters.begin(); it!=LayerWriters.end(); it++)
@@ -57,9 +57,6 @@ class MediaWriter
 
             if(LayerWriters.find(layerPartition)!=LayerWriters.end())
             {
-#ifdef VERBOSE_OUTPUT
-                std::cout << "Writing on layer " << layerPartition << std::endl;
-#endif
                 return LayerWriters[layerPartition]->Write(seqNum,payloadBuf,payloadSize);
             }
             else
@@ -77,9 +74,6 @@ class MediaWriter
 
             if(LayerWriters.find(layerPartition)!=LayerWriters.end())
             {
-#ifdef VERBOSE_OUTPUT
-                std::cout << "Writing on layer " << layerPartition << std::endl;
-#endif
                 return LayerWriters[layerPartition]->Write(dataUnitSample);
             }
             else

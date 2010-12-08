@@ -2,11 +2,8 @@
 #define NATNUMSTREAMINPUTOBJECT_H_
 
 #include <unistd.h>
-#include "MediaEvent.h"
 #include "MediaInputObject.h"
 #include "ThreadSingle.h"
-
-#define MIO_LOG_PROMPT(ownerId) "MIO(" << ownerId << ")"
 
 class NatNumStreamInputObject : public MediaInputObject
                               , public ThreadSingle
@@ -37,9 +34,6 @@ class NatNumStreamInputObject : public MediaInputObject
                 {
                     pEvent = new MediaInputEvent<int>(num);
                     pOwnerEventHandler->SignalEvent((Event *)pEvent);
-#ifdef VERBOSE_OUTPUT
-                    std::cout << MIO_LOG_PROMPT(ownerId) << ": MediaInputEvent(Data=" << num << ")" << endl;
-#endif
                     sleep(streamPeriodSecs);
                 }
             }

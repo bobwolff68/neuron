@@ -11,6 +11,8 @@
 
 #include "MediaObject.h"
 
+#define MOO_LOG_PROMPT(ownerId) "MOO(" << ownerId << ")"
+
 //!
 //! \class MediaOutputObject
 //!

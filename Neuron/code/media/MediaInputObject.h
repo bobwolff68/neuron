@@ -12,6 +12,8 @@
 #include "MediaObject.h"
 #include "MediaEvent.h"
 
+#define MIO_LOG_PROMPT(ownerId) "MIO(" << ownerId << ")"
+
 //!
 //! \class Media Input Object
 //!
