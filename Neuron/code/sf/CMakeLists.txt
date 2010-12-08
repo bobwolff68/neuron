@@ -20,13 +20,14 @@ INCLUDE_DIRECTORIES(../media ../media/idl ../entities ../neuroncommon/eventhandl
 
 add_definitions(-DRTI_LINUX)
 add_definitions(-DRTI_UNIX)
+add_definitions(-DVERBOSE_OUTPUT)
 #add_definitions(-g3)
 
 find_library(COMMON libneuroncommon.a ../lib)
 find_library(CONTROL libcontrolplane.a ../lib)
-find_library(NDDSCPP libnddscppzd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
-find_library(NDDSC libnddsczd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
-find_library(NDDSCORE libnddscorezd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSCPP libnddscpp.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSC libnddsc.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSCORE libnddscore.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
 #ADD_SUBDIRECTORY( ../control ) # add subdir
 #ADD_SUBDIRECTORY( ../neuroncommon ) # add subdir
 
