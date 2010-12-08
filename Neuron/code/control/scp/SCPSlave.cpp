@@ -213,7 +213,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
         ControlLogError("eventWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
-    
+
     retcode = eventWriter->dispose(*event,aSession->GetEventInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
     {
@@ -221,7 +221,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
         ControlLogError("eventWriter->dispose returned %d\n",retcode);
         goto done;
     }
-    
+
     retcode = stateWriter->get_key_value(*state,aSession->GetStateInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
     {
@@ -229,7 +229,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
         ControlLogError("stateWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
-    
+
     retcode = stateWriter->dispose(*state,aSession->GetStateInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
     {
@@ -246,7 +246,7 @@ bool SCPSlave::DeleteSlaveObject(SCPSlaveObject* aSession)
         ControlLogError("metricsWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
-    
+
     retcode = metricsWriter->dispose(*metrics,
                                      aSession->GetMetricsInstanceHandle());
     if (retcode != DDS_RETCODE_OK) 
