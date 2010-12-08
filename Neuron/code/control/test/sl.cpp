@@ -13,6 +13,8 @@
 //!
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <stdarg.h>
 #include "ndds_cpp.h"
 #include "controlplane.h"
 

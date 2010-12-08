@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <limits.h>
 #include "ndds_cpp.h"
 #include "controlplane.h"
 

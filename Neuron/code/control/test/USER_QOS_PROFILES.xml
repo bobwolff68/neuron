@@ -146,7 +146,7 @@
         <!-- ECP is only for local communication between the SF and SL
              Thus, only enable shared memory -->
         <qos_profile name="ECP" base_name="CP">
-        <!--
+        
             <participant_qos>
                 <transport_builtin>
                     <mask> DDS_TRANSPORTBUILTIN_SHMEM </mask>
@@ -159,7 +159,7 @@
                     </multicast_receive_addresses>
                 </discovery>
             </participant_qos>        
-        -->
+        
         </qos_profile>
 
         <!-- LSCP is only for local communication between the SF and SL
@@ -176,7 +176,7 @@
                     <multicast_receive_addresses> 
                     </multicast_receive_addresses>
                 </discovery>
-            </participant_qos>
+            </participant_qos> 
         </qos_profile>
 
     </qos_library>
