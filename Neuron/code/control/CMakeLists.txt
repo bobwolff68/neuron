@@ -16,24 +16,47 @@ SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY
 	"Single output for all libraries"
 	)
 
-# ADD_SUBDIRECTORY(scp)
 # INCLUDE_DIRECTORIES( ../cminc )
 
 INCLUDE_DIRECTORIES(. ../include ../neuroncommon idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 
-add_definitions(-DRTI_LINUX)
-add_definitions(-DRTI_UNIX)
+add_definitions(-DRTI_LINUX -DRTI_UNIX)
+
 #add_definitions(-g3)
-#add_definitions(-m32 -arch i386)
+
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  SET (COMPILE_FLAGS "-m32 -arch i386")
+  SET (CMAKE_EXE_LINKER_FLAGS "-m32 -arch i386")
+  find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+  find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+  find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+else()
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+  find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
+  find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
+  find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
+  add_definitions(-DRTI_64BIT)
+  SET (COMPILE_FLAGS 
+        "-m64"
+        CACHE PATH
+        "Specific for compile style")
+else()
+  find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+  find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+  find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+  SET (COMPILE_FLAGS
+        "-m32"
+        CACHE PATH
+        "Specific for compile style")
+endif()
+endif()
 
 set(IDL_SOURCES idl/CPInterfaceIDL.idl)
 list(APPEND IDL_SOURCES scp/idl/SCPInterface.idl)
 list(APPEND IDL_SOURCES acp/idl/ACPInterface.idl)
 list(APPEND IDL_SOURCES ecp/idl/ECPInterface.idl)
 list(APPEND IDL_SOURCES lscp/idl/LSCPInterface.idl)
-
-#set (CMAKE_EXE_LINKER_FLAGS "-m32 -arch i386")
 
 set(SOURCES)
 

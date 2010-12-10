@@ -4,6 +4,11 @@
 PROJECT(sf) # project name
 
 cmake_minimum_required(VERSION 2.4)
+
+if(COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+endif(COMMAND cmake_policy)
+
 find_library(PT_LIB pthread)
 
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
@@ -25,9 +30,9 @@ add_definitions(-DVERBOSE_OUTPUT)
 
 find_library(COMMON libneuroncommon.a ../lib)
 find_library(CONTROL libcontrolplane.a ../lib)
-find_library(NDDSCPP libnddscpp.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
-find_library(NDDSC libnddsc.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
-find_library(NDDSCORE libnddscore.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSCPP libnddscppzd.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
+find_library(NDDSC libnddsczd.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
+find_library(NDDSCORE libnddscorezd.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
 #ADD_SUBDIRECTORY( ../control ) # add subdir
 #ADD_SUBDIRECTORY( ../neuroncommon ) # add subdir
 
