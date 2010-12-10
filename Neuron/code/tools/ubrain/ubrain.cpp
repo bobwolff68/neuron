@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 {
 	int gstun_id_ubrain;
 	Shell shell;
-	uBrainManager ubrain;
+	uBrainManager ubrain(0);
 	map<string, string> respvals;
 
 	RegServer regSrv(&ubrain, respvals);

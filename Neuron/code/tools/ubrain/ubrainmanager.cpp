@@ -7,15 +7,24 @@
 
 #include "ubrainmanager.h"
 
-uBrainManager::uBrainManager()
+uBrainManager::uBrainManager(int brainId, int domainId)
 {
-	// TODO Auto-generated constructor stub
+    DDSDomainParticipantFactory *factory = DDSDomainParticipantFactory::get_instance();
+
+    DDS_DomainParticipantFactoryQos fqos;
+
+    factory->get_qos(fqos);
+    fqos.resource_limits.max_objects_per_thread = 8192;
+    factory->set_qos(fqos);
+
+	pCtrl = new Controller(brainId, domainId);
 
 }
 
 uBrainManager::~uBrainManager()
 {
-	// TODO Auto-generated destructor stub
+	if (pCtrl)
+		delete pCtrl;
 }
 
 int uBrainManager::workerBee(void)

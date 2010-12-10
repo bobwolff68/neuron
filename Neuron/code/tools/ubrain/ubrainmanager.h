@@ -10,15 +10,19 @@
 
 #include "neuroncommon.h"
 
+#include "../../control/test/controller.h"
+
 class uBrainManager : ThreadSingle
 {
 public:
-	uBrainManager();
+	uBrainManager(int brainId=0, int domainId=67);
 	virtual ~uBrainManager();
 	bool GetUniqueSFidAndMarkSFAsCreated(int& sfIdOut);
 	bool RegistrationComplete(int sfid, const char* clientIPAddress, const char* friendlyName, int globalID);
 private:
 	int workerBee(void);
+	Controller* pCtrl;
+
 };
 
 #endif /* UBRAINMANAGER_H_ */
