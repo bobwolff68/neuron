@@ -24,52 +24,55 @@
 #include <map>
 #include <list>
 
+#include <string>
+#include <sstream>
+
 //! \brief Naive function to break a string into an argv list. 
 //!
 //! Everything betweem " is considered a single argument
 //!
-void CreateArgvList(char *string,int *argc,char **argv)
+
+void CreateArgvList(char *str_in,int *argc,char **argv)
 {
-    char *c = string;
-    int s = 0;
-    
-    *argc = 0;
-    while (1)
+string arg;
+stringstream strm(str_in);
+char buf[50];
+int index;
+
+  index = 0;
+  *argc = 0;
+  
+  while (strm.good())
+  {
+    while (strm.peek()==' ' && strm.good())
+      strm.get();
+
+    // Trailing spaces would do this. They are chopped off and then we pop out.
+    if (!strm.good())
+      break;
+      
+    // Now get argument which may start with '"'
+    if (strm.peek()=='\"')
     {
-        if (!*c)
-        {
-            break;
-        }
-        switch(s)
-        {
-            case 0:
-                if (!isblank(*c))
-                {
-                    if (*c == '"')
-                        s = 2;
-                    else
-                        s = 1;
-                    argv[(*argc)++] = c;
-                }
-                break;
-            case 1:
-                if (isblank(*c))
-                {
-                    *c = 0;
-                    s = 0;
-                }    
-                break;
-            case 2:
-                if (*c == '"')
-                {
-                    ++c;
-                    *c = 0;
-                    s = 0;
-                }
-                break;
-        }
-        ++c;
+      strm.get();	// Kill the quote so we can get the guts of the arg.
+      strm.getline(buf, 49, '\"');	// Assumes there WILL be another closing '"'
+      arg = "\"";
+      arg += buf;
+      arg += "\"";	// Putting the 'eaten' '"' back in the argument for length purposes.
     }
+    else
+      strm >> arg;
+
+    // Now we have an arg. So stuff it and increment *argc
+    // If we find the length of 'arg', we know where to STUFF a NULL in the inbound string and assign.
+    argv[*argc] = str_in + index;
+    index += arg.length();
+    
+    str_in[index] = 0;
+    index++;	// Skip past the null terminator.
+    
+    (*argc)++;
+  }
 }
 
 class Controller
@@ -479,11 +482,11 @@ public:
         
         printf("\nLocal SessionFactories\n");
         printf("======================\n");
-        /*for (it = SFList.begin(); it != SFList.end(); ++it)
+        for (it = SFList.begin(); it != SFList.end(); ++it)
         {
             printf("SF %d/%d\n",it->first,it->second);
             //it->second->PrintInfo();
-        }*/
+        }
         printf("\n");
     }
 
@@ -607,6 +610,7 @@ public:
         char **argv = (char**)calloc(sizeof(char*),200);
         int argc;
         int s;
+	char thiscmdline[256];
         
         using_history();
         
@@ -620,9 +624,13 @@ public:
                 
             }
 
+	    if (!strlen(line))
+	      continue;
+
             add_history(line);
             
-            CreateArgvList(strdup(line),&argc,argv);
+	    strcpy(thiscmdline, line);
+            CreateArgvList(thiscmdline,&argc,argv);
 
             for (s = 0; s < argc; ++s)
             {
@@ -1115,6 +1123,7 @@ private:
     RTIOsapiThread *eventThread;
 };
 
+#ifndef ONLY_CONTROLLER_CLASS
 //! \brief Main entry point
 int 
 main(int argc, char **argv)
@@ -1179,4 +1188,5 @@ main(int argc, char **argv)
     
 	return 0;
 }
+#endif
 
