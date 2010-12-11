@@ -107,7 +107,7 @@ class MediaLayerWriter
             }
 
             //Use parent entity's topic to create data writer
-            pGenericWriter = pPub->create_datawriter(pTopic,DDS_DATAWRITER_QOS_USE_TOPIC_QOS,
+            pGenericWriter = pPub->create_datawriter(pTopic,DDS_DATAWRITER_QOS_DEFAULT,
 												     NULL,DDS_STATUS_MASK_NONE);
             if(pGenericWriter==NULL)
             {

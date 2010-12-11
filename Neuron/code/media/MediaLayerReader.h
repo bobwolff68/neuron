@@ -205,7 +205,7 @@ class MediaLayerReader
             }
 
             //Use parent entity's topic to create data reader
-            pGenericReader = pSub->create_datareader(pTopic,DDS_DATAREADER_QOS_USE_TOPIC_QOS,
+            pGenericReader = pSub->create_datareader(pTopic,DDS_DATAREADER_QOS_DEFAULT,
 												     NULL,DDS_STATUS_MASK_NONE);
             if(pGenericReader==NULL)
             {
