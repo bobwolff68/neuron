@@ -16,26 +16,20 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
 
         void EventHandleLoop(void)
         {
-            int             i = 1;
+            /*int             i = 1;
             int             count = 0;
-            const char     *layerPartitions[4] = { "*","0","[23]","[14]" };
-
+            const char     *layerPartitions[4] = { "*","0","[23]","[14]" };*/
             while(!isStopRequested)
             {
-                while(NoEvents() && !isStopRequested)
-                {
-                    usleep(50000);
-                }
-
                 count++;
                 HandleNextEvent();
 
-                if(count%10==0)
+                /*if(count%10==0)
                 {
                     pInputObj->SetLayerReaderPartition(layerPartitions[(i-1)%4],layerPartitions[i%4]);
                     std::cout << "Changing partition from " << layerPartitions[(i-1)%4] << " to " << layerPartitions[i%4] << std::endl;
                     i++;
-                }
+                }*/
             }
 
             while(!NoEvents())

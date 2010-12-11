@@ -4,9 +4,11 @@
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
 
-#define ENTITY_KIND_NATNUMSRC   0
-#define ENTITY_KIND_STDOUTSINK  1
-#define ENTITY_KIND_RELAYPROXY  2
+#define ENTITY_KIND_NATNUMSRC       0
+#define ENTITY_KIND_STDOUTSINK      1
+#define ENTITY_KIND_RELAYPROXY      2
+#define ENTITY_KIND_H264FILESRC     3
+#define ENTITY_KIND_H264DECODERSINK 4
 
 #define MEDIA_TOPIC_NAME(topicStr,srcEntityId) sprintf(topicStr,"%d",srcEntityId)
 
