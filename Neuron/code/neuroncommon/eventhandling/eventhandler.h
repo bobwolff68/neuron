@@ -14,7 +14,7 @@
 #include <queue>
 #include <map>
 #include <assert.h>
-#include <pthread.h>
+#include <semaphore.h>
 
 #define	EVENTQ_SLEEP_MUS	100000
 
@@ -57,12 +57,12 @@ template<typename NeuronEntityType> class EventHandlerT : public EventHandler
 	
 		std::queue<Event *>				EventQueue;
 		std::map<int,EventHandleFunc>	EventHandleFuncList;
-		pthread_mutex_t					eqMutex;
+		sem_t							eqSem;
 		
 	public:
 
-		EventHandlerT()		{ pthread_mutex_init(&eqMutex, NULL); }
-		~EventHandlerT()	{ }
+		EventHandlerT()		{ sem_init(&eqSem,0,0); }
+		~EventHandlerT()	{ sem_destroy(&eqSem); }
 
 		void	AddHandleFunc	(EventHandleFunc,int);
 		void	SignalEvent		(Event *);
@@ -87,9 +87,8 @@ void EventHandlerT<NeuronEntityType>::SignalEvent(Event *pEvent)
 {
 	if(pEvent!=NULL)
 	{
-		pthread_mutex_lock(&eqMutex);
 		EventQueue.push(pEvent);
-		pthread_mutex_unlock(&eqMutex);
+		sem_post(&eqSem);
 	}
 	else
 		std::cout << "Can't enqueue null event" << std::endl;
@@ -102,38 +101,21 @@ void EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
 {
     Event   *pEvent = NULL;
 
-	if (EventQueue.empty())
-		return;
-
-        pthread_mutex_lock(&eqMutex);
-        pEvent = EventQueue.front();
-	if (pEvent != NULL) {
-       	    EventQueue.pop();
-            pthread_mutex_unlock(&eqMutex);
-	    if (EventHandleFuncList[pEvent->GetKind()])
+    sem_wait(&eqSem);
+    pEvent = EventQueue.front();
+	EventQueue.pop();
+	
+	if (pEvent != NULL) 
+	{
+	    if (EventHandleFuncList[pEvent->GetKind()]!=NULL)
 		{
 	    		(((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
+	    		delete pEvent;
 		}
 	} 
 	else
-	{
-    	pthread_mutex_lock(&eqMutex);
-    	pEvent = EventQueue.front();
-   	    EventQueue.pop();
-   	    pthread_mutex_unlock(&eqMutex);
-        
-		if (pEvent != NULL) 
-		{
-    	    if(EventHandleFuncList.find(pEvent->GetKind())!=EventHandleFuncList.end())
-			    (((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
-			else
-				std::cout << "Handle undefined for event type " << pEvent->GetKind() << std::endl;
-		}
-		else
-			std::cout << "Can't handle null event" << std::endl;
-	}
+		std::cout << "Can't handle null event" << std::endl;
 	
-	delete pEvent;
 	return;
 }
 
