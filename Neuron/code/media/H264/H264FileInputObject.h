@@ -5,7 +5,7 @@
 #include <sys/time.h>
 #include "H264FileParser.h"
 #include "MediaInputObject.h"
-#include "ThreadSingle.h"
+#include "neuroncommon.h"
 
 class H264FileInputObject : public MediaInputObject,public ThreadSingle
 {

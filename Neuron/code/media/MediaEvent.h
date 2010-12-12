@@ -1,7 +1,7 @@
 #ifndef MEDIAEVENT_H_
 #define MEDIAEVENT_H_
 
-#include "eventhandler.h"
+#include "neuroncommon.h"
 
 #define MEDIA_INPUT_EVENT   1000
 
