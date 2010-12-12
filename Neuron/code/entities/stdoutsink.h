@@ -21,21 +21,19 @@ class StdOutSink : public SessionEntity,public EventHandlerT<StdOutSink>,public 
 
             while(!isStopRequested)
             {
-                while(NoEvents() && !isStopRequested)
+                if(HandleNextEvent())
                 {
-                    usleep(50000);
-                }
-
-                count++;
-                HandleNextEvent();
-
-                if(count%10==0)
-                {
-                    pInputObj->SetLayerReaderPartition(layerPartitions[(i-1)%4],layerPartitions[i%4]);
+                    count++;
+                    if(count%10==0)
+                    {
+                        std::string CurReaderPartition = ToString<int>(epId) + "/" + layerPartitions[(i-1)%4];
+                        std::string NxtReaderPartition = ToString<int>(epId) + "/" + layerPartitions[i%4];
+                        pInputObj->SetLayerReaderPartition(CurReaderPartition.c_str(),NxtReaderPartition.c_str());
 #ifdef VERBOSE_OUTPUT
-                    std::cout << MOO_LOG_PROMPT(id) << ": " << layerPartitions[(i-1)%4] << "-->" << layerPartitions[i%4] << std::endl;
+                        std::cout << MOO_LOG_PROMPT(id) << ": " << CurReaderPartition << "-->" << NxtReaderPartition << std::endl;
 #endif
-                    i++;
+                        i++;
+                    }
                 }
             }
 
@@ -73,12 +71,13 @@ class StdOutSink : public SessionEntity,public EventHandlerT<StdOutSink>,public 
         StdOutSink(int idP,int epIdP,int ownerIdP,int sessionIdP,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP,const char *layerRegExp):
         SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_STDOUTSINK),EventHandlerT<StdOutSink>(),ThreadSingle()
         {
-            id = idP;
+            std::string ReaderRegExp = ToString<int>(epIdP) + "/" + layerRegExp;
+
             epId = epIdP;
             pInputObj = new DDSInputObject(idP,this,pOwnerDPP,pTopicP);
             pOutputObj = new StdOutOutputObject(idP);
             AddHandleFunc(&StdOutSink::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
-            pInputObj->AddLayerReader(layerRegExp);
+            pInputObj->AddLayerReader(ReaderRegExp.c_str());
         }
 
         ~StdOutSink()

@@ -10,7 +10,11 @@
 #define ENTITY_KIND_H264FILESRC     3
 #define ENTITY_KIND_H264DECODERSINK 4
 
-#define MEDIA_TOPIC_NAME(topicStr,srcEntityId) sprintf(topicStr,"%d",srcEntityId)
+#define MEDIA_TOPIC_NAME(topicStr,prefix,sessionId)\
+        {\
+            sprintf(topicStr,"%s",prefix);\
+            strcat(topicStr,ToString<int>(sessionId).c_str());\
+        }
 
 class SessionEntity
 {

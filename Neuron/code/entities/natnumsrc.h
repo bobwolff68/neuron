@@ -20,15 +20,12 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
 
             while(!isStopRequested)
             {
-                while(NoEvents() && !isStopRequested)
-                {
-                    usleep(50000);
-                }
-
                 HandleNextEvent();
             }
 
             pInputObj->stopThread();
+            while(!NoEvents())
+                HandleNextEvent();
 
             return;
         }
@@ -38,7 +35,7 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
             int num = reinterpret_cast<MediaInputEvent<int> *>(pEvent)->GetData();
             char layerPartitionName[10];
 
-            sprintf(layerPartitionName,"%d",num%numLayers);
+            sprintf(layerPartitionName,"%d/%d",id,num%numLayers);
 #ifdef VERBOSE_OUTPUT
             std::cout << MOO_LOG_PROMPT(id) << ": (data=" << num << ",layer=" << layerPartitionName << ")" << std::endl;
 #endif
@@ -59,7 +56,6 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
         NatNumSrc(int idP,int ownerIdP,int sessionIdP,int uLimitP,int streamPeriodSecsP,int numLayersP,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP):
         SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_NATNUMSRC),EventHandlerT<NatNumSrc>(),ThreadSingle()
         {
-            id = idP;
             numLayers = numLayersP;
             seqNum = 0;
             pInputObj = new NatNumStreamInputObject(this,idP,uLimitP,streamPeriodSecsP);
@@ -69,7 +65,7 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
             for(int i=0; i<numLayersP; i++)
             {
                 char layerPartitionName[10];
-                sprintf(layerPartitionName,"%d",i);
+                sprintf(layerPartitionName,"%d/%d",id,i);
                 pOutputObj->AddLayerWriter(layerPartitionName);
             }
         }
