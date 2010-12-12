@@ -36,8 +36,8 @@ SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *namePa
     metrics = com::xvd::neuron::lscp::MetricsTypeSupport::create_data();
     
     //Init media plane
-    pMediaDP = DDSTheParticipantFactory->create_participant(domIdParam,DDS_PARTICIPANT_QOS_DEFAULT,
-    														NULL,DDS_STATUS_MASK_NONE);
+    pMediaDP = DDSTheParticipantFactory->create_participant_with_profile(domIdParam,"NEURON","MEDIA",
+    																	 NULL,DDS_STATUS_MASK_NONE);
     if(pMediaDP==NULL)
     {
     	std::cout << "Cannot create domain participant" << std::endl;
@@ -82,6 +82,18 @@ SessionLeader::~SessionLeader()
 
 				((StdOutSink *)(it->second))->stopThread();
 				delete (StdOutSink *)(it->second);
+				break;
+
+			case ENTITY_KIND_H264FILESRC:
+				
+				((H264FileSrc *)(it->second))->stopThread();
+				delete (H264FileSrc *)(it->second);
+				break;
+				
+			case ENTITY_KIND_H264DECODERSINK:
+
+				((H264DecoderSink *)(it->second))->stopThread();
+				delete (H264DecoderSink *)(it->second);
 				break;
 				
 			default:
@@ -178,8 +190,10 @@ void SessionLeader::ProcessScript(const char *script)
 	int 	entityId;
 	int 	entityType;
 	int 	srcId;
+	char	fileName[50];
 	
-	sscanf(script,"\"%d,%d,%d,%d\"",&cmdId,&entityId,&entityType,&srcId);
+	sscanf(script,"\"%d,%d,%d,%d,%s\"",&cmdId,&entityId,&entityType,&srcId,fileName);
+	fileName[strlen(fileName)-1] = '\0';
 	switch(cmdId)
 	{
 		case 1:	//ADDENTITY
@@ -204,6 +218,27 @@ void SessionLeader::ProcessScript(const char *script)
 					break;
 				}
 				
+				case ENTITY_KIND_H264FILESRC:
+				{
+					H264FileSrc *pSrc = new H264FileSrc(entityId,id,sessionId,fileName,29.97,pMediaDP,TopicList["video"]);				
+					pSrc->startThread();
+					EntityList[entityId] = (SessionEntity *)(pSrc);
+					std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
+					break;
+				}
+					
+				case ENTITY_KIND_H264DECODERSINK:
+				{	
+					H264DecoderSink *pSink = new H264DecoderSink(entityId,srcId,id,sessionId,fileName,pMediaDP,TopicList["video"],"*");
+					pSink->startThread();
+					EntityList[entityId] = (SessionEntity *)(pSink);
+					std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
+					std::string FFPlayCmd("ffplay ");
+					FFPlayCmd = FFPlayCmd + fileName;
+					std::cout << "FFPlay Command: " << FFPlayCmd << std::endl;
+					system(FFPlayCmd.c_str());
+					break;
+				}
 				default:
 			
 					std::cout << "Entity kind " << entityType << " not valid" << std::endl;
@@ -223,6 +258,16 @@ void SessionLeader::ProcessScript(const char *script)
 				case ENTITY_KIND_STDOUTSINK:
 				
 					delete (StdOutSink *)(EntityList[entityId]);
+					break;
+
+				case ENTITY_KIND_H264FILESRC:
+					
+					delete (H264FileSrc *)(EntityList[entityId]);
+					break;
+					
+				case ENTITY_KIND_H264DECODERSINK:
+				
+					delete (H264DecoderSink *)(EntityList[entityId]);
 					break;
 					
 				default:

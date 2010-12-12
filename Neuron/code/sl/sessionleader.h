@@ -8,6 +8,8 @@
 #include "controlplane.h"
 #include "natnumsrc.h"
 #include "stdoutsink.h"
+#include "H264FileSrc.h"
+#include "H264DecoderSink.h"
 
 #define DOMAIN_ID_LSCP	11
 
