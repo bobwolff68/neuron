@@ -21,7 +21,7 @@ INCLUDE_DIRECTORIES(../include ../neuroncommon ../sl ../control/include)
 INCLUDE_DIRECTORIES(../control ../control/scp ../control/lscp ../control/acp ../control/ecp)
 INCLUDE_DIRECTORIES(../control/idl ../control/scp/idl ../control/lscp/idl ../control/acp/idl ../control/ecp/idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
-INCLUDE_DIRECTORIES(../media ../media/idl ../entities ../neuroncommon/eventhandling ../neuroncommon/threading/NeuronBasics)
+INCLUDE_DIRECTORIES(../media ../media/H264 ../media/idl ../entities ../neuroncommon)
 
 add_definitions(-DRTI_LINUX)
 add_definitions(-DRTI_UNIX)
