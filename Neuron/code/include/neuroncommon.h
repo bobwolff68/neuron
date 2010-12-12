@@ -11,7 +11,9 @@
 #include "threading/NeuronBasics/ThreadSingle.h"
 #include "threading/NeuronBasics/ThreadMultiple.h"
 #include "eventhandling/eventhandler.h"
+#ifndef SKIP_DDS
 #include "dds/DDSEvent.h"
+#endif
 #include "anyoption/anyoption.h"
 
 #include <string>
@@ -36,6 +38,14 @@ T FromString( string& s, bool& bIsOK)
 		bIsOK=false;
 
 	return type;
+}
+
+template<typename T> string ToString(T type)
+{
+	stringstream ss;
+
+	ss << type;
+	return ss.str();
 }
 
 #endif
