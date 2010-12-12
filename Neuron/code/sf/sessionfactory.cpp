@@ -233,16 +233,10 @@ void SessionFactory::HandleACPDeleteSessionEvent(Event *pEvent)
 void SessionFactory::EventHandleLoop(void)
 {
 	while(!stop)
-	{
-		//wait while event queue is empty
-		while(NoEvents()&&!stop)
-		{
-			usleep(EVENTQ_SLEEP_MUS);
-		}
-		
-		if(!stop)
-			HandleNextEvent();
-	}
+		HandleNextEvent();
+	
+	while(!NoEvents())
+		HandleNextEvent();
 	
 	return;
 }
