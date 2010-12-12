@@ -33,7 +33,7 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
         void HandleMediaInputEvent(Event *pEvent)
         {
             int num = reinterpret_cast<MediaInputEvent<int> *>(pEvent)->GetData();
-            char layerPartitionName[10];
+            char layerPartitionName[50];
 
             sprintf(layerPartitionName,"%d/%d",id,num%numLayers);
 #ifdef VERBOSE_OUTPUT
@@ -64,7 +64,7 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
 
             for(int i=0; i<numLayersP; i++)
             {
-                char layerPartitionName[10];
+                char layerPartitionName[50];
                 sprintf(layerPartitionName,"%d/%d",id,i);
                 pOutputObj->AddLayerWriter(layerPartitionName);
             }

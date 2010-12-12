@@ -43,14 +43,14 @@ class H264FileSrc : public SessionEntity,public EventHandlerT<H264FileSrc>,publi
 #ifdef VERBOSE_OUTPUT
                     std::cout << seqNum << " :\t" << hdrNames[i] << " :\t" << pInputObj->pParser->vh.size[i] << std::endl;
 #endif
-                    pOutputObj->Write("0",seqNum++,pInputObj->pParser->vh.streamBuf[i],pInputObj->pParser->vh.size[i]);
+                    pOutputObj->Write((ToString<int>(id)+"/0").c_str(),seqNum++,pInputObj->pParser->vh.streamBuf[i],pInputObj->pParser->vh.size[i]);
                 }
             }
 
 /*#ifdef VERBOSE_OUTPUT
                     std::cout << seqNum << " :\t" << frmTypes[pFrame->type-1] << " :\t" << pFrame->size << std::endl;
 #endif*/
-            pOutputObj->Write(pFrame->layerName,seqNum++,pFrame->pBuf,pFrame->size);
+            pOutputObj->Write((ToString<int>(id)+"/"+(pFrame->layerName)).c_str(),seqNum++,pFrame->pBuf,pFrame->size);
             delete pFrame;
 
             return;
@@ -74,8 +74,8 @@ class H264FileSrc : public SessionEntity,public EventHandlerT<H264FileSrc>,publi
 
             for(int i=0; i<3; i++)
             {
-                char layerPartitionName[10];
-                sprintf(layerPartitionName,"%d",i);
+                char layerPartitionName[50];
+                sprintf(layerPartitionName,"%d/%d",id,i);
                 pOutputObj->AddLayerWriter(layerPartitionName);
             }
 

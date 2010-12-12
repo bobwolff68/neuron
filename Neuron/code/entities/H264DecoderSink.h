@@ -6,9 +6,6 @@
 #include "DDSInputObject.h"
 #include "H264DecoderOutputObject.h"
 
-const char *layerPartitions[3] = {"*","[0-1]","0"};
-const int   layerULimit[3] = {2,1,0};
-
 class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSink>,public ThreadSingle
 {
     private:
@@ -28,17 +25,22 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
 
         void EventHandleLoop(void)
         {
+            const char *layerPartitions[3] = {"*","[0-1]","0"};
+            const int   layerULimit[3] = {2,1,0};
+
             while(!isStopRequested)
             {
-                HandleNextEvent();
-                count++;
-
-                if(count%1000==0)
+                if(HandleNextEvent())
                 {
-                    int i = count/1000;
-                    std::cout << layerPartitions[(i-1)%3] << " ---> " << layerPartitions[i%3] << std::endl;
-                    pInputObj->SetLayerReaderPartition(layerPartitions[(i-1)%3],layerPartitions[i%3]);
-                    curLayerULimit = layerULimit[i%3];
+                    count++;
+                    if(count%1000==0)
+                    {
+                        int i = count/1000;
+                        std::cout << layerPartitions[(i-1)%3] << " ---> " << layerPartitions[i%3] << std::endl;
+                        pInputObj->SetLayerReaderPartition((ToString<int>(epId)+"/"+layerPartitions[(i-1)%3]).c_str(),
+                                                           (ToString<int>(epId)+"/"+layerPartitions[i%3]).c_str());
+                        curLayerULimit = layerULimit[i%3];
+                    }
                 }
             }
 
@@ -159,7 +161,7 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
             pParser = new H264BufferParser();
             pInputObj = new DDSInputObject(idP,this,pOwnerDPP,pTopicP);
             AddHandleFunc(&H264DecoderSink::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
-            pInputObj->AddLayerReader(layerRegExp);
+            pInputObj->AddLayerReader((ToString<int>(epId)+"/"+layerRegExp).c_str());
             decInFifoName = decInFifoNameP;
             pOutputObj = NULL;
         }
