@@ -14,6 +14,7 @@
 #include <queue>
 #include <map>
 #include <assert.h>
+#include <sys/time.h>
 #include <semaphore.h>
 
 #define	EVENTQ_SLEEP_MUS	100000
@@ -66,7 +67,7 @@ template<typename NeuronEntityType> class EventHandlerT : public EventHandler
 
 		void	AddHandleFunc	(EventHandleFunc,int);
 		void	SignalEvent		(Event *);
-		void	HandleNextEvent	(void);
+		bool	HandleNextEvent	(void);
 		bool	NoEvents		(void)						{ return EventQueue.empty(); }
 virtual void	EventHandleLoop (void) = 0;
 };
@@ -97,26 +98,46 @@ void EventHandlerT<NeuronEntityType>::SignalEvent(Event *pEvent)
 }
 
 template<typename NeuronEntityType>
-void EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
+bool EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
 {
-    Event   *pEvent = NULL;
+    Event   	   	   *pEvent = NULL;
+    bool				retVal = false;
+	struct timespec		TimeOut;
+    struct timeval		CurTime; 
 
-    sem_wait(&eqSem);
-    pEvent = EventQueue.front();
-	EventQueue.pop();
-	
-	if (pEvent != NULL) 
+	//Get absolute timeout for 20 milliseconds
+	gettimeofday(&CurTime,NULL);
+	if((CurTime.tv_usec+20000)>=1000000)
 	{
-	    if (EventHandleFuncList[pEvent->GetKind()]!=NULL)
+		CurTime.tv_sec++;
+		CurTime.tv_usec = CurTime.tv_usec+20000-1000000;
+	}
+	else	
+		CurTime.tv_usec = CurTime.tv_usec+20000;
+	
+	TimeOut.tv_sec = CurTime.tv_sec;
+	TimeOut.tv_nsec = CurTime.tv_usec*1000;
+
+
+    if(sem_timedwait(&eqSem,&TimeOut)==0)
+    {
+    	pEvent = EventQueue.front();
+		EventQueue.pop();
+	
+		if(pEvent != NULL) 
 		{
+		    if (EventHandleFuncList[pEvent->GetKind()]!=NULL)
+			{
 	    		(((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
 	    		delete pEvent;
+	    		retVal = true;
+			}
 		}
-	} 
-	else
-		std::cout << "Can't handle null event" << std::endl;
+		else
+			std::cout << "Can't handle null event" << std::endl;
+	}
 	
-	return;
+	return retVal;
 }
 
 #endif /* EVENTHANDLER_H_ */
