@@ -8,6 +8,7 @@ SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *namePa
 {
 	DDS_ReturnCode_t	retCode;
 	char				LSCPSlaveName[100];
+	char				topicName[50];
 	const char 		   *typeName = NULL;
 	
 	id = slIdParam;
@@ -53,6 +54,11 @@ SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *namePa
         exit(0);
     }
     
+    //Create Session Video Topic
+    MEDIA_TOPIC_NAME(topicName,"video_",sessionId);
+	TopicList["video"] = pMediaDP->create_topic(topicName,com::xvd::neuron::media::DataUnitTypeSupport::get_type_name(),
+												DDS_TOPIC_QOS_DEFAULT,NULL,DDS_STATUS_MASK_NONE);
+
     SetStateStandby();
 }
 
@@ -85,14 +91,16 @@ SessionLeader::~SessionLeader()
 		}
 		
 		std::cout << "Deleted entity " << it->first << std::endl;
-		retCode = pMediaDP->delete_topic(TopicList[it->first]);
-		if(retCode!=DDS_RETCODE_OK)
-		{
-			std::cout << "Cannot delete topic" << std::endl;
-			exit(0);
-		}
 	}
 	EntityList.clear();
+
+	retCode = pMediaDP->delete_topic(TopicList["video"]);
+	if(retCode!=DDS_RETCODE_OK)
+	{
+		std::cout << "Cannot delete topic" << std::endl;
+		exit(0);
+	}
+
 	TopicList.clear();
 	retCode = DDSTheParticipantFactory->delete_participant(pMediaDP);
 	if(retCode!=DDS_RETCODE_OK)
@@ -170,49 +178,37 @@ void SessionLeader::ProcessScript(const char *script)
 	int 	entityId;
 	int 	entityType;
 	int 	srcId;
-	char	topicName[50];
 	
 	sscanf(script,"\"%d,%d,%d,%d\"",&cmdId,&entityId,&entityType,&srcId);
 	switch(cmdId)
 	{
 		case 1:	//ADDENTITY
-		
-			MEDIA_TOPIC_NAME(topicName,srcId);
-			TopicList[entityId] = pMediaDP->create_topic(topicName,
-														 com::xvd::neuron::media::DataUnitTypeSupport::get_type_name(),
-														 DDS_TOPIC_QOS_DEFAULT,NULL,
-														 DDS_STATUS_MASK_NONE);
-			if(TopicList[entityId]!=NULL)
+
+			switch(entityType)
 			{
-				switch(entityType)
+				case ENTITY_KIND_NATNUMSRC:
 				{
-					case ENTITY_KIND_NATNUMSRC:
-					{
-						NatNumSrc *pSrc = new NatNumSrc(entityId,id,sessionId,20,1,5,pMediaDP,TopicList[entityId]);				
-						pSrc->startThread();
-						EntityList[entityId] = (SessionEntity *)(pSrc);
-						std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
-						break;
-					}
-					
-					case ENTITY_KIND_STDOUTSINK:
-					{	
-						StdOutSink *pSink = new StdOutSink(entityId,srcId,id,sessionId,pMediaDP,TopicList[entityId],"*");
-						pSink->startThread();
-						EntityList[entityId] = (SessionEntity *)(pSink);
-						std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
-						break;
-					}
-					
-					default:
-				
-						std::cout << "Entity kind " << entityType << " not valid" << std::endl;
-						break;
+					NatNumSrc *pSrc = new NatNumSrc(entityId,id,sessionId,20,1,5,pMediaDP,TopicList["video"]);				
+					pSrc->startThread();
+					EntityList[entityId] = (SessionEntity *)(pSrc);
+					std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
+					break;
 				}
-			}
-			else
-				std::cout << "Cannot create topic" << std::endl;
+					
+				case ENTITY_KIND_STDOUTSINK:
+				{	
+					StdOutSink *pSink = new StdOutSink(entityId,srcId,id,sessionId,pMediaDP,TopicList["video"],"*");
+					pSink->startThread();
+					EntityList[entityId] = (SessionEntity *)(pSink);
+					std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
+					break;
+				}
+				
+				default:
 			
+					std::cout << "Entity kind " << entityType << " not valid" << std::endl;
+					break;
+			}
 			break;
 			
 		case 2: //DELETEENTITY
@@ -233,17 +229,8 @@ void SessionLeader::ProcessScript(const char *script)
 				
 					std::cout << "Entity kind " << entityType << " not valid" << std::endl;
 					break;
-			}
-			
+			}			
 			EntityList.erase(entityId);
-			DDS_ReturnCode_t retCode = pMediaDP->delete_topic(TopicList[entityId]);
-			if(retCode!=DDS_RETCODE_OK)
-			{
-				std::cout << "Cannot delete topic" << std::endl;
-				exit(0);
-			}
-			TopicList.erase(entityId);
-			
 			break;
 	}
 	
@@ -253,16 +240,10 @@ void SessionLeader::ProcessScript(const char *script)
 void SessionLeader::EventHandleLoop(void)
 {
 	while(!isStopRequested)
-	{
-		//wait while event queue is empty
-		while(NoEvents()&&!isStopRequested)
-		{
-			usleep(EVENTQ_SLEEP_MUS);
-		}
+		HandleNextEvent();
 
-		if(!isStopRequested)		
-			HandleNextEvent();
-	}
+	while(!NoEvents())
+		HandleNextEvent();
 	
 	return;
 }

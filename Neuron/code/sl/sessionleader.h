@@ -1,6 +1,7 @@
 #ifndef SESSIONLEADER_H_
 #define SESSIONLEADER_H_
 
+#include <string>
 #include <string.h>
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
@@ -27,7 +28,7 @@ class SessionLeader : public EventHandlerT<SessionLeader>, public ThreadSingle
 		
 		DDSDomainParticipant		   *pMediaDP;
 		std::map<int,SessionEntity*> 	EntityList;
-		std::map<int,DDSTopic*>			TopicList;
+		std::map<std::string,DDSTopic*>	TopicList;
 		
 		com::xvd::neuron::lscp::Control *control;
     	com::xvd::neuron::lscp::State   *state;
