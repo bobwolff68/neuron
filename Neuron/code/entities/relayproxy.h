@@ -4,33 +4,23 @@
 #include "entity.h"
 #include "DDSInputObject.h"
 #include "DDSOutputObject.h"
+#include "H264BufferParser.h"
 
 class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public ThreadSingle
 {
     private:
 
-        int epId;
-        int nLayers;
-        DDSInputObject *pInputObj;
-        DDSOutputObject *pOutputObj;
+        int                 epId;
+        int                 nLayers;
+        std::string         curLayerPartition;
+        DDSInputObject     *pInputObj;
+        DDSOutputObject    *pOutputObj;
+        H264BufferParser   *pParser;
 
         void EventHandleLoop(void)
         {
-            /*int             i = 1;
-            int             count = 0;
-            const char     *layerPartitions[4] = { "*","0","[23]","[14]" };*/
             while(!isStopRequested)
-            {
-                count++;
                 HandleNextEvent();
-
-                /*if(count%10==0)
-                {
-                    pInputObj->SetLayerReaderPartition(layerPartitions[(i-1)%4],layerPartitions[i%4]);
-                    std::cout << "Changing partition from " << layerPartitions[(i-1)%4] << " to " << layerPartitions[i%4] << std::endl;
-                    i++;
-                }*/
-            }
 
             while(!NoEvents())
                 HandleNextEvent();
@@ -40,12 +30,11 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
 
         void DetermineSamplePartition(char *layerPartitionName,DataSampleSet *pSampleSet,int sampIdx)
         {
-            int num = *(reinterpret_cast<int*>((*pSampleSet->pSeqData)[sampIdx].payload.get_contiguous_buffer()));
-#ifdef VERBOSE_OUTPUT
-            std::cout << "Writing " << num << " in partition " << num%nLayers << std::endl;
-#endif
-            sprintf(layerPartitionName,"%d",num%nLayers);
+            int             bufSize = (int) (*pSampleSet->pSeqData)[sampIdx].payload.length();
+            unsigned char  *pBuf = reinterpret_cast<unsigned char *>((*pSampleSet->pSeqData)[sampIdx].payload.get_contiguous_buffer());
 
+            if(!pParser->ParseBuffer(pBuf,bufSize,0))   return;
+            strcpy(layerPartitionName,(ToString<int>(id)+"/"+ToString<int>(LAYER_TYPE(pParser->type))).c_str());
             return;
         }
 
@@ -57,9 +46,9 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
             {
                 if((*pSampleSet->pSeqInfo)[i].valid_data)
                 {
-                    char layerPartitionName[10];
-                    std::cout << "Num: " << *(reinterpret_cast<int*>((*pSampleSet->pSeqData)[i].payload.get_contiguous_buffer())) << std::endl;
+                    char layerPartitionName[50];
                     DetermineSamplePartition(layerPartitionName,pSampleSet,i);
+                    std::cout << "Partition: " << layerPartitionName << std::endl;
                     pOutputObj->Write(layerPartitionName,(*pSampleSet->pSeqData)[i]);
                 }
             }
@@ -76,29 +65,36 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
 
     public:
 
-        RelayProxy(DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP,int idP,int epIdP,int ownerIdP,int sessionIdP, int nLayersP):
+        RelayProxy(int idP,int epIdP,int ownerIdP,int sessionIdP,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP,int nLayersP,const char *layerRegExp):
         EventHandlerT<RelayProxy>(),SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_RELAYPROXY),ThreadSingle()
         {
             epId = epIdP;
             nLayers = nLayersP;
+            curLayerPartition = ToString<int>(epId)+"/"+layerRegExp;
             AddHandleFunc(&RelayProxy::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
-
+            pParser = new H264BufferParser();
             pInputObj = new DDSInputObject(id,this,pOwnerDP,pTopicP);
-            pInputObj->AddLayerReader("*");
-
+            pInputObj->AddLayerReader(curLayerPartition.c_str());
             pOutputObj = new DDSOutputObject(id,pOwnerDP,pTopicP);
             for(int i=0; i<nLayers; i++)
-            {
-                char layerPartitionName[10];
-                sprintf(layerPartitionName,"%d",i);
-                pOutputObj->AddLayerWriter(layerPartitionName);
-            }
+                pOutputObj->AddLayerWriter((ToString<int>(id)+"/"+ToString<int>(i)).c_str());
         }
 
         ~RelayProxy()
         {
+            delete pParser;
             delete pInputObj;
             delete pOutputObj;
+        }
+
+        void UpdateVideoSource(int newSrcId)
+        {
+            epId = newSrcId;
+            std::string LayerRegExp = curLayerPartition.substr(curLayerPartition.find('/'));
+            pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),(ToString<int>(epId)+LayerRegExp).c_str());
+            curLayerPartition = (ToString<int>(epId)+LayerRegExp).c_str();
+            std::cout << "Partition changed to: " << curLayerPartition << std::endl;
+            return;
         }
 };
 

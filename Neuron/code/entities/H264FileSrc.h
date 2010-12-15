@@ -23,10 +23,6 @@ class H264FileSrc : public SessionEntity,public EventHandlerT<H264FileSrc>,publi
             }
 
             pInputObj->stopThread();
-
-            while(!NoEvents())
-                HandleNextEvent();
-
             return;
         }
 

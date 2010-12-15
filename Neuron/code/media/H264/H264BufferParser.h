@@ -24,6 +24,8 @@
 #define	SPSH_STREAM_INDEX	0x0003
 #define	SPSQ_STREAM_INDEX	0x0004
 
+#define LAYER_TYPE(frm_type)	(((frm_type)>>2)*(1+((frm_type)&1)))
+
 typedef unsigned char uchar_t;
 typedef unsigned int  uint_t;
 

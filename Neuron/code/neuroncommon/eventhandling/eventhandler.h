@@ -47,6 +47,7 @@ class EventHandler
 		EventHandler()	{ };
 		~EventHandler()	{ while(!EventQueue.empty())	EventQueue.pop(); };
 		
+		int		NumEvents	(void)			{ return EventQueue.size(); }
 virtual	void	SignalEvent	(Event *) = 0;
 };
 
@@ -56,7 +57,6 @@ template<typename NeuronEntityType> class EventHandlerT : public EventHandler
 	
 	protected:
 	
-		std::queue<Event *>				EventQueue;
 		std::map<int,EventHandleFunc>	EventHandleFuncList;
 		sem_t							eqSem;
 		

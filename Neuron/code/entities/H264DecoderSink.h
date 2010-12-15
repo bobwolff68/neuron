@@ -19,6 +19,7 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
         int                         curFrameType;
         int                         count;
         const char                 *decInFifoName;
+        std::string                 curLayerPartition;
         H264BufferParser           *pParser;
         DDSInputObject             *pInputObj;
         H264DecoderOutputObject    *pOutputObj;
@@ -39,7 +40,9 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
                         std::cout << layerPartitions[(i-1)%3] << " ---> " << layerPartitions[i%3] << std::endl;
                         pInputObj->SetLayerReaderPartition((ToString<int>(epId)+"/"+layerPartitions[(i-1)%3]).c_str(),
                                                            (ToString<int>(epId)+"/"+layerPartitions[i%3]).c_str());
+
                         curLayerULimit = layerULimit[i%3];
+                        curLayerPartition = ToString<int>(epId)+"/"+layerPartitions[i%3];
                     }
                 }
             }
@@ -157,11 +160,12 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
             curFrameType = X264_TYPE_B;
             prevLayerULimit = 0;
             curLayerULimit = 2;
+            curLayerPartition = ToString<int>(epId)+"/"+layerRegExp;
             bSEIWritten = bSPSWritten = bPPSWritten = false;
             pParser = new H264BufferParser();
             pInputObj = new DDSInputObject(idP,this,pOwnerDPP,pTopicP);
             AddHandleFunc(&H264DecoderSink::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
-            pInputObj->AddLayerReader((ToString<int>(epId)+"/"+layerRegExp).c_str());
+            pInputObj->AddLayerReader(curLayerPartition.c_str());
             decInFifoName = decInFifoNameP;
             pOutputObj = NULL;
         }
@@ -171,6 +175,16 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
             delete pParser;
             delete pInputObj;
             delete pOutputObj;
+        }
+
+        void UpdateVideoSource(int newSrcId)
+        {
+            epId = newSrcId;
+            std::string LayerRegExp = curLayerPartition.substr(curLayerPartition.find('/'));
+            pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),(ToString<int>(epId)+LayerRegExp).c_str());
+            curLayerPartition = (ToString<int>(epId)+LayerRegExp).c_str();
+            std::cout << "Partition changed to: " << curLayerPartition << std::endl;
+            return;
         }
 };
 

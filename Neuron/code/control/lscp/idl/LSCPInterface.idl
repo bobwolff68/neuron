@@ -25,6 +25,7 @@ module com {
                     long epoch;
                     long lastControlSrcId;
                     long lastControlActionId;
+                    string<MAX_SCRIPT_LENGTH> payload;
                 };
                 
                 struct Metrics {

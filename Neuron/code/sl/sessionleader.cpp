@@ -84,18 +84,26 @@ SessionLeader::~SessionLeader()
 				delete (StdOutSink *)(it->second);
 				break;
 
+			case ENTITY_KIND_RELAYPROXY:
+
+				((RelayProxy *)(it->second))->stopThread();
+				delete (RelayProxy *)(it->second);
+				break;
+
 			case ENTITY_KIND_H264FILESRC:
 				
 				((H264FileSrc *)(it->second))->stopThread();
 				delete (H264FileSrc *)(it->second);
 				break;
-				
+
+#ifdef SF_ENDPOINT_MODE				
 			case ENTITY_KIND_H264DECODERSINK:
 
 				((H264DecoderSink *)(it->second))->stopThread();
 				delete (H264DecoderSink *)(it->second);
 				break;
-				
+#endif
+
 			default:
 			
 				std::cout << "Entity kind " << it->second->GetKind() <<" not valid" << std::endl;
@@ -186,97 +194,172 @@ void SessionLeader::HandleDeleteSessionEvent(Event *pEvent)
 
 void SessionLeader::ProcessScript(const char *script)
 {
-	int 	cmdId;
-	int 	entityId;
-	int 	entityType;
-	int 	srcId;
-	char	fileName[50];
+	int 						cmdId;
+	int 						entityId;
+	int 						entityType;
+	int 						srcId;
+	int							resW;
+	int 						resH;
+	char						srcName[100];
+	std::string					ScriptUnquoted;
+	std::string					Operand;
+	std::string					EntityType;
+	std::stringstream			ScriptStream;
+	std::map<std::string,int>	EntityTypeMap;
 	
-	sscanf(script,"\"%d,%d,%d,%d,%s\"",&cmdId,&entityId,&entityType,&srcId,fileName);
-	fileName[strlen(fileName)-1] = '\0';
-	switch(cmdId)
+	//Populate entity type map
+	EntityTypeMap["natnumsrc"] = ENTITY_KIND_NATNUMSRC;
+	EntityTypeMap["stdoutsink"] = ENTITY_KIND_STDOUTSINK;
+	EntityTypeMap["rp"] = ENTITY_KIND_RELAYPROXY;
+	EntityTypeMap["vfsrc"] = ENTITY_KIND_H264FILESRC;
+	EntityTypeMap["vdsink"] = ENTITY_KIND_H264DECODERSINK;
+	
+	//Remove quotes from script
+	ScriptUnquoted = script;
+	ScriptUnquoted = ScriptUnquoted.substr(1,ScriptUnquoted.length()-2);
+	ScriptStream << ScriptUnquoted;
+	
+	//Get operand
+	ScriptStream >> Operand;
+	std::cout << Operand << std::endl;
+	
+	if(Operand=="add")
 	{
-		case 1:	//ADDENTITY
-
-			switch(entityType)
+		ScriptStream >> entityId;
+		ScriptStream >> EntityType;
+		entityType = EntityTypeMap[EntityType];
+		std::cout << entityId << "," << entityType << std::endl;
+		
+		switch(entityType)
+		{
+			case ENTITY_KIND_NATNUMSRC:
 			{
-				case ENTITY_KIND_NATNUMSRC:
-				{
-					NatNumSrc *pSrc = new NatNumSrc(entityId,id,sessionId,20,1,5,pMediaDP,TopicList["video"]);				
-					pSrc->startThread();
-					EntityList[entityId] = (SessionEntity *)(pSrc);
-					std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
-					break;
-				}
-					
-				case ENTITY_KIND_STDOUTSINK:
-				{	
-					StdOutSink *pSink = new StdOutSink(entityId,srcId,id,sessionId,pMediaDP,TopicList["video"],"*");
-					pSink->startThread();
-					EntityList[entityId] = (SessionEntity *)(pSink);
-					std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
-					break;
-				}
-				
-				case ENTITY_KIND_H264FILESRC:
-				{
-					H264FileSrc *pSrc = new H264FileSrc(entityId,id,sessionId,fileName,29.97,pMediaDP,TopicList["video"]);				
-					pSrc->startThread();
-					EntityList[entityId] = (SessionEntity *)(pSrc);
-					std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
-					break;
-				}
-					
-				case ENTITY_KIND_H264DECODERSINK:
-				{	
-					H264DecoderSink *pSink = new H264DecoderSink(entityId,srcId,id,sessionId,fileName,pMediaDP,TopicList["video"],"*");
-					pSink->startThread();
-					EntityList[entityId] = (SessionEntity *)(pSink);
-					std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
-					std::string FFPlayCmd("ffplay ");
-					FFPlayCmd = FFPlayCmd + fileName;
-					std::cout << "FFPlay Command: " << FFPlayCmd << std::endl;
-					system(FFPlayCmd.c_str());
-					break;
-				}
-				default:
-			
-					std::cout << "Entity kind " << entityType << " not valid" << std::endl;
-					break;
+				NatNumSrc *pSrc = new NatNumSrc(entityId,id,sessionId,20,1,5,pMediaDP,TopicList["video"]);				
+				pSrc->startThread();
+				EntityList[entityId] = (SessionEntity *)(pSrc);
+				std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
+				break;
 			}
-			break;
-			
-		case 2: //DELETEENTITY
-			
-			switch(entityType)
-			{
-				case ENTITY_KIND_NATNUMSRC:
 					
-					delete (NatNumSrc *)(EntityList[entityId]);
-					break;
-					
-				case ENTITY_KIND_STDOUTSINK:
+			case ENTITY_KIND_STDOUTSINK:
+			{	
+				StdOutSink *pSink = new StdOutSink(entityId,srcId,id,sessionId,pMediaDP,TopicList["video"],"*");
+				pSink->startThread();
+				EntityList[entityId] = (SessionEntity *)(pSink);
+				std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
+				break;
+			}
 				
-					delete (StdOutSink *)(EntityList[entityId]);
-					break;
+			case ENTITY_KIND_RELAYPROXY:
+			{	
+				RelayProxy *pRelay = new RelayProxy(entityId,srcId,id,sessionId,pMediaDP,TopicList["video"],3,"*");
+				pRelay->startThread();
+				EntityList[entityId] = (SessionEntity *)(pRelay);
+				std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
+				break;
+			}
 
-				case ENTITY_KIND_H264FILESRC:
-					
-					delete (H264FileSrc *)(EntityList[entityId]);
-					break;
-					
-				case ENTITY_KIND_H264DECODERSINK:
+			case ENTITY_KIND_H264FILESRC:
+			{
+				ScriptStream >> srcName;
+				std::cout << srcName << std::endl;
+				H264FileSrc *pSrc = new H264FileSrc(entityId,id,sessionId,srcName,29.97,pMediaDP,TopicList["video"]);				
+				pSrc->startThread();
+				EntityList[entityId] = (SessionEntity *)(pSrc);
+				std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
+				break;
+			}
 				
-					delete (H264DecoderSink *)(EntityList[entityId]);
-					break;
+#ifdef SF_ENDPOINT_MODE					
+			case ENTITY_KIND_H264DECODERSINK:
+			{	
+				ScriptStream >> srcId >> resW >> resH >> srcName;
+				std::cout << srcId << "," << resW << "," << resH << "," << srcName << std::endl;
+				H264DecoderSink *pSink = new H264DecoderSink(entityId,srcId,id,sessionId,srcName,pMediaDP,TopicList["video"],"*");
+				pSink->startThread();
+				EntityList[entityId] = (SessionEntity *)(pSink);
+				break;
+			}
+#endif						
+			default:
+			
+				std::cout << "Entity kind " << entityType << " not valid" << std::endl;
+				break;
+		}
+	}
+	else if(Operand=="rem")
+	{
+		ScriptStream >> entityId;
+		std::cout << entityId << std::endl;
+		switch(EntityList[entityId]->GetKind())
+		{
+			case ENTITY_KIND_NATNUMSRC:
 					
-				default:
+				((NatNumSrc *)(EntityList[entityId]))->stopThread();
+				delete (NatNumSrc *)(EntityList[entityId]);
+				break;
+					
+			case ENTITY_KIND_STDOUTSINK:
 				
-					std::cout << "Entity kind " << entityType << " not valid" << std::endl;
-					break;
-			}			
-			EntityList.erase(entityId);
-			break;
+				((StdOutSink *)(EntityList[entityId]))->stopThread();
+				delete (StdOutSink *)(EntityList[entityId]);
+				break;
+
+			case ENTITY_KIND_RELAYPROXY:
+				
+				((RelayProxy *)(EntityList[entityId]))->stopThread();
+				delete (RelayProxy *)(EntityList[entityId]);
+				break;
+
+			case ENTITY_KIND_H264FILESRC:
+				
+				((H264FileSrc *)(EntityList[entityId]))->stopThread();
+				delete (H264FileSrc *)(EntityList[entityId]);
+				break;
+					
+#ifdef SF_ENDPOINT_MODE
+			case ENTITY_KIND_H264DECODERSINK:
+				((H264DecoderSink *)(EntityList[entityId]))->stopThread();
+				delete (H264DecoderSink *)(EntityList[entityId]);
+				break;
+#endif					
+					
+			default:
+				
+				std::cout << "Entity kind " << entityType << " not valid" << std::endl;
+				break;
+		}			
+		
+		EntityList.erase(entityId);
+	}
+	else if(Operand=="updsrc")		
+	{
+		ScriptStream >> entityId;
+		ScriptStream >> srcId;
+		std::cout << entityId << "," << srcId << std::endl;
+		switch(entityType)
+		{
+			case ENTITY_KIND_RELAYPROXY:
+				
+				((RelayProxy *)(EntityList[entityId]))->UpdateVideoSource(srcId);
+				break;
+					
+			case ENTITY_KIND_H264DECODERSINK:
+				
+				((H264DecoderSink *)(EntityList[entityId]))->UpdateVideoSource(srcId);
+				break;
+					
+			default:
+	
+				std::cout << "Entity kind " << entityType << " not valid" << std::endl;
+				break;
+		}
+	}
+	else if(Operand=="srclist")
+	{
+		std::string	SrcList;
+		ScriptStream >> SrcList;
+		RmtSrcNameList.Repopulate(SrcList.c_str());
 	}
 	
 	return;

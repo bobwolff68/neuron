@@ -21,7 +21,7 @@ SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
 
 INCLUDE_DIRECTORIES( .. ../idl ../../idl ../.. ../../../include ../../../neuroncommon)
 INCLUDE_DIRECTORIES( $ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds )
-add_definitions(-DRTI_DARWIN)
+add_definitions(-DRTI_LINUX)
 add_definitions(-DRTI_UNIX)
 add_definitions(-m32)
 add_definitions(-arch i386)
@@ -33,17 +33,17 @@ message(STATUS "cmake_system_processor is: ${CMAKE_SYSTEM_PROCESSOR}")
 
 
 find_library(PT_LIB pthread)
-find_library(NDDSCPP libnddscppzd.a $ENV{NDDSHOME}/lib/i86Darwin10gcc4.2.1)
-find_library(NDDSC libnddsczd.a $ENV{NDDSHOME}/lib/i86Darwin10gcc4.2.1)
-find_library(NDDSCORE libnddscorezd.a $ENV{NDDSHOME}/lib/i86Darwin10gcc4.2.1)
+find_library(NDDSCPP libnddscppzd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSC libnddsczd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSCORE libnddscorezd.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
 find_library(COMMON libneuroncommon.a ../../../lib)
 find_library(CONTROL libcontrolplane.a  ../../../lib)
 
 ADD_EXECUTABLE(scp_master scp_master.cpp)
-TARGET_LINK_LIBRARIES(scp_master ${CONTROL} ${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE} ${PT_LIB})
+TARGET_LINK_LIBRARIES(scp_master ${CONTROL} ${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE} ${PT_LIB} -ldl -lrt)
 
 ADD_EXECUTABLE(scp_slave scp_slave.cpp)
-TARGET_LINK_LIBRARIES(scp_slave ${CONTROL} i${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE} ${PT_LIB})
+TARGET_LINK_LIBRARIES(scp_slave ${CONTROL} ${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE} ${PT_LIB} -ldl -lrt)
 
 
 ###################

@@ -105,6 +105,8 @@ int index;
     void Controller::RemoteSessionUpdate(com::xvd::neuron::scp::State *state,DDS_SampleInfo *info)
     {
         printf("State update: sf: %d, scp: %d, state=%d\n",state->srcId,state->sessionId,state->state);
+        if(state->state==com::xvd::neuron::OBJECT_STATE_OFFERSRC||state->state==com::xvd::neuron::OBJECT_STATE_SELECTSRC)
+        	printf("Payload: %s\n",state->payload);
     }
     
     //! \brief Handle state updates from a SF

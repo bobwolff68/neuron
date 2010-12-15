@@ -3,7 +3,6 @@
 
 #include <unistd.h>
 #include "MediaInputObject.h"
-#include "ThreadSingle.h"
 
 class NatNumStreamInputObject : public MediaInputObject
                               , public ThreadSingle

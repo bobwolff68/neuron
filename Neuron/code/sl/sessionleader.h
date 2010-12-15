@@ -2,12 +2,14 @@
 #define SESSIONLEADER_H_
 
 #include <string>
+#include <sstream>
 #include <string.h>
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
 #include "controlplane.h"
 #include "natnumsrc.h"
 #include "stdoutsink.h"
+#include "relayproxy.h"
 #include "H264FileSrc.h"
 #include "H264DecoderSink.h"
 
@@ -17,8 +19,44 @@
 
 typedef	long long IDType;
 
+class RemoteSrcNameList
+{
+	public:
+	
+		std::map<int,std::string>	RemoteSrcNames;
+	
+		void Repopulate(const char *srcList)
+		{
+			char			  	entry[500];
+			char			  	srcName[100];
+			int					entityId;
+			std::stringstream 	Stream;
+
+			//srcList is of the form [<username>/<srcname>~<entityId>]*			
+			RemoteSrcNames.clear();
+			Stream << srcList;
+			while(!Stream.eof())
+			{
+				std::stringstream	EntryStream;
+				
+				Stream.getline(entry,500,',');
+				EntryStream << entry;
+				EntryStream.getline(srcName,100,'~');
+				EntryStream >> entityId;
+				RemoteSrcNames[entityId] = srcName;
+			}
+			
+			std::cout << "SrcNames:" << std::endl;
+			for(std::map<int,std::string>::iterator it=RemoteSrcNames.begin(); it!=RemoteSrcNames.end(); it++)
+				std::cout << "Listing: (" << it->first << "," << it->second << ")" << std::endl;
+			
+			return;
+		}
+};
+
 class SessionLeader : public EventHandlerT<SessionLeader>, public ThreadSingle
 {
+
 	private:
 	
 		IDType				id;
@@ -31,6 +69,7 @@ class SessionLeader : public EventHandlerT<SessionLeader>, public ThreadSingle
 		DDSDomainParticipant		   *pMediaDP;
 		std::map<int,SessionEntity*> 	EntityList;
 		std::map<std::string,DDSTopic*>	TopicList;
+		RemoteSrcNameList				RmtSrcNameList;
 		
 		com::xvd::neuron::lscp::Control *control;
     	com::xvd::neuron::lscp::State   *state;

@@ -14,7 +14,6 @@ class H264DecoderOutputObject : public MediaOutputObject
 
         int decInFD;
 
-
     public:
 
         H264DecoderOutputObject(int ownerIdP,const char *decInFifoName):MediaOutputObject(ownerIdP)

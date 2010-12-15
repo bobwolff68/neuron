@@ -4,7 +4,7 @@
 #include "sessionfactory.h"
 
 SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType ownerIdParam,
-							   int domId) : EventHandlerT<SessionFactory>()
+							   int domId) : EventHandlerT<SessionFactory>(),ThreadSingle()
 {
 	char	SCPSlaveName[100];
 	char	ACPSlaveName[100];
@@ -48,7 +48,7 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	//TRY_NEW(pResMtrObj,ResourceMonitor,"SessionFactory::SessionFactory()/new(ResourceMonitor): ");
 	
 	SetStateStandby();
-	EventHandleLoop();
+	//EventHandleLoop();
 }
 
 SessionFactory::~SessionFactory()
@@ -232,7 +232,7 @@ void SessionFactory::HandleACPDeleteSessionEvent(Event *pEvent)
 
 void SessionFactory::EventHandleLoop(void)
 {
-	while(!stop)
+	while(!isStopRequested)
 		HandleNextEvent();
 	
 	while(!NoEvents())

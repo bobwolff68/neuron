@@ -273,6 +273,7 @@ public:
     	}
     
     	delete session;
+    	sleep(5);
     } 
 
     virtual void EventHandleLoop (void)

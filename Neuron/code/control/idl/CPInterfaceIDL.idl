@@ -9,7 +9,9 @@ module com {
                 OBJECT_STATE_READY,
                 OBJECT_STATE_UPDATE,
                 OBJECT_STATE_DELETE,
-                OBJECT_STATE_DELETED
+                OBJECT_STATE_DELETED,
+                OBJECT_STATE_OFFERSRC,
+                OBJECT_STATE_SELECTSRC
             };
         };
     };

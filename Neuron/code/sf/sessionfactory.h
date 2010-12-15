@@ -30,7 +30,7 @@ typedef	long long IDType;
 
 };*/
 
-class SessionFactory : public EventHandlerT<SessionFactory>
+class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 {
 	class RemoteSessionSF
 	{
@@ -40,8 +40,6 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 	
 				SessionLeader  *pSL;
 				int				createMode;
-				//Process ID
-				//Thread Object
 		
 				SessionLeaderRef()		{ pSL = NULL; }
 				~SessionLeaderRef()		{ }
@@ -195,6 +193,26 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 				return;
 			}
 			
+			void OfferSource(const char *srcDescriptor)
+			{
+				state->state = com::xvd::neuron::OBJECT_STATE_OFFERSRC;
+				strcpy(state->payload,srcDescriptor);
+				pSCSlaveObj->Send(state);
+				std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": OFFERSRC => " << srcDescriptor << " (SCP)" << endl; 
+				
+				return;
+			}
+			
+			void SelectRemoteSource(const char *rmtSrcDescriptor)
+			{
+				state->state = com::xvd::neuron::OBJECT_STATE_SELECTSRC;
+				strcpy(state->payload,rmtSrcDescriptor);
+				pSCSlaveObj->Send(state);
+				std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": SELECTSRC => " << rmtSrcDescriptor << " (SCP)" << endl; 
+				
+				return;
+			}	
+
 			void HandleSLState(com::xvd::neuron::lscp::State *slState)
 			{
 				lscState->state = slState->state;
@@ -216,6 +234,16 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 						else
 							std::cout << SO_LOG_PROMPT(ownerId,GetId()) << ": NOT INIT" << endl;
 						break;
+
+					case com::xvd::neuron::OBJECT_STATE_OFFERSRC:
+						std::cout << "Offer: " << slState->payload << std::endl;
+						OfferSource(slState->payload);
+						break;
+						
+					case com::xvd::neuron::OBJECT_STATE_SELECTSRC:
+						std::cout << "Offer: " << slState->payload << std::endl;
+						SelectRemoteSource(slState->payload);
+						break;
 				}
 				
 				return;
@@ -236,7 +264,6 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 	
 		IDType						id;
 		IDType						ownerId;
-		bool						stop;
 		int							domId;
 		char					   	name[100];
 		SCPSlave   				   *pSCSlave;
@@ -267,9 +294,17 @@ class SessionFactory : public EventHandlerT<SessionFactory>
 		void	HandleACPNewSessionEvent	(Event *);
 		void	HandleACPUpdateSessionEvent	(Event *);
 		void	HandleACPDeleteSessionEvent	(Event *);
+		
+		int workerBee(void)
+		{
+			EventHandleLoop();
+			return 0;
+		}
 				
 	public:
 
+		bool stop;
+		
 		SessionFactory(IDType,const char *,IDType,int);
 		~SessionFactory();
 		
