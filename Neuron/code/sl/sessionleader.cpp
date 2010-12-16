@@ -243,6 +243,7 @@ void SessionLeader::ProcessScript(const char *script)
 					
 			case ENTITY_KIND_STDOUTSINK:
 			{	
+				ScriptStream >> srcId;
 				StdOutSink *pSink = new StdOutSink(entityId,srcId,id,sessionId,pMediaDP,TopicList["video"],"*");
 				pSink->startThread();
 				EntityList[entityId] = (SessionEntity *)(pSink);
@@ -252,6 +253,7 @@ void SessionLeader::ProcessScript(const char *script)
 				
 			case ENTITY_KIND_RELAYPROXY:
 			{	
+				ScriptStream >> srcId;
 				RelayProxy *pRelay = new RelayProxy(entityId,srcId,id,sessionId,pMediaDP,TopicList["video"],3,"*");
 				pRelay->startThread();
 				EntityList[entityId] = (SessionEntity *)(pRelay);
