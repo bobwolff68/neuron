@@ -35,7 +35,9 @@
 //! Sessions, events, and statefulness of the network.
 class Controller
 {
-    
+
+	class Session;
+
 public:
     
     Controller(int appId, int domaindId);
@@ -51,7 +53,10 @@ public:
     void ShutdownRemoteSF(int sfId);
     void CreateOrUpdateSession(int sessionId, set<int> *_sfs,const char *script,bool update);
     void ListSession();
+    Session* GetSession(int sessionId);
     void DeleteSession(int sId);
+    bool runSingleCommand(const char*cmdIn);
+    void SetCallback(CallbackBase* pc) { pCallback = pc; };
 #ifndef ONLY_CONTROLLER_CLASS
     void run();
 #endif
@@ -183,5 +188,6 @@ private:
     
     int m_appId;
 
+    CallbackBase* pCallback;
     RTIOsapiThread *eventThread;
 };

@@ -10,7 +10,6 @@
 
 #include "neuroncommon.h"
 
-#include <string>
 #include <iostream>
 
 extern "C" {

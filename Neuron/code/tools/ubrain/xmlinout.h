@@ -12,7 +12,7 @@
 
 #include <libxml/xmlreader.h>
 #include <libxml/xmlwriter.h>
-#include <stack>
+#include <deque>
 
 class XMLInOut
 {

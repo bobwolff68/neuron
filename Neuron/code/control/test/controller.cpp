@@ -17,16 +17,16 @@
 #include <string>
 #include <sstream>
 
-//! \brief Naive function to break a string into an argv list. 
+//! \brief Not-quite-so-naive function to break a string into an argv list.
 //!
-//! Everything betweem " is considered a single argument
+//! Everything between " is considered a single argument
 //!
 
 void CreateArgvList(char *str_in,int *argc,char **argv)
 {
 string arg;
 stringstream strm(str_in);
-char buf[50];
+static char buf[10000];
 int index;
 
   index = 0;
@@ -45,7 +45,7 @@ int index;
     if (strm.peek()=='\"')
     {
       strm.get();	// Kill the quote so we can get the guts of the arg.
-      strm.getline(buf, 49, '\"');	// Assumes there WILL be another closing '"'
+      strm.getline(buf, 9999, '\"');	// Assumes there WILL be another closing '"'
       arg = "\"";
       arg += buf;
       arg += "\"";	// Putting the 'eaten' '"' back in the argument for length purposes.
@@ -70,6 +70,8 @@ int index;
     { 
         pSessionEventHandler = new ControllerEventHandler(this);
                 
+        pCallback = NULL;
+
         m_appId = appId;
                 
         // The Controller manages sessions, thus connect to the SCP as master
@@ -95,16 +97,22 @@ int index;
     //! \brief Destroy this Controller
     Controller::~Controller()
     {
-        pACPMaster->DeleteMasterObject(pACPMasterObject);
+    	if (pACPMasterObject)
+    		pACPMaster->DeleteMasterObject(pACPMasterObject);
+
         delete pSCPMaster;
         delete pACPMaster;
         delete pSessionEventHandler;
     }
 
     //! \brief Handle events detetecd on the SCP
-    void Controller::RemoteSessionUpdate(com::xvd::neuron::scp::State *state,DDS_SampleInfo *info)
+    void Controller::RemoteSessionUpdate(com::xvd::neuron::scp::State *state, DDS_SampleInfo *info)
     {
         printf("State update: sf: %d, scp: %d, state=%d\n",state->srcId,state->sessionId,state->state);
+
+	if (pCallback)
+        	pCallback->NewSessionState(state);
+
         if(state->state==com::xvd::neuron::OBJECT_STATE_OFFERSRC||state->state==com::xvd::neuron::OBJECT_STATE_SELECTSRC)
         	printf("Payload: %s\n",state->payload);
     }
@@ -115,6 +123,7 @@ int index;
         RemoteSessionFactoryMap::iterator it;
         RemoteSessionFactory *rsf;
         
+        // TODO MANJESH - this becomes a CRASH if the remote SF has DIED. How can we handle this type of problem?
         it = remoteSF.find(state->srcId);
         
         if (it == remoteSF.end())
@@ -122,7 +131,7 @@ int index;
             // A new SF has been detected (it was either created manually or by the
             // sf create ... command. In either case it will be added as a managed
             // SF.
-            printf("New SF detected\n");
+            printf("New SF detected. State=%d\n", (int)state->state);
             rsf = new RemoteSessionFactory(state->srcId,
                                            info->disposed_generation_count,
                                            pACPMaster);
@@ -143,6 +152,9 @@ int index;
                 // application there is no real different between a enable and ping,
                 // but in a real application there likely is a difference
                 rsf->ping();
+
+                if (pCallback)
+                	pCallback->NewSFDetected(state->srcId);
             }
             else
             {
@@ -222,8 +234,8 @@ int index;
         printf("acp ls                           - List detected SFs\n");
         printf("acp shutdown <sfId>+             - Shutdown listed SFs\n");
         printf("acp send <sfId>+ <script>        - Send script to SFs\n");
-        printf("scp create <sId> <id>+ <script>  - Create a new session\n");
-        printf("scp updatea <sId> <id>+ <script> - Update session \n");
+        printf("scp create <sId> <sfId>+ <script>  - Create a new session\n");
+        printf("scp update <sId> <sfId>+ <script> - Update session \n");
         printf("scp delete <sId>                 - Delete a session\n");
         printf("scp ls                           - List known sessions\n");
         printf("sf create <sId>                  - Spawn a new SF\n");
@@ -328,7 +340,7 @@ int index;
             ++(*argc);
             if (*argc == max_argc)
             {
-                printf("usage: scp [create | update] <sessionId>+ <script>\n");
+                printf("usage: scp [create | update] <sessionId> <sfID>+ <script>\n");
                 return;
             }
             sId = strtol(argv[*argc],NULL,0);
@@ -505,23 +517,39 @@ int index;
         Session *session;
         
         sit = sessions.find(sessionId);
-        if ((sit != sessions.end()) && !update)
-        {
-            printf("Session %d already exists\n",sessionId);
-            return;
-        }
         
+        // Need to allow separate 'create' commands to add a given session to a set of factories.
+        // This means it is ok to send in a session-id more than once. Deal with it gracefully.
         if (!update)
         {
-            printf("Create session %d using SF ",sessionId);
-            session = new Session(pSCPMaster,sessionId);
-            sessions[sessionId] = session;
+        	// Session doesn't exist yet.
+        	if (sit == sessions.end())
+        	{
+				printf("Create session %d using SF ",sessionId);
+				session = new Session(pSCPMaster,sessionId);
+				sessions[sessionId] = session;
+        	}
+        	else
+        	{
+        		// Now we have the 'found' session here so mark it and don't re-create an existing session.
+                session = sit->second;
+
+        		printf("Adding existing session on SF ", sessionId);
+        	}
         }
         else 
         {
+        	// If the chosen session to be updated doesn't exist....error out.
+        	if (sit == sessions.end())
+        	{
+        		printf("Session %d does not exist for updating.\n", sessionId);
+        		return;
+        	}
+
             session = sit->second;
             printf("Update session %d using SF ",sessionId);
         }
+
         for (it = _sfs->begin(); it != _sfs->end(); ++it)
         {
             rsfit = remoteSF.find(*it);
@@ -530,7 +558,7 @@ int index;
                 printf("ERROR: SF id does not exist\n");
                 return;
             }
-            if (!rsfit->second->IsAvailable()) 
+            if (!rsfit->second->IsAvailable())
             {
                 printf("ERROR: SF %d is not available\n",rsfit->first);
                 return;
@@ -571,6 +599,27 @@ int index;
         }        
         printf("\n");
     }
+
+    ///
+    /// \brief Grab a handle to a particular session from outside.
+    /// \args sessionId input
+    /// \param [in] sessionId - Desired session ID to retrieve
+    /// \return
+    ///   - NULL if sessionId is not found.
+    ///   - Pointer to Session class on success.
+    ///
+    Controller::Session* Controller::GetSession(int sessionId)
+    {
+        SessionMap::iterator it;
+
+        for (it = sessions.begin(); it != sessions.end(); ++it)
+        {
+        	if (it->first == sessionId)
+        		return it->second;
+        }
+
+        return NULL;
+    }
     
     //! \brief Delete a session
     void Controller::DeleteSession(int sId)
@@ -590,6 +639,52 @@ int index;
         }
     }
     
+    bool Controller::runSingleCommand(const char*cmdIn)
+    {
+        char **argv = (char**)calloc(sizeof(char*),200);
+    	char thiscmdline[256];
+    	int argc;
+    	int s;
+
+        assert(cmdIn);
+
+    	string cmd(cmdIn);
+
+	    strcpy(thiscmdline, cmdIn);
+        CreateArgvList(thiscmdline,&argc,argv);
+
+        // TODO - MUST make sure this is done correctly. INCORRECT now.
+		for (s = 0; s < argc; ++s)
+		{
+			if (!strcmp(argv[s],"help"))
+			{
+				CmdHelp();
+				break;
+			}
+			else if (!strcmp(argv[s],"acp"))
+			{
+				CmdACP(&s,argc,argv);
+			}
+			else if (!strcmp(argv[s],"scp"))
+			{
+				CmdSCP(&s,argc,argv);
+			}
+			else if (!strcmp(argv[s],"sf"))
+			{
+				CmdSF(&s,argc,argv);
+			}
+			else
+			{
+				printf("Unknown command: %s\n",argv[s]);
+				break;
+			}
+		}
+
+		free((void*)argv);
+
+        return true;
+    }
+
 #ifndef ONLY_CONTROLLER_CLASS
     void Controller::run()
     {

@@ -6,7 +6,6 @@
  */
 
 #include "registration.h"
-#include <sstream>
 #include <cstring>	// Necessary for memcpy
 
 // Our static refcount being initialized for CurlGlobal::

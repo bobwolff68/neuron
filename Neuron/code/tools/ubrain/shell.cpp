@@ -7,12 +7,11 @@
 
 #include "shell.h"
 
-#include <string.h>
-
-Shell::Shell()
+Shell::Shell(uBrainManager* pMgr)
 {
-	// TODO Auto-generated constructor stub
+	assert(pMgr);
 
+	pBrainManager = pMgr;
 }
 
 Shell::~Shell()
@@ -37,7 +36,7 @@ Shell::~Shell()
 // 		STUNSERVER <ip_address>[:port]
 //      VERBOSITY <level>
 //
-// SCRIPT <script_to_run_via_parser>
+// LOCAL RUNSCRIPT filename=<script_to_run_via_parser>
 // - Open and read/parse filename - expected to be used for demo macros.
 //
 // SF
@@ -65,33 +64,39 @@ Shell::~Shell()
 //		- Internal list for uBrain to maintain of sessions. Can be caused by script or indirectly
 //		  by an Endpoint who wants to create a new session/call.
 //
-bool Shell::parseLine(istream& input)
+bool Shell::parseLine(istream& input, bool isScript)
 {
 	string line;
 	stringstream linestream;
 	string cmd, subcmd;
 	stringstream attrstream;
 
-	cout << endl << "uBrain > " << flush;
+		if (!isScript)
+			cout << endl << "uBrain > " << flush;
 
-#if 0
-	while (getline(input, line))
-	{
-#else
+		// Simply getting to EOF should not be a 'fail' for us. It'll get detected by the upper parser.
 		if (!getline(input, line))
-			return false;
-#endif
+			return true;
 
 		namevalues.clear();
 
+		if (line[0]=='#')
+			return true;
+
 		while (line=="" || line == "\n" || line == "\r")
 		{
-			cout << "uBrain > " << flush;
+			if (!isScript)
+				cout << "uBrain > " << flush;
+
+			// Simply getting to EOF should not be a 'fail' for us. It'll get detected by the upper parser.
 			if (!getline(input, line))
-				return false;
+				return true;
 		}
 
-		cout << "uBrain > " << flush;
+		if (isScript)
+			cout << endl << "uBrain-Script > " << line << endl;
+		else
+			cout << "uBrain > " << flush;
 
 //		cout << "line: " << line << endl;
 
@@ -149,11 +154,31 @@ bool Shell::parseLine(istream& input)
 			processCommand(cmd, subcmd);
 
 		return true;
-#if 0
-	}
-#endif
+}
 
-	return false;		// eof reached.
+bool Shell::ProcessScript(const char* fname)
+{
+	ifstream fin;
+
+	fin.open(fname);
+	if (!fin.is_open())
+	{
+		cerr << "Error: Could not open script: '" << fname << "'" << endl;
+		return false;
+	}
+
+	cout << "Executing Script:'" << fname << "' Please wait..." << endl;
+
+	while (!fin.eof())
+	{
+		if (!parseLine(fin, true))
+			break;
+
+		sleep(1);		// Slow down script-running...
+	}
+
+	fin.close();
+	return true;
 }
 
 void Shell::strtoupper(string &s)
@@ -268,318 +293,9 @@ bool Shell::parseAttributes(const char* inputstr)
 	return !namevalues.empty();
 }
 
-bool Shell::requiredAttributesPresent(string& subcmd, const char* attr1, const char* attr2, const char* attr3, const char* attr4)
-{
-	// extract the destination server
-	if (namevalues.empty())
-		return false;
-
-	if (namevalues[attr1]=="")
-	{
-		cout << subcmd << " Error. Requires attribute '" << attr1 << "'" << endl;
-		return false;
-	}
-
-	if (attr2!="" && namevalues[attr2]=="")
-	{
-		cout << subcmd << " Error. Requires attribute '" << attr2 << "'" << endl;
-		return false;
-	}
-
-	if (attr3!="" && namevalues[attr3]=="")
-	{
-		cout << subcmd << " Error. Requires attribute '" << attr3 << "'" << endl;
-		return false;
-	}
-
-	if (attr4!="" && namevalues[attr4]=="")
-	{
-		cout << subcmd << " Error. Requires attribute '" << attr4 << "'" << endl;
-		return false;
-	}
-
-	return true;
-}
-
-bool Shell::processDDSOriented(string& cmd, string& subcmd)
-{
-
-	if (cmd=="STATUS")
-	{
-		if (subcmd=="FACTORIES")
-		{
-
-		}
-		else if (subcmd=="ENTITIES")
-		{
-
-		}
-		else if (subcmd=="ENDPOINTS")
-		{
-
-		}
-		else
-		{
-			cout << "Unrecognized Command: " << cmd << " " << subcmd << endl;
-			return false;
-		}
-	}
-	else if (cmd=="CONNECT")
-	{
-
-	}
-	else if (cmd=="SF")
-	{
-
-	}
-	else if (cmd=="SETUP")
-	{
-
-	}
-	else
-	{
-		cout << "We should never arrive here - bad command in processDDSOriented()" << endl;
-		assert("We should never arrive here - bad command in processDDSOriented()"==NULL);
-		return false;
-	}
-
-	return true;
-}
-
-bool Shell::StreamToInt(stringstream& sstream, int& outInt)
-{
-	sstream >> outInt;
-
-	if (!sstream)		// An error of some sort occured. Likely sess_id has no valid id due to contents.
-	{
-		cout << "Syntax Error: '" << sstream.str() << "' is not a number." << endl;
-		return false;
-	}
-	else
-		return true;
-}
-
-bool Shell::processLocal(string& cmd, string& subcmd)
-{
-	stringstream sstr;
-	int sess_id;
-	int sf_id;
-
-	string sfip = namevalues["sfipaddress"];
-	string sfname = namevalues["sfname"];
-
-	assert(cmd=="LOCAL");
-
-	sstr.str(namevalues["sessid"]);
-	if (!StreamToInt(sstr, sess_id))
-		 return false;
-
-	sstr.str(namevalues["sf_id"]);
-	if (!StreamToInt(sstr, sf_id))
-		 return false;
-
-	if (subcmd=="GENERATEKEYPAIR")
-	{
-		if (ssh.hasLocalKeypair())
-		{
-			cout << "We have a keypair. No need to generate." << endl;
-			return false;
-		}
-		else
-		{
-			ssh.generateLocalKeypair();
-
-			if (!ssh.hasLocalKeypair())
-			{
-				cout << "ERROR: Keypair generation FAILED. Exiting." << endl;
-				return false;
-			}
-		}
-	}
-	else if (subcmd=="SENDPUBLICKEY" || subcmd=="TESTAUTHENTICATION")
-	{
-		if (!requiredAttributesPresent(subcmd, "sfipaddress"))
-		{
-			cout << "ERROR: Required attribute 'sfipaddress' not found." << endl;
-			return false;
-		}
-
-		if (subcmd=="SENDPUBLICKEY")
-		{
-			cout << " Pushing public key to remote server..." << endl;
-			return ssh.pushLocalPublicKey(sfip);
-		}
-		else
-		{
-			cout << " Testing secure connection and authentication with remote server..." << endl;
-			return ssh.testAuthentication(sfip);
-		}
-
-	}
-	else if (subcmd=="CREATESESSION" || subcmd=="REMOVESESSION")
-	{
-		if (!requiredAttributesPresent(subcmd, "sessid"))
-		{
-			cout << "ERROR: Required attribute 'sessid' not found." << endl;
-			return false;
-		}
-
-		if (subcmd=="CREATESESSION")
-		{
-			int ret;
-
-			cout << "Creating session ID=" << sess_id << endl;
-			ret = local.AddSession(sess_id);
-			if (ret)
-			{
-				switch(ret)
-				{
-				case ID_IN_USE:
-					cout << "ERROR: Session create of id=" << sess_id << " failed. ID IN USE." << endl;
-					break;
-				default:
-					cout << "ERROR: Session create of id=" << sess_id << " failed with errno=" << ret << endl;
-					break;
-				}
-			}
-			else
-				cout << "Session create successful." << endl;
-		}
-		else
-		{
-			int ret;
-
-			cout << "Deleting Session ID=" << sess_id << endl;
-			ret = local.RemoveSession(sess_id);
-			if (ret)
-			{
-				switch(ret)
-				{
-				case ID_NOT_FOUND:
-					cout << "ERROR: Removal of session id=" << sess_id << " failed. ID NOT FOUND." << endl;
-					break;
-				default:
-					cout << "ERROR: Removal of session id=" << sess_id << " failed with errno=" << ret << endl;
-					break;
-				}
-			}
-			else
-				cout << "Session removal successful." << endl;
-		}
-	}
-	else if (subcmd=="CREATESF" || subcmd=="REMOVESF")
-	{
-		if (subcmd=="CREATESF" && !requiredAttributesPresent(subcmd, "sfipaddress", "sfid"))
-		{
-			cout << "ERROR: Required attributes 'sfipaddress' and/or 'sfid' not found." << endl;
-			return false;
-		}
-
-		if (subcmd=="REMOVESF" && !requiredAttributesPresent(subcmd, "sfid"))
-		{
-			cout << "ERROR: Required attribute 'sfid' not found." << endl;
-			return false;
-		}
-
-		if (subcmd=="CREATESF")
-		{
-			int ret;
-
-			cout << "Creating Factory ID=" << sf_id << endl;
-			ret = local.AddSF(sf_id, sfip.c_str(), sfname.c_str());
-			if (ret)
-			{
-				switch(ret)
-				{
-				case ID_IN_USE:
-					cout << "ERROR: Factory create of id=" << sf_id << " failed. ID IN USE." << endl;
-					break;
-				case GENERIC_ERROR:
-					cout << "ERROR: Factory create of id=" << sf_id << " failed. Likely call to ssh failed." << endl;
-					break;
-				default:
-					cout << "ERROR: Factory create of id=" << sf_id << " failed with errno=" << ret << endl;
-					break;
-				}
-			}
-			else
-				cout << "Factory create successful. Launch successful." << endl;
-		}
-		else
-		{
-			int ret;
-
-			cout << "Deleting Factory ID=" << sf_id << endl;
-			ret = local.RemoveSF(sf_id);
-			if (ret)
-			{
-				switch(ret)
-				{
-				case ID_NOT_FOUND:
-					cout << "ERROR: Removal of factory id=" << sf_id << " failed. ID NOT FOUND." << endl;
-					break;
-				default:
-					cout << "ERROR: Removal of factory id=" << sf_id << " failed with errno=" << ret << endl;
-					break;
-				}
-			}
-			else
-				cout << "Factory removal successful. (Remote launch was not killed via this command.)" << endl;
-		}
-	}
-	else if (subcmd=="KILLSF")
-	{
-		if (!requiredAttributesPresent(subcmd, "sfid"))
-		{
-			cout << "ERROR: Required attribute 'sfid' not found." << endl;
-			return false;
-		}
-
-		// Now kill the remote and remove the factory afterwards.
-		// TODO - need to implement an ssh with sed/awk to get the process id or send 'killall' ??
-		//        This doesn't seem perfect by any means. Maybe it shouldn't be implemented.
-
-		cout << "****" << endl << "  KILLSF is not implemented yet. Use REMOVESF for local only." << endl << "****" << endl;
-		return false;
-	}
-	else if (subcmd == "SAVESCRIPT")
-	{
-		if (!requiredAttributesPresent(subcmd, "filename"))
-		{
-			cout << "ERROR: Required attribute 'filename' not found." << endl;
-			return false;
-		}
-
-		if (!xml.SaveScript(namevalues["filename"].c_str()))
-		{
-			cout << "ERROR: Saving script failed." << endl;
-			return false;
-		}
-	}
-	else if (subcmd == "GETGROUP")
-	{
-		string out;
-		if (xml.GetGroup(out))
-			cout << "Group:" << endl << "'" << out << "'" << endl;
-		else
-		{
-			cout << "ERROR: Could not get last group." << endl;
-			return false;
-		}
-	}
-	else
-	{
-		cout << "ERROR: LOCAL sub-command '" << subcmd << "' is unknown." << endl;
-		return false;
-	}
-
-	// We're good if we just 'drop' to here.
-	return true;
-}
-
 bool Shell::processCommand(string& cmd, string& subcmd)
 {
-
+	bool isOK;
 	// Convert cmd and subcmd to upper case for further processing as XML elements.
 	strtoupper(cmd);
 	strtoupper(subcmd);
@@ -596,7 +312,7 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 			<< "CONNECT srcname=<name> srcip=<ipaddress> destip=<ipaddress>" << endl
 			<< endl
 			<< "SF ADDSESSION sessid=<sessid> sfid=<sfid>" << endl
-			<< "SF ADDENTITY entid=<entid> sfid=<sfid> sessid=<sessid> enttype=<RP|FILESOURCE|DECODESINK> [entname=<entityname>]" << endl
+			<< "SF ADDENTITY entid=<entid> sfid=<sfid> sessid=<sessid> enttype=<RP|FILESOURCE|DECODESINK|NUMSOURCE|NUMSINK> [If SINK, srcentid=<srcent>] [entname=<entityname>]" << endl
 			<< "SF DELETEENTITY entid=<entid>" << endl
 			<< "SF DELETESESSION sessid=<sessid>" << endl
 			<< "SF DELETEFACTORY sfid=<sfid>" << endl
@@ -605,23 +321,99 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 			<< "LOCAL CREATESESSION sessid=<sessionid>" << endl
 			<< "LOCAL REMOVESESSION sessid=<sessionid>" << endl
 			<< "LOCAL REMOVESF sfid=<sf-id>" << endl
-			<< "LOCAL KILLSF sfid=<sf-id>" << endl
+			<< "LOCAL CREATESOURCE entid=<entid> sfid=<sfid> sessid=<sessid> sourcename=<offered_name>" << endl
+//			<< "LOCAL KILLSF sfid=<sf-id>" << endl
 			<< "LOCAL CREATEKEYPAIR" << endl
 			<< "LOCAL SENDPUBLICKEY sfipaddress=<ipaddress>" << endl
 			<< "LOCAL TESTAUTHENTICATION sfipaddress=<ipaddress>" << endl
 			<< "LOCAL SAVESCRIPT filename=<filename>" << endl
+			<< "LOCAL RUNSCRIPT filename=<filename>" << endl
+			<< "LOCAL SLEEP ms=<number_of_milliseconds>" << endl
 			<< endl
 			<< "SETUP VERBOSITY level=<0-10>"
 			<< endl << endl;
 		return true;
 		}
 
+		if (cmd[0]=='#')
+			return true;
+
 		if (cmd=="EXIT" || cmd=="QUIT")
 			exit(0);
 
 		if (cmd=="LOCAL")
 		{
-			if (!processLocal(cmd, subcmd))
+			//
+			// A few items MUST be done here in the parser/shell due to the XML tie-in.
+			//
+			if (subcmd == "SLEEP")
+			{
+				int ms;
+
+				if (namevalues["ms"]=="")
+				{
+					cout << "ERROR: Required attribute 'ms' not found." << endl;
+					return false;
+				}
+
+				ms = FromString<int>(namevalues["ms"], isOK);
+				usleep(1000*ms);
+
+				return true;
+			}
+			else if (subcmd == "RUNSCRIPT")
+			{
+				if (namevalues["filename"]=="")
+				{
+					cout << "ERROR: Required attribute 'filename' not found." << endl;
+					return false;
+				}
+
+				if (!ProcessScript(namevalues["filename"].c_str()))
+				{
+					cout << "ERROR: Running script failed." << endl;
+					return false;
+				}
+
+				return true;
+			}
+			else if (subcmd == "SAVESCRIPT")
+			{
+				if (namevalues["filename"]=="")
+				{
+					cout << "ERROR: Required attribute 'filename' not found." << endl;
+					return false;
+				}
+
+				if (!xml.SaveScript(namevalues["filename"].c_str()))
+				{
+					cout << "ERROR: Saving script failed." << endl;
+					return false;
+				}
+
+				return true;
+			}
+			else if (subcmd == "GETGROUP")
+			{
+				string out;
+				bool isOK;
+				int groupnum = FromString<int>(namevalues["groupnumber"], isOK);
+
+				if (!isOK)
+					groupnum = 0;	// Default.
+
+				if (xml.GetGroup(out, groupnum))
+					cout << "Group:" << endl << "'" << out << "'" << endl;
+				else
+				{
+					cout << "ERROR: Could not get last group." << endl;
+					return false;
+				}
+
+				return true;
+			}
+
+			if (!pBrainManager->processLocal(cmd, subcmd, namevalues))
 			{
 				cout << "Error executing: LOCAL " << subcmd << endl;
 				return false;
@@ -633,12 +425,10 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 //	case "STATUS": case "CONNECT": case "SF": case "SETUP":
 		if (cmd=="STATUS" || cmd=="CONNECT" || cmd=="SF" || cmd=="SETUP")
 		{
-			cout << "Temporarily NOT executing Command: " << cmd << " <no implementation>." << endl;
-
 			// Turn into XML and write to our in-memory document for saving to a script.
 			addToXML(cmd, subcmd);
 
-			if (!processDDSOriented(cmd, subcmd))
+			if (!pBrainManager->processDDSOriented(cmd, subcmd, namevalues))
 			{
 				cout << "Error executing DDS commands: " << cmd << " " << subcmd << endl;
 				return false;

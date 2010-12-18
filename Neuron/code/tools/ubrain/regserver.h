@@ -19,8 +19,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <sstream>
-
 class RegServer : ThreadSingle
 {
 public:
@@ -44,7 +42,7 @@ private:
 	int setNonblocking(int fd);
 	void ShutdownServer(void);
 	bool HConnection(int csock);
-	void ParseRequest(const char* req);
+	bool ParseRequest(const char* req);
 	void AddToStream(stringstream& outstream, const char* respname);
 	//  Now we have a sigint handler simply for the blocking accept() to avoid non-blocking I/O for now.
 	static void sighandler(int sig)	{ /*printf("   Signal catcher called for signal %d", sig);*/ return; };

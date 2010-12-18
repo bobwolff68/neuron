@@ -15,6 +15,12 @@
 
 #define MAXCLIENTCON 10
 
+#define BAD_REQUEST "HTTP/1.0 400 Bad Request\r\n" \
+					"Server: Neuron Server\r\n" \
+					"Content-Type: text/html; charset=UTF-8\r\n" \
+					"Content-Length: 0\r\n" \
+					"\r\n"
+
 RegServer::RegServer(uBrainManager* initBrain, map<string, string> rvals, int initport)
 {
 	assert(initBrain);
@@ -26,7 +32,7 @@ RegServer::RegServer(uBrainManager* initBrain, map<string, string> rvals, int in
 	bIsEndpoint = false;
 	bIsServerUp = false;
 	serverError = 0;
-	globalID = 5000;		// Start non-zero just to be visible in the flood of data.
+	globalID = (128 << 24) | 1;		// Start @ 2^31 and increment. This makes all ep-gid's HIGH and all non-ep-gid's start at zero.
 
 	port = initport;
 	serversock = 0;
@@ -232,7 +238,13 @@ bool RegServer::HConnection(int csock)
 
 //	cout << "Request received:'" << request << "'" << endl;;
 
-	ParseRequest(request);
+	if (!ParseRequest(request))
+	{
+		headerString = BAD_REQUEST;
+		send(csock, headerString.c_str(), headerString.size(), 0);
+		return false;
+	}
+
 	// Now we should have a proper flag
 	tempID = reqParameters["tempid"];
 
@@ -245,7 +257,11 @@ bool RegServer::HConnection(int csock)
 
 		sfid_sstr << sf_id;
 		if (!sfid_sstr)
+		{
+			headerString = BAD_REQUEST;
+			send(csock, headerString.c_str(), headerString.size(), 0);
 			return false;
+		}
 
 		respvalues["ep_sf_id"] = sfid_sstr.str();
 	}
@@ -291,7 +307,7 @@ bool RegServer::HConnection(int csock)
 	// Now it's complete....let the uBrainManager:: know this fact.
 	// GlobalID-1 is used since it was post-incremented above for safety.
 	// And the actual 'globalID' is not used for safety in case it has been changed already.
-	theBrain->RegistrationComplete(sf_id, respvalues["client_pub_ip"].c_str(), respvalues["ep_friendly_name"].c_str(), temp_gid-1);
+	theBrain->RegistrationComplete(sf_id, respvalues["client_pub_ip"].c_str(), reqParameters["ep_friendly_name"].c_str(), temp_gid-1, bIsEndpoint);
 
 	return true;
 }
@@ -316,7 +332,7 @@ void RegServer::AddToStream(stringstream& outstream, const char* respname)
 ///             ^*neuron-ep?name=["]value["]
 ///             Guarantee that '?' exists and 'name' is non-quoted and '=' exists
 ///
-void RegServer::ParseRequest(const char* req)
+bool RegServer::ParseRequest(const char* req)
 {
 	stringstream reqstream;
 	string chopped_req(req);
@@ -327,13 +343,13 @@ void RegServer::ParseRequest(const char* req)
 	if (pos==string::npos)
 	{
 //		cout << "Error: URI Input fail. No 'neuron-' - instead='" << req << "'" << endl;
-		return;
+		return false;
 	}
 
 	// Advance pointer beyond neuron-
 	chopped_req = chopped_req.substr(pos+strlen("neuron-"), string::npos);
 
-//	cout << "RegServer:: Pre-lop-of-HTTP/ we have:" << chopped_req << endl;
+	cout << "RegServer:: Pre-lop-of-HTTP/ we have:" << chopped_req << endl;
 
 	// Now lop off the ending from "HTTP/"
 	pos = chopped_req.find("HTTP/");
@@ -343,11 +359,14 @@ void RegServer::ParseRequest(const char* req)
 		chopped_req = chopped_req.substr(0, pos);
 	}
 
-//	cout << "RegServer:: After lopping-of-HTTP/ we have:" << chopped_req << endl;
+	cout << "RegServer:: After lopping-of-HTTP/ we have:" << chopped_req << endl;
 
 	if (chopped_req.substr(0,2)=="sf")
 	{
 		// We're done here.
+		bIsEndpoint = false;
+
+		return true;
 	}
 	else if (chopped_req.substr(0,2)=="ep")
 	{
@@ -402,7 +421,7 @@ void RegServer::ParseRequest(const char* req)
 			else
 				reqstream >> value;
 
-//			cout << endl << "RegServer::Parse() - PAIR: " << name << "=" << value << endl;
+			cout << endl << "RegServer::Parse() - PAIR: " << name << "=" << value << endl;
 
 			// Now what to do with the pair...
 			reqParameters[name] = value;
@@ -414,13 +433,16 @@ void RegServer::ParseRequest(const char* req)
 				reqstream.get();
 		}
 
+		return true;
 	}
 	else
 	{
 		cout << "Error: URI Input fail. No '-ep' or '-sf' - instead='" << req << "'" << endl;
-		return;
+		return false;
 	}
 
+	assert(false);
+	return false;
 }
 
 /*----------------------------------------------------------------------

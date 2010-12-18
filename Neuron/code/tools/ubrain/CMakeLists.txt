@@ -71,7 +71,7 @@ else()
 endif()
 endif()
 
-INCLUDE_DIRECTORIES( ../../include ../../neuroncommon ) # add to include path
+INCLUDE_DIRECTORIES( ../../include ../../neuroncommon ../../entities ) # add to include path
 INCLUDE_DIRECTORIES( ../../control ../../control/include ../../control/idl ) # add to include path
 
 INCLUDE_DIRECTORIES( /usr/include/libxml2 )

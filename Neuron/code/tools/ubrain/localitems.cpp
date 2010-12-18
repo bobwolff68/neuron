@@ -12,6 +12,12 @@ LocalItems::LocalItems()
 	ClearAll();
 	inoutnull = " </dev/null >/dev/null 2>&1 ";
 	innull = " </dev/null ";
+
+	entTypeMap["NUMSOURCE"] = EntInfo::Ent_NumSource;
+	entTypeMap["NUMSINK"]	= EntInfo::Ent_NumSink;
+	entTypeMap["RP"]		= EntInfo::Ent_RP;
+	entTypeMap["FILESOURCE"]= EntInfo::Ent_FileSource;
+	entTypeMap["DECODESINK"]= EntInfo::Ent_DecodeSink;
 }
 
 LocalItems::~LocalItems()
@@ -33,8 +39,23 @@ LocalItems::~LocalItems()
 	    delete sfit->second;
 }
 
+SessInfo::SessInfo()
+{
+	session_in_these_sfs.clear();
+	sourceList.clear();
+}
+
+SessInfo::~SessInfo()
+{
+	SourceInfoList::iterator sil;
+
+	for (sil=sourceList.begin() ; sil != sourceList.end() ; sil++)
+		delete sil->second;
+}
+
 int LocalItems::AddSession(int sessID)
 {
+//	cout << "DEBUG: In Addsession with sessID=" << sessID << endl;
 	if (sessList[sessID])
 		return ID_IN_USE;
 
@@ -45,12 +66,9 @@ int LocalItems::AddSession(int sessID)
 		return GENERIC_ERROR;
 
 	pEnt->sess_id = sessID;
-	pEnt->session_in_these_sfs.clear();
 
 	sessList[sessID] = pEnt;
-
-	cout << "List of Sessions..." << endl;
-	ListSessions();
+//	cout << "DEBUG: Exiting Addsession perfectly for sessID" << sessID << endl;
 
 	return 0;
 }
@@ -59,8 +77,11 @@ int LocalItems::AddSession(int sessID)
 /// \brief Adds the sessID to the general sessList if it is not present.
 ///        Then adds the given sfID to the list of sf's involved in this session.
 ///
-int LocalItems::AddSessionToSF(int sessID, int sfID)
+int LocalItems::AddSFToSession(int sfID, int sessID)
 {
+//	cout << "DEBUG: In AddSFToSession " << endl
+//			<< "- #factories=" << GetNumSFs() << endl;
+//	cout << " Num SFs in Session (SessID=" << sessID << ") is:" << GetNumSFsInSession(sessID) << endl;
 	AddSession(sessID);
 
 	pSessInfo pSess;
@@ -76,6 +97,9 @@ int LocalItems::AddSessionToSF(int sessID, int sfID)
 	else
 		pSess->session_in_these_sfs[sfID] = sfList[sfID];
 
+//	cout << "DEBUG: Exiting AddSFToSession " << endl
+//			<< "- #factories=" << GetNumSFs() << endl;
+//	cout << " Num SFs in Session (SessID=" << sessID << ") is:" << GetNumSFsInSession(sessID) << endl;
 	return 0;
 }
 
@@ -84,6 +108,8 @@ int LocalItems::RemoveSession(int sessID)
 	if (!sessList[sessID])
 		return ID_NOT_FOUND;
 
+	// Remove all sources from the session before deleting the session.
+
 	delete sessList[sessID];
 	sessList.erase(sessID);
 
@@ -91,6 +117,48 @@ int LocalItems::RemoveSession(int sessID)
 	ListSessions();
 
 	return 0;
+}
+
+int LocalItems::RemoveAllSourcesFromSession(int sessID)
+{
+	SessInfo* pSess = sessList[sessID];
+
+	if (!pSess)
+		return ID_NOT_FOUND;
+
+	SourceInfoList::iterator sit;
+
+	for ( sit=pSess->sourceList.begin() ; sit != pSess->sourceList.end(); sit++ )
+	{
+		assert(sit->second);
+		delete sit->second;
+		pSess->sourceList.erase(sit);
+	}
+
+	assert(pSess->sourceList.size()==0);
+
+	return 0;
+}
+
+int LocalItems::ListSourcesInSession(int sessID)
+{
+	SessInfo* pSess = sessList[sessID];
+
+	if (!pSess)
+		return ID_NOT_FOUND;
+
+	SourceInfoList::iterator sit;
+
+	cout << "Number of sources in SessionID=" << sessID << " is:" << pSess->sourceList.size() << endl;
+
+	for ( sit=pSess->sourceList.begin() ; sit != pSess->sourceList.end(); sit++ )
+	{
+		assert(sit->second);
+		cout << "Source on " << sit->second->epName << ": " << sit->second->sourceName << endl;
+	}
+
+	return 0;
+
 }
 
 ///
@@ -114,14 +182,42 @@ void LocalItems::ListSessions(void)
 {
 	  SessList::iterator sessit;
 
-	  cout << "Number of Sessions currently: " << sessList.size() << endl;
+	  cout << endl << "Number of Sessions currently: " << sessList.size() << endl;
 
 	  // List all Sessions
 	  for ( sessit=sessList.begin() ; sessit != sessList.end(); sessit++ )
 	    cout << "Session ID=" << sessit->first << ". Involved in " << sessit->second->session_in_these_sfs.size() << " Factories." << endl;
 }
 
-int LocalItems::AddSF(int sfID, const char* ip, const char* name)
+SessInfo* LocalItems::GetSessionInfo(int sessID)
+{
+	return sessList[sessID];
+}
+
+bool LocalItems::GetSFsForSession(int sessID, SFList& sfs, bool bEPOnly)
+{
+	SessList::iterator sessit;
+
+	// Find the session first...
+	for ( sessit=sessList.begin() ; sessit != sessList.end(); sessit++ )
+	{
+		if (sessit->first == sessID)
+		{
+			// Found it. Iterate the SF list and return all SFs or only EP SFs if flagged.
+			SFList::iterator sfit;
+
+			for (sfit=sessit->second->session_in_these_sfs.begin() ; sfit != sessit->second->session_in_these_sfs.end() ; sfit++ )
+				if (bEPOnly || sfit->second->is_endpoint)
+					sfs[sfit->first] = sfit->second;
+
+			return true;
+		}
+	}
+
+	return true;
+}
+
+int LocalItems::AddSFInternally(int sfID, const char* ip, int gID, const char* name, bool isEP)
 {
 	if (sfList[sfID])
 		return ID_IN_USE;
@@ -133,23 +229,62 @@ int LocalItems::AddSF(int sfID, const char* ip, const char* name)
 		return GENERIC_ERROR;
 
 	pSF->sf_id = sfID;
+	pSF->g_id = gID;
 	pSF->sf_ipaddress = ip;
 	pSF->sf_name = name;
+	pSF->is_endpoint = isEP;
 
 	sfList[sfID] = pSF;
 
-	// Now launch the remote 'sf'
-	cout << "Launching remote 'sf' at " << ip << endl;
-	string sshnow;
-	sshnow = "ssh ";
-	sshnow += ip;
-	sshnow += " \"/home/rwolff/bin/sf -d ";
-	sshnow += inoutnull + "\"";
-//	cout << "This is the command: '" << sshnow << "'" << endl;
-	system(sshnow.c_str());
+//	cout << "List of Factories..." << endl;
+//	ListSFs();
 
-	cout << "List of Factories..." << endl;
-	ListSFs();
+	return 0;
+}
+
+//
+// Use this flag to enable pseudo-logging of remote sf entities.
+// WARNING: There **MUST** be a client reading the output log fifo at all times
+//          via "tail -F /tmp/sf_out<sfid>.log"
+//          Otherwise, the remote sf will block on its very first output (DDS coming online)
+//
+#define PIPE_OUT
+
+int LocalItems::AddSFLaunch(int sfID, const char* ip, int gID, const char* name)
+{
+	int ret;
+	ret = AddSFInternally(sfID, ip, gID, name, false);
+	if (ret)
+		return ret;
+
+	//
+	// TODO *MUST* Change commandline on 'sf' and get a REAL owner_id for the parent instead of '0'
+	//
+
+	string namecheck(name); //
+	if (namecheck.find(" ") != string::npos)
+	{
+		cout << "Illegal name given. No spaces allowed." << endl;
+		return GENERIC_ERROR;
+	}
+
+	// Now launch the remote 'sf'
+	cout << "Launching remote Factory ID=" << sfID << " at " << ip << endl;
+	stringstream sshnow;
+	sshnow << "ssh " << ip << " \"./bin/sf " << sfID << " " << name << " 0 67 ";
+#ifdef PIPE_OUT
+	stringstream mcmd;
+	// Always "make" the fifo...even if it fails due to prior existence.
+	mcmd << "mkfifo /tmp/sf_out" << sfID << ".log >/dev/null 2>&1";
+	system(mcmd.str().c_str());
+
+	sshnow << " </dev/null >>/tmp/sf_out" << sfID << ".log 2>&1 &\"";
+#else
+	sshnow << inoutnull + " &\"";
+//	sshnow << " </dev/null >sf_out" << sfID << ".log 2>&1 &\"";
+#endif
+//	cout << "This is the command: '" << sshnow.str() << "'" << endl;
+	system(sshnow.str().c_str());
 
 	return 0;
 }
@@ -172,12 +307,17 @@ void LocalItems::ListSFs(void)
 {
 	  SFList::iterator sfit;
 
-	  cout << "Number of Factories currently: " << sfList.size() << endl;
+	  cout << endl << "Number of Factories currently: " << sfList.size() << endl;
 
 	  // List all SFs
 	  for ( sfit=sfList.begin() ; sfit != sfList.end(); sfit++ )
-	    cout << "Factory ID=" << sfit->first << " is on IP '" << sfit->second->sf_ipaddress << "'"
+	  {
+		  if (!sfit->second)
+			  cout << "Factory ID=" << sfit->first << " ERROR-SF-NULL." << endl;
+		  else
+			  cout << "Factory ID=" << sfit->first << " is on IP '" << sfit->second->sf_ipaddress << "'"
 	    		<< " with name='" << sfit->second->sf_name << "'." << endl;
+	  }
 }
 
 ///
@@ -185,7 +325,7 @@ void LocalItems::ListSFs(void)
 ///         in depth for a "local" item. So, it must be added to the entList as well as being
 ///         added to the sessList's association list and the sf's list of sessions.
 ///
-int LocalItems::AddEntity(int entID, int sfID, int sessID, int type)
+int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, int resx, int resy)
 {
 	if (entList[entID])
 		return ID_IN_USE;
@@ -200,6 +340,8 @@ int LocalItems::AddEntity(int entID, int sfID, int sessID, int type)
 	pEnt->sf_id = sfID;
 	pEnt->sess_id = sessID;
 	pEnt->type = type;
+	pEnt->resx = resx;
+	pEnt->resy = resy;
 
 	// Make sure the SF exists.
 	if (!sfList[sfID])
@@ -214,8 +356,41 @@ int LocalItems::AddEntity(int entID, int sfID, int sessID, int type)
 	// Now add this session to the associated SF.
 	sessList[sessID]->session_in_these_sfs[sfID] = sfList[sfID];
 
-	cout << "List of Entities..." << endl;
-	ListEntities();
+	return 0;
+}
+
+int LocalItems::AddSourceToSession(int sessID, int sfID, int entID, const char* sourceName)
+{
+	pSessInfo pSess;
+	pSFInfo pSF;
+	pSourceInfo pSource;
+	string epName;
+
+	// Find the session - else all bets are off.
+	pSess = sessList[sessID];
+
+	if (!pSess)
+		return DEST_SESS_NOT_FOUND;
+
+	// Ensure the sf to which the source belongs is marked as "involved" with this session
+	pSF = pSess->session_in_these_sfs[sfID];
+
+	if (!pSF)
+		return DEST_SF_NOT_FOUND;
+
+	// Now create a Source and fill it in.
+	pSource = new SourceInfo;
+	if (!pSource)
+		return GENERIC_ERROR;
+
+	// Need to grab the SF's epName
+	pSource->epName = pSF->sf_name;
+	pSource->sourceName = sourceName;
+	pSource->entid = entID;
+	pSource->sessid = sessID;
+	pSource->sfid = sfID;
+
+	pSess->sourceList[entID] = pSource;
 
 	return 0;
 }
@@ -228,9 +403,6 @@ int LocalItems::RemoveEntity(int entID)
 	delete entList[entID];
 	entList.erase(entID);
 
-	cout << "List of Entities..." << endl;
-	ListEntities();
-
 	return 0;
 }
 
@@ -238,10 +410,15 @@ void LocalItems::ListEntities(void)
 {
 	  EntList::iterator entit;
 
-	  cout << "Number of Entities currently: " << entList.size() << endl;
+	  cout << endl << "Number of Entities currently: " << entList.size() << endl;
 
 	  // List all Entities
 	  for ( entit=entList.begin() ; entit != entList.end(); entit++ )
-	    cout << "Entity ID=" << entit->first << " is found on sfID=" << entit->second->sf_id
-	    		<< " and is in sessionID=" << entit->second->sess_id << "'." << endl;
+	  {
+		  cout << "Entity ID=" << entit->first << flush;
+		  if (!entit->second)
+			  cout << " ERROR-ENTITY-NULL." << endl;
+		  else
+			  cout << " is found on sfID=" << entit->second->sf_id << " and is in sessionID=" << entit->second->sess_id << "'." << endl;
+	  }
 }

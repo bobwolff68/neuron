@@ -16,6 +16,10 @@
 #endif
 #include "anyoption/anyoption.h"
 
+#include "controlplane.h"
+
+#include "entity.h"
+
 #include <string>
 #include <sstream>
 
@@ -47,6 +51,17 @@ template<typename T> string ToString(T type)
 	ss << type;
 	return ss.str();
 }
+
+class CallbackBase
+{
+public:
+	CallbackBase() { };
+	virtual ~CallbackBase() { };
+	virtual void NewSFDetected(int id)=0;
+	// Process both Select and Offer -- and in the future more items.
+	virtual void NewSessionState(com::xvd::neuron::scp::State* state)=0;
+
+};
 
 #endif
 
