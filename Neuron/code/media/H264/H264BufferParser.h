@@ -41,11 +41,15 @@ class H264BufferParser
 
     public:
 
+        bool        isOwnerRP;
+        int         timesParsed;
         int 	    type;
         H264Header  vh;
 
         H264BufferParser()
         {
+            isOwnerRP = true;
+            timesParsed = 0;
             type = -1;
 
             for(int i=0; i<VIDEO_HDR_TYPES; i++)
@@ -124,6 +128,13 @@ class H264BufferParser
             }
             else
             {
+                timesParsed = ((uint_t) streamBuf[5]) & 0x3;
+                if(isOwnerRP)
+                {
+                    timesParsed = timesParsed + ((int)(timesParsed<3));
+                    streamBuf[5] = ((streamBuf[5]>>2)<<2)|((uchar_t)(timesParsed&0x3));
+                }
+
                 type = ((uint_t) streamBuf[5]) & 0x1c;
                 type >>= 2;
             }

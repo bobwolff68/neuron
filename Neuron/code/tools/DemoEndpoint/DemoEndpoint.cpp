@@ -1,10 +1,9 @@
 #include "LoginObject.h"
-//#include "H264StreamViewer.h"
 #include "MainScreen.h"
 #include "sessionfactory.h"
 
-#define DEFAULT_UBRAIN_ID   50
-#define DEFAULT_DOMAIN_ID   100
+#define DEFAULT_UBRAIN_ID   0
+#define DEFAULT_DOMAIN_ID   67
 
 void OfferSourceToUBrain(SessionFactory *pSF,const char *srcName,int entityType,int resW,int resH)
 {
@@ -54,12 +53,10 @@ class DemoEndpoint
         std::string                         Name;
         LoginObject                        *pLoginObj;
         MainScreen                         *pMainScreen;
-        //map<std::string,H264StreamWindow*>  StreamWinList;
-        //map<int,std::string>                RmtSrcNameList;
 
     public:
 
-        SessionFactory                     *pSF;
+        SessionFactory *pSF;
 
         DemoEndpoint(const char *regServLocalIP)
         {
@@ -73,7 +70,7 @@ class DemoEndpoint
             pSF = new SessionFactory(epsfId,Name.c_str(),DEFAULT_UBRAIN_ID,DEFAULT_DOMAIN_ID);
             pSF->startThread();
 
-            pMainScreen = new MainScreen(pSF,500,100,Name);
+            pMainScreen = new MainScreen(pSF,500,200,Name);
         }
 
         ~DemoEndpoint()

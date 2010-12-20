@@ -11,6 +11,7 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
     private:
 
         int                 epId;
+        int                 srcId;
         int                 nLayers;
         std::string         curLayerPartition;
         DDSInputObject     *pInputObj;
@@ -69,8 +70,9 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
         EventHandlerT<RelayProxy>(),SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_RELAYPROXY),ThreadSingle()
         {
             epId = epIdP;
+            srcId = epId;
             nLayers = nLayersP;
-            curLayerPartition = ToString<int>(epId)+"/"+layerRegExp;
+            curLayerPartition = ToString<int>(srcId)+"/"+layerRegExp;
             AddHandleFunc(&RelayProxy::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
             pParser = new H264BufferParser();
             pInputObj = new DDSInputObject(id,this,pOwnerDP,pTopicP);
@@ -89,10 +91,10 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
 
         void UpdateVideoSource(int newSrcId)
         {
-            epId = newSrcId;
+            srcId = newSrcId;
             std::string LayerRegExp = curLayerPartition.substr(curLayerPartition.find('/'));
-            pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),(ToString<int>(epId)+LayerRegExp).c_str());
-            curLayerPartition = (ToString<int>(epId)+LayerRegExp).c_str();
+            pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),(ToString<int>(srcId)+LayerRegExp).c_str());
+            curLayerPartition = (ToString<int>(srcId)+LayerRegExp).c_str();
             std::cout << "Partition changed to: " << curLayerPartition << std::endl;
             return;
         }

@@ -52,7 +52,6 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 			SCPSlaveObject 	   *pSCSlaveObj;
 			LSCPMaster		   *pLSCMaster;
 			LSCPMasterObject   *pLSCMasterObj;
-			SessionLeaderRef	slRef;
 		
 			com::xvd::neuron::scp::Control *control;
 			com::xvd::neuron::scp::State   *state;
@@ -65,6 +64,8 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 			com::xvd::neuron::lscp::Metrics *lscMetrics;
 			
 		public:
+		
+			SessionLeaderRef	slRef;
 			
 			RemoteSessionSF(SCPSlave *pSCSlaveParam,SCPSlaveObject *pSCSlaveObjParam,
 					  		LSCPMaster *pLSCMasterParam,int domIdParam,int ownerIdParam,
@@ -344,6 +345,47 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 		    std::cout << SF_LOG_PROMPT(id) << ": DELETED (ACP)" << endl; 
 		    
 		    return;		
+		}
+		
+		int GetEntityIdForRmtSrc(int sessionId,const char *srcName)
+		{
+			int id = -1;
+			
+			if(SessionList.find(sessionId)!=SessionList.end())
+				id = SessionList[sessionId]->slRef.pSL->GetEntityIdForRmtSrc(srcName);
+				
+			return id;
+		}
+		
+		bool GetRmtSrcEntIdList(int sessionId,std::map<std::string,int> &List)
+		{
+			bool found = false;
+			
+			if(SessionList.find(sessionId)!=SessionList.end())
+			{
+				SessionList[sessionId]->slRef.pSL->GetRmtSrcEntIdList(List);
+				found = true;
+			}
+				
+			return found;
+		}
+		
+		bool SetH264DecoderSinkSubLayerULimit(int sessionId,int epSrcId,int layerULimit)
+		{
+			bool retVal = false;
+			
+			if(SessionList.find(sessionId)!=SessionList.end())
+				retVal = SessionList[sessionId]->slRef.pSL->SetH264DecoderSinkSubLayerULimit(epSrcId,layerULimit);
+				
+			return retVal;
+		}
+		
+		int GetTimesParsed(int sessionId,int srcEntId)
+		{
+			if(SessionList.find(sessionId)!=SessionList.end())
+				return SessionList[sessionId]->slRef.pSL->GetTimesParsed(srcEntId);
+				
+			return -1;
 		}
 };
 

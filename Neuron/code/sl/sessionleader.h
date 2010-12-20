@@ -19,37 +19,72 @@
 
 typedef	long long IDType;
 
-class RemoteSrcNameList
+class RemoteSourceList
 {
-	public:
+	private:
 	
-		std::map<int,std::string>	RemoteSrcNames;
+		std::map<std::string,int>	List;
+	
+	public:
 	
 		void Repopulate(const char *srcList)
 		{
 			char			  	entry[500];
 			char			  	srcName[100];
+			char				entIdStr[100];
 			int					entityId;
+			bool				bFlag;
 			std::stringstream 	Stream;
 
 			//srcList is of the form [<username>/<srcname>~<entityId>]*			
-			RemoteSrcNames.clear();
+			List.clear();
 			Stream << srcList;
 			while(!Stream.eof())
 			{
 				std::stringstream	EntryStream;
+				std::string			SrcName;
+				std::string			EntIdStr;
 				
 				Stream.getline(entry,500,',');
 				EntryStream << entry;
+				
+				//Source name
 				EntryStream.getline(srcName,100,'~');
-				EntryStream >> entityId;
-				RemoteSrcNames[entityId] = srcName;
+				SrcName = srcName;
+				
+				//Entity id
+				EntryStream.getline(entIdStr,100,'~');
+				EntIdStr = entIdStr;
+				entityId = FromString<int>(EntIdStr,bFlag);
+				
+				//Resolution - <width>~<height>
+				EntryStream.getline(entIdStr,100);
+				SrcName = SrcName + "~" + entIdStr;
+				
+				List[SrcName] = entityId;
 			}
 			
 			std::cout << "SrcNames:" << std::endl;
-			for(std::map<int,std::string>::iterator it=RemoteSrcNames.begin(); it!=RemoteSrcNames.end(); it++)
+			for(std::map<std::string,int>::iterator it=List.begin(); it!=List.end(); it++)
 				std::cout << "Listing: (" << it->first << "," << it->second << ")" << std::endl;
 			
+			return;
+		}
+		
+		int GetEntityIdForRmtSrc(const char *srcName)
+		{
+			int			id = -1;
+			std::string SrcName = srcName;
+			
+			if(List.find(SrcName)!=List.end())
+				id = List[SrcName];
+				
+			return id;
+		}
+		
+		void GetRmtSrcEntIdList(std::map<std::string,int> &ListOut)
+		{
+			ListOut = List;
 			return;
 		}
 };
@@ -69,7 +104,7 @@ class SessionLeader : public EventHandlerT<SessionLeader>, public ThreadSingle
 		DDSDomainParticipant		   *pMediaDP;
 		std::map<int,SessionEntity*> 	EntityList;
 		std::map<std::string,DDSTopic*>	TopicList;
-		RemoteSrcNameList				RmtSrcNameList;
+		RemoteSourceList				RmtSrcEntIdList;
 		
 		com::xvd::neuron::lscp::Control *control;
     	com::xvd::neuron::lscp::State   *state;
@@ -148,6 +183,56 @@ class SessionLeader : public EventHandlerT<SessionLeader>, public ThreadSingle
 		    
 		    return;
     	}
+    	
+    	int GetEntityIdForRmtSrc(const char *srcName)
+		{
+			return RmtSrcEntIdList.GetEntityIdForRmtSrc(srcName);
+		}
+		
+		void GetRmtSrcEntIdList(std::map<std::string,int> &ListOut)
+		{
+			RmtSrcEntIdList.GetRmtSrcEntIdList(ListOut);
+			return;
+		}
+		
+		bool SetH264DecoderSinkSubLayerULimit(int epSrcId,int layerULimit)
+		{
+			bool									retVal = false;
+			std::map<int,SessionEntity*>::iterator 	it;
+			
+			for(it=EntityList.begin(); it!=EntityList.end(); it++)
+			{
+				if(it->second->GetKind()==ENTITY_KIND_H264DECODERSINK)
+				{
+					H264DecoderSink *pSink = (H264DecoderSink *)(it->second);
+					if(pSink->GetEpSrcId()==epSrcId)
+					{
+						pSink->SetSubLayerULimit(layerULimit);
+						retVal = true;
+						break;
+					}
+				}
+			}
+			
+			return retVal;
+		}
+		
+		int GetTimesParsed(int epSrcId)
+		{
+			std::map<int,SessionEntity*>::iterator 	it;
+			
+			for(it=EntityList.begin(); it!=EntityList.end(); it++)
+			{
+				if(it->second->GetKind()==ENTITY_KIND_H264DECODERSINK)
+				{
+					H264DecoderSink *pSink = (H264DecoderSink *)(it->second);
+					if(pSink->GetEpSrcId()==epSrcId)
+						return pSink->GetTimesParsed();
+				}
+			}
+			
+			return -1;
+		}
 };
 
 #endif /* SESSIONLEADER_H_ */

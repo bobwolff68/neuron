@@ -3,6 +3,10 @@
 #include <unistd.h>
 #include "sessionleader.h"
 
+#ifndef ENDPOINT_SRC_PATH
+#define ENDPOINT_SRC_PATH "/home/manjesh/Videos/"
+#endif
+
 SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *nameParam,int domIdParam,
 							 int ownerIdParam) : EventHandlerT<SessionLeader>(),ThreadSingle()
 {
@@ -96,13 +100,11 @@ SessionLeader::~SessionLeader()
 				delete (H264FileSrc *)(it->second);
 				break;
 
-#ifdef SF_ENDPOINT_MODE				
 			case ENTITY_KIND_H264DECODERSINK:
 
 				((H264DecoderSink *)(it->second))->stopThread();
 				delete (H264DecoderSink *)(it->second);
 				break;
-#endif
 
 			default:
 			
@@ -263,26 +265,43 @@ void SessionLeader::ProcessScript(const char *script)
 
 			case ENTITY_KIND_H264FILESRC:
 			{
+				char				buf[100];
+				std::string			SrcFileName(ENDPOINT_SRC_PATH);
+				std::stringstream 	sstream;
+				
 				ScriptStream >> srcName;
 				std::cout << srcName << std::endl;
-				H264FileSrc *pSrc = new H264FileSrc(entityId,id,sessionId,srcName,29.97,pMediaDP,TopicList["video"]);				
+				
+				sstream << srcName;
+				//sstream.getline(buf,100,'/');
+				sstream.getline(buf,100);
+				SrcFileName = SrcFileName + buf;
+				SrcFileName = SrcFileName + ".264";
+				std::cout << "Source File: " << SrcFileName << std::endl;
+				strcpy(buf,SrcFileName.c_str());
+				
+				H264FileSrc *pSrc = new H264FileSrc(entityId,id,sessionId,buf,pMediaDP,TopicList["video"]);				
 				pSrc->startThread();
 				EntityList[entityId] = (SessionEntity *)(pSrc);
 				std::cout << "Kind=" << EntityList[entityId]->GetKind() << std::endl;
 				break;
 			}
 				
-#ifdef SF_ENDPOINT_MODE					
 			case ENTITY_KIND_H264DECODERSINK:
 			{	
-				ScriptStream >> srcId >> resW >> resH >> srcName;
-				std::cout << srcId << "," << resW << "," << resH << "," << srcName << std::endl;
-				H264DecoderSink *pSink = new H264DecoderSink(entityId,srcId,id,sessionId,srcName,pMediaDP,TopicList["video"],"*");
+				std::string	DecInFifoName;
+				
+				ScriptStream >> srcId;
+				DecInFifoName = ToString<int>(srcId) + ".264";
+				std::cout << "Input Fifo: " << DecInFifoName << std::endl;
+				
+				std::cout << "Source ID: " << srcId << std::endl;
+				H264DecoderSink *pSink = new H264DecoderSink(entityId,srcId,id,sessionId,DecInFifoName.c_str(),pMediaDP,TopicList["video"],"*");
 				pSink->startThread();
 				EntityList[entityId] = (SessionEntity *)(pSink);
 				break;
 			}
-#endif						
+
 			default:
 			
 				std::cout << "Entity kind " << entityType << " not valid" << std::endl;
@@ -319,13 +338,11 @@ void SessionLeader::ProcessScript(const char *script)
 				delete (H264FileSrc *)(EntityList[entityId]);
 				break;
 					
-#ifdef SF_ENDPOINT_MODE
 			case ENTITY_KIND_H264DECODERSINK:
 				((H264DecoderSink *)(EntityList[entityId]))->stopThread();
 				delete (H264DecoderSink *)(EntityList[entityId]);
 				break;
-#endif					
-					
+	
 			default:
 				
 				std::cout << "Entity kind " << entityType << " not valid" << std::endl;
@@ -339,7 +356,7 @@ void SessionLeader::ProcessScript(const char *script)
 		ScriptStream >> entityId;
 		ScriptStream >> srcId;
 		std::cout << entityId << "," << srcId << std::endl;
-		switch(entityType)
+		switch(EntityList[entityId]->GetKind())
 		{
 			case ENTITY_KIND_RELAYPROXY:
 				
@@ -353,7 +370,7 @@ void SessionLeader::ProcessScript(const char *script)
 					
 			default:
 	
-				std::cout << "Entity kind " << entityType << " not valid" << std::endl;
+				std::cout << "Entity kind " << EntityList[entityId]->GetKind() << " not valid" << std::endl;
 				break;
 		}
 	}
@@ -361,7 +378,7 @@ void SessionLeader::ProcessScript(const char *script)
 	{
 		std::string	SrcList;
 		ScriptStream >> SrcList;
-		RmtSrcNameList.Repopulate(SrcList.c_str());
+		RmtSrcEntIdList.Repopulate(SrcList.c_str());
 	}
 	
 	return;

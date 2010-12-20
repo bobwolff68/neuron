@@ -73,7 +73,7 @@ class MediaReader
                 }
                 else
                 {
-                    std::cout << "Cannot add layer reader (already present)" << std::endl;
+                    std::cout << "Cannot change partition (already present in another layer reader)" << std::endl;
                     return false;
                 }
             }

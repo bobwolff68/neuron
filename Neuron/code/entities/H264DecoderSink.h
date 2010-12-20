@@ -11,6 +11,7 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
     private:
 
         int                         epId;
+        int                         srcId;          //Id of relay proxy, if present, of src epId.
         int                         bSEIWritten;
         int                         bSPSWritten;
         int                         bPPSWritten;
@@ -18,7 +19,7 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
         int                         curLayerULimit;
         int                         curFrameType;
         int                         count;
-        const char                 *decInFifoName;
+        std::string                 DecInFifoName;
         std::string                 curLayerPartition;
         H264BufferParser           *pParser;
         DDSInputObject             *pInputObj;
@@ -26,26 +27,8 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
 
         void EventHandleLoop(void)
         {
-            const char *layerPartitions[3] = {"*","[0-1]","0"};
-            const int   layerULimit[3] = {2,1,0};
-
             while(!isStopRequested)
-            {
-                if(HandleNextEvent())
-                {
-                    count++;
-                    if(count%1000==0)
-                    {
-                        int i = count/1000;
-                        std::cout << layerPartitions[(i-1)%3] << " ---> " << layerPartitions[i%3] << std::endl;
-                        pInputObj->SetLayerReaderPartition((ToString<int>(epId)+"/"+layerPartitions[(i-1)%3]).c_str(),
-                                                           (ToString<int>(epId)+"/"+layerPartitions[i%3]).c_str());
-
-                        curLayerULimit = layerULimit[i%3];
-                        curLayerPartition = ToString<int>(epId)+"/"+layerPartitions[i%3];
-                    }
-                }
-            }
+                HandleNextEvent();
 
             while(!NoEvents())
                 HandleNextEvent();
@@ -60,7 +43,7 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
             const char  *frmTypes[5] = {"i","I","P","B","b"};
 
             if(pOutputObj==NULL)
-                pOutputObj = new H264DecoderOutputObject(id,decInFifoName);
+                pOutputObj = new H264DecoderOutputObject(id,DecInFifoName.c_str());
 
             for(int i=0; i<pSampleSet->pSeqData->length(); i++)
             {
@@ -94,8 +77,15 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
                             //std::cout << "1" << std::endl;
                             if(!bSPSWritten || prevLayerULimit!=curLayerULimit)
                             {
-                                //std::cout << "2" << std::endl;
-                                prevLayerULimit = curLayerULimit;
+                                if(prevLayerULimit!=curLayerULimit)
+                                {
+                                    std::string newLayerPartition;
+                                    prevLayerULimit = curLayerULimit;
+                                    newLayerPartition = ToString<int>(srcId) + "/[0-" + ToString<int>(curLayerULimit) + "]";
+                                    pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),newLayerPartition.c_str());
+                                    curLayerPartition = newLayerPartition;
+                                }
+
                                 if(pParser->vh.streamBuf[spsIdxMap[curLayerULimit]]!=NULL)
                                 {
                                     std::cout << "SPS Header (Index: " << spsIdxMap[curLayerULimit] << ", Size: " << pParser->vh.size[spsIdxMap[curLayerULimit]] << ")" << std::endl;
@@ -157,16 +147,18 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
         SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_H264DECODERSINK),EventHandlerT<H264DecoderSink>(),ThreadSingle()
         {
             epId = epIdP;
+            srcId = epId;
             curFrameType = X264_TYPE_B;
             prevLayerULimit = 0;
             curLayerULimit = 2;
-            curLayerPartition = ToString<int>(epId)+"/"+layerRegExp;
+            DecInFifoName = decInFifoNameP;
+            curLayerPartition = ToString<int>(srcId)+"/"+layerRegExp;
             bSEIWritten = bSPSWritten = bPPSWritten = false;
             pParser = new H264BufferParser();
+            pParser->isOwnerRP = false;
             pInputObj = new DDSInputObject(idP,this,pOwnerDPP,pTopicP);
             AddHandleFunc(&H264DecoderSink::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
             pInputObj->AddLayerReader(curLayerPartition.c_str());
-            decInFifoName = decInFifoNameP;
             pOutputObj = NULL;
         }
 
@@ -179,12 +171,28 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
 
         void UpdateVideoSource(int newSrcId)
         {
-            epId = newSrcId;
+            srcId = newSrcId;
             std::string LayerRegExp = curLayerPartition.substr(curLayerPartition.find('/'));
-            pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),(ToString<int>(epId)+LayerRegExp).c_str());
-            curLayerPartition = (ToString<int>(epId)+LayerRegExp).c_str();
+            pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),(ToString<int>(srcId)+LayerRegExp).c_str());
+            curLayerPartition = (ToString<int>(srcId)+LayerRegExp).c_str();
             std::cout << "Partition changed to: " << curLayerPartition << std::endl;
             return;
+        }
+
+        int GetEpSrcId(void)
+        {
+            return epId;
+        }
+
+        void SetSubLayerULimit(int layerULimit)
+        {
+            curLayerULimit = layerULimit;
+            return;
+        }
+
+        int GetTimesParsed(void)
+        {
+            return pParser->timesParsed;
         }
 };
 

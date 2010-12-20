@@ -115,6 +115,10 @@ class H264DecoderObject : public ThreadSingle
             //Register all available file formats and codecs
             av_register_all();
 
+            //If fifo not present, create it
+            if(access(decInFifoNameP,F_OK)<0)
+                mkfifo(decInFifoNameP,S_IRWXU|S_IRWXG);
+
             //Attempt to open the decoder input fifo
             if(av_open_input_file(&pFmtCtx,decInFifoNameP,NULL,0,NULL)!=0)
             {

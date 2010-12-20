@@ -234,6 +234,9 @@ class H264FileParser
             type = ((uint_t) streamBuf[streamPtr-1]) & 0x1c;
             type >>= 2;
 
+            //Do this only for rp chain length, remove later
+            streamBuf[streamPtr-1] = (streamBuf[streamPtr-1]>>2)<<2;
+
             if(nalType != NAL_TYPE_AUD)
                 type = X264_TYPE_HDR;
 

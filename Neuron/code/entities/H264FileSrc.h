@@ -10,6 +10,7 @@ class H264FileSrc : public SessionEntity,public EventHandlerT<H264FileSrc>,publi
     private:
 
         long                    seqNum;
+        std::string             FileName;
         H264FileInputObject    *pInputObj;
         DDSOutputObject        *pOutputObj;
 
@@ -60,11 +61,22 @@ class H264FileSrc : public SessionEntity,public EventHandlerT<H264FileSrc>,publi
 
     public:
 
-        H264FileSrc(int idP,int ownerIdP,int sessionIdP,const char *fileNameP,double fpsP,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP):
+        H264FileSrc(int idP,int ownerIdP,int sessionIdP,const char *fileNameP,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP):
         SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_H264FILESRC),EventHandlerT<H264FileSrc>(),ThreadSingle()
         {
+            double          fps;
+            std::string     FpsFileName(fileNameP);
+            std::ifstream   in;
+
             seqNum = 0;
-            pInputObj = new H264FileInputObject(this,idP,fileNameP,fpsP);
+            FileName = fileNameP;
+            FpsFileName = FpsFileName + "fps";
+            in.open(FpsFileName.c_str(),std::ifstream::in);
+            in >> fps;
+            in.close();
+
+            std::cout << "FPS selected " << fps << std::endl;
+            pInputObj = new H264FileInputObject(this,idP,FileName.c_str(),fps);
             pOutputObj = new DDSOutputObject(idP,pOwnerDPP,pTopicP);
             AddHandleFunc(&H264FileSrc::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
 
