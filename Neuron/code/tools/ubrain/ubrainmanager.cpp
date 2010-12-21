@@ -7,7 +7,7 @@
 
 #include "ubrainmanager.h"
 
-uBrainManager::uBrainManager(int brainId, int domainId=67)
+uBrainManager::uBrainManager(int brainId, int domainId)
 {
     DDSDomainParticipantFactory *factory = DDSDomainParticipantFactory::get_instance();
 
