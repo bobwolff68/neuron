@@ -26,6 +26,7 @@ public:
 	bool processDDSOriented(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool processDDS_SF(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<string, string> & nvPairs);
+	bool ProcessDDS_SF_ChangeConnection(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool ProcessDDS_SF_DeleteEntity(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool RefreshSourcesOnSession(int sessID);
 

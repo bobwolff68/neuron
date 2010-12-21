@@ -203,6 +203,10 @@ string uBrainManager::FormulateScript(const char* incmd, string& enttype, int en
 			return scr.str();
 		}
 	}
+	else if (cmd=="CHANGE")
+	{
+		scr << "updsrc " << entid << " " << ent_src;
+	}
 	else if (cmd=="DELETE")
 	{
 		scr << "rem " << entid;
@@ -223,6 +227,53 @@ string uBrainManager::FormulateScript(const char* incmd, string& enttype, int en
 	}
 
 	return scr.str();
+}
+
+bool uBrainManager::ProcessDDS_SF_ChangeConnection(string& cmd, string& subcmd, map<string, string> & nvPairs)
+{
+        int sess_id;
+        int sf_id;
+        int ent_id;
+        int src_ent_id;
+        int resx, resy;
+        bool isOK;
+        stringstream go;
+
+        string sfip = nvPairs["sfipaddress"];
+        string sfname = nvPairs["sfname"];
+        string entname = nvPairs["entname"];
+
+        string enttype = nvPairs["enttype"];
+        strtoupper(enttype);
+
+        sess_id         = FromString<int>(nvPairs["sessid"],isOK);
+        sf_id           = FromString<int>(nvPairs["sfid"], isOK);
+        ent_id          = FromString<int>(nvPairs["entid"], isOK);
+
+	// Used to designate the new connection to which the sink should subscribe
+        src_ent_id      = FromString<int>(nvPairs["srcentid"], isOK);
+
+        assert(cmd=="SF");
+        assert(subcmd=="CHANGECONNECTION");
+
+        if (!requiredAttributesPresent(subcmd, nvPairs, "entid", "sessid", "sfid", "srcentid"))
+        {
+                cout << "ERROR: Required attribute(s) missing from 'sessid', 'entid', 'sfid', or 'srcentid'." << endl;
+                return false;
+        }
+
+	string script;
+
+	// Now prep to process the new connection.
+	script = FormulateScript("CHANGE", enttype, ent_id, src_ent_id);
+	// Now tell the controller about it.
+	go << "scp update " << sess_id << " " << sf_id << " \"" << script << "\"";
+	cout << "CHANGECONNECTION: Sending Controller: '" << go.str() << "'" << endl;
+
+	if (!pCtrl->runSingleCommand(go.str().c_str()))
+		return false;
+
+  return true;
 }
 
 bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<string, string> & nvPairs)
@@ -261,7 +312,8 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<str
 	int ret;
 
 	// Now process
-	if (enttype=="NUMSOURCE" || enttype=="NUMSINK" || enttype=="FILESOURCE" || enttype=="DECODESINK" || enttype=="RP")
+	if (enttype=="NUMSOURCE" || enttype=="NUMSINK" || enttype=="FILESOURCE" 
+		|| enttype=="DECODESINK" || enttype=="RP")
 	{
 		if ((enttype=="DECODESINK" || enttype=="NUMSINK" || enttype=="RP")
 					&& !requiredAttributesPresent(subcmd, nvPairs, "srcentid"))
@@ -478,6 +530,10 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string, strin
 	else if (subcmd=="ADDENTITY")
 	{
 		return ProcessDDS_SF_AddEntity(cmd, subcmd, nvPairs);
+	}
+	else if (subcmd=="CHANGECONNECTION")
+	{
+		return ProcessDDS_SF_ChangeConnection(cmd, subcmd, nvPairs);
 	}
 	else if (subcmd=="DELETEENTITY")
 	{

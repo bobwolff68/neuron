@@ -18,7 +18,7 @@ class LoginObject
             bool bFlag;
 
             pLoginScreen = new LoginScreen(LOGIN_SCREEN_WIDTH_DEFAULT,LOGIN_SCREEN_HEIGHT_DEFAULT,UserNameOut);
-            pRegClient = new RegistrationClient(regServLocalIP,8181,true,UserNameOut.c_str());
+            pRegClient = new RegistrationClient(regServLocalIP,80,true,UserNameOut.c_str());
             pRegClient->registerClient();
             std::cout << "Received gstun_id: " << pRegClient->publicPairs["gstun_id"] << std::endl;
             sfIdOut = FromString<int>(pRegClient->publicPairs["ep_sf_id"],bFlag);

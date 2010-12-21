@@ -313,6 +313,7 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 			<< endl
 			<< "SF ADDSESSION sessid=<sessid> sfid=<sfid>" << endl
 			<< "SF ADDENTITY entid=<entid> sfid=<sfid> sessid=<sessid> enttype=<RP|FILESOURCE|DECODESINK|NUMSOURCE|NUMSINK> [If SINK, srcentid=<srcent>] [entname=<entityname>]" << endl
+			<< "SF CHANGECONNECTION sfid=<sfid> sessid=<session_id> entid=<sink_ent_id> srcentid=<src_ent_id> [sfipaddress=<ip_of_SF>]" << endl
 			<< "SF DELETEENTITY entid=<entid>" << endl
 			<< "SF DELETESESSION sessid=<sessid>" << endl
 			<< "SF DELETEFACTORY sfid=<sfid>" << endl
