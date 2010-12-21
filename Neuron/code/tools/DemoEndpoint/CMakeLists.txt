@@ -46,19 +46,20 @@ add_definitions(-D_REENTRANT)
 add_definitions(-DSF_ENDPOINT_MODE)
 add_definitions(-g3)
 
-add_definitions(-m64)
-add_definitions(-DRTI_64BIT)
+#add_definitions(-m64)
+#add_definitions(-DRTI_64BIT)
 
 find_library(COMMON libneuroncommon.a ../../lib)
 find_library(CONTROL libcontrolplane.a ../../lib)
-find_library(NDDSCPP libnddscppzd.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
-find_library(NDDSC libnddsczd.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
-find_library(NDDSCORE libnddscorezd.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
+find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
 find_library(LIBAVCODEC_LIBRARY libavcodec.a)
 find_library(LIBAVFORMAT_LIBRARY libavformat.a)
 find_library(LIBAVUTIL_LIBRARY libavutil.a)
 find_library(LIBSWSCALE_LIBRARY libswscale.a)
-#find_library(SDL_LIBRARY libSDL.a)
+find_library(NDDSWAN libnddstransportwanz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+#find_library(BRARY libSDL.a)
 find_library(LIBCURL libcurl.a ../../neuroncommon/netlib)
 #ADD_SUBDIRECTORY( ../../control ) # add subdir
 #ADD_SUBDIRECTORY( ../../neuroncommon ) # add subdir
@@ -84,6 +85,7 @@ TARGET_LINK_LIBRARIES(
    ${NDDSCPP}
    ${NDDSC}
    ${NDDSCORE}
+   ${NDDSWAN}
    ${PT_LIB}
    ${LIBCURL}
    -lSDL

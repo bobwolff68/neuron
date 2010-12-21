@@ -183,6 +183,11 @@ class H264StreamWindow
             return closed;
         }
 
+        void RemoveH264DecoderSink(void)
+        {
+            pArg->pSF->RemoveH264DecoderSink(1001,srcEntId);
+            return;
+        }
 };
 
 void OnDestroy(GtkWidget *pWidget,gpointer pData)
@@ -191,6 +196,7 @@ void OnDestroy(GtkWidget *pWidget,gpointer pData)
     H264StreamWindow *pWin = (H264StreamWindow *)pData;
     gtk_widget_hide(pWidget);
     pWin->TellViewerToDie();
+    pWin->RemoveH264DecoderSink();
     std::cout << "Exiting Done..." << std::endl;
     return;
 }
@@ -252,7 +258,8 @@ class MultiStreamViewer
         void UpdateRPChainLengths(SessionFactory *pSF)
         {
             for(std::map<int,H264StreamWindow*>::iterator it=WinList.begin(); it!=WinList.end(); it++)
-                it->second->UpdateRPChainLength(pSF);
+                if(!it->second->Closed())
+                    it->second->UpdateRPChainLength(pSF);
 
             return;
         }

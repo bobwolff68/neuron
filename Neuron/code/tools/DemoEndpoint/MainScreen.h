@@ -110,10 +110,11 @@ class MainScreen
             pMultiViewer = new MultiStreamViewer();
 
             //Hardwire local source list
-            LocSrcList["Video Source 1"] = "src1~640~480";
-            LocSrcList["Video Source 2"] = "src2~1280~534";
-            LocSrcList["Video Source 3"] = "src3~1280~720";
-            LocSrcList["Video Source 4"] = "src4~640~480";
+            LocSrcList["UCLA Talk 1"] = "TalkingHead1~640~360";
+            LocSrcList["UCLA Talk 2"] = "TalkingHead1~640~360";
+            LocSrcList["UCLA Talk 3"] = "TalkingHead3~640~360";
+            LocSrcList["Joe"] = "Joe~720~480";
+            LocSrcList["Clip from 'Up'"] = "Up~1280~720";
 
             //Create main window
             pWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);

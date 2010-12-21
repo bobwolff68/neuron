@@ -71,6 +71,11 @@ class SessionEntity
         {
             return kind;
         }
+
+        int GetId(void)
+        {
+            return id;
+        }
 };
 
 #endif // ENTITY_H_

@@ -387,6 +387,14 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 				
 			return -1;
 		}
+		
+		void RemoveH264DecoderSink(int sessionId,int epSrcId)
+		{
+			if(SessionList.find(sessionId)!=SessionList.end())
+				SessionList[sessionId]->slRef.pSL->RemoveH264DecoderSink(epSrcId);
+				
+			return;
+		}
 };
 
 #endif /* SESSIONFACTORY_H_ */

@@ -3,10 +3,6 @@
 #include <unistd.h>
 #include "sessionleader.h"
 
-#ifndef ENDPOINT_SRC_PATH
-#define ENDPOINT_SRC_PATH "/home/manjesh/Videos/"
-#endif
-
 SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *nameParam,int domIdParam,
 							 int ownerIdParam) : EventHandlerT<SessionLeader>(),ThreadSingle()
 {
@@ -266,8 +262,14 @@ void SessionLeader::ProcessScript(const char *script)
 			case ENTITY_KIND_H264FILESRC:
 			{
 				char				buf[100];
-				std::string			SrcFileName(ENDPOINT_SRC_PATH);
+				const char			*homePath = NULL;
+				std::string			SrcFileName("");
 				std::stringstream 	sstream;
+				
+				homePath = getenv("HOME");
+				std::cout << "Home: " << homePath << std::endl;
+				SrcFileName = SrcFileName + homePath;
+				SrcFileName = SrcFileName + "/Videos/";
 				
 				ScriptStream >> srcName;
 				std::cout << srcName << std::endl;

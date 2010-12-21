@@ -64,6 +64,7 @@ else()
   find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
   find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
   find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+  find_library(NDDSWAN libnddstransportwanz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
   SET (COMPILE_FLAGS
         "-m32"
         CACHE PATH
@@ -86,6 +87,7 @@ endforeach()
 #add_definitions(-DSKIP_DDS -g3 -DDEBUG -D_DEBUG)
 add_definitions(-g3 -DDEBUG -D_DEBUG)
 add_definitions(-DRTI_LINUX -DRTI_UNIX)
+add_definitions(-DUBRAIN)
 
 # special for controller.cpp to be used as a class and not as a main(), run(), etc.
 add_definitions(-DONLY_CONTROLLER_CLASS)
@@ -95,6 +97,7 @@ ADD_EXECUTABLE(ubrain ${SOURCES})
 TARGET_LINK_LIBRARIES(
    ubrain                            # to foo link
    ${CONTROL} ${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE}
+   ${NDDSWAN}
    ${LIBXML2}
    ${LIBCURL}		# Temporarily necessary
    ${LIBC} ${LIBM} ${LIBZ} ${PT_LIB}

@@ -16,10 +16,6 @@
 #endif
 #include "anyoption/anyoption.h"
 
-#include "controlplane.h"
-
-#include "entity.h"
-
 #include <string>
 #include <sstream>
 
@@ -52,6 +48,10 @@ template<typename T> string ToString(T type)
 	return ss.str();
 }
 
+#ifdef UBRAIN
+#include "controlplane.h"
+#include "entity.h"
+
 class CallbackBase
 {
 public:
@@ -62,6 +62,7 @@ public:
 	virtual void NewSessionState(com::xvd::neuron::scp::State* state)=0;
 
 };
+#endif
 
 #endif
 

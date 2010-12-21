@@ -233,6 +233,29 @@ class SessionLeader : public EventHandlerT<SessionLeader>, public ThreadSingle
 			
 			return -1;
 		}
+		
+		void RemoveH264DecoderSink(int epSrcId)
+		{
+			std::map<int,SessionEntity*>::iterator 	it;
+			std::cout << "Inside sl.remove()" << std::endl; 
+			
+			for(it=EntityList.begin(); it!=EntityList.end(); it++)
+			{
+				if(it->second->GetKind()==ENTITY_KIND_H264DECODERSINK)
+				{
+					std::cout << "Inside sl.remove().if()" << std::endl; 
+					H264DecoderSink *pSink = (H264DecoderSink *)(it->second);
+					if(pSink->GetEpSrcId()==epSrcId)
+					{
+						std::string	Script = "\"rem " + ToString<int>(it->second->GetId()) + "\"";
+						std::cout << "DELETE SCRIPT: " << Script << std::endl;
+						ProcessScript(Script.c_str());
+						break;
+					}
+				}
+			}				
+			return;
+		}
 };
 
 #endif /* SESSIONLEADER_H_ */
