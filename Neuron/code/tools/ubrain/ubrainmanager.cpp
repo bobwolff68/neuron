@@ -7,7 +7,7 @@
 
 #include "ubrainmanager.h"
 
-uBrainManager::uBrainManager(int brainId, int domainId)
+uBrainManager::uBrainManager(int brainId, int domainId=67)
 {
     DDSDomainParticipantFactory *factory = DDSDomainParticipantFactory::get_instance();
 
@@ -75,7 +75,7 @@ bool uBrainManager::RegistrationComplete(int sfid, const char* clientIPAddress, 
 	map<string,string> nvP;
 	nvP["sfid"]=ToString<int>(sfid);
 	nvP["sessid"]=ToString<int>(1001);
-	
+
 	string cmd, subcmd;
 	cmd = "SF";
 	subcmd = "ADDSESSION";
@@ -312,7 +312,7 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<str
 	int ret;
 
 	// Now process
-	if (enttype=="NUMSOURCE" || enttype=="NUMSINK" || enttype=="FILESOURCE" 
+	if (enttype=="NUMSOURCE" || enttype=="NUMSINK" || enttype=="FILESOURCE"
 		|| enttype=="DECODESINK" || enttype=="RP")
 	{
 		if ((enttype=="DECODESINK" || enttype=="NUMSINK" || enttype=="RP")
@@ -851,7 +851,7 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string, string
 	else if (subcmd=="CREATESOURCE")
 	{
 		int ret;
-		
+
 		if (!requiredAttributesPresent(subcmd, nvPairs, "sfid", "sessid", "entid", "sourcename"))
 		{
 			cout << "ERROR: Required attribute 'sfid' not found." << endl;
