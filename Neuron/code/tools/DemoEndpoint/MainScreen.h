@@ -111,7 +111,7 @@ class MainScreen
 
             //Hardwire local source list
             LocSrcList["UCLA Talk 1"] = "TalkingHead1~640~360";
-            LocSrcList["UCLA Talk 2"] = "TalkingHead1~640~360";
+            LocSrcList["UCLA Talk 2"] = "TalkingHead2~640~360";
             LocSrcList["UCLA Talk 3"] = "TalkingHead3~640~360";
             LocSrcList["Joe"] = "Joe~720~480";
             LocSrcList["Clip from 'Up'"] = "Up~1280~720";
@@ -140,10 +140,11 @@ class MainScreen
 
             //Populate local src dropdown
             gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"Publish local source...");
-            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"Video Source 1");
-            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"Video Source 2");
-            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"Video Source 3");
-            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"Video Source 4");
+            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"UCLA Talk 1");
+            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"UCLA Talk 2");
+            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"UCLA Talk 3");
+            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"Joe");
+            gtk_combo_box_append_text(GTK_COMBO_BOX(pLocSrcList),"Clip from 'Up'");
             gtk_combo_box_set_active(GTK_COMBO_BOX(pLocSrcList),0);
 
             pArg = new GtkCallbackArgs(pMultiViewer,pSF,pRmtSrcList,pLocSrcList,pNRmtSrcs,UserName);

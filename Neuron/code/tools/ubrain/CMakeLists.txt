@@ -28,9 +28,6 @@ SET (SOURCES ubrain.cpp
    ../../control/test/controller.cpp
 )
 
-#ADD_SUBDIRECTORY( ../../control ) # add subdir
-#ADD_SUBDIRECTORY( ../../neuroncommon ) # add subdir
-
 # Hack for survival at the moment...just find and link the library. No true dependencies yet.
 find_library(COMMON libneuroncommon.a ../../lib)
 find_library(CONTROL libcontrolplane.a ../../lib)
@@ -64,7 +61,6 @@ else()
   find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
   find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
   find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
-  find_library(NDDSWAN libnddstransportwanz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
   SET (COMPILE_FLAGS
         "-m32"
         CACHE PATH
@@ -97,7 +93,6 @@ ADD_EXECUTABLE(ubrain ${SOURCES})
 TARGET_LINK_LIBRARIES(
    ubrain                            # to foo link
    ${CONTROL} ${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE}
-   ${NDDSWAN}
    ${LIBXML2}
    ${LIBCURL}		# Temporarily necessary
    ${LIBC} ${LIBM} ${LIBZ} ${PT_LIB}

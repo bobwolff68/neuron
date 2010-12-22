@@ -58,13 +58,7 @@ find_library(LIBAVCODEC_LIBRARY libavcodec.a)
 find_library(LIBAVFORMAT_LIBRARY libavformat.a)
 find_library(LIBAVUTIL_LIBRARY libavutil.a)
 find_library(LIBSWSCALE_LIBRARY libswscale.a)
-find_library(NDDSWAN libnddstransportwanz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
-#find_library(BRARY libSDL.a)
 find_library(LIBCURL libcurl.a ../../neuroncommon/netlib)
-#ADD_SUBDIRECTORY( ../../control ) # add subdir
-#ADD_SUBDIRECTORY( ../../neuroncommon ) # add subdir
-
-# INCLUDE_DIRECTORIES( ../cminc ) # add to include path
 
 ADD_EXECUTABLE(
    demoendpoint                                          # build executable foo
@@ -75,7 +69,6 @@ ADD_EXECUTABLE(
    ../../media/idl/media.cxx
    ../../media/idl/mediaSupport.cxx
    ../../media/idl/mediaPlugin.cxx
-#   ../control/CPInterface.cpp
 )
 
 TARGET_LINK_LIBRARIES(
@@ -85,11 +78,9 @@ TARGET_LINK_LIBRARIES(
    ${NDDSCPP}
    ${NDDSC}
    ${NDDSCORE}
-   ${NDDSWAN}
    ${PT_LIB}
    ${LIBCURL}
    -lSDL
-   #${SDL_LIBRARY}
    ${LIBSWSCALE_LIBRARY}
    ${LIBAVCODEC_LIBRARY}
    ${LIBAVFORMAT_LIBRARY}

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
      xsi:noNamespaceSchemaLocation="/Users/tron/RTI/Projects/DDS/BRANCH_NDDS46A/modules/ndds.4.1/scripts/../resource/rtiddsgen/../qos_profiles_4.6a/schema/rti_dds_qos_profiles.xsd"
-     version="4.6a">
+     version="4.5c">
      
     <qos_library name="NEURON">
     

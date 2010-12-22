@@ -6,7 +6,7 @@ module com
         {
             module media
             {
-                const long ML_MAX_PAYLOAD_SIZE = 400000;
+                const long ML_MAX_PAYLOAD_SIZE = 500000;
 
                 struct DataUnit
                 {
