@@ -275,7 +275,8 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, int gID, const char* name)
 #ifdef PIPE_OUT
 	stringstream mcmd;
 	// Always "make" the fifo...even if it fails due to prior existence.
-	mcmd << "mkfifo /tmp/sf_out" << sfID << ".log >/dev/null 2>&1";
+	mcmd << "rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1";
+//	mcmd << "mkfifo /tmp/sf_out" << sfID << ".log >/dev/null 2>&1";
 	system(mcmd.str().c_str());
 
 	sshnow << " </dev/null >>/tmp/sf_out" << sfID << ".log 2>&1 &\"";
