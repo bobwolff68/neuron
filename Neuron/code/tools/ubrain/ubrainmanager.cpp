@@ -68,8 +68,8 @@ bool uBrainManager::RegistrationComplete(int sfid, const char* clientIPAddress, 
 	// TODO - Fill in and correlate all registry data -- and create internal SF for endpoints.
 	local.AddSFInternally(sfid, clientIPAddress, globalID, friendlyName, isEP);
 
-	cout << "Hardwired...Snooze....5 seconds...." << endl;
-	sleep(5);
+	cout << "Hardwired...Snooze....6 seconds...." << endl;
+	sleep(6);
 
 	// TODO MANJESH / RMW - This is hardwired to always add a new factory to session ID=1001
 	map<string,string> nvP;
@@ -81,8 +81,8 @@ bool uBrainManager::RegistrationComplete(int sfid, const char* clientIPAddress, 
 	subcmd = "ADDSESSION";
 	processDDS_SF(cmd, subcmd, nvP);
 
-	cout << "Hardwired...Snooze....3 seconds...." << endl;
-	sleep(3);
+	cout << "Hardwired...Snooze....4 seconds...." << endl;
+	sleep(4);
 
 
 	RefreshSourcesOnSession(1001);
@@ -668,6 +668,7 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string, string
 	int sess_id;
 	int sf_id;
 	int ent_id;
+	int resx, resy;
 	bool isOK;
 
 	string sfip = nvPairs["sfipaddress"];
@@ -679,6 +680,8 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string, string
 	sess_id = FromString<int>(nvPairs["sessid"],isOK);
 	sf_id = FromString<int>(nvPairs["sfid"], isOK);
 	ent_id = FromString<int>(nvPairs["entid"], isOK);
+	resx = FromString<int>(nvPairs["resx"], isOK);
+	resy = FromString<int>(nvPairs["resy"], isOK);
 
 
 	if (subcmd=="GENERATEKEYPAIR")
@@ -859,7 +862,7 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string, string
 		}
 
 		// Now the SourceInfo must be added to the session's list
-		ret = local.AddSourceToSession(sess_id, sf_id, ent_id, sourcename.c_str());
+		ret = local.AddSourceToSession(sess_id, sf_id, ent_id, sourcename.c_str(), resx, resy);
 		if (ret)
 			cout << "Error: MANUALLY Adding source to session. Error ID=" << ret << endl;
 	}
@@ -1079,7 +1082,7 @@ void uBrainManager::ReceiveOfferSource(com::xvd::neuron::scp::State* state)
 		local.AddSFToSession(sf_id, sess_id);
 
 	// Now the SourceInfo must be added to the session's list
-	ret = local.AddSourceToSession(sess_id, sf_id, ent_id, buf);
+	ret = local.AddSourceToSession(sess_id, sf_id, ent_id, buf, resx, resy);
 	if (ret)
 		cout << "Error: Adding source to session. Error ID=" << ret << endl;
 

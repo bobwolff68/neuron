@@ -16,6 +16,7 @@
 #endif
 #include "anyoption/anyoption.h"
 
+
 #include <string>
 #include <sstream>
 
@@ -50,6 +51,7 @@ template<typename T> string ToString(T type)
 
 #ifdef UBRAIN
 #include "controlplane.h"
+
 #include "entity.h"
 
 class CallbackBase

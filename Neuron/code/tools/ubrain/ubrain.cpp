@@ -46,7 +46,7 @@ int main(int argc, char** argv)
 #define TRYCLIENTSERVER
 #ifdef  TRYCLIENTSERVER
 
-	RegServer regSrv(&uBrain, respvals, 80);
+	RegServer regSrv(&uBrain, respvals, 8181);
 	gstun_id_ubrain = regSrv.getBrainGStun();
 
 #if 0
