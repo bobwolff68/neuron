@@ -98,7 +98,7 @@ public:
 	int AddSFToSession(int sfID, int sessID);
 	int GetNumSFsInSession(int sessID) { return sessList[sessID] ? sessList[sessID]->session_in_these_sfs.size() : -1; };
 	int RemoveSession(int sessID);
-	int AddSourceToSession(int sessID, int sfID, int entID, const char* sourceName, int resx, int resy);
+	int AddSourceToSession(int sessID, int sfID, int entID, const char* sourceName);
 	int RemoveAllSourcesFromSession(int sessID);
 	int RemoveSessionFromSF(int sessID, int sfID);
 	void ListSessions(void);

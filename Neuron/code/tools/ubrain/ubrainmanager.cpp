@@ -862,7 +862,7 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string, string
 		}
 
 		// Now the SourceInfo must be added to the session's list
-		ret = local.AddSourceToSession(sess_id, sf_id, ent_id, sourcename.c_str(), resx, resy);
+		ret = local.AddSourceToSession(sess_id, sf_id, ent_id, sourcename.c_str());
 		if (ret)
 			cout << "Error: MANUALLY Adding source to session. Error ID=" << ret << endl;
 	}
@@ -1082,7 +1082,7 @@ void uBrainManager::ReceiveOfferSource(com::xvd::neuron::scp::State* state)
 		local.AddSFToSession(sf_id, sess_id);
 
 	// Now the SourceInfo must be added to the session's list
-	ret = local.AddSourceToSession(sess_id, sf_id, ent_id, buf, resx, resy);
+	ret = local.AddSourceToSession(sess_id, sf_id, ent_id, buf);
 	if (ret)
 		cout << "Error: Adding source to session. Error ID=" << ret << endl;
 

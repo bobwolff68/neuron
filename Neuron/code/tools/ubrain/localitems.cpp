@@ -359,7 +359,7 @@ int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type
 	return 0;
 }
 
-int LocalItems::AddSourceToSession(int sessID, int sfID, int entID, const char* sourceName, int resx, int resy)
+int LocalItems::AddSourceToSession(int sessID, int sfID, int entID, const char* sourceName)
 {
 	pSessInfo pSess;
 	pSFInfo pSF;
@@ -389,8 +389,6 @@ int LocalItems::AddSourceToSession(int sessID, int sfID, int entID, const char* 
 	pSource->entid = entID;
 	pSource->sessid = sessID;
 	pSource->sfid = sfID;
-	entList[entID]->resx = resx;
-	entList[entID]->resy = resy;
 
 	pSess->sourceList[entID] = pSource;
 
