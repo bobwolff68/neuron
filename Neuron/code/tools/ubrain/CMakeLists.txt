@@ -40,6 +40,7 @@ find_library(LIBXML2 libxml2.a)
 find_library(LIBC libc.a)
 find_library(LIBM libm.a)
 find_library(LIBZ libz.a)
+find_library(READLINE readline)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   SET (COMPILE_FLAGS "-m32 -arch i386")
@@ -95,6 +96,7 @@ TARGET_LINK_LIBRARIES(
    ${CONTROL} ${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE}
    ${LIBXML2}
    ${LIBCURL}		# Temporarily necessary
+   ${READLINE}
    ${LIBC} ${LIBM} ${LIBZ} ${PT_LIB}
    -ldl -lrt
 )

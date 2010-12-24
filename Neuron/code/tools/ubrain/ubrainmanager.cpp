@@ -322,7 +322,7 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<str
 			return false;
 		}
 
-		ret = local.AddEntity(ent_id, sf_id, sess_id, local.entTypeMap[enttype], resx, resy);
+		ret = local.AddEntity(ent_id, sf_id, sess_id, local.entTypeMap[enttype], entname.c_str(), resx, resy);
 		switch(ret)
 		{
 		case 0:
@@ -468,17 +468,17 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string, strin
 		state.state = com::xvd::neuron::OBJECT_STATE_OFFERSRC;
 		state.srcId = 5566;
 		state.sessionId = 1001;
-		state.payload = "3,MyFileSourceCamera-0,640,480";
+		state.payload = (char*)"3,MyFileSourceCamera-0,640,480";
 
 		NewSessionState(&state);
 
 		state.srcId = 5566;
-		state.payload = "3,MyOtherFileSourceCamera-1,1024,768";
+		state.payload = (char*)"3,MyOtherFileSourceCamera-1,1024,768";
 
 		NewSessionState(&state);
 
 		state.srcId = 6000;
-		state.payload = "3,THEIR_NEW_SourceCamera-1,1920,1080";
+		state.payload = (char*)"3,THEIR_NEW_SourceCamera-1,1920,1080";
 
 		NewSessionState(&state);
 		return true;
@@ -487,6 +487,17 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string, strin
 	{
 		RefreshSourcesOnSession(1001);
 		return true;
+	}
+	else if (subcmd=="TFIND")
+	{
+		if (!local.GetEntInfo(nvPairs["entname"].c_str()))
+			cout << "Entname='" << nvPairs["entname"] << "' not found in Entities list." << endl;
+		else
+		{
+			EntInfo* pei;
+			pei = local.GetEntInfo(nvPairs["entname"].c_str());
+			cout << "Entname='" << nvPairs["entname"] << "' FOUND. ID is " << pei->ent_id << endl;
+		}
 	}
 #endif
 

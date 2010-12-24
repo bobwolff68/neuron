@@ -326,7 +326,7 @@ void LocalItems::ListSFs(void)
 ///         in depth for a "local" item. So, it must be added to the entList as well as being
 ///         added to the sessList's association list and the sf's list of sessions.
 ///
-int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, int resx, int resy)
+int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, const char* entname, int resx, int resy)
 {
 	if (entList[entID])
 		return ID_IN_USE;
@@ -343,6 +343,7 @@ int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type
 	pEnt->type = type;
 	pEnt->resx = resx;
 	pEnt->resy = resy;
+	pEnt->entname = entname;
 
 	// Make sure the SF exists.
 	if (!sfList[sfID])
@@ -353,6 +354,9 @@ int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type
 
 	// Add to the general list.
 	entList[entID] = pEnt;
+
+	// Add entity mapped by name ...
+	entNameList[pEnt->entname] = pEnt;
 
 	// Now add this session to the associated SF.
 	sessList[sessID]->session_in_these_sfs[sfID] = sfList[sfID];
@@ -401,6 +405,13 @@ int LocalItems::RemoveEntity(int entID)
 	if (!entList[entID])
 		return ID_NOT_FOUND;
 
+	if (!entNameList[entList[entID]->entname])
+		return ID_NOT_FOUND;
+
+	// Remove name from the entNameList
+	entNameList.erase(entList[entID]->entname);
+
+	// Now delete the entity and erase from the main list.
 	delete entList[entID];
 	entList.erase(entID);
 

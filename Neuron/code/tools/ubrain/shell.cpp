@@ -71,8 +71,8 @@ bool Shell::parseLine(istream& input, bool isScript)
 	string cmd, subcmd;
 	stringstream attrstream;
 
-		if (!isScript)
-			cout << endl << "uBrain > " << flush;
+//		if (!isScript)
+//			cout << endl << "uBrain > " << flush;
 
 		// Simply getting to EOF should not be a 'fail' for us. It'll get detected by the upper parser.
 		if (!getline(input, line))
@@ -85,18 +85,21 @@ bool Shell::parseLine(istream& input, bool isScript)
 
 		while (line=="" || line == "\n" || line == "\r")
 		{
+			return true;
+#if 0
 			if (!isScript)
 				cout << "uBrain > " << flush;
 
 			// Simply getting to EOF should not be a 'fail' for us. It'll get detected by the upper parser.
 			if (!getline(input, line))
 				return true;
+#endif
 		}
 
 		if (isScript)
 			cout << endl << "uBrain-Script > " << line << endl;
-		else
-			cout << "uBrain > " << flush;
+//		else
+//			cout << "uBrain > " << flush;
 
 //		cout << "line: " << line << endl;
 

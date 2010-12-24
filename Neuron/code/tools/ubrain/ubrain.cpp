@@ -9,6 +9,9 @@
 #include "ubrainmanager.h"
 #include "regserver.h"
 
+#include <readline/readline.h>
+#include <readline/history.h>
+
 extern bool parsecmd(int argc, char**argv);
 extern string stunserver;
 extern string startupscript;
@@ -100,7 +103,11 @@ int main(int argc, char** argv)
 	}
 
 	bool bIsScript = (oldBuf != NULL);
-
+	stringstream readline_cin;
+	
+	// Setup readline to use history ...
+        using_history();
+	
 	// Use cin regardless of script or no script. It will all be worked out by the re-assign of rdbuf() above
 	while (1)
 	{
@@ -117,8 +124,31 @@ int main(int argc, char** argv)
 			oldBuf = NULL;
 		}
 
-		if (!pShell->parseLine(cin, bIsScript))
-			break;
+		if (bIsScript)
+		{
+			if (!pShell->parseLine(cin, bIsScript))
+				break;
+		}
+		else
+		{
+		// Using readline so we need to use it for getting the line and history. 
+		// Then we parse it and move along.
+			char *line;
+			line = readline("uBrain > ");
+			
+			if (strlen(line))
+			      add_history(line);
+
+			// Now emulate a stream input from cin with the just-received-line
+			readline_cin << line << endl;
+			
+			// Line is malloc()'d by readline.
+			free(line);
+			
+			if (!pShell->parseLine(readline_cin, bIsScript))
+				break;
+		}
+			
 	}
 
 	// restore original streambuf

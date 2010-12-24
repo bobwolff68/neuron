@@ -78,6 +78,7 @@ public:
 	int ent_id;
 	int sf_id;
 	int sess_id;
+	string entname;
 	EntInfo::EntType type;		// To be re-defined as enum?
 
 	// Other data needed for an entity?
@@ -86,6 +87,7 @@ public:
 
 typedef EntInfo* pEntInfo;
 typedef map<int, pEntInfo> EntList;
+typedef map<string, pEntInfo> EntNameList;
 
 class LocalItems
 {
@@ -112,10 +114,11 @@ public:
 	void ListSFs(void);
 	int GetNumSFs(void) { return sfList.size(); };
 
-	int AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, int resx, int resy);
+	int AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, const char* entname, int resx, int resy);
 	int RemoveEntity(int entID);
 	void ListEntities(void);
 	EntInfo* GetEntInfo(int entID) { return entList[entID]; };
+	EntInfo* GetEntInfo(const char* entname) { string en=entname; return entNameList[en]; };
 
 	map<string,EntInfo::EntType> entTypeMap;
 
@@ -123,6 +126,7 @@ protected:
 	SFList sfList;
 	SessList sessList;
 	EntList entList;
+	EntNameList entNameList;
 	string inoutnull;
 	string innull;
 };
