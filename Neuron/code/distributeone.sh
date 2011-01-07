@@ -3,6 +3,7 @@
 echo "Distributing to $1 all binaries, licenses, profiles, and videos."
 
 cd bin
+ssh $1 "rm bin >/dev/null 2>&1 ; mkdir bin >/dev/null 2>&1"
 scp sf $1:bin/
 scp demoendpoint $1:bin/
 scp ubrain $1:bin/

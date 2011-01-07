@@ -217,13 +217,13 @@
 				<history>
 					<depth>20</depth>
 				</history>
-				 <multicast>
+				<!-- <multicast>
                    <value>
                         <element>
                             <receive_address>239.255.1.2</receive_address>
                         </element>
                    </value>
-                </multicast>
+                </multicast>-->
 			</datareader_qos>
 			
 			<datawriter_qos>

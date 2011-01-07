@@ -9,6 +9,7 @@
 #define ENTITY_KIND_RELAYPROXY      2
 #define ENTITY_KIND_H264FILESRC     3
 #define ENTITY_KIND_H264DECODERSINK 4
+#define ENTITY_KIND_SAMPLEQUEUESINK 5
 
 #define MEDIA_TOPIC_NAME(topicStr,prefix,sessionId)\
         {\
