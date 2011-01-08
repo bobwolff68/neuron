@@ -6,7 +6,6 @@ echo "Distributing to $1 all binaries, licenses, profiles, and videos."
 cd bin
 ssh -i $2 $1 "rm bin >/dev/null 2>&1 ; mkdir bin >/dev/null 2>&1"
 scp -i $2 sf $1:bin/
-scp -i $2 demoendpoint $1:bin/
 scp -i $2 ubrain $1:bin/
 
 scp -i $2 $NDDSHOME/rti_license.dat $1:bin/
