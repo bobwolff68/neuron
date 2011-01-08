@@ -15,6 +15,7 @@
 #define DEST_SF_NOT_FOUND	-3
 #define DEST_SESS_NOT_FOUND	-4
 #define DEST_SF_IN_USE		-5
+#define TIMEOUT				-6
 
 #define GENERIC_ERROR	-99
 
@@ -30,6 +31,7 @@ public:
 	string sf_ipaddress;
 	string sf_name;
 	bool is_endpoint;
+	com::xvd::neuron::ObjectState curSFState;
 };
 
 typedef SFInfo* pSFInfo;
@@ -58,6 +60,8 @@ public:
 	int sess_id;
 	SFList session_in_these_sfs;
 	SourceInfoList sourceList;
+	string sessName;
+	map<int,com::xvd::neuron::ObjectState> curSessionStateOnSF;
 };
 
 typedef SessInfo* pSessInfo;
@@ -73,9 +77,10 @@ public:
 		Ent_FileSource,
 		Ent_DecodeSink
 	} EntType;
-	EntInfo() { };
+	EntInfo() { src_ent_id = -1; };
 	virtual ~EntInfo() { };
 	int ent_id;
+	int src_ent_id;
 	int sf_id;
 	int sess_id;
 	string entname;
@@ -96,8 +101,8 @@ public:
 	virtual ~LocalItems();
 	void ClearAll(void) { sfList.clear(); sessList.clear(); entList.clear(); };
 
-	int AddSession(int sessID);
-	int AddSFToSession(int sfID, int sessID);
+	int AddSession(int sessID, const char* sessname);
+	int AddSFToSession(int sfID, int sessID, const char* sessname);
 	int GetNumSFsInSession(int sessID) { return sessList[sessID] ? sessList[sessID]->session_in_these_sfs.size() : -1; };
 	int RemoveSession(int sessID);
 	int AddSourceToSession(int sessID, int sfID, int entID, const char* sourceName);
@@ -107,14 +112,19 @@ public:
 	int ListSourcesInSession(int sessID);
 	SessInfo* GetSessionInfo(int sessID);
 	bool GetSFsForSession(int sessID, SFList& sfs, bool bEPOnly);
+	com::xvd::neuron::ObjectState GetCurStateInSFForSession(int sfid, int sessid);
+    int UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neuron::ObjectState state);
 
 	int AddSFInternally(int sfID, const char* ip, int gID, const char* name, bool isEP);
 	int AddSFLaunch(int sfID, const char* ip, int gID, const char* name);
 	int RemoveSF(int sfID);
 	void ListSFs(void);
+    SFInfo* GetSFInfo(int sfid) { return sfList[sfid]; };
 	int GetNumSFs(void) { return sfList.size(); };
+	com::xvd::neuron::ObjectState GetCurSFState(int sfid) { if (sfList[sfid]) return sfList[sfid]->curSFState; else return (com::xvd::neuron::ObjectState)ID_NOT_FOUND; };
+	int UpdateCurSFState(int sfid, com::xvd::neuron::ObjectState state) { if (sfList[sfid]) { sfList[sfid]->curSFState = state; return 0; } else return ID_NOT_FOUND;};
 
-	int AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, const char* entname, int resx, int resy);
+	int AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, const char* entname, int resx, int resy, int src_ent_id=-1);
 	int RemoveEntity(int entID);
 	void ListEntities(void);
 	EntInfo* GetEntInfo(int entID) { return entList[entID]; };

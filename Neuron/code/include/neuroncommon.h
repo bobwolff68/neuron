@@ -60,6 +60,7 @@ public:
 	CallbackBase() { };
 	virtual ~CallbackBase() { };
 	virtual void NewSFDetected(int id)=0;
+	virtual void NewSFState(com::xvd::neuron::acp::State* state)=0;
 	// Process both Select and Offer -- and in the future more items.
 	virtual void NewSessionState(com::xvd::neuron::scp::State* state)=0;
 

@@ -32,6 +32,7 @@ public:
 
 	// Callback items
 	void NewSFDetected(int id);
+    void NewSFState(com::xvd::neuron::acp::State* state);
 	void NewSessionState(com::xvd::neuron::scp::State* state);
 	// Associated with Callback
 	void ReceiveOfferSource(com::xvd::neuron::scp::State* state);
@@ -43,11 +44,12 @@ private:
 	void strtoupper(string &s);
 	int upper(int c) { return std::toupper((unsigned char)c); }
 	string FormulateScript(const char* incmd, string& enttype, int entid, int ent_src, const char* optName=NULL);
+	int WaitForSFReady(int sfid, int timeInms);
+	int WaitForSessionReadyOnSF(int sessid, int sfid, int timeInms);
 
 	Controller* pCtrl;
 	LocalItems local;
 	SSHManagement ssh;
-
 };
 
 #endif /* UBRAINMANAGER_H_ */

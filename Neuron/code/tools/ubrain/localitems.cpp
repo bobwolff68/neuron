@@ -53,7 +53,7 @@ SessInfo::~SessInfo()
 		delete sil->second;
 }
 
-int LocalItems::AddSession(int sessID)
+int LocalItems::AddSession(int sessID, const char* sessname)
 {
 //	cout << "DEBUG: In Addsession with sessID=" << sessID << endl;
 	if (sessList[sessID])
@@ -66,6 +66,7 @@ int LocalItems::AddSession(int sessID)
 		return GENERIC_ERROR;
 
 	pEnt->sess_id = sessID;
+	pEnt->sessName = sessname;
 
 	sessList[sessID] = pEnt;
 //	cout << "DEBUG: Exiting Addsession perfectly for sessID" << sessID << endl;
@@ -77,12 +78,12 @@ int LocalItems::AddSession(int sessID)
 /// \brief Adds the sessID to the general sessList if it is not present.
 ///        Then adds the given sfID to the list of sf's involved in this session.
 ///
-int LocalItems::AddSFToSession(int sfID, int sessID)
+int LocalItems::AddSFToSession(int sfID, int sessID, const char* sessname)
 {
 //	cout << "DEBUG: In AddSFToSession " << endl
 //			<< "- #factories=" << GetNumSFs() << endl;
 //	cout << " Num SFs in Session (SessID=" << sessID << ") is:" << GetNumSFsInSession(sessID) << endl;
-	AddSession(sessID);
+	AddSession(sessID, sessname);
 
 	pSessInfo pSess;
 
@@ -95,7 +96,10 @@ int LocalItems::AddSFToSession(int sfID, int sessID)
 	if (pSess->session_in_these_sfs[sfID])
 		return DEST_SF_IN_USE;
 	else
+	{
 		pSess->session_in_these_sfs[sfID] = sfList[sfID];
+		pSess->curSessionStateOnSF[sfID] = com::xvd::neuron::OBJECT_STATE_INIT;
+	}
 
 //	cout << "DEBUG: Exiting AddSFToSession " << endl
 //			<< "- #factories=" << GetNumSFs() << endl;
@@ -181,12 +185,37 @@ int LocalItems::RemoveSessionFromSF(int sessID, int sfID)
 void LocalItems::ListSessions(void)
 {
 	  SessList::iterator sessit;
+	  SFList::iterator sfit;
 
 	  cout << endl << "Number of Sessions currently: " << sessList.size() << endl;
 
 	  // List all Sessions
 	  for ( sessit=sessList.begin() ; sessit != sessList.end(); sessit++ )
-	    cout << "Session ID=" << sessit->first << ". Involved in " << sessit->second->session_in_these_sfs.size() << " Factories." << endl;
+	  {
+	    cout << "Session ID=" << sessit->first;
+	    if (sessit->second->sessName!="")
+            cout << " with name='" << sessit->second->sessName << "'. is found in " << sessit->second->session_in_these_sfs.size() << " Factories." << endl;
+	    else
+	        cout << ". Involved in " << sessit->second->session_in_these_sfs.size() << " Factories." << endl;
+
+	    // Now list those involved factories.
+	    if (sessit->second->session_in_these_sfs.size())
+	    {
+	        cout << "   SF ID's with session: ";
+	        for ( sfit=sessit->second->session_in_these_sfs.begin() ; sfit != sessit->second->session_in_these_sfs.end(); sfit++ )
+	        {
+	            cout << sessit->first;      // Output the sfid.
+	            // Now if there is an sfname attached, print it too. Else iterate.
+	            if (sfit->second->sf_name!="")
+	                cout << "/" << sfit->second->sf_name;
+
+                cout << ", ";
+	        }
+
+	        cout << endl;
+	    }
+
+	  }
 }
 
 SessInfo* LocalItems::GetSessionInfo(int sessID)
@@ -215,6 +244,36 @@ bool LocalItems::GetSFsForSession(int sessID, SFList& sfs, bool bEPOnly)
 	}
 
 	return true;
+}
+
+com::xvd::neuron::ObjectState LocalItems::GetCurStateInSFForSession(int sfid, int sessid)
+{
+    if (!sessList[sessid])
+        return (com::xvd::neuron::ObjectState)DEST_SESS_NOT_FOUND;
+
+    if (!sessList[sessid]->session_in_these_sfs[sfid])
+        return (com::xvd::neuron::ObjectState)DEST_SF_NOT_FOUND;
+
+    // Make sure there is a current state registered for the sfid -- should be there.
+    assert(sessList[sessid]->curSessionStateOnSF.find(sfid) != sessList[sessid]->curSessionStateOnSF.end());
+
+    return sessList[sessid]->curSessionStateOnSF[sfid];
+};
+
+int LocalItems::UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neuron::ObjectState state)
+{
+    if (!sessList[sessid])
+        return DEST_SESS_NOT_FOUND;
+
+    if (!sessList[sessid]->session_in_these_sfs[sfid])
+        return DEST_SF_NOT_FOUND;
+
+    // Make sure there is a current state registered for the sfid -- should be there.
+    assert(sessList[sessid]->curSessionStateOnSF.find(sfid) != sessList[sessid]->curSessionStateOnSF.end());
+
+    sessList[sessid]->curSessionStateOnSF[sfid] = state;
+
+    return 0;
 }
 
 int LocalItems::AddSFInternally(int sfID, const char* ip, int gID, const char* name, bool isEP)
@@ -248,7 +307,7 @@ int LocalItems::AddSFInternally(int sfID, const char* ip, int gID, const char* n
 //          via "tail -F /tmp/sf_out<sfid>.log"
 //          Otherwise, the remote sf will block on its very first output (DDS coming online)
 //
-#define PIPE_OUT
+#define LOGSF_OUT
 
 int LocalItems::AddSFLaunch(int sfID, const char* ip, int gID, const char* name)
 {
@@ -272,11 +331,11 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, int gID, const char* name)
 	cout << "Launching remote Factory ID=" << sfID << " at " << ip << endl;
 	stringstream sshnow;
 	sshnow << "ssh " << ip << " \"./bin/sf " << sfID << " " << name << " 0 67 ";
-#ifdef PIPE_OUT
+#ifdef LOGSF_OUT
 	stringstream mcmd;
-	// Always "make" the fifo...even if it fails due to prior existence.
-	mcmd << "rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1";
-//	mcmd << "mkfifo /tmp/sf_out" << sfID << ".log >/dev/null 2>&1";
+	// Always re-create the log file to start up clean.
+	mcmd << "ssh " << ip << " \"rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1\"";
+
 	system(mcmd.str().c_str());
 
 	sshnow << " </dev/null >>/tmp/sf_out" << sfID << ".log 2>&1 &\"";
@@ -326,7 +385,7 @@ void LocalItems::ListSFs(void)
 ///         in depth for a "local" item. So, it must be added to the entList as well as being
 ///         added to the sessList's association list and the sf's list of sessions.
 ///
-int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, const char* entname, int resx, int resy)
+int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, const char* entname, int resx, int resy, int src_ent_id)
 {
 	if (entList[entID])
 		return ID_IN_USE;
@@ -338,6 +397,8 @@ int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type
 		return GENERIC_ERROR;
 
 	pEnt->ent_id = entID;
+	pEnt->src_ent_id = src_ent_id;
+
 	pEnt->sf_id = sfID;
 	pEnt->sess_id = sessID;
 	pEnt->type = type;

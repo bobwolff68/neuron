@@ -111,7 +111,7 @@ int index;
     {
         printf("State update: sf: %d, scp: %d, state=%d\n",state->srcId,state->sessionId,state->state);
 
-	if (pCallback)
+        if (pCallback)
         	pCallback->NewSessionState(state);
 
         if(state->state==com::xvd::neuron::OBJECT_STATE_OFFERSRC||state->state==com::xvd::neuron::OBJECT_STATE_SELECTSRC)
@@ -132,11 +132,12 @@ int index;
             // A new SF has been detected (it was either created manually or by the
             // sf create ... command. In either case it will be added as a managed
             // SF.
-            printf("New SF detected. State=%d\n", (int)state->state);
+//            printf("New SF detected. State=%d\n", (int)state->state);
             rsf = new RemoteSessionFactory(state->srcId,
                                            info->disposed_generation_count,
                                            pACPMaster);
             remoteSF[state->srcId] = rsf;
+
             if (state->state == com::xvd::neuron::OBJECT_STATE_STANDBY)
             {
                 // This is the state we would expect if the SF is running
@@ -153,15 +154,20 @@ int index;
                 // application there is no real different between a enable and ping,
                 // but in a real application there likely is a difference
                 rsf->ping();
-
-                if (pCallback)
-                	pCallback->NewSFDetected(state->srcId);
             }
             else
             {
                 // If it is being deleted or in another state we don't
                 // want to deal with it as a valid SF
             }
+
+            // Informative call back ...
+            if (pCallback)
+                pCallback->NewSFDetected(state->srcId);
+
+            // Informative callback for upper watcher.
+            if (pCallback)
+                pCallback->NewSFState(state);
         }
         else
         {
@@ -175,6 +181,7 @@ int index;
             // TODO: In this case we need to go through all the current sessions
             //       using using this SF and determine what to do.
             printf("Update to SF detected, state = %d/%d\n",state->state,info->disposed_generation_count);
+
             RemoteSessionFactoryMap::iterator rsfit;
             rsfit = remoteSF.find(state->srcId);
             if (state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
@@ -225,6 +232,11 @@ int index;
             {
                // Currently there is no error state, this should be added
             }
+
+            // Informative callback for upper watcher.
+            if (pCallback)
+                pCallback->NewSFState(state);
+
         }
     }
     

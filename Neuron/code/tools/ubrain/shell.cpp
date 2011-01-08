@@ -314,28 +314,33 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 			<< endl
 			<< "CONNECT srcname=<name> srcip=<ipaddress> destip=<ipaddress>" << endl
 			<< endl
-			<< "SF ADDSESSION sessid=<sessid> sfid=<sfid>" << endl
+			<< "SF ADDSESSION sessid=<sessid> sfid=<sfid> [sessname=<session_name>]" << endl
 			<< "SF ADDENTITY entid=<entid> sfid=<sfid> sessid=<sessid> enttype=<RP|FILESOURCE|DECODESINK|NUMSOURCE|NUMSINK> [If SINK, srcentid=<srcent>] [entname=<entityname>]" << endl
 			<< "SF CHANGECONNECTION sfid=<sfid> sessid=<session_id> entid=<sink_ent_id> srcentid=<src_ent_id> [sfipaddress=<ip_of_SF>]" << endl
 			<< "SF DELETEENTITY entid=<entid>" << endl
 			<< "SF DELETESESSION sessid=<sessid>" << endl
 			<< "SF DELETEFACTORY sfid=<sfid>" << endl
+            << "SF WAITFORSFREADY sfid=<sfid> timeout=<#ms_to_wait>" << endl
+            << "SF WAITFORSESSREADY sessid=<sessid> sfid=<sfid> timeout=<#ms_to_wait>" << endl
 			<< endl
 			<< "LOCAL CREATESF sfipaddress=<ipaddress> sfid=<sf-id>" << endl << "               [sfname=<human-readable-referencename>]" << endl
-			<< "LOCAL CREATESESSION sessid=<sessionid>" << endl
-			<< "LOCAL REMOVESESSION sessid=<sessionid>" << endl
-			<< "LOCAL REMOVESF sfid=<sf-id>" << endl
 			<< "LOCAL CREATESOURCE entid=<entid> sfid=<sfid> sessid=<sessid> sourcename=<offered_name>" << endl
 //			<< "LOCAL KILLSF sfid=<sf-id>" << endl
 			<< "LOCAL CREATEKEYPAIR" << endl
 			<< "LOCAL SENDPUBLICKEY sfipaddress=<ipaddress>" << endl
 			<< "LOCAL TESTAUTHENTICATION sfipaddress=<ipaddress>" << endl
-			<< "LOCAL SAVESCRIPT filename=<filename>" << endl
 			<< "LOCAL RUNSCRIPT filename=<filename>" << endl
 			<< "LOCAL SLEEP ms=<number_of_milliseconds>" << endl
-			<< endl
-			<< "SETUP VERBOSITY level=<0-10>"
-			<< endl << endl;
+			<< "LOCAL SHELL command=<command_to_run>" << endl
+			<< "LOCAL CONTROLLERDIRECT command=<acp/scp command in controller syntax>" << endl
+            << "The following items (indented) are deprecated for direct use." << endl
+            << "    LOCAL CREATESESSION sessid=<sessionid> [sessname=<session_name>]" << endl
+            << "    LOCAL REMOVESESSION sessid=<sessionid>" << endl
+            << "    LOCAL REMOVESF sfid=<sf-id>" << endl
+            << "    LOCAL SAVESCRIPT filename=<filename>" << endl
+            << "    and Also..." << endl
+            << "    SETUP VERBOSITY level=<0-10>" << endl
+			<< endl;
 		return true;
 		}
 
@@ -365,6 +370,23 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 
 				return true;
 			}
+            else if (subcmd == "SHELL")
+            {
+                if (namevalues["command"]=="")
+                {
+                    cout << "ERROR: Required attribute 'command' not found." << endl;
+                    return false;
+                }
+
+                int retcode;
+                retcode = system(namevalues["command"].c_str());
+                retcode = WEXITSTATUS(retcode);
+
+                if (retcode)
+                    cout << "FAILURE: LOCAL SHELL failed with exit code: " << retcode << endl;
+
+                return true;
+            }
 			else if (subcmd == "RUNSCRIPT")
 			{
 				if (namevalues["filename"]=="")
