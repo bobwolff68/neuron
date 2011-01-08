@@ -169,7 +169,7 @@
                 </transport_builtin>
                 <discovery>
                     <initial_peers> 
-                        <element> builtin.shmem://  </element>
+                        <element> 100@builtin.shmem://  </element>
                     </initial_peers>
                     <multicast_receive_addresses> 
                     </multicast_receive_addresses>
