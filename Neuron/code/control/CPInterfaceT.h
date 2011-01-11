@@ -31,11 +31,11 @@ public:
     {
         DDS_DomainParticipantFactoryQos fQos;
         DDS_DomainParticipantQos dpQos;
-        DDS_PublisherQos pubQos;
-        DDS_SubscriberQos subQos;
+        //DDS_PublisherQos pubQos;
+        //DDS_SubscriberQos subQos;
         DDS_ReturnCode_t retcode;
-        DDSTopic *topic;
-        const char *type_name;
+        //DDSTopic *topic;
+        //const char *type_name;
 
         pFactory = DDSDomainParticipantFactory::get_instance();
 
@@ -70,6 +70,175 @@ public:
         //snprintf(dpQos.participant_name.name,255,"%s",name);
 	dpQos.participant_name.name = DDS_String_dup(name);
 
+        /*retcode = pFactory->get_publisher_qos_from_profile(pubQos, "NEURON", qosProfile);
+        if (retcode != DDS_RETCODE_OK)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to get NEURON::%s publisher profile\n",qosProfile);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+        // Disable autostart on the pFactory to give better control in instantiations
+        // of this class.
+        pubQos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
+
+        retcode = pFactory->get_subscriber_qos_from_profile(subQos, "NEURON", qosProfile);
+        if (retcode != DDS_RETCODE_OK)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to get NEURON::%s subscriber profile\n",qosProfile);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+        subQos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;*/
+
+        // NOTE: Install listeners if needed. Currently all listeners are handled at the
+        //       data-reader and data-writer level
+        pDomainParticipant = pFactory->create_participant(domainId,
+                                                          dpQos,
+                                                          NULL,
+                                                          DDS_STATUS_MASK_NONE);
+        if (pDomainParticipant == NULL)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to create domain participant with profile %s\n",qosProfile);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        /*// TODO: Install listeners if required. Currently all are handlded at
+        //       the data-writer entity level
+        pPublisher = pDomainParticipant->create_publisher(pubQos,
+                                                            NULL,
+                                                            DDS_STATUS_MASK_NONE);
+
+        if (pPublisher == NULL)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to create publisher with profile %s\n",qosProfile);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        // TODO: Install listeners
+        pSubscriber = pDomainParticipant->create_subscriber(subQos,
+                                                              NULL,
+                                                              DDS_STATUS_MASK_NONE);
+
+        if (pSubscriber == NULL)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to create subscriber with profile %s\n",qosProfile);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        // Register all types using the canonical name, no real benefit of using a different
+        // one
+        type_name = ControlTypeSupport::get_type_name();
+        retcode = ControlTypeSupport::register_type(pDomainParticipant,
+                                                    type_name);
+        if (retcode != DDS_RETCODE_OK)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to register type %s\n",type_name);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        // Use the type name as the topic name.
+        // NOTE: There is a 256 char limit on each, so if the names are
+        // longer this must be changed.
+        topic = pDomainParticipant->create_topic(type_name,
+                                                  type_name,
+                                                  DDS_TOPIC_QOS_DEFAULT,
+                                                  NULL,
+                                                  DDS_STATUS_MASK_NONE);
+        if (topic == NULL)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        type_name = EventTypeSupport::get_type_name();
+        retcode = EventTypeSupport::register_type(pDomainParticipant,type_name);
+        if (retcode != DDS_RETCODE_OK) {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to register type %s\n",type_name);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        topic = pDomainParticipant->create_topic(type_name,
+                                                  type_name,
+                                                  DDS_TOPIC_QOS_DEFAULT,
+                                                  NULL,
+                                                  DDS_STATUS_MASK_NONE);
+        if (topic == NULL)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        type_name = StateTypeSupport::get_type_name();
+        retcode = StateTypeSupport::register_type(pDomainParticipant, type_name);
+        if (retcode != DDS_RETCODE_OK) {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to register type %s\n",type_name);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        topic = pDomainParticipant->create_topic(type_name,
+                                                  type_name,
+                                                  DDS_TOPIC_QOS_DEFAULT,
+                                                  NULL,
+                                                  DDS_STATUS_MASK_NONE);
+        if (topic == NULL)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        type_name = MetricsTypeSupport::get_type_name();
+        retcode = MetricsTypeSupport::register_type(pDomainParticipant,
+                                                    type_name);
+        if (retcode != DDS_RETCODE_OK)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to register type %s\n",type_name);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
+        topic = pDomainParticipant->create_topic(type_name,
+                                                  type_name,
+                                                  DDS_TOPIC_QOS_DEFAULT,
+                                                  NULL,
+                                                  DDS_STATUS_MASK_NONE);
+        if (topic == NULL)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }*/
+    }
+
+    bool AddPeer(const char *peer)
+    {
+        return (pDomainParticipant->add_peer(peer) == DDS_RETCODE_OK);
+    }
+
+    void Enable(const char *qosProfile)
+    {
+        DDS_PublisherQos pubQos;
+        DDS_SubscriberQos subQos;
+        DDS_ReturnCode_t retcode;
+        DDSTopic *topic;
+        const char *type_name;
+
+        retcode = pDomainParticipant->enable();
+        if (retcode != DDS_RETCODE_OK)
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("CPInterfaceT::Enable(): Failed\n");
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+
         retcode = pFactory->get_publisher_qos_from_profile(pubQos, "NEURON", qosProfile);
         if (retcode != DDS_RETCODE_OK)
         {
@@ -89,19 +258,6 @@ public:
             throw DDS_RETCODE_BAD_PARAMETER;
         }
         subQos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
-
-        // NOTE: Install listeners if needed. Currently all listeners are handled at the
-        //       data-reader and data-writer level
-        pDomainParticipant = pFactory->create_participant(domainId,
-                                                          dpQos,
-                                                          NULL,
-                                                          DDS_STATUS_MASK_NONE);
-        if (pDomainParticipant == NULL)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to create domain participant with profile %s\n",qosProfile);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
 
         // TODO: Install listeners if required. Currently all are handlded at
         //       the data-writer entity level
@@ -216,16 +372,8 @@ public:
             ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-    }
 
-    bool AddPeer(const char *peer)
-    {
-        return (pDomainParticipant->add_peer(peer) == DDS_RETCODE_OK);
-    }
-
-    bool Enable(void)
-    {
-        return (pDomainParticipant->enable() == DDS_RETCODE_OK);
+        return;
     }
 
     void AddProperty(const char *name, const char *value)

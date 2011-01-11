@@ -7,7 +7,7 @@
 //! \author Tron Kindseth (tron@rti.com)
 //! \date Created on: Nov 1, 2010
 //!
-//! The purpose of this example is to illustrate how an Controller may function 
+//! The purpose of this example is to illustrate how an Controller may function
 //!
 //! Specifically. this code is provided "as is", without warranty, expressed
 //! or implied.
@@ -32,7 +32,7 @@ int index;
 
   index = 0;
   *argc = 0;
-  
+
   while (strm.good())
   {
     while (strm.peek()==' ' && strm.good())
@@ -41,7 +41,7 @@ int index;
     // Trailing spaces would do this. They are chopped off and then we pop out.
     if (!strm.good())
       break;
-      
+
     // Now get argument which may start with '"'
     if (strm.peek()=='\"')
     {
@@ -58,47 +58,47 @@ int index;
     // If we find the length of 'arg', we know where to STUFF a NULL in the inbound string and assign.
     argv[*argc] = str_in + index;
     index += arg.length();
-    
+
     str_in[index] = 0;
     index++;	// Skip past the null terminator.
-    
+
     (*argc)++;
   }
 }
 
     //! \brief Create a new Controller
     Controller::Controller(int appId, int domaindId, int acpWanId, int scpWanId)
-    { 
+    {
         pSessionEventHandler = new ControllerEventHandler(this);
-                
+
         pCallback = NULL;
 
         m_appId = appId;
-                
+
         // The Controller manages sessions, thus connect to the SCP as master
     	pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster","SCP");
     	pSCPMaster->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id", ToString<int>(scpWanId).c_str());
-    	pSCPMaster->Enable();
+    	pSCPMaster->Enable("SCP");
 
         // The Controller serves as the admin master for all SFs, thus connect as master
         pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP","ACP");
         pACPMaster->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id", ToString<int>(acpWanId).c_str());
-        pACPMaster->Enable();
-        
+        pACPMaster->Enable("ACP");
+
         m_domainId = domaindId;
-        
+
         // This is using RTI APIs to spawn an event handler thread. Please
         // replace with something more appropriate
-        eventThread = RTIOsapiThread_new("controlThread", 
-                                         RTI_OSAPI_THREAD_PRIORITY_NORMAL, 
-                                         0, 
-                                         PTHREAD_STACK_MIN*16, 
-                                         NULL, 
-                                         eventLoop, 
+        eventThread = RTIOsapiThread_new("controlThread",
+                                         RTI_OSAPI_THREAD_PRIORITY_NORMAL,
+                                         0,
+                                         PTHREAD_STACK_MIN*16,
+                                         NULL,
+                                         eventLoop,
                                          pSessionEventHandler);
     }
-    
-    
+
+
     //! \brief Destroy this Controller
     Controller::~Controller()
     {
@@ -137,16 +137,16 @@ int index;
         if(state->state==com::xvd::neuron::OBJECT_STATE_OFFERSRC||state->state==com::xvd::neuron::OBJECT_STATE_SELECTSRC)
         	printf("Payload: %s\n",state->payload);
     }
-    
+
     //! \brief Handle state updates from a SF
     void Controller::RemoteSFUpdate(com::xvd::neuron::acp::State *state,DDS_SampleInfo *info)
     {
         RemoteSessionFactoryMap::iterator it;
         RemoteSessionFactory *rsf;
-        
+
         // TODO MANJESH - this becomes a CRASH if the remote SF has DIED. How can we handle this type of problem?
         it = remoteSF.find(state->srcId);
-        
+
         if (it == remoteSF.end())
         {
             // A new SF has been detected (it was either created manually or by the
@@ -191,8 +191,8 @@ int index;
         }
         else
         {
-            // We already know about this SF. In this case we act upon the 
-            // state change. If it has been deleted, we remove it from 
+            // We already know about this SF. In this case we act upon the
+            // state change. If it has been deleted, we remove it from
             // our list of remote eSFs. If we initiated the delete,
             // isShutdown() returns true, it is all good. However, if someone
             // exited it we not this but still remove it from out list
@@ -215,25 +215,25 @@ int index;
                     remoteSF.erase(state->srcId);
                     SFList.erase(state->srcId);
                 }
-                else 
+                else
                 {
-                    // If by some chance we detect the 
+                    // If by some chance we detect the
                     printf("SessionFactory %d does not exist\n",state->srcId);
-                }                
+                }
             }
             else if ((state->state == com::xvd::neuron::OBJECT_STATE_STANDBY) ||
-                     (state->state == com::xvd::neuron::OBJECT_STATE_READY)) 
+                     (state->state == com::xvd::neuron::OBJECT_STATE_READY))
             {
                 if (!rsfit->second->isSame(info->disposed_generation_count))
                 {
-                    // This is the state we would expect if the SF was started 
-                    // clean again after we have discovered it or it has been been 
+                    // This is the state we would expect if the SF was started
+                    // clean again after we have discovered it or it has been been
                     // enabled by someone else after being restarted. We would
-                    // expect that this is a different incarnation, so we check 
-                    // for that.                    
+                    // expect that this is a different incarnation, so we check
+                    // for that.
                     printf("A new incarnation of SF %d was expected!!\n",state->srcId);
-                } 
-                else 
+                }
+                else
                 {
                     if (state->state == com::xvd::neuron::OBJECT_STATE_STANDBY)
                     {
@@ -242,13 +242,13 @@ int index;
                     else
                     {
                         // If it already ready, just ping it in case the previous
-                        // controller was restarted. In that case we want to 
+                        // controller was restarted. In that case we want to
                         // ensure the key is rediscovered
                         rsfit->second->ping();
                     }
                 }
             }
-            else 
+            else
             {
                // Currently there is no error state, this should be added
             }
@@ -259,11 +259,11 @@ int index;
 
         }
     }
-    
+
     //! \brief Handle help command
     void Controller::CmdHelp()
     {
-        printf("Interactive controller shell:\n\n");        
+        printf("Interactive controller shell:\n\n");
         printf("acp ls                           - List detected SFs\n");
         printf("acp shutdown <sfId>+             - Shutdown listed SFs\n");
         printf("acp send <sfId>+ <script>        - Send script to SFs\n");
@@ -274,11 +274,11 @@ int index;
         printf("sf create <sId>                  - Spawn a new SF\n");
         printf("sf delete <sId>                  - Delete a SF\n");
         printf("sf ls                            - List locally created SFs\n");
-        printf("\n");        
+        printf("\n");
         printf("quit                             - Exit with no cleanup\n");
         printf("\n");
     }
-    
+
     //! \brief Handle acp <..> commands
     void Controller::CmdACP(int *argc,int max_argc,char **argv)
     {
@@ -313,7 +313,7 @@ int index;
             {
                 ShutdownRemoteSF(*it);
             }
-        }                                
+        }
         else if (!strcmp(argv[*argc],"send"))
         {
             int sfId;
@@ -325,7 +325,7 @@ int index;
             {
                 printf("usage: acp send <id>+ <cmd>\n");
                 return;
-            }            
+            }
             while (*argc < max_argc)
             {
                 if (argv[*argc][0]=='"')
@@ -342,18 +342,18 @@ int index;
                     rsfit->second->Send(argv[*argc]);
                 }
             }
-            else 
+            else
             {
                 printf("usage: acp send <id>+ <cmd>\n");
                 return;
             }
-        }                                        
+        }
         else
         {
             printf("unknown acp command: %s\n",argv[*argc]);
-        }        
+        }
     }
-    
+
     //! \brief Handle scp <..> commands
     void Controller::CmdSCP(int *argc,int max_argc,char **argv)
     {
@@ -369,7 +369,7 @@ int index;
             int sfId;
             set<int> sessionSFs;
             bool update = !strcmp(argv[*argc],"update");
-            
+
             ++(*argc);
             if (*argc == max_argc)
             {
@@ -377,7 +377,7 @@ int index;
                 return;
             }
             sId = strtol(argv[*argc],NULL,0);
-            
+
             ++(*argc);
             while (*argc < max_argc)
             {
@@ -391,7 +391,7 @@ int index;
             {
                 CreateOrUpdateSession(sId,&sessionSFs,argv[*argc],update);
             }
-            else 
+            else
             {
                 CreateOrUpdateSession(sId,&sessionSFs,NULL,update);
             }
@@ -407,7 +407,7 @@ int index;
             }
             sId = strtol(argv[*argc],NULL,0);
             DeleteSession(sId);
-        }                    
+        }
         else if (!strcmp(argv[*argc],"ls"))
         {
             ListSession();
@@ -418,13 +418,13 @@ int index;
         }
 
     }
-    
+
     //! \brief Handle sf <..> commands
     void Controller::CmdSF(int *argc,int max_argc,char **argv)
     {
         int sId, pId;
         //SessionFactory *aSF;
-        
+
         ++(*argc);
         if (*argc == max_argc)
         {
@@ -436,7 +436,7 @@ int index;
             ++(*argc);
             if (*argc == max_argc)
             {
-                printf("usage: sf create <id>\n");                
+                printf("usage: sf create <id>\n");
                 return;
             }
             while (*argc < max_argc)
@@ -448,12 +448,12 @@ int index;
                 sprintf(did,"%d",m_domainId);
                 sprintf(aid,"%d",m_appId);
                 pid = fork();
-                if (pid != 0)   
+                if (pid != 0)
                 {
                     printf("Created SF: %d/%d\n",sId,pid);
-                    SFList[sId] = pid;                        
+                    SFList[sId] = pid;
                     (*argc)++;
-                } 
+                }
                 else
                 {
                      execl("../../bin/sf",
@@ -462,7 +462,7 @@ int index;
                            "SessionFactory",
                            aid,
                            did,(char *)0);
-                
+
                      /*execl("bin/sf",
                            "bin/sf",
                            "-appId",
@@ -471,7 +471,7 @@ int index;
                            did,(char *)0);*/
                      exit(0);
                 }
-            }            
+            }
         }
         else if (!strcmp(argv[*argc],"ls"))
         {
@@ -483,21 +483,21 @@ int index;
             ++(*argc);
             if (*argc == max_argc)
             {
-                printf("usage: sf delete <id>\n");                
+                printf("usage: sf delete <id>\n");
                 return;
-            }                        
+            }
             sId = strtol(argv[*argc],NULL,0);
             it = SFList.find(sId);
             //delete it->second;
             SFList.erase(sId);
-        }                    
+        }
     }
-    
+
     //! \brief List detected SFs
     void Controller::ListRemoteSF()
     {
         RemoteSessionFactoryMap::iterator it;
-        
+
         printf("\nRemote SessionFactories\n");
         printf("=======================\n");
         for (it = remoteSF.begin(); it != remoteSF.end(); ++it)
@@ -511,7 +511,7 @@ int index;
     void Controller::ListSF()
     {
         map<int,pid_t>::iterator it;
-        
+
         printf("\nLocal SessionFactories\n");
         printf("======================\n");
         for (it = SFList.begin(); it != SFList.end(); ++it)
@@ -523,24 +523,24 @@ int index;
     }
 
     //! \brief Shutdown a detected SF.
-    //! 
+    //!
     //! Under the hood, this function disposed of the MasterObject
     void Controller::ShutdownRemoteSF(int sfId)
     {
         RemoteSessionFactoryMap::iterator rsfit;
-        
+
         rsfit = remoteSF.find(sfId);
         if (rsfit != remoteSF.end())
         {
             printf("Shutting down SessionFactory %d ....\n",sfId);
             rsfit->second->Shutdown();
         }
-        else 
+        else
         {
             printf("SessionFactory %d does not exist\n",sfId);
         }
     }
-    
+
     //! \brief Create of update a session
     void Controller::CreateOrUpdateSession(int sessionId, set<int> *_sfs,const char *script,bool update)
     {
@@ -548,9 +548,9 @@ int index;
         RemoteSessionFactoryMap::iterator rsfit;
         SessionMap::iterator sit;
         Session *session;
-        
+
         sit = sessions.find(sessionId);
-        
+
         // Need to allow separate 'create' commands to add a given session to a set of factories.
         // This means it is ok to send in a session-id more than once. Deal with it gracefully.
         if (!update)
@@ -570,7 +570,7 @@ int index;
         		printf("Adding existing session on SF ", sessionId);
         	}
         }
-        else 
+        else
         {
         	// If the chosen session to be updated doesn't exist....error out.
         	if (sit == sessions.end())
@@ -599,7 +599,7 @@ int index;
             if (!update)
             {
                 session->AddSlave(*it,script);
-            } 
+            }
             else
             {
                 if (!session->UpdateSF(*it,script))
@@ -617,19 +617,19 @@ int index;
             printf("\n");
         }
     }
-    
+
     //! \brief List active sessions
     void Controller::ListSession()
     {
         SessionMap::iterator it;
-        
+
         printf("\nSessions\n");
         printf("========\n");
-        
+
         for (it = sessions.begin(); it != sessions.end(); ++it)
         {
             it->second->ReportSessionStatus();
-        }        
+        }
         printf("\n");
     }
 
@@ -653,7 +653,7 @@ int index;
 
         return NULL;
     }
-    
+
     //! \brief Delete a session
     void Controller::DeleteSession(int sId)
     {
@@ -665,13 +665,13 @@ int index;
             printf("Delete session %d\n",sId);
             delete it->second;
             sessions.erase(sId);
-        } 
+        }
         else
         {
             printf("Session %d does not exist\n",sId);
         }
     }
-    
+
     bool Controller::runSingleCommand(const char*cmdIn)
     {
         char **argv = (char**)calloc(sizeof(char*),200);
@@ -727,24 +727,24 @@ int index;
         int argc;
         int s;
 	char thiscmdline[256];
-        
+
         using_history();
-        
+
         while (!quit)
         {
             line = readline("controller>");
-            if (!strcmp(line,"quit")) 
+            if (!strcmp(line,"quit"))
             {
                 quit = 1;
                 continue;
-                
+
             }
 
 	    if (!strlen(line))
 	      continue;
 
             add_history(line);
-            
+
 	    strcpy(thiscmdline, line);
             CreateArgvList(thiscmdline,&argc,argv);
 
@@ -762,12 +762,12 @@ int index;
                 else if (!strcmp(argv[s],"scp"))
                 {
                     CmdSCP(&s,argc,argv);
-                }   
+                }
                 else if (!strcmp(argv[s],"sf"))
                 {
                     CmdSF(&s,argc,argv);
                 }
-                else 
+                else
                 {
                     printf("Unknown command: %s\n",argv[s]);
                     break;
@@ -778,22 +778,22 @@ int index;
 #endif
 
         // The constructor takes the SCP master object and scp ID as input. The
-        // SCP Master attaches to the SCP plane and can manipulate any scp. 
+        // SCP Master attaches to the SCP plane and can manipulate any scp.
         Controller::Session::Session(SCPMaster *_sm,int _sid)
         {
             sm = _sm;
-            
+
             // The SCPMasterObject is an instance of a session as seen from the
             // SCPMaster. Each MasterObject maintains state for a single session
-            // forthis SCPMaster. 
+            // forthis SCPMaster.
             scp = sm->CreateMasterObject(_sid);
-            
+
             // Data-type for the interface to the SCPMasterObject.
             control = com::xvd::neuron::scp::ControlTypeSupport::create_data();
-            
-            sprintf(control->script,"Created scp %d",scp->GetSessionId());        
+
+            sprintf(control->script,"Created scp %d",scp->GetSessionId());
         }
-        
+
         Controller::Session::~Session()
         {
             // Return the session object to the SCPMaster
@@ -801,20 +801,20 @@ int index;
             {
                 printf("error deleting master object\n");
             }
-            
+
             // Delete local memory to store control and state
             com::xvd::neuron::scp::ControlTypeSupport::delete_data(control);
         }
-        
+
         // Add a slave to the session
         void Controller::Session::AddSlave(int slaveId,const char *script)
         {
             sfs.insert(slaveId);
-            if (script != NULL) 
+            if (script != NULL)
             {
                 sprintf(control->script,"%s",script);
-            } 
-            else 
+            }
+            else
             {
                 sprintf(control->script,"end");
             }
@@ -828,22 +828,22 @@ int index;
         bool Controller::Session::UpdateSF(int slaveId,const char *script)
         {
             std::set<int>::iterator it;
-            
+
             it = sfs.find(slaveId);
             if (it == sfs.end())
             {
                 return false;
             }
-            
-           if (script == NULL) 
+
+           if (script == NULL)
            {
                 sprintf(control->script,"end");
            }
            else
-           {            
+           {
             	sprintf(control->script,"%s",script);
            }
-           
+
            if (!scp->Send(control,slaveId))
            {
                 printf("failed to update SF %d\n",slaveId);
@@ -851,7 +851,7 @@ int index;
            }
            return true;
         }
-        
+
         void Controller::Session::RemoveSlave(int slaveId)
         {
             sprintf(control->script,"delete scp %d",scp->GetSessionId());
@@ -864,11 +864,11 @@ int index;
                 sfs.erase(slaveId);
             }
         }
-        
+
         bool Controller::Session::SlavesAreReady(set<int> *pending)
         {
             com::xvd::neuron::scp::State *state=NULL;
-            set<int>::iterator it;        
+            set<int>::iterator it;
             for (it = pending->begin(); it != pending->end(); ++it)
             {
                 state = scp->GetState(*it);
@@ -884,47 +884,47 @@ int index;
             }
             return pending->empty();
         }
-        
+
         // Send a command to a SF
         bool Controller::Session::SendCommand(const char *script,int slaveId)
         {
             set<int>::iterator it;
             it = sfs.find(slaveId);
-            
+
             if (it == sfs.end())
             {
                 printf("slave %d is not valid\n",slaveId);
                 return false;
             }
-            
+
             sprintf(control->script,"execute scp %d: %s\n",
                     scp->GetSessionId(),script);
-            
+
             return scp->Send(control,slaveId);
         }
-        
+
         void Controller::Session::ReportSessionStatus(void)
         {
             printf("Session [%d] status\n",scp->GetSessionId());
-            
+
             com::xvd::neuron::scp::State *state=NULL;
             com::xvd::neuron::scp::EventSeq *events=NULL;
             com::xvd::neuron::scp::MetricsSeq *metrics=NULL;
-            
+
             set<int>::iterator it;
-            
+
             for (it = sfs.begin(); it != sfs.end(); ++it)
-            {            
+            {
                 printf("checking state for %d\n",*it);
                 state = scp->GetState(*it);
                 events = scp->GetEvents(*it);
                 metrics = scp->GetMetrics(*it);
-                
+
                 if (state != NULL)
                 {
                     printf("State: %d, %d,%d\n",state->srcId,state->sessionId,state->state);
                 }
-                
+
                 if (events != NULL)
                 {
                     for (int i = 0; i < events->length(); ++i)
@@ -936,7 +936,7 @@ int index;
                                (*events)[i].eventCode);
                     }
                 }
-                
+
                 if (metrics != NULL)
                 {
                     for (int i = 0; i < metrics->length(); ++i)
@@ -952,7 +952,7 @@ int index;
                 }
             }
         }
-        
+
         Controller::RemoteSessionFactory::RemoteSessionFactory(int appId,DDS_Long _rank,ACPMaster *_pACPMaster)
         {
             m_appId = appId;
@@ -963,7 +963,7 @@ int index;
             localState = INIT;
             rank = _rank;
         }
-        
+
         Controller::RemoteSessionFactory::~RemoteSessionFactory()
         {
             if (pACPMasterObject != NULL)
@@ -972,27 +972,27 @@ int index;
             }
             com::xvd::neuron::acp::ControlTypeSupport::delete_data(control);
         }
-        
+
         void Controller::RemoteSessionFactory::PrintInfo()
         {
             com::xvd::neuron::acp::State *pACstate;
             com::xvd::neuron::acp::EventSeq *pACeventSeq;
             com::xvd::neuron::acp::MetricsSeq *pACmetricsSeq;
-            
+
             pACstate = pACPMasterObject->GetState(m_appId);
             pACeventSeq = pACPMasterObject->GetEvents(m_appId);
             pACmetricsSeq = pACPMasterObject->GetMetrics(m_appId);
-            
+
             printf("SF[%d]\n",m_appId);
             if (pACstate != NULL)
             {
                 printf("\tState=%d\n",pACstate->state);
             }
-            else 
+            else
             {
                 printf("\tState=Unknown\n");
             }
-            
+
             if (pACeventSeq != NULL)
             {
                 for (int i = 0; i < pACeventSeq->length(); ++i)
@@ -1003,7 +1003,7 @@ int index;
                            (*pACeventSeq)[i].eventCode);
                 }
             }
-            
+
             if (pACmetricsSeq != NULL)
             {
                 for (int i = 0; i < pACmetricsSeq->length(); ++i)
@@ -1018,36 +1018,36 @@ int index;
             }
             printf("\n");
         }
-        
+
         bool Controller::RemoteSessionFactory::IsAvailable()
         {
             com::xvd::neuron::acp::State *pACstate;
             com::xvd::neuron::acp::EventSeq *pACeventSeq;
             com::xvd::neuron::acp::MetricsSeq *pACmetricsSeq;
-            
+
             pACstate = pACPMasterObject->GetState(m_appId);
             pACeventSeq = pACPMasterObject->GetEvents(m_appId);
             pACmetricsSeq = pACPMasterObject->GetMetrics(m_appId);
-            
+
             if ((pACstate == NULL) || (pACstate->state != com::xvd::neuron::OBJECT_STATE_READY))
                 return false;
-            
+
             // TODO: Add some logic related to metrics
-            
+
             return true;
         }
-        
+
         ACPMasterObject* Controller::RemoteSessionFactory::GetACPMasterObject()
         {
             return pACPMasterObject;
         }
-        
+
         void Controller::RemoteSessionFactory::Send(char *cmd)
         {
             sprintf(control->script,"%s",cmd);
             pACPMasterObject->Send(control,m_appId);
         }
-        
+
         void Controller::RemoteSessionFactory::Shutdown()
         {
             pACPMaster->DeleteMasterObject(pACPMasterObject);
@@ -1059,7 +1059,7 @@ int index;
         {
             return shutDown;
         }
-        
+
         void Controller::RemoteSessionFactory::enable()
         {
             sprintf(control->script,"start");
@@ -1071,27 +1071,27 @@ int index;
             sprintf(control->script,"ping");
             pACPMasterObject->Send(control,m_appId);
         }
-        
+
         bool Controller::RemoteSessionFactory::isSame(DDS_Long _rank)
         {
             return _rank == rank;
         }
-        
 
-	// Now for  Controller::ControllerEventHandler::        
+
+	// Now for  Controller::ControllerEventHandler::
 	//
         Controller::ControllerEventHandler::ControllerEventHandler(Controller *_controller) : EventHandlerT<ControllerEventHandler>()
-        { 
+        {
             AddHandleFunc(&ControllerEventHandler::MyEventHandler,SCP_EVENT_SESSION_STATE_UPDATE);
             AddHandleFunc(&ControllerEventHandler::MyEventHandler,SCP_EVENT_SESSION_METRICS_UPDATE);
             AddHandleFunc(&ControllerEventHandler::MyEventHandler,SCP_EVENT_SESSION_EVENT);
             AddHandleFunc(&ControllerEventHandler::MyEventHandler,ACP_EVENT_SESSION_STATE_UPDATE);
             AddHandleFunc(&ControllerEventHandler::MyEventHandler,ACP_EVENT_SESSION_METRICS_UPDATE);
-            AddHandleFunc(&ControllerEventHandler::MyEventHandler,ACP_EVENT_SESSION_EVENT);  
+            AddHandleFunc(&ControllerEventHandler::MyEventHandler,ACP_EVENT_SESSION_EVENT);
             controller = _controller;
         }
-        
-        void Controller::ControllerEventHandler::MyEventHandler(Event *e) 
+
+        void Controller::ControllerEventHandler::MyEventHandler(Event *e)
         {
             switch (e->GetKind()) {
                 case SCP_EVENT_SESSION_STATE_UPDATE:
@@ -1113,19 +1113,19 @@ int index;
                 case ACP_EVENT_SESSION_METRICS_UPDATE:
                     break;
                 case ACP_EVENT_SESSION_EVENT:
-                    break;                    
+                    break;
                 default:
                     printf("Unknown event: %d\n",e->GetKind());
             }
         }
-        
+
         void Controller::ControllerEventHandler::EventHandleLoop (void)
         {
-        }    
-    
+        }
+
     //!
     //! \brief Main eventloop
-    //!   
+    //!
     void* Controller::eventLoop(void *param)
     {
         ControllerEventHandler *ev = (ControllerEventHandler*)param;
@@ -1133,13 +1133,13 @@ int index;
         {
             usleep(100000);
             ev->HandleNextEvent();
-        }        
+        }
         return NULL;
     }
 
 #ifndef ONLY_CONTROLLER_CLASS
 //! \brief Main entry point
-int 
+int
 main(int argc, char **argv)
 {
     int domainId = 67;
@@ -1147,13 +1147,13 @@ main(int argc, char **argv)
 	Controller *tester = NULL;
     int i;
     DDSDomainParticipantFactory *factory = DDSDomainParticipantFactory::get_instance();
-    
+
     DDS_DomainParticipantFactoryQos fqos;
-    
+
     factory->get_qos(fqos);
     fqos.resource_limits.max_objects_per_thread = 8192;
     factory->set_qos(fqos);
-    
+
     for (i = 0; i < argc; ++i)
     {
         if (!strcmp("-appId",argv[i]))
@@ -1185,21 +1185,21 @@ main(int argc, char **argv)
                 break;
             }
         }*/
-    }        
-    
+    }
+
     if (i < argc) {
         return -1;
     }
-    
+
     tester = new Controller(appId,domainId);
-    
+
     if (tester == NULL)
     {
         return -1;
     }
-    
+
     tester->run();
-    
+
 	return 0;
 }
 #endif

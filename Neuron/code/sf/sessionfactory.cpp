@@ -28,20 +28,20 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	pSCSlave = new SCPSlave(this,id,domId,SCPSlaveName,"SCP");
     pSCSlave->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id",scpSlaveWanIdStr);
     pSCSlave->AddPeer(uBrainScpWanDesc);
-    pSCSlave->Enable();
+    pSCSlave->Enable("SCP");
 
 
 	// Create Local Session Control Plane (LSCP) master
 	GEN_CP_INTERFACE_NAME(LSCPMasterName,name,LSCP_MASTER_NAME);
 	pLSCMaster = new LSCPMaster(this,id,domId,LSCPMasterName,"LSCP");
-    pLSCMaster->Enable();
+    pLSCMaster->Enable("LSCP");
 
 	// Create Admin Control Plane (ACP) slave
 	GEN_CP_INTERFACE_NAME(ACPSlaveName,name,ACP_SLAVE_NAME);
 	pACSlave = new ACPSlave(this,id,domId,ACPSlaveName,"ACP");
     pACSlave->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id",acpSlaveWanIdStr);
     pACSlave->AddPeer(uBrainAcpWanDesc);
-    pACSlave->Enable();
+    pACSlave->Enable("ACP");
 	pACSlaveObj = pACSlave->CreateSlaveObject(id);
 
 	// Initialize ACP Instances
