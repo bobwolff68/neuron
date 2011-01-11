@@ -27,7 +27,8 @@ public:
 	SFInfo() { };
 	virtual ~SFInfo() { };
 	int sf_id;
-	int g_id;		// Global ID for each SF for the STUN connection
+    int acp_slave_wan_id;       // Global ID for each SF for the STUN connection
+    int scp_slave_wan_id;       // Global ID for each SF for the STUN connection
 	string sf_ipaddress;
 	string sf_name;
 	bool is_endpoint;
@@ -75,7 +76,8 @@ public:
 		Ent_NumSink,
 		Ent_RP,
 		Ent_FileSource,
-		Ent_DecodeSink
+		Ent_DecodeSink,
+		Ent_SQSink
 	} EntType;
 	EntInfo() { src_ent_id = -1; };
 	virtual ~EntInfo() { };
@@ -115,8 +117,8 @@ public:
 	com::xvd::neuron::ObjectState GetCurStateInSFForSession(int sfid, int sessid);
     int UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neuron::ObjectState state);
 
-	int AddSFInternally(int sfID, const char* ip, int gID, const char* name, bool isEP);
-	int AddSFLaunch(int sfID, const char* ip, int gID, const char* name);
+	int AddSFInternally(int sfID, const char* ip, int acpID, int scpID, const char* name, bool isEP);
+	int AddSFLaunch(int sfID, const char* ip, const char* name);
 	int RemoveSF(int sfID);
 	void ListSFs(void);
     SFInfo* GetSFInfo(int sfid) { return sfList[sfid]; };

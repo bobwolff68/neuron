@@ -24,11 +24,16 @@ int main(int argc, char** argv)
 	map<string, string> respvals;
 
 	// Static items -- I think they are static?
+#if 0
+    NDDSConfigLogger::get_instance()->
+        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
+                                  NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+#endif
 
 	// Should come from command line.
 	respvals["stun_ip"] = "207.145.121.125";
-	respvals["brain_id"] = "wan://1@blah blah";
-	respvals["wan_id"] = "wan://1@ubrain-ip-address::blah blah";
+    respvals["ubrain_scp_desc"] = "1@wan://::1:1.1.1.1";
+    respvals["ubrain_acp_desc"] = "1@wan://::2:1.1.1.1";
 
 	///
 	/// Parse the command line and setup variables for options. Then start rolling for real.
@@ -44,7 +49,7 @@ int main(int argc, char** argv)
 	///
 	/// Now get rolling
 	///
-	uBrainManager uBrain(0);
+	uBrainManager uBrain(0, 2, 1);
 
 #define TRYCLIENTSERVER
 #ifdef  TRYCLIENTSERVER

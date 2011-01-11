@@ -40,7 +40,7 @@ class Controller
 
 public:
     
-    Controller(int appId, int domaindId);
+    Controller(int appId, int domaindId, int acpWanId, int scpWanId);
     ~Controller();
     void RemoteSessionUpdate(com::xvd::neuron::scp::State *state,DDS_SampleInfo *info);
     void RemoteSFUpdate(com::xvd::neuron::acp::State *state,DDS_SampleInfo *info);
@@ -57,6 +57,8 @@ public:
     void DeleteSession(int sId);
     bool runSingleCommand(const char*cmdIn);
     void SetCallback(CallbackBase* pc) { pCallback = pc; };
+    bool AddSCPMasterPeer(const char* descriptor);
+    bool AddACPMasterPeer(const char* descriptor);
 #ifndef ONLY_CONTROLLER_CLASS
     void run();
 #endif

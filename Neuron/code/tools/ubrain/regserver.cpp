@@ -267,20 +267,24 @@ bool RegServer::HConnection(int csock)
 	}
 
 	respvalues["client_pub_ip"]=clientIpAddress;
-	stringstream tempstream;
+
 	temp_gid = globalID++;				// Must increment immediately to avoid a conflict.
-	tempstream << temp_gid;
-	respvalues["gstun_id"] = tempstream.str();
+	respvalues["client_scp_id"] = ToString<int>(temp_gid);
+    temp_gid = globalID++;              // Must increment immediately to avoid a conflict.
+    respvalues["client_acp_id"] = ToString<int>(temp_gid);
 
 //	cout << "SPECIAL: gstun_id='" << respvalues["gstun_id"] << "'" << endl;
 
 	// Prep the 'static' and recently determined items.
 	AddToStream(body, "client_pub_ip");
 	AddToStream(body, "stun_ip");
-	AddToStream(body, "brain_id");
-	AddToStream(body, "wan_id");
-	AddToStream(body, "gstun_id");
-	AddToStream(body, "ep_sf_id");
+    AddToStream(body, "ubrain_scp_desc");
+	AddToStream(body, "ubrain_acp_desc");
+    AddToStream(body, "client_scp_id");
+    AddToStream(body, "client_acp_id");
+
+    if (bIsEndpoint)
+        AddToStream(body, "ep_sf_id");
 
 	bodyString = body.str();
 
@@ -307,7 +311,11 @@ bool RegServer::HConnection(int csock)
 	// Now it's complete....let the uBrainManager:: know this fact.
 	// GlobalID-1 is used since it was post-incremented above for safety.
 	// And the actual 'globalID' is not used for safety in case it has been changed already.
-	theBrain->RegistrationComplete(sf_id, respvalues["client_pub_ip"].c_str(), reqParameters["ep_friendly_name"].c_str(), temp_gid-1, bIsEndpoint);
+	// TODO
+
+	respvalues["ep_friendly_name"] = reqParameters["ep_friendly_name"];
+
+	theBrain->RegistrationComplete(respvalues, bIsEndpoint);
 
 	return true;
 }

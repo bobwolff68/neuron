@@ -17,7 +17,8 @@ LocalItems::LocalItems()
 	entTypeMap["NUMSINK"]	= EntInfo::Ent_NumSink;
 	entTypeMap["RP"]		= EntInfo::Ent_RP;
 	entTypeMap["FILESOURCE"]= EntInfo::Ent_FileSource;
-	entTypeMap["DECODESINK"]= EntInfo::Ent_DecodeSink;
+    entTypeMap["DECODESINK"]= EntInfo::Ent_DecodeSink;
+    entTypeMap["SQSINK"]= EntInfo::Ent_SQSink;
 }
 
 LocalItems::~LocalItems()
@@ -276,7 +277,7 @@ int LocalItems::UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neu
     return 0;
 }
 
-int LocalItems::AddSFInternally(int sfID, const char* ip, int gID, const char* name, bool isEP)
+int LocalItems::AddSFInternally(int sfID, const char* ip, int acpID, int scpID, const char* name, bool isEP)
 {
 	if (sfList[sfID])
 		return ID_IN_USE;
@@ -288,7 +289,8 @@ int LocalItems::AddSFInternally(int sfID, const char* ip, int gID, const char* n
 		return GENERIC_ERROR;
 
 	pSF->sf_id = sfID;
-	pSF->g_id = gID;
+    pSF->acp_slave_wan_id = acpID;
+    pSF->scp_slave_wan_id = scpID;
 	pSF->sf_ipaddress = ip;
 	pSF->sf_name = name;
 	pSF->is_endpoint = isEP;
@@ -309,10 +311,10 @@ int LocalItems::AddSFInternally(int sfID, const char* ip, int gID, const char* n
 //
 #define LOGSF_OUT
 
-int LocalItems::AddSFLaunch(int sfID, const char* ip, int gID, const char* name)
+int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name)
 {
 	int ret;
-	ret = AddSFInternally(sfID, ip, gID, name, false);
+	ret = AddSFInternally(sfID, ip, -1, -1, name, false);
 	if (ret)
 		return ret;
 
@@ -330,7 +332,7 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, int gID, const char* name)
 	// Now launch the remote 'sf'
 	cout << "Launching remote Factory ID=" << sfID << " at " << ip << endl;
 	stringstream sshnow;
-	sshnow << "ssh " << ip << " \"./bin/sf " << sfID << " " << name << " 0 67 ";
+	sshnow << "ssh " << ip << " \"source .bashrc;./bin/sf " << sfID << " " << name << " 0 67 " << ip << " ";
 #ifdef LOGSF_OUT
 	stringstream mcmd;
 	// Always re-create the log file to start up clean.

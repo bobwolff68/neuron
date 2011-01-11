@@ -17,11 +17,11 @@
 class uBrainManager : ThreadSingle, CallbackBase
 {
 public:
-	uBrainManager(int brainId=0, int domainId=67);
+	uBrainManager(int brainId, int acpWanId, int scpWanId, int domainId=67);
 	virtual ~uBrainManager();
 	bool GetUniqueSFidAndMarkSFAsCreated(int& sfIdOut);
 	bool GetUniqueEntityID(int& entIdOut);
-	bool RegistrationComplete(int sfid, const char* clientIPAddress, const char* friendlyName, int globalID, bool isEP);
+	bool RegistrationComplete(map<string,string> pairs, bool isEP);
 	bool processLocal(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool processDDSOriented(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool processDDS_SF(string& cmd, string& subcmd, map<string, string> & nvPairs);

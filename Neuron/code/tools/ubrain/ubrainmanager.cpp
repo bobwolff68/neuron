@@ -7,7 +7,7 @@
 
 #include "ubrainmanager.h"
 
-uBrainManager::uBrainManager(int brainId, int domainId)
+uBrainManager::uBrainManager(int brainId, int acpWanId, int scpWanId, int domainId)
 {
     DDSDomainParticipantFactory *factory =
             DDSDomainParticipantFactory::get_instance();
@@ -18,7 +18,7 @@ uBrainManager::uBrainManager(int brainId, int domainId)
     fqos.resource_limits.max_objects_per_thread = 8192;
     factory->set_qos(fqos);
 
-    pCtrl = new Controller(brainId, domainId);
+    pCtrl = new Controller(brainId, domainId, acpWanId, scpWanId);
 
     pCtrl->SetCallback(this);
 }
@@ -62,31 +62,94 @@ bool uBrainManager::GetUniqueEntityID(int& entIdOut)
 ///        The data presented allows the uBrainManager to finalize creation of the SF internally, matching
 ///        friendly name with sfid/ip address etc. The other crucial piece is the global ID for STUN.
 ///
-bool uBrainManager::RegistrationComplete(int sfid, const char* clientIPAddress,
-        const char* friendlyName, int globalID, bool isEP)
+bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
 {
+    string descr;
+    string cmd, subcmd;
+    map < string, string > nvP;
+    int sfid;
+    bool bok;
 
-    // TODO Here is where we will generate a unique sfid and add the SF to the 'lists' without launching it.
+    sfid = FromString<int>(pairs["ep_sf_id"], bok);
+
+    //
+    // Setup acp and scp wan id's in the controller for the newly added client/sf.
+    //
+
+    descr = "1@wan://::" + pairs["client_acp_id"];
+    descr += ":1.1.1.1";
+    if (!pCtrl->AddACPMasterPeer(descr.c_str()))
+        cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's ACP Master." << endl;
+
+    descr = "1@wan://::" + pairs["client_scp_id"];
+    descr += ":1.1.1.1";
+    if (!pCtrl->AddSCPMasterPeer(descr.c_str()))
+        cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's SCP Master." << endl;
 
     // TODO - Fill in and correlate all registry data -- and create internal SF for endpoints.
-    local.AddSFInternally(sfid, clientIPAddress, globalID, friendlyName, isEP);
 
-    cout << "Hardwired...Snooze....6 seconds...." << endl;
-    sleep(6);
+    //
+    // If the SF already exists, we added it -- it was not an endpoint.
+    // So, make sure it's ready and also populate it's wan id's as they should be '-1' each currently.
+    //
+    pSFInfo psf;
+    psf = local.GetSFInfo(sfid);
+    if (psf)
+    {
+        assert(psf->is_endpoint == false);
+        assert(psf->acp_slave_wan_id == -1);
+        assert(psf->scp_slave_wan_id == -1);
 
-    // TODO MANJESH / RMW - This is hardwired to always add a new factory to session ID=1001
-    map < string, string > nvP;
-    nvP["sfid"] = ToString<int> (sfid);
-    nvP["sessid"] = ToString<int> (1001);
+        psf->acp_slave_wan_id = FromString<int>(pairs["client_acp_id"], bok);
+        psf->scp_slave_wan_id = FromString<int>(pairs["client_scp_id"], bok);
 
-    string cmd, subcmd;
-    cmd = "SF";
-    subcmd = "ADDSESSION";
-    processDDS_SF(cmd, subcmd, nvP);
+        // Wait for new SF to become ready/online.
+        nvP.clear();
+        cmd = "SF";
+        subcmd = "WAITFORSFREADY";
+        nvP["sfid"] = pairs["ep_sf_id"];
+        nvP["timeout"] = "25000";
+        processDDS_SF(cmd, subcmd, nvP);
 
-    cout << "Hardwired...Snooze....4 seconds...." << endl;
-    sleep(4);
+    }
+    else
+    {
+        local.AddSFInternally(sfid, pairs["client_pub_ip"].c_str(),
+                FromString<int>(pairs["client_acp_id"], bok), FromString<int>(pairs["client_scp_id"], bok),
+                pairs["ep_friendly_name"].c_str(), isEP);
 
+        // Wait for new SF to become ready/online.
+        nvP.clear();
+        cmd = "SF";
+        subcmd = "WAITFORSFREADY";
+        nvP["sfid"] = pairs["ep_sf_id"];
+        nvP["timeout"] = "25000";
+        processDDS_SF(cmd, subcmd, nvP);
+
+        nvP.clear();
+        // TODO MANJESH / RMW - This is hardwired to always add a new factory to session ID=1001
+        nvP["sfid"] = pairs["ep_sf_id"];
+
+        // TODO - Hardwired session id 1001 must be removed.
+        nvP["sessid"] = ToString<int> (1001);
+
+        cmd = "SF";
+        subcmd = "ADDSESSION";
+        processDDS_SF(cmd, subcmd, nvP);
+
+        // Wait for new SF to become ready/online.
+        nvP.clear();
+        cmd = "SF";
+        subcmd = "WAITFORSESSREADY";
+        nvP["sfid"] = pairs["ep_sf_id"];
+        // TODO - Hardwired session id 1001 must be removed.
+        nvP["sessid"] = ToString<int> (1001);
+        nvP["timeout"] = "25000";
+        processDDS_SF(cmd, subcmd, nvP);
+
+    }
+
+    // TODO - Hardwired session id 1001 must be removed.
     RefreshSourcesOnSession(1001);
 
     // Now the remote Ep-SF exists...the controller will discover its existence automagically.
@@ -205,6 +268,8 @@ string uBrainManager::FormulateScript(const char* incmd, string& enttype,
         else if (enttype == "vdsink")
             scr << " " << ent_src;
         else if (enttype == "rp")
+            scr << " " << ent_src;
+        else if (enttype == "sqsink")
             scr << " " << ent_src;
         else
         {
@@ -333,14 +398,22 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<
 
     // Now process
     if (enttype == "NUMSOURCE" || enttype == "NUMSINK" || enttype
-            == "FILESOURCE" || enttype == "DECODESINK" || enttype == "RP")
+            == "FILESOURCE" || enttype == "DECODESINK" || enttype == "RP"
+                    || enttype == "SQSINK")
     {
-        if ((enttype == "DECODESINK" || enttype == "NUMSINK" || enttype == "RP")
+        if ((enttype == "DECODESINK" || enttype == "NUMSINK" || enttype == "RP" || enttype == "SQSINK")
                 && !requiredAttributesPresent(subcmd, nvPairs, "srcentid"))
         {
             cout << "ERROR: Required attribute 'srcentid' missing." << endl;
             return false;
         }
+
+/*
+ * TODO - RMW-WAN
+connect entid=2345 peer=wan:alsdkfas
+connect entid=6789 peer=wan:dslafkjsdlk
+connect sessid=sdf sfid=sdfs peer=wan:sadfsd
+*/
 
         ret = local.AddEntity(ent_id, sf_id, sess_id,
                 local.entTypeMap[enttype], entname.c_str(), resx, resy,
@@ -388,6 +461,8 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<
             enttype = "vdsink";
         else if (enttype == "RP")
             enttype = "rp";
+        else if (enttype == "SQSINK")
+            enttype = "sqsink";
         else
         {
             enttype = "ERROR_BAD_ENTTYPE:" + enttype;
@@ -397,8 +472,7 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<
         script = FormulateScript("ADD", enttype, ent_id, src_ent_id,
                 entname.c_str());
         // Now tell the controller about it.
-        go << "scp update " << sess_id << " " << sf_id << " \"" << script
-                << "\"";
+        go << "scp update " << sess_id << " " << sf_id << " \"" << script << " " << nvPairs["maxqueuelength"] << "\"";
         cout << "Sending Controller: '" << go.str() << "'" << endl;
 
         if (!pCtrl->runSingleCommand(go.str().c_str()))
@@ -937,7 +1011,7 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string,
             cout << "Creating Factory ID=" << sf_id << endl;
             // For locally created SF's by the uBrain, we use the sf_id as the global stun id.
             // Only enpoints get other id's as they are external to the brain and could belong to another.
-            ret = local.AddSFLaunch(sf_id, sfip.c_str(), sf_id, sfname.c_str());
+            ret = local.AddSFLaunch(sf_id, sfip.c_str(), sfname.c_str());
             if (ret)
             {
                 switch (ret)

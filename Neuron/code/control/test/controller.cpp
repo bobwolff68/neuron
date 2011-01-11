@@ -67,7 +67,7 @@ int index;
 }
 
     //! \brief Create a new Controller
-    Controller::Controller(int appId, int domaindId)
+    Controller::Controller(int appId, int domaindId, int acpWanId, int scpWanId)
     { 
         pSessionEventHandler = new ControllerEventHandler(this);
                 
@@ -77,9 +77,13 @@ int index;
                 
         // The Controller manages sessions, thus connect to the SCP as master
     	pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster","SCP");
+    	pSCPMaster->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id", ToString<int>(scpWanId).c_str());
+    	pSCPMaster->Enable();
 
         // The Controller serves as the admin master for all SFs, thus connect as master
         pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP","ACP");
+        pACPMaster->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id", ToString<int>(acpWanId).c_str());
+        pACPMaster->Enable();
         
         m_domainId = domaindId;
         
@@ -104,6 +108,22 @@ int index;
         delete pSCPMaster;
         delete pACPMaster;
         delete pSessionEventHandler;
+    }
+
+    bool Controller::AddSCPMasterPeer(const char* descriptor)
+    {
+        if (!pSCPMaster)
+            return false;
+
+        return pSCPMaster->AddPeer(descriptor);
+    }
+
+    bool Controller::AddACPMasterPeer(const char* descriptor)
+    {
+        if (!pACPMaster)
+            return false;
+
+        return pACPMaster->AddPeer(descriptor);
     }
 
     //! \brief Handle events detetecd on the SCP
