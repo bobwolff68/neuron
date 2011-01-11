@@ -336,7 +336,7 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const ch
 #ifdef LOGSF_OUT
 	stringstream mcmd;
 	// Always re-create the log file to start up clean.
-	mcmd << "ssh " << ip << " \"rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1\"";
+	mcmd << "ssh " << usernameAt << ip << " \"rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1\"";
 
 	system(mcmd.str().c_str());
 
@@ -345,7 +345,7 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const ch
 	sshnow << inoutnull + " &\"";
 //	sshnow << " </dev/null >sf_out" << sfID << ".log 2>&1 &\"";
 #endif
-//	cout << "This is the command: '" << sshnow.str() << "'" << endl;
+	cout << "This is the command: '" << sshnow.str() << "'" << endl;
 	system(sshnow.str().c_str());
 
 	return 0;
