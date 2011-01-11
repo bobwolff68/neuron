@@ -118,7 +118,7 @@ public:
     int UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neuron::ObjectState state);
 
 	int AddSFInternally(int sfID, const char* ip, int acpID, int scpID, const char* name, bool isEP);
-	int AddSFLaunch(int sfID, const char* ip, const char* name);
+	int AddSFLaunch(int sfID, const char* ip, const char* name, const char* usernameAt);
 	int RemoveSF(int sfID);
 	void ListSFs(void);
     SFInfo* GetSFInfo(int sfid) { return sfList[sfid]; };

@@ -1017,7 +1017,7 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string,
             cout << "Creating Factory ID=" << sf_id << endl;
             // For locally created SF's by the uBrain, we use the sf_id as the global stun id.
             // Only enpoints get other id's as they are external to the brain and could belong to another.
-            ret = local.AddSFLaunch(sf_id, sfip.c_str(), sfname.c_str());
+            ret = local.AddSFLaunch(sf_id, sfip.c_str(), sfname.c_str(), nvPairs["username"].c_str());
             if (ret)
             {
                 switch (ret)
