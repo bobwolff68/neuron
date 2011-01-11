@@ -92,7 +92,7 @@ public:
     //! \param[in] dstId  Slave ID of session
     //! \param[in] sid    SessionID of session
     //!                
-    bool AddPeer(const char*);    
+//RMW-removed due to CPInterfaceT having this already.    bool AddPeer(const char*);    
 };
 
 template<class DataSeq, class Reader,class EventKind>
