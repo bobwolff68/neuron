@@ -78,11 +78,17 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
 
     descr = "1@wan://::" + pairs["client_acp_id"];
     descr += ":1.1.1.1";
+
+    cout << "INFO: RegistrationComplete: ACP PEER-add: " << descr << endl;
+
     if (!pCtrl->AddACPMasterPeer(descr.c_str()))
         cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's ACP Master." << endl;
 
     descr = "1@wan://::" + pairs["client_scp_id"];
     descr += ":1.1.1.1";
+
+    cout << "INFO: RegistrationComplete: SCP PEER-add: " << descr << endl;
+
     if (!pCtrl->AddSCPMasterPeer(descr.c_str()))
         cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's SCP Master." << endl;
 

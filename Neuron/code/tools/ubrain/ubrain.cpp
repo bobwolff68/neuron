@@ -17,6 +17,11 @@ extern string stunserver;
 extern string startupscript;
 extern string logoutfile;
 
+#define UBRAIN_WAN_ACPID 2
+#define UBRAIN_WAN_ACPID_STR "2"
+#define UBRAIN_WAN_SCPID 1
+#define UBRAIN_WAN_SCPID_STR "1"
+
 int main(int argc, char** argv)
 {
 	int gstun_id_ubrain;
@@ -32,8 +37,8 @@ int main(int argc, char** argv)
 
 	// Should come from command line.
 	respvals["stun_ip"] = "207.145.121.125";
-    respvals["ubrain_scp_desc"] = "1@wan://::1:1.1.1.1";
-    respvals["ubrain_acp_desc"] = "1@wan://::2:1.1.1.1";
+    respvals["ubrain_acp_desc"] = "1@wan://::" UBRAIN_WAN_ACPID_STR ":1.1.1.1";
+    respvals["ubrain_scp_desc"] = "1@wan://::" UBRAIN_WAN_SCPID_STR ":1.1.1.1";
 
 	///
 	/// Parse the command line and setup variables for options. Then start rolling for real.
@@ -49,7 +54,7 @@ int main(int argc, char** argv)
 	///
 	/// Now get rolling
 	///
-	uBrainManager uBrain(0, 2, 1);
+	uBrainManager uBrain(0, UBRAIN_WAN_ACPID, UBRAIN_WAN_SCPID);
 
 #define TRYCLIENTSERVER
 #ifdef  TRYCLIENTSERVER

@@ -273,8 +273,6 @@ bool RegServer::HConnection(int csock)
     temp_gid = globalID++;              // Must increment immediately to avoid a conflict.
     respvalues["client_acp_id"] = ToString<int>(temp_gid);
 
-//	cout << "SPECIAL: gstun_id='" << respvalues["gstun_id"] << "'" << endl;
-
 	// Prep the 'static' and recently determined items.
 	AddToStream(body, "client_pub_ip");
 	AddToStream(body, "stun_ip");
@@ -287,6 +285,8 @@ bool RegServer::HConnection(int csock)
         AddToStream(body, "ep_sf_id");
 
 	bodyString = body.str();
+
+	cout << "INFO: RegServer: Full body sending back to client:" << endl << bodyString << endl;
 
 	// Now form the header. This is intertwined for a reason.
 	// The "Content-Length: **" item must know the size of the body.
