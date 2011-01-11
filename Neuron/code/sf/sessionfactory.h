@@ -306,7 +306,8 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 
 		bool stop;
 
-		SessionFactory(IDType,const char *,IDType,int);
+		SessionFactory(IDType,const char *,IDType,int,const char *,const char *,
+                       const char *,const char *);
 		~SessionFactory();
 
 		IDType	GetId(void)		{ return id; }

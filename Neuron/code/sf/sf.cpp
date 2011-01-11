@@ -1,30 +1,27 @@
 #include <stdio.h>
+#include "registration.h"
 #include "sessionfactory.h"
 
 int main(int argc, char *argv[])
 {
-	IDType 	sfId;
-	IDType	ownerId;
-	int		domId;
-	
-	
+	IDType 	            sfId;
+	IDType	            ownerId;
+	int		            domId;
+	RegistrationClient *pRegClient = NULL;
+
 	sscanf(argv[1],"%lld",&sfId);
 	sscanf(argv[3],"%lld",&ownerId);
 	sscanf(argv[4],"%d",&domId);
-	SessionFactory	sf(sfId,argv[2],ownerId,domId);
+	pRegClient = new RegistrationClient(argv[5],8181,false,argv[2]);
+	pRegClient->registerClient();
+	SessionFactory	sf(sfId,argv[2],ownerId,domId,pRegClient->publicPairs["client_scp_id"].c_str(),
+                       pRegClient->publicPairs["client_acp_id"].c_str(),pRegClient->publicPairs["ubrain_scp_desc"].c_str(),
+                       pRegClient->publicPairs["ubrain_acp_desc"].c_str());
 	sf.startThread();
 	while(!sf.stop)
 	{
 		usleep(20000);
-		//com::xvd::neuron::lscp::State *pState = com::xvd::neuron::lscp::StateTypeSupport::create_data();
-		//pState->srcId = sfId;
-		//pState->sessionId = 1001;
-		//pState->state = com::xvd::neuron::OBJECT_STATE_OFFERSRC;
-		//strcpy(pState->payload,"srcId,srcType,resW,resH");
-		//sf.SignalEvent(new LSCPEventSessionStateUpdate(pState,new (DDS_SampleInfo)));
-		//com::xvd::neuron::lscp::StateTypeSupport::delete_data(pState);
 	}
 	sf.stopThread();
 	return 0;
 }
-

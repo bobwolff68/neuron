@@ -22,6 +22,7 @@ INCLUDE_DIRECTORIES(../control ../control/scp ../control/lscp ../control/acp ../
 INCLUDE_DIRECTORIES(../control/idl ../control/scp/idl ../control/lscp/idl ../control/acp/idl ../control/ecp/idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 INCLUDE_DIRECTORIES(../media ../media/H264 ../media/idl ../entities ../neuroncommon)# ../tools/DemoEndpoint)
+INCLUDE_DIRECTORIES(../tools/ubrain)
 
 add_definitions(-DRTI_LINUX)
 add_definitions(-DRTI_UNIX)
@@ -35,12 +36,14 @@ find_library(CONTROL libcontrolplane.a ../lib)
 find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
 find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
 find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(LIBCURL libcurl.a ../neuroncommon/netlib)
 
 ADD_EXECUTABLE(
    sf                                          # build executable foo
    sessionfactory.cpp			# from these sources
    sf.cpp
    ../sl/sessionleader.cpp
+   ../tools/ubrain/registration.cpp
    ../media/idl/media.cxx
    ../media/idl/mediaSupport.cxx
    ../media/idl/mediaPlugin.cxx
@@ -54,6 +57,7 @@ TARGET_LINK_LIBRARIES(
    ${NDDSC}
    ${NDDSCORE}
    ${PT_LIB}
+   ${LIBCURL}
    -ldl
    -lrt
 )

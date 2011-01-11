@@ -4,7 +4,9 @@
 #include "sessionfactory.h"
 
 SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType ownerIdParam,
-							   int domId) : EventHandlerT<SessionFactory>(),ThreadSingle()
+							   int domId,const char *scpSlaveWanIdStr,const char *acpSlaveWanIdStr,
+							   const char *uBrainScpWanDesc,const char *uBrainAcpWanDesc)
+: EventHandlerT<SessionFactory>(),ThreadSingle()
 {
 	char	SCPSlaveName[100];
 	char	ACPSlaveName[100];
@@ -24,14 +26,22 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	// Create Session Control Object (SCO) slave
 	GEN_CP_INTERFACE_NAME(SCPSlaveName,name,SCP_SLAVE_NAME);
 	pSCSlave = new SCPSlave(this,id,domId,SCPSlaveName,"SCP");
+    pSCSlave->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id",scpSlaveWanIdStr);
+    pSCSlave->AddPeer(uBrainScpWanDesc);
+    pSCSlave->Enable();
+
 
 	// Create Local Session Control Plane (LSCP) master
 	GEN_CP_INTERFACE_NAME(LSCPMasterName,name,LSCP_MASTER_NAME);
 	pLSCMaster = new LSCPMaster(this,id,domId,LSCPMasterName,"LSCP");
+    pLSCMaster->Enable();
 
 	// Create Admin Control Plane (ACP) slave
 	GEN_CP_INTERFACE_NAME(ACPSlaveName,name,ACP_SLAVE_NAME);
 	pACSlave = new ACPSlave(this,id,domId,ACPSlaveName,"ACP");
+    pACSlave->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id",acpSlaveWanIdStr);
+    pACSlave->AddPeer(uBrainAcpWanDesc);
+    pACSlave->Enable();
 	pACSlaveObj = pACSlave->CreateSlaveObject(id);
 
 	// Initialize ACP Instances
