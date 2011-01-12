@@ -470,6 +470,10 @@ public:
                                     eventReader(NULL),
                                     metricsReader(NULL)
     {
+    }
+
+    void Startup(EventHandler *eh,int _srcId,const char *qosProfile)
+    {
         DDSTopic *topic;
         DDS_ReturnCode_t retcode;
         DDSDataWriter *pDW;
@@ -1002,6 +1006,10 @@ public:
     eventWriter(NULL),
     metricsWriter(NULL)
     {
+    }
+
+    void Startup(EventHandler *q,int _srcId,const char *qosProfile)
+    {
         DDSTopic *topic;
         DDS_ReturnCode_t retcode;
         DDSContentFilteredTopic *cft;
@@ -1044,7 +1052,8 @@ public:
         }
 
         // update any application specfic QoS here
-        sprintf(expression,"dstId = %d",appId);
+        //TODO: Temporary fix: changed appId to _srcId. Replace later
+        sprintf(expression,"dstId = %d",_srcId);
         cft = this->pDomainParticipant->create_contentfilteredtopic(expression,
                                                                     topic,
                                                                     expression,

@@ -32,7 +32,8 @@ RegServer::RegServer(uBrainManager* initBrain, map<string, string> rvals, int in
 	bIsEndpoint = false;
 	bIsServerUp = false;
 	serverError = 0;
-	globalID = (128 << 24) | 1;		// Start @ 2^31 and increment. This makes all ep-gid's HIGH and all non-ep-gid's start at zero.
+//	globalID = (128 << 24) | 1;		// Start @ 2^31 and increment. This makes all ep-gid's HIGH and all non-ep-gid's start at zero.
+	globalID = 15;		// Start @ 2^31 and increment. This makes all ep-gid's HIGH and all non-ep-gid's start at zero.
 
 	port = initport;
 	serversock = 0;

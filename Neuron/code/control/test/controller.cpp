@@ -77,14 +77,8 @@ int index;
 
         // The Controller manages sessions, thus connect to the SCP as master
     	pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster","SCP");
-    	pSCPMaster->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id", ToString<int>(scpWanId).c_str());
-    	pSCPMaster->Enable("SCP");
-
         // The Controller serves as the admin master for all SFs, thus connect as master
         pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP","ACP");
-        pACPMaster->AddProperty("dds.transport.wan_plugin.wan.transport_instance_id", ToString<int>(acpWanId).c_str());
-        pACPMaster->Enable("ACP");
-
         m_domainId = domaindId;
 
         // This is using RTI APIs to spawn an event handler thread. Please

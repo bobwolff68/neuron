@@ -15,13 +15,13 @@
 
 class LSCPSlaveControlReaderListener : public CPDataReaderListener
 {
-    
+
 public:
     LSCPSlaveControlReaderListener(LSCPSlave *_sl,
                                   com::xvd::neuron::lscp::ControlDataReader *reader);
-    
+
     virtual void on_data_available(DDSDataReader* reader);
-    
+
 private:
     com::xvd::neuron::lscp::ControlDataReader *m_reader;
     LSCPSlave *sl;
@@ -38,19 +38,21 @@ class LSCPSlave : public CPSlaveT<LSCPSlaveObject,
                                  com::xvd::neuron::lscp::ControlTypeSupport,
                                  com::xvd::neuron::lscp::EventTypeSupport,
                                  com::xvd::neuron::lscp::StateTypeSupport,
-                                 com::xvd::neuron::lscp::MetricsTypeSupport> 
+                                 com::xvd::neuron::lscp::MetricsTypeSupport>
 {
 public:
     LSCPSlave(EventHandler *q,int _sfId,int domainId,const char *,const char *qosProfile);
-    
+
     ~LSCPSlave();
-    
+
     virtual LSCPSlaveObject* CreateSlaveObject(int sid);
 
-    virtual bool DeleteSlaveObject(LSCPSlaveObject* aSession);      
-    
+    virtual bool DeleteSlaveObject(LSCPSlaveObject* aSession);
+
+    void StartupTwo(void);
+
 private:
-    
+
     LSCPSlaveControlReaderListener *controlListener;
 };
 

@@ -135,55 +135,13 @@
     
         <!-- No specialization required for the SCP (yet) -->
         <qos_profile name="SCP" base_name="CP">
-			<participant_qos>
-		    	<property>
-		    		<value>
-		    			<element>
-		    				<name>dds.transport.load_plugins</name>
-		    				<value>dds.transport.wan_plugin.wan</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.library</name>
-		    				<value>libnddstransportwan.so</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.create_function</name>
-		    				<value>NDDS_Transport_WAN_create</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.server</name>
-		    				<value>207.145.121.125</value>
-		    			</element>
-		    		</value>
-		    	</property>
-        	</participant_qos>
-        </qos_profile>
+        
+	</qos_profile>
 
         <!-- No specialization required for the ACP (yet) -->
         <qos_profile name="ACP" base_name="CP">
-			<participant_qos>
-		    	<property>
-		    		<value>
-		    			<element>
-		    				<name>dds.transport.load_plugins</name>
-		    				<value>dds.transport.wan_plugin.wan</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.library</name>
-		    				<value>libnddstransportwan.so</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.create_function</name>
-		    				<value>NDDS_Transport_WAN_create</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.server</name>
-		    				<value>207.145.121.125</value>
-		    			</element>
-		    		</value>
-		    	</property>
-        	</participant_qos>        
-        </qos_profile>
+
+       </qos_profile> 
     
         <!-- ECP is only for local communication between the SF and SL
              Thus, only enable shared memory -->
@@ -211,7 +169,7 @@
                 </transport_builtin>
                 <discovery>
                     <initial_peers> 
-                        <element> 100@builtin.shmem://  </element>
+                        <element> builtin.shmem://  </element>
                     </initial_peers>
                     <multicast_receive_addresses> 
                     </multicast_receive_addresses>
@@ -224,24 +182,8 @@
 				<receiver_pool>
 					<buffer_size>65536</buffer_size>
 				</receiver_pool>
-		    	<property>
-		    		<value>
-		    			<element>
-		    				<name>dds.transport.load_plugins</name>
-		    				<value>dds.transport.wan_plugin.wan</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.library</name>
-		    				<value>libnddstransportwan.so</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.create_function</name>
-		    				<value>NDDS_Transport_WAN_create</value>
-		    			</element>
-		    			<element>
-		    				<name>dds.transport.wan_plugin.wan.server</name>
-		    				<value>207.145.121.125</value>
-		    			</element>
+				<property>
+					<value>
 						<element>
 							<name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
 							<value>65536</value>

@@ -27,8 +27,10 @@ public:
         virtual ~CurlGlobal() { if (!--refCount) cleanup(); };
 private:
         static int refCount;
-        static void init() { curl_global_cleanup(); };
-        static void cleanup() { curl_global_init(CURL_GLOBAL_ALL); };
+//        static void init() { curl_global_cleanup(); };
+//        static void cleanup() { curl_global_init(CURL_GLOBAL_ALL); };
+        static void cleanup() { curl_global_cleanup(); };
+        static void init() { curl_global_init(CURL_GLOBAL_ALL); };
 };
 
 class RegistrationClient : private CurlGlobal

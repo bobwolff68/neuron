@@ -15,13 +15,13 @@
 
 class ACPSlaveControlReaderListener : public CPDataReaderListener
 {
-    
+
 public:
     ACPSlaveControlReaderListener(ACPSlave *_sl,
                                   com::xvd::neuron::acp::ControlDataReader *reader);
-    
+
     virtual void on_data_available(DDSDataReader* reader);
-    
+
 private:
     com::xvd::neuron::acp::ControlDataReader *m_reader;
     ACPSlave *sl;
@@ -38,19 +38,21 @@ class ACPSlave : public CPSlaveT<ACPSlaveObject,
                                  com::xvd::neuron::acp::ControlTypeSupport,
                                  com::xvd::neuron::acp::EventTypeSupport,
                                  com::xvd::neuron::acp::StateTypeSupport,
-                                 com::xvd::neuron::acp::MetricsTypeSupport> 
+                                 com::xvd::neuron::acp::MetricsTypeSupport>
 {
 public:
     ACPSlave(EventHandler *q,int _sfId,int domainId,const char *name,const char *qosProfile);
-    
+
     ~ACPSlave();
-    
+
     virtual ACPSlaveObject* CreateSlaveObject(int sid);
 
-    virtual bool DeleteSlaveObject(ACPSlaveObject* aSession);      
-    
+    virtual bool DeleteSlaveObject(ACPSlaveObject* aSession);
+
+    void StartupTwo(void);
+
 private:
-    
+
     ACPSlaveControlReaderListener *controlListener;
 };
 

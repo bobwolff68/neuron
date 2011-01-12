@@ -43,7 +43,7 @@ RegistrationClient::RegistrationClient(const char* pIp_address, int portnum, boo
 		url += "/neuron-sf";
 	}
 
-//	cout << "URL being formed is:" << endl << "  '" << url << "'" << endl;
+	cout << "URL being formed is:" << endl << "  '" << url << "'" << endl;
 
 	if (!setupNetwork())
 		throw;
@@ -107,7 +107,7 @@ bool RegistrationClient::registerClient(void)
 
 		bodystr.write(response, respLength);
 
-//		cout << "Init response: '" << bodystr.str() << "'" << endl;
+		cout << "Init response: '" << bodystr.str() << "'" << endl;
 
 		while (bodystr.good())
 		{

@@ -13,7 +13,7 @@
 #include "LSCPSlave.h"
 
 LSCPSlaveControlReaderListener::LSCPSlaveControlReaderListener(LSCPSlave *_sl,
-            com::xvd::neuron::lscp::ControlDataReader *reader) :CPDataReaderListener(_sl)    
+            com::xvd::neuron::lscp::ControlDataReader *reader) :CPDataReaderListener(_sl)
 {
     m_reader = reader;
     sl = _sl;
@@ -28,29 +28,29 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     LSCPSlaveObject *slave;
     Event *ev;
     com::xvd::neuron::lscp::Control *control;
-    
-    retcode = m_reader->take(data_seq, 
-                             info_seq, 
+
+    retcode = m_reader->take(data_seq,
+                             info_seq,
                              DDS_LENGTH_UNLIMITED,
-                             DDS_ANY_SAMPLE_STATE, 
+                             DDS_ANY_SAMPLE_STATE,
                              DDS_ANY_VIEW_STATE,
                              DDS_ANY_INSTANCE_STATE);
-    
+
     if (retcode == DDS_RETCODE_NO_DATA) {
         // TODO: Error logging
         ControlLogError("Failed to take ECP contorl data\n");
-        return;        
+        return;
     } else if (retcode != DDS_RETCODE_OK) {
-        ControlLogError("ECP take failed with %d\n",retcode);        
+        ControlLogError("ECP take failed with %d\n",retcode);
         return;
     }
-    
+
     for (i = 0; i < data_seq.length(); ++i) {
         switch (info_seq[i].view_state) {
             case DDS_NEW_VIEW_STATE:
                 if (!info_seq[i].valid_data) {
                     // TODO: Error logging
-                }   
+                }
                 slave = sl->CreateSlaveObject(data_seq[i].sessionId);
                 ev = new LSCPEventNewSession(slave,&data_seq[i]);
                 sl->PostEvent(ev);
@@ -60,7 +60,7 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                     // TODO: Error logging
                 } else {
                     ev = new LSCPEventUpdateSession(&data_seq[i],&info_seq[i]);
-                    sl->PostEvent(ev);                    
+                    sl->PostEvent(ev);
                 }
                 break;
             default:
@@ -77,7 +77,7 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                 break;
             case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
                 if (info_seq[i].valid_data) {
-                    // TODO 
+                    // TODO
                 } else {
                 }
                 break;
@@ -88,9 +88,9 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                     control = com::xvd::neuron::lscp::ControlTypeSupport::create_data();
 
                     m_reader->get_key_value(*control,info_seq[i].instance_handle);
-                    
+
                     ev = new LSCPEventDeleteSession(control->sessionId);
-                    
+
                     com::xvd::neuron::lscp::ControlTypeSupport::delete_data(control);
 
                     sl->PostEvent(ev);
@@ -101,14 +101,14 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                 break;
         }
     }
-    
+
     retcode = m_reader->return_loan(data_seq, info_seq);
     if (retcode != DDS_RETCODE_OK) {
         ControlLogError("LSCP return_loan failed with %d\n",retcode);
     }
 };
 
-LSCPSlave::LSCPSlave(EventHandler *q,int _srcId, int domainId, const char* name,const char *qosProfile) : 
+LSCPSlave::LSCPSlave(EventHandler *q,int _srcId, int domainId, const char* name,const char *qosProfile) :
 CPSlaveT<
 LSCPSlaveObject,
 com::xvd::neuron::lscp::ControlDataReader,
@@ -127,13 +127,13 @@ com::xvd::neuron::lscp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosPro
     controlReader->enable();
     stateWriter->enable();
     eventWriter->enable();
-    metricsWriter->enable();    
+    metricsWriter->enable();
 }
 
 LSCPSlave::~LSCPSlave()
 {
     LSCPSlaveControlReaderListener *controlListener = NULL;
-    
+
     if (controlReader)
     {
         controlListener = (LSCPSlaveControlReaderListener*)controlReader->get_listener();
@@ -151,76 +151,76 @@ LSCPSlaveObject* LSCPSlave::CreateSlaveObject(int sid)
     LSCPSlaveObject *s = NULL;
     DDS_InstanceHandle_t h1 = DDS_HANDLE_NIL,
                          h2 = DDS_HANDLE_NIL,
-                         h3 = DDS_HANDLE_NIL;    
-    
-    
+                         h3 = DDS_HANDLE_NIL;
+
+
     state->sessionId = sid;
     state->srcId = srcId;
     h1 = stateWriter->register_instance(*state);
-    if (DDS_InstanceHandle_is_nil(&h1)) 
+    if (DDS_InstanceHandle_is_nil(&h1))
     {
         //TODO: Error log
         ControlLogError("h1 is NILL\n");
         goto done;
     }
-    
+
     event->sessionId = sid;
     event->srcId = srcId;
     h2 = eventWriter->register_instance(*event);
-    if (DDS_InstanceHandle_is_nil(&h2)) 
+    if (DDS_InstanceHandle_is_nil(&h2))
     {
         //TODO: Error log
         ControlLogError("h2 is NILL\n");
         goto done;
     }
-    
+
     metrics->sessionId = sid;
     metrics->srcId = srcId;
     h3 = metricsWriter->register_instance(*metrics);
-    if (DDS_InstanceHandle_is_nil(&h3)) 
+    if (DDS_InstanceHandle_is_nil(&h3))
     {
         //TODO: Error log
         ControlLogError("h3 is NILL\n");
         goto done;
     }
-    
+
     s = new LSCPSlaveObject(this,srcId,sid,h1,h2,h3);
-    
+
 done:
     return s;
 }
 
-bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession) 
+bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession)
 {
     DDS_ReturnCode_t retcode;
     bool retval = false;
-    
+
     retcode = eventWriter->get_key_value(*event,aSession->GetEventInstanceHandle());
-    if (retcode != DDS_RETCODE_OK) 
+    if (retcode != DDS_RETCODE_OK)
     {
         //TODO: Error log
         ControlLogError("eventWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
-    
+
     retcode = eventWriter->dispose(*event,aSession->GetEventInstanceHandle());
-    if (retcode != DDS_RETCODE_OK) 
+    if (retcode != DDS_RETCODE_OK)
     {
         //TODO: Error log
         ControlLogError("eventWriter->dispose returned %d\n",retcode);
         goto done;
     }
-    
+
     retcode = stateWriter->get_key_value(*state,aSession->GetStateInstanceHandle());
-    if (retcode != DDS_RETCODE_OK) 
+    if (retcode != DDS_RETCODE_OK)
     {
         //TODO: Error log
         ControlLogError("stateWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
-    
+
     retcode = stateWriter->dispose(*state,aSession->GetStateInstanceHandle());
-    if (retcode != DDS_RETCODE_OK) 
+    if (retcode != DDS_RETCODE_OK)
     {
         //TODO: Error log
         ControlLogError("stateWriter->dispose returned %d\n",retcode);
@@ -229,26 +229,26 @@ bool LSCPSlave::DeleteSlaveObject(LSCPSlaveObject* aSession)
 
     retcode = metricsWriter->get_key_value(*metrics,
                                            aSession->GetMetricsInstanceHandle());
-    if (retcode != DDS_RETCODE_OK) 
+    if (retcode != DDS_RETCODE_OK)
     {
         //TODO: Error log
         ControlLogError("metricsWriter->get_key_value returned %d\n",retcode);
         goto done;
     }
-    
+
     retcode = metricsWriter->dispose(*metrics,
                                      aSession->GetMetricsInstanceHandle());
-    if (retcode != DDS_RETCODE_OK) 
+    if (retcode != DDS_RETCODE_OK)
     {
         //TODO: Error log
         ControlLogError("metricsWriter->dispose returned %d\n",retcode);
         goto done;
     }
-    
+
     delete aSession;
     retval = true;
-    
+
 done:
-        
+
     return retval;
 }
