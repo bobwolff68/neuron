@@ -51,9 +51,9 @@ add_definitions(-g3)
 
 find_library(COMMON libneuroncommon.a ../../lib)
 find_library(CONTROL libcontrolplane.a ../../lib)
-find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
-find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
-find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/x64Linux2.6gcc4.1.1)
+find_library(NDDSCPP libnddscppz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSC libnddscz.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
+find_library(NDDSCORE libnddscorez.a $ENV{NDDSHOME}/lib/i86Linux2.6gcc4.1.1)
 find_library(LIBAVCODEC_LIBRARY libavcodec.a)
 find_library(LIBAVFORMAT_LIBRARY libavformat.a)
 find_library(LIBAVUTIL_LIBRARY libavutil.a)
@@ -88,10 +88,11 @@ TARGET_LINK_LIBRARIES(
    ${LIBAVCODEC_LIBRARY}
    ${LIBAVUTIL_LIBRARY}
    ${GTK_LIBRARIES} 
+   -lidn
+   -lssl
    -ldl
    -lrt
    -lm
-   -lz
 )
 
 ###################

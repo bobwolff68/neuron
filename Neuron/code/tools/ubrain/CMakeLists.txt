@@ -39,7 +39,6 @@ find_library(LIBCURL libcurl.a ../../neuroncommon/netlib)
 find_library(LIBXML2 libxml2.a)
 find_library(LIBC libc.a)
 find_library(LIBM libm.a)
-find_library(LIBZ libz.a)
 find_library(READLINE readline)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
@@ -97,8 +96,9 @@ TARGET_LINK_LIBRARIES(
    ${LIBXML2}
    ${LIBCURL}		# Temporarily necessary
    ${READLINE}
-   ${LIBC} ${LIBM} ${LIBZ} ${PT_LIB}
-   -ldl -lrt
+   ${LIBC} ${LIBM} ${PT_LIB}
+   -lncurses
+   -lidn -lssl -ldl -lrt
 )
 
 ###################
