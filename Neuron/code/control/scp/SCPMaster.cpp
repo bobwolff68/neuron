@@ -99,6 +99,8 @@ SCPMaster::SCPMaster(EventHandler *q,
                      int _srcId,
                      int domainId,
                      const char *name,
+                     map<string,string> &PropertyPairs,
+                     map<string,DDS_Boolean> &PropagateDiscoveryFlags,
                      const char *qosProfile) :
 CPMasterT<
 SCPMasterObject,
@@ -116,7 +118,7 @@ com::xvd::neuron::scp::Control,
 com::xvd::neuron::scp::ControlTypeSupport,
 com::xvd::neuron::scp::EventTypeSupport,
 com::xvd::neuron::scp::StateTypeSupport,
-com::xvd::neuron::scp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
+com::xvd::neuron::scp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,PropertyPairs,PropagateDiscoveryFlags,qosProfile)
 {
     DDS_ReturnCode_t retcode;
 
@@ -322,4 +324,3 @@ DDS_InstanceHandle_t SCPMaster::GetMasterObjectMetricsHandle(int dstId,int sid)
 
     return metricsReader->lookup_instance(*metrics);
 }
-

@@ -54,7 +54,8 @@ public:
     //! \param[in] eh          Event-handler for all events received
     //! \param[in] srcId       Unique ID for the ACPMaster in the ACP
     //! \param[in] qosProfile  RTI DDS QoS profile to use
-    ACPMaster(EventHandler *eh,int srcId, int domainId, const char*name,const char *qosProfile);
+    ACPMaster(EventHandler *eh,int srcId, int domainId, const char*name,map<string,string> &PropertyPairs,
+              map<string,DDS_Boolean> &PropagateDiscoveryFlags,const char *qosProfile);
     
     //! Desstructor for the ACPMaster object
     //!

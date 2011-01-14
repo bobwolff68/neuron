@@ -114,7 +114,8 @@ private:
     ECPMaster *sm;    
 };
 
-ECPMaster::ECPMaster(EventHandler *q,int _srcId, int domainId, const char *name,const char *qosProfile) : 
+ECPMaster::ECPMaster(EventHandler *q,int _srcId, int domainId, const char *name, map<string,string> &PropertyPairs,
+                     map<string,DDS_Boolean> &PropagateDiscoveryFlags, const char *qosProfile) : 
 CPMasterT<
 ECPMasterObject,
 com::xvd::neuron::ecp::ControlDataWriter,
@@ -131,7 +132,7 @@ com::xvd::neuron::ecp::Control,
 com::xvd::neuron::ecp::ControlTypeSupport,
 com::xvd::neuron::ecp::EventTypeSupport,
 com::xvd::neuron::ecp::StateTypeSupport,
-com::xvd::neuron::ecp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
+com::xvd::neuron::ecp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,PropertyPairs,PropagateDiscoveryFlags,qosProfile)
 {
     DDS_ReturnCode_t retcode;
     

@@ -9,8 +9,11 @@
 #ifndef CPINTERFACET_H_
 #define CPINTERFACET_H_
 
+#include <map>
+#include <string>
 #include "CPInterface.h"
 
+using namespace std;
 
 // TODO: Move this to a command log-directory
 #define CONTROL_LOG_INFO    1
@@ -23,8 +26,33 @@ typename EventTypeSupport,
 typename StateTypeSupport,
 typename MetricsTypeSupport> class CPInterfaceT : public CPInterface
 {
+private:
+    void SetPropertyQosPolicy(DDS_PropertyQosPolicy &propertyQos,
+                              map<string,string> &PropertyPairs,
+                              map<string,DDS_Boolean> &PropagateDiscoveryFlags
+                             )
+    {
+        DDS_ReturnCode_t retcode;
+        
+        for(map<string,string>::iterator it=PropertyPairs.begin(); it!=PropertyPairs.end(); it++)
+        {
+            retcode = DDSPropertyQosPolicyHelper::add_property(propertyQos,it->first.c_str(),
+                      it->second.c_str(),PropagateDiscoveryFlags[it->first]);
+            if(retcode!=DDS_RETCODE_OK)
+            {
+                //TODO: Replace with real error logging
+                ControlLogError("CPInterfaceT::AddProperties(): Failed to add %s=%s\n",
+                                it->first.c_str(),it->second.c_str());
+                throw DDS_RETCODE_BAD_PARAMETER;
+            }            
+        }
+    }
+    
 public:
-    CPInterfaceT(int domainId,const char *name, const char *qosProfile = NULL) : 
+    CPInterfaceT(int domainId,const char *name, 
+                 map<string,string> &PropertyPairs,
+                 map<string,DDS_Boolean> &PropagateDiscoveryFlags,
+                 const char *qosProfile = NULL) : 
     pDomainParticipant(NULL),
     pPublisher(NULL),
     pSubscriber(NULL) 
@@ -37,6 +65,7 @@ public:
         const char *type_name;
         
         pFactory = DDSDomainParticipantFactory::get_instance();
+        
         // TODO: Improve this.The basic idea is that instead of creating
         //       from a profile, get the profile and then modify the profile 
         //       based on other configurations parameters. This gives the best
@@ -49,8 +78,9 @@ public:
             throw DDS_RETCODE_BAD_PARAMETER;
         }
         // Ensure all DPs have a name
-        //snprintf(dpQos.participant_name.name,255,"%s",name);
-	dpQos.participant_name.name = DDS_String_dup(name);
+	    dpQos.participant_name.name = DDS_String_dup(name);
+        // Add Proerties
+        SetPropertyQosPolicy(dpQos.property,PropertyPairs,PropagateDiscoveryFlags);
         
         retcode = pFactory->get_publisher_qos_from_profile(pubQos, "NEURON", qosProfile);
         if (retcode != DDS_RETCODE_OK)
@@ -204,11 +234,11 @@ public:
     {
         return (pDomainParticipant->add_peer(peer) == DDS_RETCODE_OK);
     }
-    
-    ~CPInterfaceT() 
+
+    ~CPInterfaceT()
     {
         DDS_ReturnCode_t retcode;
-        if (pDomainParticipant != NULL) 
+        if (pDomainParticipant != NULL)
         {
             retcode = pDomainParticipant->delete_contained_entities();
             if (retcode != DDS_RETCODE_OK) 
@@ -258,14 +288,17 @@ class CPMasterT : public CPInterfaceT<ControlTypeSupport,
                                       MetricsTypeSupport> {
 public:
     //CPMasterT(EventHandler *eh,int srcId,int domainId, const char *name,int appId, const char *qosProfile) : CPInterfaceT<ControlTypeSupport,
-    CPMasterT(EventHandler *eh,int _srcId,int domainId, const char *name,int appId, const char *qosProfile) : CPInterfaceT<ControlTypeSupport,
-                                    EventTypeSupport,
-                                    StateTypeSupport,
-                                    MetricsTypeSupport>(domainId,name,qosProfile),
-                                    controlWriter(NULL),
-                                    stateReader(NULL),
-                                    eventReader(NULL),
-                                    metricsReader(NULL)
+    CPMasterT(EventHandler *eh,int _srcId,int domainId, const char *name,int appId, 
+              map<string,string> &PropertyPairs,map<string,DDS_Boolean> &PropagateDiscoveryFlags,
+              const char *qosProfile) : CPInterfaceT<ControlTypeSupport,
+                                        EventTypeSupport,
+                                        StateTypeSupport,
+                                        MetricsTypeSupport>(domainId,name,PropertyPairs,
+                                                            PropagateDiscoveryFlags,qosProfile),
+                                        controlWriter(NULL),
+                                        stateReader(NULL),
+                                        eventReader(NULL),
+                                        metricsReader(NULL)
     {
         DDSTopic *topic;
         DDS_ReturnCode_t retcode;
@@ -793,11 +826,18 @@ typename StateTypeSupport,
 typename MetricsTypeSupport>
 class CPSlaveT : public CPInterfaceT<ControlTypeSupport,EventTypeSupport,StateTypeSupport,MetricsTypeSupport> {
 public:
-    CPSlaveT(EventHandler *q,int _srcId,int domainId, const char *name, int appId, const char *qosProfile) : CPInterfaceT<ControlTypeSupport,EventTypeSupport,StateTypeSupport,MetricsTypeSupport>(domainId,name,qosProfile),
-    controlReader(NULL),
-    stateWriter(NULL),
-    eventWriter(NULL),
-    metricsWriter(NULL)
+    CPSlaveT(EventHandler *q,int _srcId,int domainId, const char *name, int appId, 
+             map<string,string> &PropertyPairs,map<string,DDS_Boolean> &PropagateDiscoveryFlags, 
+             const char *qosProfile) : 
+             CPInterfaceT<ControlTypeSupport,
+                          EventTypeSupport,
+                          StateTypeSupport,
+                          MetricsTypeSupport>(domainId,name,PropertyPairs,
+                                              PropagateDiscoveryFlags,qosProfile),
+            controlReader(NULL),
+            stateWriter(NULL),
+            eventWriter(NULL),
+            metricsWriter(NULL)
     {
         DDSTopic *topic;
         DDS_ReturnCode_t retcode;

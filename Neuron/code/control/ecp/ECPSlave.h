@@ -41,7 +41,8 @@ class ECPSlave : public CPSlaveT<ECPSlaveObject,
                                  com::xvd::neuron::ecp::MetricsTypeSupport> 
 {
 public:
-    ECPSlave(EventHandler *q,int _sfId,int domainId,const char *name,const char *qosProfile);
+    ECPSlave(EventHandler *q,int _sfId,int domainId,const char *name, map<string,string> &PropertyPairs,
+             map<string,DDS_Boolean> &PropagateDiscoveryFlags, const char *qosProfile);
     
     ~ECPSlave();
     

@@ -94,7 +94,8 @@ private:
     ACPMaster *sm;
 };
 
-ACPMaster::ACPMaster(EventHandler *q,int _srcId, int domainId, const char *name,const char *qosProfile) :
+ACPMaster::ACPMaster(EventHandler *q,int _srcId, int domainId, const char *name, map<string,string> &PropertyPairs,
+                     map<string,DDS_Boolean> &PropagateDiscoveryFlags, const char *qosProfile) :
 CPMasterT<
 ACPMasterObject,
 com::xvd::neuron::acp::ControlDataWriter,
@@ -111,7 +112,7 @@ com::xvd::neuron::acp::Control,
 com::xvd::neuron::acp::ControlTypeSupport,
 com::xvd::neuron::acp::EventTypeSupport,
 com::xvd::neuron::acp::StateTypeSupport,
-com::xvd::neuron::acp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
+com::xvd::neuron::acp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,PropertyPairs,PropagateDiscoveryFlags,qosProfile)
 {
     DDS_ReturnCode_t retcode;
 

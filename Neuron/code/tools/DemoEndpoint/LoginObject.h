@@ -22,10 +22,6 @@ class LoginObject
             pRegClient->registerClient();
 
             LoginInfo = pRegClient->publicPairs;
-            //std::cout << "Received gstun_id: " << pRegClient->publicPairs["gstun_id"] << std::endl;
-            //sfIdOut = FromString<int>(pRegClient->publicPairs["ep_sf_id"],bFlag);
-            //sessionIdOut = 1001;
-            //ubrainIdOut = 0;
         }
 
         ~LoginObject()

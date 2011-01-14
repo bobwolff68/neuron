@@ -68,9 +68,7 @@ class DemoEndpoint
             std::cout << "epsfId: " << LoginInfo["ep_sf_Id"] << std::endl;
             epsfId = FromString<int>(LoginInfo["ep_sf_id"],isOk);
 
-            pSF = new SessionFactory(epsfId,Name.c_str(),DEFAULT_UBRAIN_ID,DEFAULT_DOMAIN_ID,
-                                     LoginInfo["client_scp_id"].c_str(),LoginInfo["client_acp_id"].c_str(),
-                                     LoginInfo["ubrain_scp_desc"].c_str(),LoginInfo["ubrain_acp_desc"].c_str());
+            pSF = new SessionFactory(epsfId,Name.c_str(),DEFAULT_UBRAIN_ID,DEFAULT_DOMAIN_ID,LoginInfo);
             pSF->startThread();
 
             pMainScreen = new MainScreen(pSF,500,200,Name);

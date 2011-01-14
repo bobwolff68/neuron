@@ -105,7 +105,8 @@ void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     }
 };
 
-SCPSlave::SCPSlave(EventHandler *q,int _srcId, int domainId, const char *name,const char *qosProfile) :
+SCPSlave::SCPSlave(EventHandler *q,int _srcId, int domainId, const char *name,map<string,string> &PropertyPairs,
+map<string,DDS_Boolean> &PropagateDiscoveryFlags,const char *qosProfile) :
 CPSlaveT<
 SCPSlaveObject,
 com::xvd::neuron::scp::ControlDataReader,
@@ -118,7 +119,7 @@ com::xvd::neuron::scp::Metrics,
 com::xvd::neuron::scp::ControlTypeSupport,
 com::xvd::neuron::scp::EventTypeSupport,
 com::xvd::neuron::scp::StateTypeSupport,
-com::xvd::neuron::scp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
+com::xvd::neuron::scp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,PropertyPairs,PropagateDiscoveryFlags,qosProfile)
 {
     controlReader->set_listener(new SCPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
     controlReader->enable();

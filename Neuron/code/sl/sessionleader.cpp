@@ -11,6 +11,9 @@ SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *namePa
 	char				topicName[50];
 	const char 		   *typeName = NULL;
 
+    map<string,string>      PropertyPairsLSCP;
+    map<string,DDS_Boolean> PropagateDiscoveryFlagsLSCP;
+    
 	id = slIdParam;
 	sessionId = sIdParam;
 	ownerId = ownerIdParam;
@@ -18,7 +21,8 @@ SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *namePa
 
 	// Create Local Session Control Plane (LSCP) slave
 	GEN_CP_INTERFACE_NAME(LSCPSlaveName,name,LSCP_SLAVE_NAME);
-	pLSCSlave = new LSCPSlave(this,id,domIdParam,LSCPSlaveName,"LSCP");
+	pLSCSlave = new LSCPSlave(this,id,domIdParam,LSCPSlaveName,PropertyPairsLSCP,
+	                          PropagateDiscoveryFlagsLSCP,"LSCP");
 	pLSCSlaveObj = pLSCSlave->CreateSlaveObject(sessionId);
 
 	// Create Entity Control Plane

@@ -41,7 +41,8 @@ class SCPSlave : public CPSlaveT<SCPSlaveObject,
                                  com::xvd::neuron::scp::MetricsTypeSupport> 
 {
 public:
-    SCPSlave(EventHandler *q,int _sfId,int domainId,const char *name,const char *qosProfile);
+    SCPSlave(EventHandler *q,int _sfId,int domainId,const char *name,map<string,string> &PropertyPairs,
+             map<string,DDS_Boolean> &PropagateDiscoveryFlags,const char *qosProfile);
     
     ~SCPSlave();
     

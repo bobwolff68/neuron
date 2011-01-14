@@ -96,17 +96,6 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 				// Create a new SL
 				if(slCreateMode==NEW_SL_THREAD)
 				{
-					/*char slName[100];
-					char idStr[20];
-
-					strcpy(slName,"SF(");
-					sprintf(idStr,"%lld",ownerId);
-					strcat(slName,idStr);
-					strcat(slName,")=>SL(");
-					sprintf(idStr,"%lld",GetId());
-					strcat(slName,idStr);
-					strcat(slName,")");*/
-
 					slRef.pSL = new SessionLeader(ownerId,GetId(),nameParam,domIdParam,ownerId);
 					(slRef.pSL)->startThread();
 				}
@@ -306,8 +295,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 
 		bool stop;
 
-		SessionFactory(IDType,const char *,IDType,int,const char *,const char *,
-                       const char *,const char *);
+		SessionFactory(IDType,const char *,IDType,int,map<string,string> &);
 		~SessionFactory();
 
 		IDType	GetId(void)		{ return id; }

@@ -54,7 +54,8 @@ public:
     //! \param[in] eh          Event-handler for all events received
     //! \param[in] srcId       Unique ID for the ECPMaster in the ECP
     //! \param[in] qosProfile  RTI DDS QoS profile to use
-    ECPMaster(EventHandler *eh,int srcId, int domainId, const char *name,const char *qosProfile);
+    ECPMaster(EventHandler *eh,int srcId, int domainId, const char *name, map<string,string> &PropertyPairs,
+              map<string,DDS_Boolean> &PropagateDiscoveryFlags, const char *qosProfile);
     
     //! Desstructor for the ECPMaster object
     //!

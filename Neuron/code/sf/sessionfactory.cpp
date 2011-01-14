@@ -1,40 +1,52 @@
 #include <iostream>
-#include <new>
 #include <unistd.h>
 #include "sessionfactory.h"
 
 SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType ownerIdParam,
-							   int domId,const char *scpSlaveWanIdStr,const char *acpSlaveWanIdStr,
-							   const char *uBrainScpWanDesc,const char *uBrainAcpWanDesc)
+							   int domId,map<string,string> &nvPairs)
 : EventHandlerT<SessionFactory>(),ThreadSingle()
 {
 	char	SCPSlaveName[100];
 	char	ACPSlaveName[100];
 	char	LSCPMasterName[100];
 
+    map<string,string>      PropertyPairsACP;
+    map<string,DDS_Boolean> PropagateDiscoveryFlagsACP;
+    map<string,string>      PropertyPairsSCP;
+    map<string,DDS_Boolean> PropagateDiscoveryFlagsSCP;
+    map<string,string>      PropertyPairsLSCP;
+    map<string,DDS_Boolean> PropagateDiscoveryFlagsLSCP;
+    
 	id = sfIdParam;
 	stop = false;
 	this->domId = domId;
 	strcpy(name,nameParam);
 	ownerId = ownerIdParam;
 
+
     //If debug dds libs used, set verbosity high
 //    NDDSConfigLogger::get_instance()->
 //        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
 //                                  NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
 
-	// Create Session Control Object (SCO) slave
-	GEN_CP_INTERFACE_NAME(SCPSlaveName,name,SCP_SLAVE_NAME);
-	pSCSlave = new SCPSlave(this,id,domId,SCPSlaveName,"SCP");
+	// Create Admin Control Plane (ACP) slave
+	GEN_CP_INTERFACE_NAME(ACPSlaveName,name,ACP_SLAVE_NAME);
+	PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["client_acp_id"];
+	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	pACSlave = new ACPSlave(this,id,domId,ACPSlaveName,PropertyPairsACP,PropagateDiscoveryFlagsACP,"ACP");
+	pACSlave->AddPeer(nvPairs["ubrain_acp_desc"].c_str());
+	pACSlaveObj = pACSlave->CreateSlaveObject(id);
 
+	// Create Session Control Plane (SCO) slave
+	GEN_CP_INTERFACE_NAME(SCPSlaveName,name,SCP_SLAVE_NAME);
+	PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["client_scp_id"];
+	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	pSCSlave = new SCPSlave(this,id,domId,SCPSlaveName,PropertyPairsSCP,PropagateDiscoveryFlagsSCP,"SCP");
+    pSCSlave->AddPeer(nvPairs["ubrain_scp_desc"].c_str());
 
 	// Create Local Session Control Plane (LSCP) master
 	GEN_CP_INTERFACE_NAME(LSCPMasterName,name,LSCP_MASTER_NAME);
-	pLSCMaster = new LSCPMaster(this,id,domId,LSCPMasterName,"LSCP");
-	// Create Admin Control Plane (ACP) slave
-	GEN_CP_INTERFACE_NAME(ACPSlaveName,name,ACP_SLAVE_NAME);
-	pACSlave = new ACPSlave(this,id,domId,ACPSlaveName,"ACP");
-	pACSlaveObj = pACSlave->CreateSlaveObject(id);
+	pLSCMaster = new LSCPMaster(this,id,domId,LSCPMasterName,PropertyPairsLSCP,PropagateDiscoveryFlagsLSCP,"LSCP");
 
 	// Initialize ACP Instances
 	acControl = com::xvd::neuron::acp::ControlTypeSupport::create_data();

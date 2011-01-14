@@ -108,7 +108,8 @@ void ECPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     }
 };
 
-ECPSlave::ECPSlave(EventHandler *q,int _srcId, int domainId, const char*name,const char *qosProfile) : 
+ECPSlave::ECPSlave(EventHandler *q,int _srcId, int domainId, const char*name, map<string,string> &PropertyPairs,
+                   map<string,DDS_Boolean> &PropagateDiscoveryFlags, const char *qosProfile) : 
 CPSlaveT<
 ECPSlaveObject,
 com::xvd::neuron::ecp::ControlDataReader,
@@ -121,7 +122,7 @@ com::xvd::neuron::ecp::Metrics,
 com::xvd::neuron::ecp::ControlTypeSupport,
 com::xvd::neuron::ecp::EventTypeSupport,
 com::xvd::neuron::ecp::StateTypeSupport,
-com::xvd::neuron::ecp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
+com::xvd::neuron::ecp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,PropertyPairs,PropagateDiscoveryFlags,qosProfile)
 {
     controlReader->set_listener(new ECPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
     controlReader->enable();

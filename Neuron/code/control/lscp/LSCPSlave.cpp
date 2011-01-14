@@ -108,7 +108,8 @@ void LSCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
     }
 };
 
-LSCPSlave::LSCPSlave(EventHandler *q,int _srcId, int domainId, const char* name,const char *qosProfile) :
+LSCPSlave::LSCPSlave(EventHandler *q,int _srcId, int domainId, const char* name, map<string,string> &PropertyPairs,
+                     map<string,DDS_Boolean> &PropagateDiscoveryFlags, const char *qosProfile) :
 CPSlaveT<
 LSCPSlaveObject,
 com::xvd::neuron::lscp::ControlDataReader,
@@ -121,7 +122,7 @@ com::xvd::neuron::lscp::Metrics,
 com::xvd::neuron::lscp::ControlTypeSupport,
 com::xvd::neuron::lscp::EventTypeSupport,
 com::xvd::neuron::lscp::StateTypeSupport,
-com::xvd::neuron::lscp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
+com::xvd::neuron::lscp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,PropertyPairs,PropagateDiscoveryFlags,qosProfile)
 {
     controlReader->set_listener(new LSCPSlaveControlReaderListener(this, controlReader),DDS_STATUS_MASK_ALL);
     controlReader->enable();

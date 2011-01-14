@@ -41,7 +41,8 @@ class ACPSlave : public CPSlaveT<ACPSlaveObject,
                                  com::xvd::neuron::acp::MetricsTypeSupport> 
 {
 public:
-    ACPSlave(EventHandler *q,int _sfId,int domainId,const char *name,const char *qosProfile);
+    ACPSlave(EventHandler *q,int _sfId,int domainId,const char *name,map<string,string> &PropertyPairs,
+             map<string,DDS_Boolean> &PropagateDiscoveryFlags,const char *qosProfile);
     
     ~ACPSlave();
     

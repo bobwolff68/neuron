@@ -67,20 +67,30 @@ int index;
 }
 
     //! \brief Create a new Controller
-    Controller::Controller(int appId, int domaindId, int acpWanId, int scpWanId)
+    Controller::Controller(int appId, int domaindId, map<string,string> &nvPairs)
     {
+	map<string,string>      PropertyPairsACP;
+    	map<string,DDS_Boolean> PropagateDiscoveryFlagsACP;
+    	map<string,string>      PropertyPairsSCP;
+    	map<string,DDS_Boolean> PropagateDiscoveryFlagsSCP;
+
         pSessionEventHandler = new ControllerEventHandler(this);
 
         pCallback = NULL;
 
         m_appId = appId;
 
-        // The Controller manages sessions, thus connect to the SCP as master
-    	pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster","SCP");
         // The Controller serves as the admin master for all SFs, thus connect as master
-        pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP","ACP");
-        m_domainId = domaindId;
+	PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_acp_id"];
+	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP","ACP");
 
+        // The Controller manages sessions, thus connect to the SCP as master	
+	PropertyPairsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_scp_id"];
+	PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+    	pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster","SCP");        
+
+	m_domainId = domaindId;
         // This is using RTI APIs to spawn an event handler thread. Please
         // replace with something more appropriate
         eventThread = RTIOsapiThread_new("controlThread",

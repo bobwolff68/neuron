@@ -118,7 +118,8 @@ private:
     LSCPMaster *sm;
 };
 
-LSCPMaster::LSCPMaster(EventHandler *q,int _srcId, int domainId, const char *name,const char *qosProfile) :
+LSCPMaster::LSCPMaster(EventHandler *q,int _srcId, int domainId, const char *name,map<string,string> &PropertyPairs,
+map<string,DDS_Boolean> &PropagateDiscoveryFlags,const char *qosProfile) :
 CPMasterT<
 LSCPMasterObject,
 com::xvd::neuron::lscp::ControlDataWriter,
@@ -135,7 +136,7 @@ com::xvd::neuron::lscp::Control,
 com::xvd::neuron::lscp::ControlTypeSupport,
 com::xvd::neuron::lscp::EventTypeSupport,
 com::xvd::neuron::lscp::StateTypeSupport,
-com::xvd::neuron::lscp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,qosProfile)
+com::xvd::neuron::lscp::MetricsTypeSupport>(q,_srcId,domainId,name,_srcId,PropertyPairs,PropagateDiscoveryFlags,qosProfile)
 {
     DDS_ReturnCode_t retcode;
 
