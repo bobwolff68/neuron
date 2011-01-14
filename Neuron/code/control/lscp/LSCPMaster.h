@@ -24,7 +24,7 @@
 //!            Metrics interface.
 //!          An application that wishes to create a new session must create it
 //!          using the CreateMasterObject. This object represents a session in
-//!          the LSCP. Conversely, a session must be deleted from the LSCP using
+//!          the LSCP. Conversely, a session must be deleted from the LSCP using 
 //!          the DeleteMasterObject.
 //!
 //! \todo GetMasterObjectNNN is not to be called directly.
@@ -45,26 +45,24 @@ com::xvd::neuron::lscp::Control,
 com::xvd::neuron::lscp::ControlTypeSupport,
 com::xvd::neuron::lscp::EventTypeSupport,
 com::xvd::neuron::lscp::StateTypeSupport,
-com::xvd::neuron::lscp::MetricsTypeSupport>
+com::xvd::neuron::lscp::MetricsTypeSupport> 
 {
 public:
-
+    
     //! Constructor for the LSCPMaster object
     //!
     //! \param[in] eh          Event-handler for all events received
     //! \param[in] srcId       Unique ID for the LSCPMaster in the LSCP
     //! \param[in] qosProfile  RTI DDS QoS profile to use
     LSCPMaster(EventHandler *eh,int srcId, int domainId, const char*, const char *qosProfile);
-
+    
     //! Desstructor for the LSCPMaster object
     //!
     ~LSCPMaster();
-
+    
     virtual LSCPMasterObject* CreateMasterObject(int sid);
-
+    
     virtual bool DeleteMasterObject(LSCPMasterObject* aSession);
-
-    void StartupTwo(void);
 };
 
 template<class DataSeq, class Reader,class EventKind>
@@ -76,7 +74,7 @@ public:
         m_reader = reader;
         sm = _sm;
     }
-
+    
     void on_data_available(DDSDataReader* reader)
     {
         DataSeq data_seq;
@@ -84,14 +82,14 @@ public:
         DDS_ReturnCode_t retcode;
         int i;
         Event *ev;
-
-        retcode = m_reader->read(data_seq,
-                                 info_seq,
+        
+        retcode = m_reader->read(data_seq, 
+                                 info_seq, 
                                  DDS_LENGTH_UNLIMITED,
-                                 DDS_NOT_READ_SAMPLE_STATE,
+                                 DDS_NOT_READ_SAMPLE_STATE, 
                                  DDS_ANY_VIEW_STATE,
                                  DDS_ANY_INSTANCE_STATE);
-
+        
         if (retcode == DDS_RETCODE_NO_DATA) {
             // TODO: Error logging
             ControlLogError("Failed to read LSCP data\n");
@@ -101,13 +99,13 @@ public:
             ControlLogError("LSCP read failed with return code 5d\n",retcode);
             return;
         }
-
+        
         for (i = 0; i < data_seq.length(); ++i) {
             switch (info_seq[i].view_state) {
                 case DDS_NEW_VIEW_STATE:
                     if (!info_seq[i].valid_data) {
                         // TODO: Error logging
-                    }
+                    }   
                     break;
                 case DDS_NOT_NEW_VIEW_STATE:
                     if (!info_seq[i].valid_data) {
@@ -118,7 +116,7 @@ public:
                 default:
                     break;
             }
-
+            
             switch (info_seq[i].instance_state) {
                 case DDS_ALIVE_INSTANCE_STATE:
                     if (info_seq[i].valid_data) {
@@ -127,7 +125,7 @@ public:
                     break;
                 case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
                     if (info_seq[i].valid_data) {
-                        // TODO
+                        // TODO 
                     }
                     break;
                 case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
@@ -138,25 +136,25 @@ public:
                 default:
                     break;
             }
-
-            if (info_seq[i].valid_data)
+            
+            if (info_seq[i].valid_data) 
             {
                 ev = new EventKind(&data_seq[i],&info_seq[i]);
                 sm->PostEvent(ev);
             }
         }
-
+        
         retcode = m_reader->return_loan(data_seq, info_seq);
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             // TODO: Error logging
             ControlLogError("ECP return_loan failed with return code %d\n",retcode);
         }
     };
-
+    
 private:
     Reader *m_reader;
-    LSCPMaster *sm;
+    LSCPMaster *sm;    
 };
 
 typedef LSCPMasterReaderListenerT<com::xvd::neuron::lscp::EventSeq,

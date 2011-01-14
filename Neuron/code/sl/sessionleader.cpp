@@ -19,7 +19,6 @@ SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *namePa
 	// Create Local Session Control Plane (LSCP) slave
 	GEN_CP_INTERFACE_NAME(LSCPSlaveName,name,LSCP_SLAVE_NAME);
 	pLSCSlave = new LSCPSlave(this,id,domIdParam,LSCPSlaveName,"LSCP");
-	pLSCSlave->Enable("LSCP");
 	pLSCSlaveObj = pLSCSlave->CreateSlaveObject(sessionId);
 
 	// Create Entity Control Plane

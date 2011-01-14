@@ -24,39 +24,21 @@ typename StateTypeSupport,
 typename MetricsTypeSupport> class CPInterfaceT : public CPInterface
 {
 public:
-    CPInterfaceT(int domainId,const char *name, const char *qosProfile = NULL) :
+    CPInterfaceT(int domainId,const char *name, const char *qosProfile = NULL) : 
     pDomainParticipant(NULL),
     pPublisher(NULL),
-    pSubscriber(NULL)
+    pSubscriber(NULL) 
     {
-        DDS_DomainParticipantFactoryQos fQos;
         DDS_DomainParticipantQos dpQos;
-        //DDS_PublisherQos pubQos;
-        //DDS_SubscriberQos subQos;
+        DDS_PublisherQos pubQos;
+        DDS_SubscriberQos subQos;
         DDS_ReturnCode_t retcode;
-        //DDSTopic *topic;
-        //const char *type_name;
-
+        DDSTopic *topic;
+        const char *type_name;
+        
         pFactory = DDSDomainParticipantFactory::get_instance();
-
-        retcode = pFactory->get_qos(fQos);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("CP: Failed to get default participant factory profile\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-        fQos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
-        retcode = pFactory->set_qos(fQos);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("CP: Failed to set default participant factory profile\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
         // TODO: Improve this.The basic idea is that instead of creating
-        //       from a profile, get the profile and then modify the profile
+        //       from a profile, get the profile and then modify the profile 
         //       based on other configurations parameters. This gives the best
         //       control
         retcode = pFactory->get_participant_qos_from_profile(dpQos, "NEURON", qosProfile);
@@ -69,176 +51,7 @@ public:
         // Ensure all DPs have a name
         //snprintf(dpQos.participant_name.name,255,"%s",name);
 	dpQos.participant_name.name = DDS_String_dup(name);
-
-        /*retcode = pFactory->get_publisher_qos_from_profile(pubQos, "NEURON", qosProfile);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to get NEURON::%s publisher profile\n",qosProfile);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-        // Disable autostart on the pFactory to give better control in instantiations
-        // of this class.
-        pubQos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
-
-        retcode = pFactory->get_subscriber_qos_from_profile(subQos, "NEURON", qosProfile);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to get NEURON::%s subscriber profile\n",qosProfile);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-        subQos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;*/
-
-        // NOTE: Install listeners if needed. Currently all listeners are handled at the
-        //       data-reader and data-writer level
-        pDomainParticipant = pFactory->create_participant(domainId,
-                                                          dpQos,
-                                                          NULL,
-                                                          DDS_STATUS_MASK_NONE);
-        if (pDomainParticipant == NULL)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to create domain participant with profile %s\n",qosProfile);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        /*// TODO: Install listeners if required. Currently all are handlded at
-        //       the data-writer entity level
-        pPublisher = pDomainParticipant->create_publisher(pubQos,
-                                                            NULL,
-                                                            DDS_STATUS_MASK_NONE);
-
-        if (pPublisher == NULL)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to create publisher with profile %s\n",qosProfile);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        // TODO: Install listeners
-        pSubscriber = pDomainParticipant->create_subscriber(subQos,
-                                                              NULL,
-                                                              DDS_STATUS_MASK_NONE);
-
-        if (pSubscriber == NULL)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to create subscriber with profile %s\n",qosProfile);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        // Register all types using the canonical name, no real benefit of using a different
-        // one
-        type_name = ControlTypeSupport::get_type_name();
-        retcode = ControlTypeSupport::register_type(pDomainParticipant,
-                                                    type_name);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to register type %s\n",type_name);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        // Use the type name as the topic name.
-        // NOTE: There is a 256 char limit on each, so if the names are
-        // longer this must be changed.
-        topic = pDomainParticipant->create_topic(type_name,
-                                                  type_name,
-                                                  DDS_TOPIC_QOS_DEFAULT,
-                                                  NULL,
-                                                  DDS_STATUS_MASK_NONE);
-        if (topic == NULL)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        type_name = EventTypeSupport::get_type_name();
-        retcode = EventTypeSupport::register_type(pDomainParticipant,type_name);
-        if (retcode != DDS_RETCODE_OK) {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to register type %s\n",type_name);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        topic = pDomainParticipant->create_topic(type_name,
-                                                  type_name,
-                                                  DDS_TOPIC_QOS_DEFAULT,
-                                                  NULL,
-                                                  DDS_STATUS_MASK_NONE);
-        if (topic == NULL)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        type_name = StateTypeSupport::get_type_name();
-        retcode = StateTypeSupport::register_type(pDomainParticipant, type_name);
-        if (retcode != DDS_RETCODE_OK) {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to register type %s\n",type_name);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        topic = pDomainParticipant->create_topic(type_name,
-                                                  type_name,
-                                                  DDS_TOPIC_QOS_DEFAULT,
-                                                  NULL,
-                                                  DDS_STATUS_MASK_NONE);
-        if (topic == NULL)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        type_name = MetricsTypeSupport::get_type_name();
-        retcode = MetricsTypeSupport::register_type(pDomainParticipant,
-                                                    type_name);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to register type %s\n",type_name);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        topic = pDomainParticipant->create_topic(type_name,
-                                                  type_name,
-                                                  DDS_TOPIC_QOS_DEFAULT,
-                                                  NULL,
-                                                  DDS_STATUS_MASK_NONE);
-        if (topic == NULL)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }*/
-    }
-
-    bool AddPeer(const char *peer)
-    {
-        return (pDomainParticipant->add_peer(peer) == DDS_RETCODE_OK);
-    }
-
-    void Enable(const char *qosProfile)
-    {
-        DDS_PublisherQos pubQos;
-        DDS_SubscriberQos subQos;
-        DDS_ReturnCode_t retcode;
-        DDSTopic *topic;
-        const char *type_name;
-
-        retcode = pDomainParticipant->enable();
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("CPInterfaceT::Enable(): Failed\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
+        
         retcode = pFactory->get_publisher_qos_from_profile(pubQos, "NEURON", qosProfile);
         if (retcode != DDS_RETCODE_OK)
         {
@@ -246,10 +59,10 @@ public:
             ControlLogError("Failed to get NEURON::%s publisher profile\n",qosProfile);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-        // Disable autostart on the pFactory to give better control in instantiations
+        // Disable autostart on the pFactory to give better control in instantiations 
         // of this class.
         pubQos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
-
+        
         retcode = pFactory->get_subscriber_qos_from_profile(subQos, "NEURON", qosProfile);
         if (retcode != DDS_RETCODE_OK)
         {
@@ -258,180 +71,164 @@ public:
             throw DDS_RETCODE_BAD_PARAMETER;
         }
         subQos.entity_factory.autoenable_created_entities = DDS_BOOLEAN_FALSE;
-
+        
+        // NOTE: Install listeners if needed. Currently all listeners are handled at the
+        //       data-reader and data-writer level
+        pDomainParticipant = pFactory->create_participant(domainId, 
+                                                          dpQos, 
+                                                          NULL,
+                                                          DDS_STATUS_MASK_NONE);
+        if (pDomainParticipant == NULL) 
+        {
+            //TODO: Replace with real error logging
+            ControlLogError("Failed to create domain participant with profile %s\n",qosProfile);          
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+        
         // TODO: Install listeners if required. Currently all are handlded at
         //       the data-writer entity level
-        pPublisher = pDomainParticipant->create_publisher(pubQos,
-                                                            NULL,
+        pPublisher = pDomainParticipant->create_publisher(pubQos, 
+                                                            NULL, 
                                                             DDS_STATUS_MASK_NONE);
-
-        if (pPublisher == NULL)
+        
+        if (pPublisher == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create publisher with profile %s\n",qosProfile);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         // TODO: Install listeners
-        pSubscriber = pDomainParticipant->create_subscriber(subQos,
-                                                              NULL,
+        pSubscriber = pDomainParticipant->create_subscriber(subQos, 
+                                                              NULL, 
                                                               DDS_STATUS_MASK_NONE);
-
-        if (pSubscriber == NULL)
+        
+        if (pSubscriber == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create subscriber with profile %s\n",qosProfile);
             throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
+        } 
+        
         // Register all types using the canonical name, no real benefit of using a different
         // one
-        type_name = ControlTypeSupport::get_type_name();
+        type_name = ControlTypeSupport::get_type_name();        
         retcode = ControlTypeSupport::register_type(pDomainParticipant,
                                                     type_name);
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to register type %s\n",type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        // Use the type name as the topic name.
-        // NOTE: There is a 256 char limit on each, so if the names are
+        
+        // Use the type name as the topic name. 
+        // NOTE: There is a 256 char limit on each, so if the names are 
         // longer this must be changed.
-        topic = pDomainParticipant->create_topic(type_name,
-                                                  type_name,
-                                                  DDS_TOPIC_QOS_DEFAULT,
-                                                  NULL,
+        topic = pDomainParticipant->create_topic(type_name, 
+                                                  type_name, 
+                                                  DDS_TOPIC_QOS_DEFAULT, 
+                                                  NULL, 
                                                   DDS_STATUS_MASK_NONE);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        type_name = EventTypeSupport::get_type_name();
+        
+        type_name = EventTypeSupport::get_type_name();        
         retcode = EventTypeSupport::register_type(pDomainParticipant,type_name);
         if (retcode != DDS_RETCODE_OK) {
             //TODO: Replace with real error logging
             ControlLogError("Failed to register type %s\n",type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        topic = pDomainParticipant->create_topic(type_name,
-                                                  type_name,
-                                                  DDS_TOPIC_QOS_DEFAULT,
-                                                  NULL,
+        
+        topic = pDomainParticipant->create_topic(type_name, 
+                                                  type_name, 
+                                                  DDS_TOPIC_QOS_DEFAULT, 
+                                                  NULL, 
                                                   DDS_STATUS_MASK_NONE);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        type_name = StateTypeSupport::get_type_name();
+        
+        type_name = StateTypeSupport::get_type_name();        
         retcode = StateTypeSupport::register_type(pDomainParticipant, type_name);
         if (retcode != DDS_RETCODE_OK) {
             //TODO: Replace with real error logging
             ControlLogError("Failed to register type %s\n",type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        topic = pDomainParticipant->create_topic(type_name,
-                                                  type_name,
-                                                  DDS_TOPIC_QOS_DEFAULT,
-                                                  NULL,
+        
+        topic = pDomainParticipant->create_topic(type_name, 
+                                                  type_name, 
+                                                  DDS_TOPIC_QOS_DEFAULT, 
+                                                  NULL, 
                                                   DDS_STATUS_MASK_NONE);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        type_name = MetricsTypeSupport::get_type_name();
-        retcode = MetricsTypeSupport::register_type(pDomainParticipant,
+        
+        type_name = MetricsTypeSupport::get_type_name();        
+        retcode = MetricsTypeSupport::register_type(pDomainParticipant, 
                                                     type_name);
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to register type %s\n",type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        topic = pDomainParticipant->create_topic(type_name,
-                                                  type_name,
-                                                  DDS_TOPIC_QOS_DEFAULT,
-                                                  NULL,
+        
+        topic = pDomainParticipant->create_topic(type_name, 
+                                                  type_name, 
+                                                  DDS_TOPIC_QOS_DEFAULT, 
+                                                  NULL, 
                                                   DDS_STATUS_MASK_NONE);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create topic %s of type %s\n",type_name,type_name);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        return;
     }
-
-    void AddProperty(const char *name, const char *value)
+    
+    bool AddPeer(const char *peer)
+    {
+        return (pDomainParticipant->add_peer(peer) == DDS_RETCODE_OK);
+    }
+    
+    ~CPInterfaceT() 
     {
         DDS_ReturnCode_t retcode;
-        DDS_DomainParticipantQos partQos;
-
-        retcode = pDomainParticipant->get_qos(partQos);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("CP::AddProperty(): Failed to get participant profile\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        retcode = DDSPropertyQosPolicyHelper::add_property(partQos.property,name,value,DDS_BOOLEAN_FALSE);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("CP::AddProperty(): Failed to set participant property(%s,%s)\n",name,value);
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        retcode = pDomainParticipant->set_qos(partQos);
-        if (retcode != DDS_RETCODE_OK)
-        {
-            //TODO: Replace with real error logging
-            ControlLogError("CP::AddProperty(): Failed to set participant profile\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
-        return;
-    }
-
-    ~CPInterfaceT()
-    {
-        DDS_ReturnCode_t retcode;
-        if (pDomainParticipant != NULL)
+        if (pDomainParticipant != NULL) 
         {
             retcode = pDomainParticipant->delete_contained_entities();
-            if (retcode != DDS_RETCODE_OK)
+            if (retcode != DDS_RETCODE_OK) 
             {
                 ControlLogError("Failed to delete the participants contained entitiees\n");
                 throw DDS_RETCODE_BAD_PARAMETER;
             }
-
+            
             retcode = DDSTheParticipantFactory->delete_participant(pDomainParticipant);
-            if (retcode != DDS_RETCODE_OK)
+            if (retcode != DDS_RETCODE_OK) 
             {
                 ControlLogError("Failed to delete the participant\n");
                 throw DDS_RETCODE_BAD_PARAMETER;
             }
-            // NOTE: We cannot finalize the DomainParticipantFacgtory instance since
+            // NOTE: We cannot finalize the DomainParticipantFacgtory instance since 
             //       other participant may still be running
         }
     }
-
-protected:
+    
+protected:    
     DDSDomainParticipantFactory *pFactory;
     DDSDomainParticipant *pDomainParticipant;
     DDSPublisher *pPublisher;
@@ -470,40 +267,36 @@ public:
                                     eventReader(NULL),
                                     metricsReader(NULL)
     {
-    }
-
-    void Startup(EventHandler *eh,int _srcId,const char *qosProfile)
-    {
         DDSTopic *topic;
         DDS_ReturnCode_t retcode;
         DDSDataWriter *pDW;
         DDSDataReader *pDR;
         DDSTopicDescription *td;
-
+        
         td = this->pDomainParticipant->lookup_topicdescription(ControlTypeSupport::get_type_name());
-
-        if (td == NULL)
+        
+        if (td == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         topic = DDSTopic::narrow(td);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow topic %s\n",td->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         //Need one profile for each Topic
         DDS_DataWriterQos dw_qos;
         retcode = this->pFactory->get_datawriter_qos_from_profile_w_topic_name(
-                                            dw_qos,
+                                            dw_qos, 
                                             "NEURON",
                                             qosProfile,topic->get_name());
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup data-writer profile %s for topic %s\n",
@@ -511,243 +304,243 @@ public:
             throw DDS_RETCODE_BAD_PARAMETER;
         }
         // update any application specfic QoS here
-        pDW = this->pPublisher->create_datawriter(topic,
-                                            dw_qos,
-                                            NULL,
+        pDW = this->pPublisher->create_datawriter(topic, 
+                                            dw_qos, 
+                                            NULL, 
                                             DDS_STATUS_MASK_NONE);
-
-
+        
+    
         if (pDW == NULL)
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create data-writer for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         controlWriter = ControlDataWriter::narrow(pDW);
         if (controlWriter == NULL)
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow data-writer for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
-
+        
+        
         DDS_DataReaderQos dr_qos;
         td = this->pDomainParticipant->lookup_topicdescription(StateTypeSupport::get_type_name());
-
-        if (td == NULL)
+        
+        if (td == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         topic = DDSTopic::narrow(td);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow topic %s\n",td->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         retcode = this->pFactory->get_datareader_qos_from_profile_w_topic_name(
-                                                dr_qos,
-                                                "NEURON",
+                                                dr_qos, 
+                                                "NEURON", 
                                                 qosProfile,
                                                 topic->get_name());
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup data-reader profile %s for topic %s\n",
                             qosProfile,topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        pDR = this->pSubscriber->create_datareader(topic,
-                                                   dr_qos,
-                                                   NULL,
+        
+        pDR = this->pSubscriber->create_datareader(topic, 
+                                                   dr_qos, 
+                                                   NULL, 
                                                    DDS_STATUS_MASK_NONE);
-        if (pDR == NULL)
+        if (pDR == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create data-reader for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         stateReader = StateDataReader::narrow(pDR);
-        if (stateReader == NULL)
+        if (stateReader == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow data reader for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         td = this->pDomainParticipant->lookup_topicdescription(EventTypeSupport::get_type_name());
-
-        if (td == NULL)
+        
+        if (td == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         topic = DDSTopic::narrow(td);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow topic %s\n",td->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         retcode = this->pFactory->get_datareader_qos_from_profile_w_topic_name(
-                                            dr_qos,
-                                            "NEURON",
+                                            dr_qos, 
+                                            "NEURON", 
                                             qosProfile,
                                             topic->get_name());
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             ControlLogError("Failed to lookup data-reader profile %s for topic %s\n",
                             qosProfile,topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        pDR = this->pSubscriber->create_datareader(topic,
-                                                   dr_qos,
-                                                   NULL,
+        
+        pDR = this->pSubscriber->create_datareader(topic, 
+                                                   dr_qos, 
+                                                   NULL, 
                                                    DDS_STATUS_MASK_NONE);
-        if (pDR == NULL)
+        if (pDR == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create data-reader for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         eventReader = EventDataReader::narrow(pDR);
-        if (eventReader == NULL)
+        if (eventReader == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow data reader for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+                
         td = this->pDomainParticipant->lookup_topicdescription(MetricsTypeSupport::get_type_name());
-
-        if (td == NULL)
+        
+        if (td == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         topic = DDSTopic::narrow(td);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow topic %s\n",td->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         retcode = this->pFactory->get_datareader_qos_from_profile_w_topic_name(
-                                                    dr_qos,
-                                                    "NEURON",
+                                                    dr_qos, 
+                                                    "NEURON", 
                                                     qosProfile,
                                                     topic->get_name());
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             ControlLogError("Failed to lookup data-reader profile %s for topic %s\n",
                             qosProfile,topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        pDR = this->pSubscriber->create_datareader(topic,
-                                                   dr_qos,
-                                                   NULL,
+        
+        pDR = this->pSubscriber->create_datareader(topic, 
+                                                   dr_qos, 
+                                                   NULL, 
                                                    DDS_STATUS_MASK_NONE);
-        if (pDR == NULL)
+        if (pDR == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create data-reader for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
-        }
-
+            throw DDS_RETCODE_BAD_PARAMETER;            
+        }   
+        
         metricsReader = MetricsDataReader::narrow(pDR);
-        if (metricsReader == NULL)
+        if (metricsReader == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow data reader for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         state = StateTypeSupport::create_data();
-
+        
         if (state == NULL)
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed create state sample\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         event = EventTypeSupport::create_data();
         if (event == NULL)
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed create event sample\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
-        metrics = MetricsTypeSupport::create_data();
+        
+        metrics = MetricsTypeSupport::create_data();            
         if (metrics == NULL)
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed create metrics sample\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         control = ControlTypeSupport::create_data();
-        if (control == NULL)
+        if (control == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed create control sample\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         //srcId = srcId;
         srcId = _srcId;
-        upper = eh;
+        upper = eh;        
     }
-
+    
     ~CPMasterT()
     {
         if (state != NULL)
         {
             StateTypeSupport::delete_data(state);
         }
-
+        
         if (event != NULL)
         {
             EventTypeSupport::delete_data(event);
         }
-
-        if (control != NULL)
+        
+        if (control != NULL) 
         {
             ControlTypeSupport::delete_data(control);
         }
-
+        
         if (metrics != NULL)
         {
             MetricsTypeSupport::delete_data(metrics);
         }
     }
-
+    
     //! \param[in] sessionId   Session ID
     virtual CPMasterObjectT* CreateMasterObject(int sessionId) = 0;
-
+                                    
     //! Delete a Session object created with CreateMasterObject
     //!
     //! \param[in] so Session object to delete
     virtual bool DeleteMasterObject(CPMasterObjectT* so)=0;
-
+                       
     //! Send a control topic
     //!
     //! \param[in] control control data to send on the SCP
@@ -765,14 +558,14 @@ public:
         }
         return true;
     }
-
+                                          
     //! Return the current state for a particular session
     //!
     //! \param[in] instance Session instance to retrieve state for
     //! \param[out] state Contains state on succcessful return
     //! \return true on success, false on failure
     //!
-    //! \todo. This method should not be exposed to applications
+    //! \todo. This method should not be exposed to applications    
     bool GetMasterObjectState(DDS_InstanceHandle_t instance,State *out_state)
     {
         StateSeq data_seq;
@@ -788,8 +581,8 @@ public:
                                            DDS_READ_SAMPLE_STATE,
                                            DDS_NOT_NEW_VIEW_STATE,
                                            DDS_ALIVE_INSTANCE_STATE);
-
-        if ((retcode != DDS_RETCODE_OK) && (retcode != DDS_RETCODE_NO_DATA))
+        
+        if ((retcode != DDS_RETCODE_OK) && (retcode != DDS_RETCODE_NO_DATA)) 
         {
             // TODO: Error handling
             ControlLogError("read_instance failed with error-code: %d\n",retcode);
@@ -818,14 +611,14 @@ public:
 
         return true;
     }
-
+                                          
     //! Return the current state for a particular session
     //!
     //! \param[in] instance Session instance to retrieve Events for
     //! \param[out] events Contains events on succcessful return
     //! \return true on success, false on failure
     //!
-    //! \todo. This method should not be exposed to applications
+    //! \todo. This method should not be exposed to applications        
     bool GetMasterObjectEvents(DDS_InstanceHandle_t instance,EventSeq* eventSeq)
     {
         EventSeq result_seq;
@@ -840,7 +633,7 @@ public:
                                            DDS_NOT_NEW_VIEW_STATE,
                                            DDS_ALIVE_INSTANCE_STATE);
 
-        if ((retcode != DDS_RETCODE_OK) && (retcode != DDS_RETCODE_NO_DATA))
+        if ((retcode != DDS_RETCODE_OK) && (retcode != DDS_RETCODE_NO_DATA)) 
         {
             // TODO: Error handling
             ControlLogError("GetMasterObjectEvents read_instance failed with error-code: %d\n",retcode);
@@ -866,7 +659,7 @@ public:
     //! \param[out] metrics Contains events on succcessful return
     //! \return true on success, false on failure
     //!
-    //! \todo. This method should not be exposed to applications
+    //! \todo. This method should not be exposed to applications            
     bool GetMasterObjectMetrics(DDS_InstanceHandle_t instance,MetricsSeq *metricsSeq)
     {
         MetricsSeq result_seq;
@@ -881,7 +674,7 @@ public:
                                              DDS_NOT_NEW_VIEW_STATE,
                                              DDS_ALIVE_INSTANCE_STATE);
 
-        if ((retcode != DDS_RETCODE_OK) && (retcode != DDS_RETCODE_NO_DATA))
+        if ((retcode != DDS_RETCODE_OK) && (retcode != DDS_RETCODE_NO_DATA)) 
         {
             // TODO: Error handling
             ControlLogError("GetMasterObjectMetrics failed with error-code: %d\n",retcode);
@@ -897,39 +690,39 @@ public:
 
         metricsReader->return_loan(result_seq,info_seq);
 
-        return true;
+        return true;    
     }
-
+                                          
     virtual DDS_InstanceHandle_t GetMasterObjectStateHandle(int dstId,int sid)
     {
       DDS_InstanceHandle_t ih = DDS_HANDLE_NIL;
-
+      
       state->srcId = dstId;
-
+      
       ih = stateReader->lookup_instance(*state);
-
+      
       return ih;
     }
 
     virtual DDS_InstanceHandle_t GetMasterObjectEventHandle(int dstId, int sid)
     {
       DDS_InstanceHandle_t ih = DDS_HANDLE_NIL;
-
+      
       event->srcId = dstId;
-
+      
       ih = eventReader->lookup_instance(*event);
-
+      
       return ih;
     }
 
     virtual DDS_InstanceHandle_t GetMasterObjectMetricsHandle(int dstId,int sid)
     {
       DDS_InstanceHandle_t ih = DDS_HANDLE_NIL;
-
+      
       metrics->srcId = dstId;
-
+      
       ih = metricsReader->lookup_instance(*metrics);
-
+      
       return ih;
     }
 
@@ -937,49 +730,49 @@ public:
     //!
     //! \param[in] ev new event
     //!
-    //! \todo. This method should not be exposed to applications
+    //! \todo. This method should not be exposed to applications                
     virtual bool PostEvent(Event *ev)
     {
         upper->SignalEvent(ev);
         return true;
     }
-
-
+                                          
+                                          
 protected:
     int srcId;
-
+  
 //! \var upper
 //! \brief Upper-layer event handle
 EventHandler *upper;
-
+  
   //! \var controlWriter
   //! \brief DDS writer for control data
   ControlDataWriter *controlWriter;
-
+  
   //! \var stateReader
   //! \brief DDS reader for state data
   StateDataReader *stateReader;
-
+  
   //! \var eventReader
   //! \brief DDS reader for event data
   EventDataReader *eventReader;
-
+  
   //! \var metricsReader
   //! \brief DDS reader for metrics data
   MetricsDataReader *metricsReader;
-
+  
   //! \var metrics
   //! \brief scratch to lookup instance handles
   Metrics *metrics;
-
+  
   //! \var event
   //! \brief scratch to lookup instance handles
   EventT *event;
-
+  
   //! \var state
   //! \brief scratch to lookup instance handles
   State *state;
-
+  
   //! \var control
   //! \brief scratch to lookup instance handles
   Control *control;
@@ -1006,10 +799,6 @@ public:
     eventWriter(NULL),
     metricsWriter(NULL)
     {
-    }
-
-    void Startup(EventHandler *q,int _srcId,const char *qosProfile)
-    {
         DDSTopic *topic;
         DDS_ReturnCode_t retcode;
         DDSContentFilteredTopic *cft;
@@ -1018,45 +807,44 @@ public:
         DDSDataWriter *pDW;
         DDSDataReader *pDR;
         DDSTopicDescription *td;
-
+        
         // TODO: Register Types with DP
         td = this->pDomainParticipant->lookup_topicdescription(ControlTypeSupport::get_type_name());
-
+        
         if (td == NULL)
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         topic = DDSTopic::narrow(td);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         //Need one profile for each Topic
         DDS_DataReaderQos dr_qos;
         retcode = this->pFactory->get_datareader_qos_from_profile_w_topic_name(
-                                                dr_qos,
-                                                "NEURON",
+                                                dr_qos, 
+                                                "NEURON", 
                                                 qosProfile,topic->get_name());
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup data-reader profile %s for topic %s\n",
                             qosProfile,topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         // update any application specfic QoS here
-        //TODO: Temporary fix: changed appId to _srcId. Replace later
-        sprintf(expression,"dstId = %d",_srcId);
+        sprintf(expression,"dstId = %d",appId);
         cft = this->pDomainParticipant->create_contentfilteredtopic(expression,
-                                                                    topic,
-                                                                    expression,
+                                                                    topic, 
+                                                                    expression, 
                                                                     params);
         if (cft == NULL) {
             //TODO: Replace with real error logging
@@ -1064,12 +852,12 @@ public:
                             expression,expression);
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-        pDR = this->pSubscriber->create_datareader(cft,
-                                                   dr_qos,
-                                                   NULL,
+        pDR = this->pSubscriber->create_datareader(cft, 
+                                                   dr_qos, 
+                                                   NULL, 
                                                    DDS_STATUS_MASK_NONE);
-
-
+        
+        
         controlReader = ControlDataReader::narrow(pDR);
         if (controlReader == NULL)
         {
@@ -1077,45 +865,45 @@ public:
             ControlLogError("Failed to create controlReader\n");
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         DDS_DataWriterQos dw_qos;
         td = this->pDomainParticipant->lookup_topicdescription(StateTypeSupport::get_type_name());
-
-        if (td == NULL)
+        
+        if (td == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         topic = DDSTopic::narrow(td);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         retcode = this->pFactory->get_datawriter_qos_from_profile_w_topic_name(
-                                                        dw_qos,
-                                                        "NEURON",
+                                                        dw_qos, 
+                                                        "NEURON", 
                                                         qosProfile,topic->get_name());
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup data-writer profile %s for topic %s\n",
                             qosProfile,topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        pDW = this->pPublisher->create_datawriter(topic,
-                                                  dw_qos,
-                                                  NULL,
+        
+        pDW = this->pPublisher->create_datawriter(topic, 
+                                                  dw_qos, 
+                                                  NULL, 
                                                   DDS_STATUS_MASK_NONE);
-        if (pDW == NULL)
+        if (pDW == NULL) 
         {
             ControlLogError("Failed to create data-writer for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
 
         stateWriter = StateDataWriter::narrow(pDW);
@@ -1123,144 +911,144 @@ public:
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow data-writer for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         td = this->pDomainParticipant->lookup_topicdescription(EventTypeSupport::get_type_name());
-
-        if (td == NULL)
+        
+        if (td == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         topic = DDSTopic::narrow(td);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         retcode = this->pFactory->get_datawriter_qos_from_profile_w_topic_name(dw_qos, "NEURON", qosProfile,topic->get_name());
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup data-writer profile %s for topic %s\n",
                             qosProfile,topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         pDW = this->pPublisher->create_datawriter(topic, dw_qos, NULL, DDS_STATUS_MASK_NONE);
-        if (pDW == NULL)
+        if (pDW == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create data-writer for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         eventWriter = EventDataWriter::narrow(pDW);
-        if (eventWriter == NULL)
+        if (eventWriter == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow data-writer for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         td = this->pDomainParticipant->lookup_topicdescription(MetricsTypeSupport::get_type_name());
-
-        if (td == NULL)
+        
+        if (td == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         topic = DDSTopic::narrow(td);
-        if (topic == NULL)
+        if (topic == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow topic %s\n",topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
+        
         retcode = this->pFactory->get_datawriter_qos_from_profile_w_topic_name(dw_qos, "NEURON", qosProfile,topic->get_name());
-        if (retcode != DDS_RETCODE_OK)
+        if (retcode != DDS_RETCODE_OK) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to lookup data-writer profile %s for topic %s\n",
                             qosProfile,topic->get_name());
             throw DDS_RETCODE_BAD_PARAMETER;
         }
-
-        pDW = this->pPublisher->create_datawriter(topic,
-                                                  dw_qos,
-                                                  NULL,
+        
+        pDW = this->pPublisher->create_datawriter(topic, 
+                                                  dw_qos, 
+                                                  NULL, 
                                                   DDS_STATUS_MASK_NONE);
-        if (pDW == NULL)
+        if (pDW == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to create data-writer for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         metricsWriter = MetricsDataWriter::narrow(pDW);
-        if (metricsWriter == NULL)
+        if (metricsWriter == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed to narrow data-writer for topic %s\n",topic->get_name());
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         state = StateTypeSupport::create_data();
         if (state == NULL)
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed create state sample\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         event = EventTypeSupport::create_data();
-        if (event == NULL)
+        if (event == NULL) 
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed create event sample\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         metrics = MetricsTypeSupport::create_data();
         if (metrics == NULL)
         {
             //TODO: Replace with real error logging
             ControlLogError("Failed metrics state sample\n");
-            throw DDS_RETCODE_BAD_PARAMETER;
+            throw DDS_RETCODE_BAD_PARAMETER;            
         }
-
+        
         srcId = _srcId;
-        upper = q;
+        upper = q;        
     }
-
+    
     ~CPSlaveT()
     {
         if (state != NULL)
         {
             StateTypeSupport::delete_data(state);
         }
-
+        
         if (event != NULL)
         {
             EventTypeSupport::delete_data(event);
         }
-
+        
         if (metrics != NULL)
         {
             MetricsTypeSupport::delete_data(metrics);
-        }
+        }    
     }
-
+     
     virtual SlaveObjectT* CreateSlaveObject(int sid)=0;
-
+    
     virtual bool DeleteSlaveObject(SlaveObjectT* aSession)=0;
 
     bool Send(State *state, DDS_InstanceHandle_t ih)
@@ -1274,8 +1062,8 @@ public:
             return false;
         }
         return true;
-    }
-
+    }        
+    
     bool Send(EventT *event, DDS_InstanceHandle_t ih)
     {
         DDS_ReturnCode_t retcode;
@@ -1285,9 +1073,9 @@ public:
             ControlLogError("Send event failed with error-code: \n",retcode);
             return false;
         }
-        return true;
+        return true;        
     }
-
+    
     bool Send(Metrics *metrics, DDS_InstanceHandle_t ih)
     {
         DDS_ReturnCode_t retcode;
@@ -1300,14 +1088,14 @@ public:
         }
         return true;
     }
-
+    
     virtual bool PostEvent(Event *ev)
     {
         upper->SignalEvent(ev);
         return true;
     }
-
-protected:
+    
+protected:    
     /* Experiments */
     ControlDataReader *controlReader;
     StateDataWriter *stateWriter;
@@ -1316,7 +1104,7 @@ protected:
     State *state;
     EventT *event;
     Metrics *metrics;
-
+    
     int srcId;
     EventHandler *upper;
 };

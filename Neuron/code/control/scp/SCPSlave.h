@@ -15,13 +15,13 @@
 
 class SCPSlaveControlReaderListener : public CPDataReaderListener
 {
-
+    
 public:
     SCPSlaveControlReaderListener(SCPSlave *_sl,
                                   com::xvd::neuron::scp::ControlDataReader *reader);
-
+    
     virtual void on_data_available(DDSDataReader* reader);
-
+    
 private:
     com::xvd::neuron::scp::ControlDataReader *m_reader;
     SCPSlave *sl;
@@ -38,21 +38,19 @@ class SCPSlave : public CPSlaveT<SCPSlaveObject,
                                  com::xvd::neuron::scp::ControlTypeSupport,
                                  com::xvd::neuron::scp::EventTypeSupport,
                                  com::xvd::neuron::scp::StateTypeSupport,
-                                 com::xvd::neuron::scp::MetricsTypeSupport>
+                                 com::xvd::neuron::scp::MetricsTypeSupport> 
 {
 public:
     SCPSlave(EventHandler *q,int _sfId,int domainId,const char *name,const char *qosProfile);
-
+    
     ~SCPSlave();
-
+    
     virtual SCPSlaveObject* CreateSlaveObject(int sid);
 
-    virtual bool DeleteSlaveObject(SCPSlaveObject* aSession);
-
-    void StartupTwo(void);
-
+    virtual bool DeleteSlaveObject(SCPSlaveObject* aSession);      
+    
 private:
-
+    
     SCPSlaveControlReaderListener *controlListener;
 };
 
