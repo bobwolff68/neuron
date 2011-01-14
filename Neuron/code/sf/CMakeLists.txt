@@ -82,6 +82,8 @@ TARGET_LINK_LIBRARIES(
    ${NDDSCORE}
    ${PT_LIB}
    ${LIBCURL}
+   -lidn
+   -lssl
    -ldl
    -lrt
 )
