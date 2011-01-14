@@ -1,0 +1,342 @@
+<?xml version="1.0"?>
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:noNamespaceSchemaLocation="/Users/tron/RTI/Projects/DDS/BRANCH_NDDS46A/modules/ndds.4.1/scripts/../resource/rtiddsgen/../qos_profiles_4.6a/schema/rti_dds_qos_profiles.xsd"
+     version="4.5c">
+<!-- =================== -->
+<!-- CLOUDSF QOS PROFILE -->
+<!-- =================== -->     
+    <qos_library name="NEURON">
+    
+        <qos_profile name="CP">
+                    <!-- Event profile -->
+            <datawriter_qos topic_filter="*Event*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>60</sec>
+                    </max_blocking_time>
+                </reliability>                
+
+                <!-- Make sure all events gets written -->
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+            </datawriter_qos>
+
+            <datareader_qos topic_filter="*Event*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>                
+
+                <!-- Only store the last 10 events -->
+                <history>
+                    <kind>KEEP_LAST_HISTORY_QOS</kind>
+                    <depth> 10 </depth>
+                </history>                
+            </datareader_qos>
+
+            <!-- Control profile -->
+            <datawriter_qos topic_filter="*Control*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>60</sec>
+                    </max_blocking_time>
+                </reliability>                
+
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+                <resource_limits>
+                    <max_samples>50</max_samples>
+                </resource_limits>
+            </datawriter_qos>
+            
+            <datareader_qos topic_filter="*Control*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>                
+
+                <!-- Must receive all commands -->
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+            </datareader_qos>
+
+            <!-- State profile -->
+            <datawriter_qos topic_filter="*State*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>60</sec>
+                    </max_blocking_time>
+                </reliability>                
+
+                <durability>
+                    <kind> TRANSIENT_LOCAL_DURABILITY_QOS  </kind>
+                </durability>
+
+                <!-- Only keep the most recent state -->
+                <history>
+                    <kind>KEEP_LAST_HISTORY_QOS</kind>
+                    <depth> 1 </depth>
+                </history>
+
+                <resource_limits>
+                    <max_samples>50</max_samples>
+                </resource_limits>
+            </datawriter_qos>
+
+            <datareader_qos topic_filter="*State*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>                
+
+                <!-- Only keep the most recent state -->
+                <history>
+                    <kind>KEEP_LAST_HISTORY_QOS</kind>
+                    <depth> 1 </depth>
+                </history>
+
+                <durability>
+                        <kind> TRANSIENT_LOCAL_DURABILITY_QOS  </kind>
+                </durability>
+            </datareader_qos>
+
+            <!-- Metrics Profile -->
+            <datawriter_qos topic_filter="*Metrics*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                    <max_blocking_time>
+                        <sec>60</sec>
+                    </max_blocking_time>
+                </reliability>                
+
+                <!-- Make sure all metrics are written -->
+                <history>
+                    <kind>KEEP_ALL_HISTORY_QOS</kind>
+                </history>
+
+            </datawriter_qos>
+
+            <datareader_qos topic_filter="*Metrics*">
+                <reliability>
+                    <kind>RELIABLE_RELIABILITY_QOS</kind>
+                </reliability>                
+
+                <!-- Keep the last 10 metrics -->
+                <history>
+                    <kind>KEEP_LAST_HISTORY_QOS</kind>
+                    <depth> 10 </depth>
+                </history>
+            </datareader_qos>
+            
+        </qos_profile>
+    
+        <!-- No specialization required for the SCP (yet) -->
+        <qos_profile name="SCP" base_name="CP">
+			<participant_qos>
+			<transport_builtin>
+				<mask>DDS_TRANSPORTBUILTIN_MASK_DEFAULT</mask>
+			</transport_builtin>
+			<discovery>
+				<initial_peers>
+					<element>builtin.udpv4://239.255.0.1</element>
+					<element>builtin.udpv4://127.0.0.1</element>
+					<element>builtin.shmem://</element>
+					<element>1@wan://::1:1.1.1.1</element>
+				</initial_peers>
+			</discovery>
+		    	<property>
+		    		<value>
+		    			<element>
+		    				<name>dds.transport.load_plugins</name>
+		    				<value>dds.transport.wan_plugin.wan</value>
+		    			</element>
+		    			<element>
+		    				<name>dds.transport.wan_plugin.wan.library</name>
+		    				<value>libnddstransportwan.so</value>
+		    			</element>
+		    			<element>
+		    				<name>dds.transport.wan_plugin.wan.create_function</name>
+		    				<value>NDDS_Transport_WAN_create</value>
+		    			</element>
+		    			<element>
+		    				<name>dds.transport.wan_plugin.wan.server</name>
+		    				<value>207.145.121.125</value>
+		    			</element>
+		    			<element>
+		    				<name>dds.transport.wan_plugin.wan.transport_instance_id</name>
+		    				<value>6</value>
+		    			</element>
+		    		</value>
+		    	</property>
+        	</participant_qos>
+        </qos_profile>
+
+        <!-- No specialization required for the ACP (yet) -->
+        <qos_profile name="ACP" base_name="CP">
+			<participant_qos>
+			<transport_builtin>
+				<mask>DDS_TRANSPORTBUILTIN_MASK_DEFAULT</mask>
+			</transport_builtin>
+			<discovery>
+				<initial_peers>
+					<element>builtin.udpv4://239.255.0.1</element>
+					<element>builtin.udpv4://127.0.0.1</element>
+					<element>builtin.shmem://</element>
+					<element>1@wan://::2:1.1.1.1</element>
+				</initial_peers>
+			</discovery>
+		    	<property>
+		    		<value>
+		    			<element>
+		    				<name>dds.transport.load_plugins</name>
+		    				<value>dds.transport.wan_plugin.wan</value>
+		    			</element>
+		    			<element>
+		    				<name>dds.transport.wan_plugin.wan.library</name>
+		    				<value>libnddstransportwan.so</value>
+		    			</element>
+		    			<element>
+		    				<name>dds.transport.wan_plugin.wan.create_function</name>
+		    				<value>NDDS_Transport_WAN_create</value>
+		    			</element>
+		    			<element>
+		    				<name>dds.transport.wan_plugin.wan.server</name>
+		    				<value>207.145.121.125</value>
+		    			</element>
+		    			<element>
+		    				<name>dds.transport.wan_plugin.wan.transport_instance_id</name>
+		    				<value>7</value>
+		    			</element>
+		    		</value>
+		    	</property>
+        	</participant_qos>        
+        </qos_profile>
+    
+        <!-- ECP is only for local communication between the SF and SL
+             Thus, only enable shared memory -->
+        <qos_profile name="ECP" base_name="CP">
+            <participant_qos>
+                <transport_builtin>
+                    <mask> DDS_TRANSPORTBUILTIN_SHMEM </mask>
+                </transport_builtin>
+                <discovery>
+                    <initial_peers> 
+                        <element> builtin.shmem:// </element>
+                    </initial_peers>
+                    <multicast_receive_addresses> 
+                    </multicast_receive_addresses>
+                </discovery>
+            </participant_qos>        
+        </qos_profile>
+
+        <!-- LSCP is only for local communication between the SF and SL
+             Thus, only enable shared memory -->
+        <qos_profile name="LSCP" base_name="CP">
+            <participant_qos>
+                <transport_builtin>
+                    <mask> DDS_TRANSPORTBUILTIN_SHMEM </mask>
+                </transport_builtin>
+                <discovery>
+                    <initial_peers> 
+                        <element> 100@builtin.shmem://  </element>
+                    </initial_peers>
+                    <multicast_receive_addresses> 
+                    </multicast_receive_addresses>
+                </discovery>
+            </participant_qos>
+        </qos_profile>
+ 
+                <qos_profile name="MEDIA">
+                        <participant_qos>
+                                <receiver_pool>
+                                        <buffer_size>65536</buffer_size>
+                                </receiver_pool>
+                        <transport_builtin>
+                        <mask> DDS_TRANSPORTBUILTIN_MASK_DEFAULT</mask>
+                    </transport_builtin>
+                        <discovery>
+                                <initial_peers>
+                                        <element>builtin.udpv4://239.255.0.1</element>
+                        		<element>builtin.udpv4://127.0.0.1</element>
+                        		<element>builtin.shmem://</element>
+                        		<element>4@wan://::5:1.1.1.1</element>
+                                </initial_peers>
+                        </discovery>
+                        <property>
+                                <value>
+                                        <element>
+                                                <name>dds.transport.load_plugins</name>
+                                                <value>dds.transport.wan_plugin.wan</value>
+                                        </element>
+                                        <element>
+                                                <name>dds.transport.wan_plugin.wan.library</name>
+                                                <value>libnddstransportwan.so</value>
+                                        </element>
+                                        <element>
+                                                <name>dds.transport.wan_plugin.wan.create_function</name>
+                                                <value>NDDS_Transport_WAN_create</value>
+                                        </element>
+                                        <element>
+                                                <name>dds.transport.wan_plugin.wan.server</name>
+                                                <value>207.145.121.125</value>
+                                        </element>
+                                        <element>
+                                                <name>dds.transport.wan_plugin.wan.transport_instance_id</name>
+                                                <value>8</value>
+                                        </element>
+                                                <element>
+                                                        <name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
+                                                        <value>65536</value>
+                                                </element>
+                                                <element>
+                                                        <name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
+                                                        <value>65536</value>
+                                                </element>
+                                                <element>
+                                                        <name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
+                                                        <value>65536</value>
+                                                </element>
+                                                <element>
+                                                        <name>dds.transport.shmem.parent.message_size_max</name>
+                                                        <value>65536</value>
+                                                </element>
+                                                <element>
+                                                        <name>dds.transport.shmem.receive_buffer_size</name>
+                                                        <value>65536</value>
+                                                </element>
+                                        </value>
+                                </property>
+                        </participant_qos>
+                        <topic_qos>
+                                <history>
+                                        <depth>20</depth>
+                                </history>
+                        </topic_qos>
+
+                        <datareader_qos>
+                                <history>
+                                        <depth>20</depth>
+                                </history>
+                                <!-- <multicast>
+                   <value>
+                        <element>
+                            <receive_address>239.255.1.2</receive_address>
+                        </element>
+                   </value>
+                </multicast>-->
+                        </datareader_qos>
+
+                        <datawriter_qos>
+                                <history>
+                                        <depth>10</depth>
+                                </history>
+                        </datawriter_qos>
+                </qos_profile>
+ 
+    </qos_library>
+</dds>
