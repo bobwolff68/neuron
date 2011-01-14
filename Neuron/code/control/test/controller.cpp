@@ -83,12 +83,12 @@ int index;
         // The Controller serves as the admin master for all SFs, thus connect as master
 	PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_acp_id"];
 	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
-	pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP","ACP");
+	pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP", PropertyPairsACP, PropagateDiscoveryFlagsACP, "ACP");
 
         // The Controller manages sessions, thus connect to the SCP as master	
 	PropertyPairsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_scp_id"];
 	PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
-    	pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster","SCP");        
+    pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster", PropertyPairsSCP, PropagateDiscoveryFlagsSCP, "SCP");
 
 	m_domainId = domaindId;
         // This is using RTI APIs to spawn an event handler thread. Please

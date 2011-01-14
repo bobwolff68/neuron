@@ -17,7 +17,7 @@
 class uBrainManager : ThreadSingle, CallbackBase
 {
 public:
-	uBrainManager(int brainId, int acpWanId, int scpWanId, int domainId=67);
+	uBrainManager(int brainId, map<string,string> nvPairs, int domainId=67);
 	virtual ~uBrainManager();
 	bool GetUniqueSFidAndMarkSFAsCreated(int& sfIdOut);
 	bool GetUniqueEntityID(int& entIdOut);

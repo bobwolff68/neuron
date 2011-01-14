@@ -39,6 +39,8 @@ int main(int argc, char** argv)
 	respvals["stun_ip"] = "207.145.121.125";
     respvals["ubrain_acp_desc"] = "1@wan://::" UBRAIN_WAN_ACPID_STR ":1.1.1.1";
     respvals["ubrain_scp_desc"] = "1@wan://::" UBRAIN_WAN_SCPID_STR ":1.1.1.1";
+    respvals["ubrain_acp_id"] = ToString<int>(UBRAIN_WAN_ACPID);
+    respvals["ubrain_scp_id"] = ToString<int>(UBRAIN_WAN_SCPID);
 
 	///
 	/// Parse the command line and setup variables for options. Then start rolling for real.
@@ -47,14 +49,14 @@ int main(int argc, char** argv)
 
 	if (stunserver != "")
 	{
-		cout << "Got new stun: " << stunserver << endl;
+		cout << "STUN Server IP: " << stunserver << endl;
 		respvals["stun_ip"] = stunserver;
 	}
 
 	///
 	/// Now get rolling
 	///
-	uBrainManager uBrain(0, UBRAIN_WAN_ACPID, UBRAIN_WAN_SCPID);
+	uBrainManager uBrain(0, respvals);
 
 #define TRYCLIENTSERVER
 #ifdef  TRYCLIENTSERVER

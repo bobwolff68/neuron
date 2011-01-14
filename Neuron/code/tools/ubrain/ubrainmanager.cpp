@@ -7,7 +7,7 @@
 
 #include "ubrainmanager.h"
 
-uBrainManager::uBrainManager(int brainId, int acpWanId, int scpWanId, int domainId)
+uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domainId)
 {
     DDSDomainParticipantFactory *factory =
             DDSDomainParticipantFactory::get_instance();
@@ -18,7 +18,7 @@ uBrainManager::uBrainManager(int brainId, int acpWanId, int scpWanId, int domain
     fqos.resource_limits.max_objects_per_thread = 8192;
     factory->set_qos(fqos);
 
-    pCtrl = new Controller(brainId, domainId, acpWanId, scpWanId);
+    pCtrl = new Controller(brainId, domainId, nvPairs);
 
     pCtrl->SetCallback(this);
 }

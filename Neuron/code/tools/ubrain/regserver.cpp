@@ -210,7 +210,7 @@ bool RegServer::HConnection(int csock)
 
 	bIsEndpoint = false;		// Until proven true...
 	tempID.clear();
-	reqParameters.clear();
+    reqParameters.clear();
 
 	addrLen = sizeof(addr);
 	getpeername(csock, (struct sockaddr*)&addr, &addrLen);
