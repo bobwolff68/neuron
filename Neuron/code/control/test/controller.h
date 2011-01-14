@@ -40,7 +40,7 @@ class Controller
 
 public:
     
-    Controller(int appId, int domaindId, int acpWanId, int scpWanId);
+    Controller(int appId,map<string,string> &nvPairs);
     ~Controller();
     void RemoteSessionUpdate(com::xvd::neuron::scp::State *state,DDS_SampleInfo *info);
     void RemoteSFUpdate(com::xvd::neuron::acp::State *state,DDS_SampleInfo *info);
