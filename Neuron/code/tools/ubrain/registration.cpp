@@ -41,7 +41,7 @@ RegistrationClient::RegistrationClient(const char* pIp_address, int sfid, int po
 	else
 	{
 		url += "/neuron-sf?sfid=";
-		url += sfid;
+		url += ToString<int>(sfid);
 	}
 
 	cout << "URL being formed is:" << endl << "  '" << url << "'" << endl;
