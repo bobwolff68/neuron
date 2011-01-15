@@ -70,7 +70,10 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     int sfid;
     bool bok;
 
-    sfid = FromString<int>(pairs["ep_sf_id"], bok);
+    if (isEP)
+        sfid = FromString<int>(pairs["ep_sf_id"], bok);
+    else
+        sfid = FromString<int>(pairs["sfid"], bok);
 
     //
     // Setup acp and scp wan id's in the controller for the newly added client/sf.
@@ -113,7 +116,7 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
         nvP.clear();
         cmd = "SF";
         subcmd = "WAITFORSFREADY";
-        nvP["sfid"] = pairs["ep_sf_id"];
+        nvP["sfid"] = ToString<int>(sfid);
         nvP["timeout"] = "25000";
         processDDS_SF(cmd, subcmd, nvP);
 
@@ -128,13 +131,13 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
         nvP.clear();
         cmd = "SF";
         subcmd = "WAITFORSFREADY";
-        nvP["sfid"] = pairs["ep_sf_id"];
+        nvP["sfid"] = ToString<int>(sfid);
         nvP["timeout"] = "25000";
         processDDS_SF(cmd, subcmd, nvP);
 
         nvP.clear();
         // TODO MANJESH / RMW - This is hardwired to always add a new factory to session ID=1001
-        nvP["sfid"] = pairs["ep_sf_id"];
+        nvP["sfid"] = ToString<int>(sfid);
 
         // TODO - Hardwired session id 1001 must be removed.
         nvP["sessid"] = ToString<int> (1001);
@@ -147,7 +150,7 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
         nvP.clear();
         cmd = "SF";
         subcmd = "WAITFORSESSREADY";
-        nvP["sfid"] = pairs["ep_sf_id"];
+        nvP["sfid"] = ToString<int>(sfid);
         // TODO - Hardwired session id 1001 must be removed.
         nvP["sessid"] = ToString<int> (1001);
         nvP["timeout"] = "25000";

@@ -36,7 +36,6 @@ private:
 	map<string, string> respvalues;
 	map<string, string> reqParameters;
 	int globalID;
-	string tempID;		// Used specifically for endpoints to 'give' a semi-unique sfid to start.
 
 	void Init();
 	int setNonblocking(int fd);

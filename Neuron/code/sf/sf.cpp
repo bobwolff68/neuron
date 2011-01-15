@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 	sscanf(argv[1],"%lld",&sfId);
 	sscanf(argv[3],"%lld",&ownerId);
 	sscanf(argv[4],"%d",&domId);
-	pRegClient = new RegistrationClient(argv[5],8181,false,argv[2]);
+	pRegClient = new RegistrationClient(argv[5],sfId,8181,false,argv[2]);
 	pRegClient->registerClient();
 
 	cout << "Found UBrain: (ACPMasterWanDesc: " << pRegClient->publicPairs["ubrain_acp_desc"]

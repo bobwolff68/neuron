@@ -11,7 +11,7 @@
 // Our static refcount being initialized for CurlGlobal::
 int CurlGlobal::refCount = 0;
 
-RegistrationClient::RegistrationClient(const char* pIp_address, int portnum, bool bIsEndpoint, const char* friendlyname)
+RegistrationClient::RegistrationClient(const char* pIp_address, int sfid, int portnum, bool bIsEndpoint, const char* friendlyname)
 {
 	// TODO Auto-generated constructor stub
 	stringstream intconv;
@@ -40,7 +40,8 @@ RegistrationClient::RegistrationClient(const char* pIp_address, int portnum, boo
 	}
 	else
 	{
-		url += "/neuron-sf";
+		url += "/neuron-sf?sfid=";
+		url += sfid;
 	}
 
 	cout << "URL being formed is:" << endl << "  '" << url << "'" << endl;

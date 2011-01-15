@@ -36,7 +36,7 @@ private:
 class RegistrationClient : private CurlGlobal
 {
 public:
-	RegistrationClient(const char* pIp_address, int portnum=8181, bool bIsEndpoint=false, const char* friendlyname=NULL);
+	RegistrationClient(const char* pIp_address, int sfid, int portnum=8181, bool bIsEndpoint=false, const char* friendlyname=NULL);
 	virtual ~RegistrationClient();
 	bool setupNetwork(void);
 	bool registerClient(void);

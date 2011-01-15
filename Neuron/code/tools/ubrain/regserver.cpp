@@ -26,7 +26,6 @@ RegServer::RegServer(uBrainManager* initBrain, map<string, string> rvals, int in
 	assert(initBrain);
 
 	theBrain = initBrain;
-	tempID.clear();
 	reqParameters.clear();
 
 	bIsEndpoint = false;
@@ -209,7 +208,6 @@ bool RegServer::HConnection(int csock)
 	string bodyString;
 
 	bIsEndpoint = false;		// Until proven true...
-	tempID.clear();
     reqParameters.clear();
 
 	addrLen = sizeof(addr);
@@ -246,9 +244,6 @@ bool RegServer::HConnection(int csock)
 		return false;
 	}
 
-	// Now we should have a proper flag
-	tempID = reqParameters["tempid"];
-
 	int sf_id=0;
 
 	// Prep the body after grabbing final needed items.
@@ -265,6 +260,11 @@ bool RegServer::HConnection(int csock)
 		}
 
 		respvalues["ep_sf_id"] = sfid_sstr.str();
+	}
+	else if (!bIsEndpoint)
+	{
+	    assert(reqParameters["sfid"]!="");
+	    respvalues["sfid"] = reqParameters["sfid"];
 	}
 
 	respvalues["client_pub_ip"]=clientIpAddress;
