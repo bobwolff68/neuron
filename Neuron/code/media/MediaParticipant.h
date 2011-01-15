@@ -115,23 +115,24 @@ class MediaParticipant
 
     private:
 
-        int                         sessionId;
-        DDSDomainParticipant       *pDomParticipant;
-        map<string,DDSTopic*>      Topics;
+        int                             sessionId;
+        DDSDomainParticipantFactory    *pPartFactory;
+        DDSDomainParticipant           *pDomParticipant;
+        map<string,DDSTopic*>           Topics;
 
         void SetParticipantFactoryAutoEnableEntities(DDS_Boolean val)
         {
             DDS_ReturnCode_t                retCode;
             DDS_DomainParticipantFactoryQos factQos;
 
-            retCode = DDSTheParticipantFactory->get_qos(factQos);
+            retCode = pPartFactory->get_qos(factQos);
             if(retCode!=DDS_RETCODE_OK)
             {
                 cout << "MediaParticipant(): Can't get factory qos" << endl;
                 exit(0);
             }
             factQos.entity_factory.autoenable_created_entities = val;
-            retCode = DDSTheParticipantFactory->set_qos(factQos);
+            retCode = pPartFactory->set_qos(factQos);
             if(retCode!=DDS_RETCODE_OK)
             {
                 cout << "MediaParticipant(): Can't set factory qos" << endl;
@@ -172,11 +173,13 @@ class MediaParticipant
             pDomParticipant = NULL;
             PartName += "::Media";
 
+            pPartFactory = DDSDomainParticipantFactory::get_instance();
+
             //Disable autenable of domain particioants
             SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_FALSE);
 
             //Get domain participant qos
-            retCode = DDSTheParticipantFactory->get_participant_qos_from_profile(partQos,"NEURON","MEDIA");
+            retCode = pPartFactory->get_participant_qos_from_profile(partQos,"NEURON","MEDIA");
             if(retCode!=DDS_RETCODE_OK)
             {
                 cout << "MediaParticipant(): Can't get default participant qos" << endl;
@@ -190,7 +193,7 @@ class MediaParticipant
             ConfigDiscovery(partQos);
 
             //Create domain participant
-            pDomParticipant = DDSTheParticipantFactory->create_participant(domainId,partQos,NULL,DDS_STATUS_MASK_NONE);
+            pDomParticipant = pPartFactory->create_participant(domainId,partQos,NULL,DDS_STATUS_MASK_NONE);
             if(pDomParticipant==NULL)
             {
                 cout << "MediaParticipant(): Can't create participant" << endl;
@@ -212,16 +215,13 @@ class MediaParticipant
                 exit(0);
             }
 
-           //Enable autenable of domain particioants
-            SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_TRUE);
-
             //Register type name(s)
             typeName = com::xvd::neuron::media::DataUnitTypeSupport::get_type_name();
             retCode = com::xvd::neuron::media::DataUnitTypeSupport::register_type(pDomParticipant,typeName);
             if(retCode!=DDS_RETCODE_OK)
             {
                 cout << "MediaParticipant(): Can't register type '" << typeName << "'" << endl;
-                DDSTheParticipantFactory->delete_participant(pDomParticipant);
+                pPartFactory->delete_participant(pDomParticipant);
                 exit(0);
             }
         }
@@ -241,7 +241,7 @@ class MediaParticipant
             }
 
             Topics.clear();
-            retCode = DDSTheParticipantFactory->delete_participant(pDomParticipant);
+            retCode = pPartFactory->delete_participant(pDomParticipant);
             if(retCode!=DDS_RETCODE_OK)
             {
                 cout << "~MediaParticipant(): Can't delete participant" << endl;
