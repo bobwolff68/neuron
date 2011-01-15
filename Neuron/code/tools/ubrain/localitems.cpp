@@ -332,7 +332,7 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const ch
 	// Now launch the remote 'sf'
 	cout << "Launching remote Factory ID=" << sfID << " at " << ip << endl;
 	stringstream sshnow;
-	sshnow << "ssh " << usernameAt << ip << " \"source .bashrc;./bin/sf " << sfID << " " << name << " 0 67 " << ip << " ";
+	sshnow << "ssh " << usernameAt << ip << " \"source .bashrc;./bin/sf " << sfID << " " << name << " 0 67 " << "50.18.56.81" << " ";
 #ifdef LOGSF_OUT
 	stringstream mcmd;
 	// Always re-create the log file to start up clean.
