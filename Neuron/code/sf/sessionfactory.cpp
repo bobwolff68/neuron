@@ -119,7 +119,9 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
 					string          Token;
 
 					sstream << pNewSessEvt->GetData()->script;
+					sstream.get();	// Remove '"' leading.
 					sstream >> Token;
+
 					if(Token!="sessname")
 					{
 					    Token = "SF(";
@@ -130,6 +132,8 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
 					else
 					{
 					    sstream >> Token;
+					    // Remove trailing '"'
+					    Token = Token.substr(0,Token.length()-1);
                         cout << "Given session name: " << Token << endl;
 					}
 
