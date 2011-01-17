@@ -370,88 +370,81 @@ bool RegServer::ParseRequest(const char* req)
 
 	cout << "RegServer:: After lopping-of-HTTP/ we have:" << chopped_req << endl;
 
+    if (chopped_req.substr(0,2)!="sf" && chopped_req.substr(0,2)!="ep")
+    {
+        cout << "Error: URI Input fail. No '-ep' or '-sf' - instead='" << req << "'" << endl;
+        return false;
+    }
+
+    // Now we have guaranteed with have -sf or -ep.
 	if (chopped_req.substr(0,2)=="sf")
-	{
-		// We're done here.
 		bIsEndpoint = false;
-
-		return true;
-	}
-	else if (chopped_req.substr(0,2)=="ep")
-	{
-		assert(chopped_req[2]=='?');
-
-		bIsEndpoint = true;
-
-		chopped_req = chopped_req.substr(3, string::npos);
-
-		// Now we are at the name/value pair.
-		reqstream.str(chopped_req);
-
-		while (reqstream.good())
-		{
-			string name;
-			string value;
-			char buff[100];
-
-			reqstream.getline(buff, 99, '=');
-
-			// If we have a failure here, it may just mean we're in a non-sense attrib list or at the end of a list.
-			// Dont fail...just break so that the length of the name/value pair list will determine success.
-			if (reqstream.eof())
-				break;
-
-			// Eat all trailing ' ' spaces.
-			while (strlen(buff) && buff[strlen(buff)-1]==' ')
-				buff[strlen(buff)-1]=0;
-
-			name = buff;	// Copies buff string into name.
-
-			// Moving on to the next part (the value - either quoted or not)
-			// Eat pre-run-whitespace
-			while (reqstream.peek()==' ')
-				reqstream.get();
-
-			// If next char is '"', we must eat all '"' if more than one and then read until '"'
-			// else just read till next space.
-			if (reqstream.peek()=='\"')
-			{
-				reqstream.get();
-
-				// Now first '"' is read...now read till '"'
-				reqstream.getline(buff, 99, '\"');
-
-				// Eat all trailing ' ' spaces.
-				while (buff[strlen(buff)-1]==' ')
-					buff[strlen(buff)-1]=0;
-
-				value = buff;
-			}
-			else
-				reqstream >> value;
-
-			cout << endl << "RegServer::Parse() - PAIR: " << name << "=" << value << endl;
-
-			// Now what to do with the pair...
-			reqParameters[name] = value;
-
-			// And prepare to go around again by eating until '&' and then eating whitespace.
-			while (reqstream.good() && reqstream.peek()!='&')
-				reqstream.get();
-			while (reqstream.good() && reqstream.peek()==' ')
-				reqstream.get();
-		}
-
-		return true;
-	}
 	else
-	{
-		cout << "Error: URI Input fail. No '-ep' or '-sf' - instead='" << req << "'" << endl;
-		return false;
-	}
+        bIsEndpoint = true;
 
-	assert(false);
-	return false;
+	// Must be -sf? or -ep?
+    assert(chopped_req[2]=='?');
+
+    chopped_req = chopped_req.substr(3, string::npos);
+
+    // Now we are at the name/value pair.
+    reqstream.str(chopped_req);
+
+    while (reqstream.good())
+    {
+        string name;
+        string value;
+        char buff[100];
+
+        reqstream.getline(buff, 99, '=');
+
+        // If we have a failure here, it may just mean we're in a non-sense attrib list or at the end of a list.
+        // Dont fail...just break so that the length of the name/value pair list will determine success.
+        if (reqstream.eof())
+            break;
+
+        // Eat all trailing ' ' spaces.
+        while (strlen(buff) && buff[strlen(buff)-1]==' ')
+            buff[strlen(buff)-1]=0;
+
+        name = buff;	// Copies buff string into name.
+
+        // Moving on to the next part (the value - either quoted or not)
+        // Eat pre-run-whitespace
+        while (reqstream.peek()==' ')
+            reqstream.get();
+
+        // If next char is '"', we must eat all '"' if more than one and then read until '"'
+        // else just read till next space.
+        if (reqstream.peek()=='\"')
+        {
+            reqstream.get();
+
+            // Now first '"' is read...now read till '"'
+            reqstream.getline(buff, 99, '\"');
+
+            // Eat all trailing ' ' spaces.
+            while (buff[strlen(buff)-1]==' ')
+                buff[strlen(buff)-1]=0;
+
+            value = buff;
+        }
+        else
+            reqstream >> value;
+
+        cout << endl << "RegServer::Parse() - PAIR: " << name << "=" << value << endl;
+
+        // Now what to do with the pair...
+        reqParameters[name] = value;
+
+        // And prepare to go around again by eating until '&' and then eating whitespace.
+        while (reqstream.good() && reqstream.peek()!='&')
+            reqstream.get();
+        while (reqstream.good() && reqstream.peek()==' ')
+            reqstream.get();
+    }
+
+	return true;
 }
 
 /*----------------------------------------------------------------------
