@@ -268,6 +268,19 @@ bool Shell::parseAttributes(const char* inputstr)
 				buff[strlen(buff)-1]=0;
 
 			value = buff;
+
+			// Now look for single quotes and if found, substitute with double-quotes.
+			while(1)
+			{
+			    size_t index=0;
+
+			    index = value.find("'", index);
+			    if (index == string::npos)
+			        break;
+			    else
+			        value[index] = '"';
+			}
+
 		}
 		else
 			input >> value;
