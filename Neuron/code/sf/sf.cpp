@@ -27,5 +27,7 @@ int main(int argc, char *argv[])
 		usleep(20000);
 	}
 	sf.stopThread();
+	
+	delete pRegClient;
 	return 0;
 }

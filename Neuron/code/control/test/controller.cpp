@@ -562,7 +562,7 @@ int index;
         	// Session doesn't exist yet.
         	if (sit == sessions.end())
         	{
-				printf("Create session %d using SF ",sessionId);
+				printf("Create session %d using first-SF=%d ",sessionId, *(_sfs->begin()));
 				session = new Session(pSCPMaster,sessionId);
 				sessions[sessionId] = session;
         	}
@@ -571,7 +571,7 @@ int index;
         		// Now we have the 'found' session here so mark it and don't re-create an existing session.
                 session = sit->second;
 
-        		printf("Adding existing session on SF ", sessionId);
+        		printf("Adding existing session(%d) on first-SF=%d ", sessionId, *(_sfs->begin()));
         	}
         }
         else
@@ -602,6 +602,7 @@ int index;
             }
             if (!update)
             {
+		cout << "Adding Slave " << *it << endl;;
                 session->AddSlave(*it,script);
             }
             else

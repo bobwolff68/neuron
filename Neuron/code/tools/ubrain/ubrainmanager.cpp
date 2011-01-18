@@ -75,6 +75,8 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     else
         sfid = FromString<int>(pairs["sfid"], bok);
 
+    cout << "uBrainManager: RegComplete: sfid is: " << sfid << endl;
+
     //
     // Setup acp and scp wan id's in the controller for the newly added client/sf.
     //
@@ -106,6 +108,7 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     if (psf)
     {
         assert(psf->is_endpoint == false);
+	assert(!isEP);
         assert(psf->acp_slave_wan_id == -1);
         assert(psf->scp_slave_wan_id == -1);
 
@@ -123,6 +126,9 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     }
     else
     {
+//        assert(psf->is_endpoint == true);
+//	assert(isEP);
+
         local.AddSFInternally(sfid, pairs["client_pub_ip"].c_str(),
                 FromString<int>(pairs["client_acp_id"], bok), FromString<int>(pairs["client_scp_id"], bok),
                 pairs["ep_friendly_name"].c_str(), isEP);
@@ -155,7 +161,6 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
         nvP["sessid"] = ToString<int> (1001);
         nvP["timeout"] = "25000";
         processDDS_SF(cmd, subcmd, nvP);
-
     }
 
     // TODO - Hardwired session id 1001 must be removed.

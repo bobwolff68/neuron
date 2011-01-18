@@ -175,7 +175,7 @@ class MediaParticipant
 
             pPartFactory = DDSDomainParticipantFactory::get_instance();
 
-            //Disable autenable of domain particioants
+            //Disable autenable of domain participants
             SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_FALSE);
 
             //Get domain participant qos
@@ -214,6 +214,9 @@ class MediaParticipant
                 cout << "MediaParticipant(): Can't enable participant" << endl;
                 exit(0);
             }
+
+            //Enable autenable of domain participants
+            SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_TRUE);
 
             //Register type name(s)
             typeName = com::xvd::neuron::media::DataUnitTypeSupport::get_type_name();
