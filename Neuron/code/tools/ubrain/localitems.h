@@ -53,6 +53,20 @@ public:
 typedef SourceInfo* pSourceInfo;
 typedef map<int,pSourceInfo> SourceInfoList;
 
+class SessOnSFInfo
+{
+    SessOnSFInfo(int sid, pSFInfo initpSF) { assert(initpSF); sessid=sid; pSF=initpSF; state=com::xvd::neuron::OBJECT_STATE_INIT; acp_master_wan_id=-1; scp_master_wan_id=-1;};
+    virtual ~SessOnSFInfo();
+    pSFInfo pSF;
+    int sessid;
+    com::xvd::neuron::ObjectState state;
+    int acp_master_wan_id;       // Global ID for each SF for the STUN connection
+    int scp_master_wan_id;       // Global ID for each SF for the STUN connection
+};
+
+typedef SessOnSFInfo* pSessOnSFInfo;
+typedef map<int,pSessOnSFInfo> SessOnSFInfoList;
+
 class SessInfo
 {
 public:
@@ -62,7 +76,9 @@ public:
 	SFList session_in_these_sfs;
 	SourceInfoList sourceList;
 	string sessName;
+	// ** TODO: RMW - remove this variable and start using SessionInfoOnSF[] mapping instead.
 	map<int,com::xvd::neuron::ObjectState> curSessionStateOnSF;
+	SessOnSFInfoList SessionInfoOnSF;
 };
 
 typedef SessInfo* pSessInfo;

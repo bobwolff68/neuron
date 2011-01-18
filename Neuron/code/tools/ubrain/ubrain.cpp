@@ -119,6 +119,7 @@ int main(int argc, char** argv)
 	
 	// Setup readline to use history ...
         using_history();
+        read_history(NULL); // Load prior history from ~/.history
 	
 	// Use cin regardless of script or no script. It will all be worked out by the re-assign of rdbuf() above
 	while (1)
@@ -163,6 +164,7 @@ int main(int argc, char** argv)
 			
 	}
 
+    write_history(NULL); // Save history to ~/.history
 	// restore original streambuf
 	if (oldBuf)
 		std::cin.rdbuf(oldBuf);

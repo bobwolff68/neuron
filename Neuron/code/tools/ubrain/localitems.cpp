@@ -313,10 +313,21 @@ int LocalItems::AddSFInternally(int sfID, const char* ip, int acpID, int scpID, 
 
 int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const char* usernameAt)
 {
+    string userString;
+
+    userString = usernameAt;
+
 	int ret;
 	ret = AddSFInternally(sfID, ip, -1, -1, name, false);
 	if (ret)
 		return ret;
+
+	if (userString!="")
+	{
+	    // Add trailing '@' if not present.
+	    if (userString[userString.length()-1] != '@')
+	        userString += "@";
+	}
 
 	//
 	// TODO *MUST* Change commandline on 'sf' and get a REAL owner_id for the parent instead of '0'
@@ -332,18 +343,19 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const ch
 	// Now launch the remote 'sf'
 	cout << "Launching remote Factory ID=" << sfID << " at " << ip << endl;
 	stringstream sshnow;
-	sshnow << "ssh " << usernameAt << ip << " \"source .bashrc;./bin/sf " << sfID << " " << name << " 0 67 " << "50.18.56.81" << " ";
+    stringstream extracmd;
+
 #ifdef LOGSF_OUT
-	stringstream mcmd;
-	// Always re-create the log file to start up clean.
-	mcmd << "ssh " << usernameAt << ip << " \"rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1\"";
+    // Always re-create the log file to start up clean.
+    extracmd << " rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1;";
+#endif
 
-	system(mcmd.str().c_str());
+    sshnow << "ssh " << userString << ip << " \"source .bashrc;" << extracmd.str() << "./bin/sf " << sfID << " " << name << " 0 67 " << "50.18.56.81" << " ";
 
+#ifdef LOGSF_OUT
 	sshnow << " </dev/null >>/tmp/sf_out" << sfID << ".log 2>&1 &\"";
 #else
 	sshnow << inoutnull + " &\"";
-//	sshnow << " </dev/null >sf_out" << sfID << ".log 2>&1 &\"";
 #endif
 	cout << "This is the command: '" << sshnow.str() << "'" << endl;
 	system(sshnow.str().c_str());
