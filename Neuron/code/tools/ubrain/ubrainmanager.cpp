@@ -9,6 +9,8 @@
 
 uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domainId)
 {
+    local.setRegServerPublicIP(nvPairs["ubrain_ip"].c_str());
+
     DDSDomainParticipantFactory *factory =
             DDSDomainParticipantFactory::get_instance();
 

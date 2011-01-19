@@ -7,9 +7,14 @@
 
 #include "localitems.h"
 
-LocalItems::LocalItems()
+LocalItems::LocalItems(const char* regsrvip)
 {
-	ClearAll();
+    if (regsrvip)
+        setRegServerPublicIP(regsrvip);
+    else
+        regServerPublic="NOT_SET_YET";
+
+    ClearAll();
 	inoutnull = " </dev/null >/dev/null 2>&1 ";
 	innull = " </dev/null ";
 
@@ -349,7 +354,7 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const ch
     extracmd << " rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1;";
 #endif
 
-    sshnow << "ssh " << userString << ip << " \"source .bashrc;" << extracmd.str() << "./bin/sf " << sfID << " " << name << " 0 67 " << "50.18.56.81" << " ";
+    sshnow << "ssh " << userString << ip << " \"source .bashrc;" << extracmd.str() << "./bin/sf " << sfID << " " << name << " 0 67 " << regServerPublic << " ";
 
 #ifdef LOGSF_OUT
 	sshnow << " </dev/null >>/tmp/sf_out" << sfID << ".log 2>&1 &\"";

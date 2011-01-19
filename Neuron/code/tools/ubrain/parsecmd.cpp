@@ -20,6 +20,7 @@
 	string stunserver = "207.145.121.125";	// XVD T1-line direct connect server in 2010
 	string startupscript = "";
 	string logoutfile = "";
+	string ubrain_ip = "50.18.56.81";
 //
 //};
 //
@@ -34,16 +35,18 @@ int wanID;
 bool bUseUDP;
 bool bUseDefaultPeers;
 bool bEnableMonitor;
+bool bUseLANOnly;
 //bool bUseFlowCtrl;
 //long sizeSampleWindowForStats;
 
 bool parsecmd(int argc, char**argv)
 {
+    bUseLANOnly = false;
 	domain = 0;
 	stunLivePeriodStr[0] = 0;
 	stunRetranIntvlStr[0] = 0;
 	stunNumRetransStr[0] = 0;
-	bUseUDP = false;
+	bUseUDP = true;
 	bEnableMonitor = false;
 	bUseDefaultPeers = true;
 //	bUseFlowCtrl = false;
@@ -55,16 +58,20 @@ bool parsecmd(int argc, char**argv)
 	opt->addUsage("Usage: ");
 	opt->addUsage("");
 	opt->addUsage(" -h  --help                    Prints this help ");
+    opt->addUsage(
+            " --ubrain <public_ip>      Sets the publicly available IP for http: requests/registration");
 	opt->addUsage(
 			" --stun <ip>[:<port>]      Address and port of stun server for udpwan.");
 	opt->addUsage(
 			" --script <scriptname>     Macro script file to run upon startup.");
+    opt->addUsage(
+            " --lanonly                 Operate without STUN, WAN, etc. LAN only. (default is WAN)");
 
 
 
 
-	opt->addUsage(
-			" -d  --domain <dom_number>     Set Domain# (default 0, monitor domain 100)");
+    opt->addUsage(
+            " -d  --domain <dom_number>     Set Domain# (default 0, monitor domain 100)");
 	opt->addUsage(
 			" -i  --IP <UDP|TCP>            Force use of TCP or UDP (default is UDP)");
 	opt->addUsage(
@@ -86,14 +93,17 @@ bool parsecmd(int argc, char**argv)
 	opt->addUsage("");
 
 	opt->setFlag("help", 'h'); /* a flag (takes no argument), supporting long and short form */
-	opt->setFlag("monitor", 'o');
+    opt->setFlag("lanonly");
+    opt->setOption("ubrain");
+    opt->setOption("stun");
+    opt->setOption("script");
+
+    opt->setFlag("monitor", 'o');
 //	opt->setFlag("flowctrl", 'f');
 	opt->setOption("domain", 'd'); /* an option (takes an argument), supporting long and short form */
 	opt->setOption("IP", 'i'); /* an option (takes an argument), supporting long and short form */
 	opt->setOption("peerlist", 'l');
 
-	opt->setOption("stun", 's');
-	opt->setOption("script");
 	opt->setOption("wanid", 'w');
 	opt->setOption("slp", 'v');
 	opt->setOption("sri", 'm');
@@ -115,6 +125,39 @@ bool parsecmd(int argc, char**argv)
 		exit(1);
 	}
 
+    if (opt->getValue("lanonly"))
+    {
+        cout << "Use of --lanonly flag is not supported yet." << endl;
+        exit(4);
+    }
+
+    if (opt->getValue("ubrain") != NULL)
+        ubrain_ip = opt->getValue("ubrain");
+
+    cout << "Public registration server/ubrain ip address: " << ubrain_ip << endl;
+
+    if (opt->getValue("stun") != NULL)
+    {
+        // For now only default STUN port used
+        if (bUseUDP)
+            stunserver = opt->getValue("stun");
+        else
+        {
+            cout << "Error: --stun is not valid in TCP mode. Use UDP." << endl;
+            exit(2);
+        }
+    }
+
+    cout << "STUN server ip address: " << stunserver << endl;
+
+    if (opt->getValue("script") != NULL)
+    {
+        startupscript = opt->getValue("script");
+        cout << "Initial script is: " << startupscript << endl;
+    }
+
+
+
 	if (opt->getValue('i') != NULL || opt->getValue("IP") != NULL)
 	{
 		bUseUDP = !strncasecmp(opt->getValue('i'), "UDP", 3);
@@ -124,29 +167,6 @@ bool parsecmd(int argc, char**argv)
 		else
 			cout << "Using TCP for transport." << endl;
 	}
-
-	if (opt->getValue("stun") != NULL)
-	{
-		// For now only default STUN port used
-		if (bUseUDP)
-		{
-			stunserver = opt->getValue("stun");
-			cout << "STUN server ip address: " << stunserver << endl;
-		}
-		else
-		{
-			cout << "Error: --stun is not valid in TCP mode. Use UDP." << endl;
-			exit(2);
-		}
-	}
-
-	if (opt->getValue("script") != NULL)
-	{
-		startupscript = opt->getValue("script");
-		cout << "Initial script is: " << startupscript << endl;
-	}
-
-
 
 	if (opt->getValue('d') != NULL || opt->getValue("domain") != NULL)
 	{

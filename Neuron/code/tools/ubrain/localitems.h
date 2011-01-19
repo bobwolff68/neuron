@@ -115,7 +115,7 @@ typedef map<string, pEntInfo> EntNameList;
 class LocalItems
 {
 public:
-	LocalItems();
+	LocalItems(const char* regsrvip=NULL);
 	virtual ~LocalItems();
 	void ClearAll(void) { sfList.clear(); sessList.clear(); entList.clear(); };
 
@@ -150,6 +150,7 @@ public:
 
 	map<string,EntInfo::EntType> entTypeMap;
 
+	void setRegServerPublicIP(const char* instr) { regServerPublic = instr; };
 protected:
 	SFList sfList;
 	SessList sessList;
@@ -157,6 +158,7 @@ protected:
 	EntNameList entNameList;
 	string inoutnull;
 	string innull;
+	string regServerPublic;
 };
 
 #endif /* LOCALITEMS_H_ */

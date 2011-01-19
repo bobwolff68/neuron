@@ -48,7 +48,7 @@ private:
 	int WaitForSessionReadyOnSF(int sessid, int sfid, int timeInms);
 
 	Controller* pCtrl;
-	LocalItems local;
+	LocalItems local;       // Will set the registration server next...
 	SSHManagement ssh;
 };
 

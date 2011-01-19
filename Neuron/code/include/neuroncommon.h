@@ -49,6 +49,19 @@ template<typename T> string ToString(T type)
 	return ss.str();
 }
 
+template<typename T> T ToUpper(T &s)
+{
+      std::string::iterator i = s.begin();
+      std::string::iterator end = s.end();
+
+      while (i != end) {
+        *i = std::toupper((unsigned char)*i);
+        ++i;
+      }
+
+      return s;
+}
+
 #ifdef UBRAIN
 #include "controlplane.h"
 
