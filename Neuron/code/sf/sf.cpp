@@ -21,6 +21,7 @@ int main(int argc, char *argv[])
              << ", SCPSlaveWanId: " << pRegClient->publicPairs["client_scp_id"] << endl;
 
 	SessionFactory	sf(sfId,argv[2],ownerId,domId,pRegClient->publicPairs);
+	
 	sf.startThread();
 	while(!sf.stop)
 	{

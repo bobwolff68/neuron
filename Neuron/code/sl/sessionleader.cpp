@@ -21,6 +21,12 @@ SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *namePa
 
 	// Create Local Session Control Plane (LSCP) slave
 	GEN_CP_INTERFACE_NAME(LSCPSlaveName,name,LSCP_SLAVE_NAME);
+	PropertyPairsLSCP["CPInterfaceType"] = "LSCP:Slave";
+	PropagateDiscoveryFlagsLSCP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;	
+	PropertyPairsLSCP["Id"] = ToString<int>(id);
+	PropagateDiscoveryFlagsLSCP["Id"] = DDS_BOOLEAN_TRUE;	
+	PropertyPairsLSCP["MasterId"] = ToString<int>(ownerId);
+	PropagateDiscoveryFlagsLSCP["MasterId"] = DDS_BOOLEAN_TRUE;	
 	pLSCSlave = new LSCPSlave(this,id,domIdParam,LSCPSlaveName,PropertyPairsLSCP,
 	                          PropagateDiscoveryFlagsLSCP,"LSCP");
 	pLSCSlaveObj = pLSCSlave->CreateSlaveObject(sessionId);

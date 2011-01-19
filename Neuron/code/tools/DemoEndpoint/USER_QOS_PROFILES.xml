@@ -136,6 +136,22 @@
         <!-- No specialization required for the SCP (yet) -->
         <qos_profile name="SCP" base_name="CP">
 			<participant_qos>
+			<discovery_config>
+				<participant_liveliness_assert_period>
+					<sec>5</sec>
+				</participant_liveliness_assert_period>
+				<initial_participant_announcements>
+					10
+				</initial_participant_announcements>
+				<min_initial_participant_announcement_period>
+					<sec>0</sec>
+					<nanosec>100000000</nanosec>
+				</min_initial_participant_announcement_period>
+				<max_initial_participant_announcement_period>
+					<sec>0</sec>
+					<nanosec>100000000</nanosec>
+				</max_initial_participant_announcement_period>
+			</discovery_config>
 		    	<property>
 		    		<value>
 		    			<element>
@@ -162,6 +178,22 @@
         <!-- No specialization required for the ACP (yet) -->
         <qos_profile name="ACP" base_name="CP">
 			<participant_qos>
+			<discovery_config>
+				<participant_liveliness_assert_period>
+					<sec>5</sec>
+				</participant_liveliness_assert_period>
+				<initial_participant_announcements>
+					10
+				</initial_participant_announcements>
+				<min_initial_participant_announcement_period>
+					<sec>0</sec>
+					<nanosec>100000000</nanosec>
+				</min_initial_participant_announcement_period>
+				<max_initial_participant_announcement_period>
+					<sec>0</sec>
+					<nanosec>100000000</nanosec>
+				</max_initial_participant_announcement_period>
+			</discovery_config>
 		    	<property>
 		    		<value>
 		    			<element>
@@ -221,6 +253,22 @@
 
 		<qos_profile name="MEDIA">
 			<participant_qos>
+			<discovery_config>
+				<participant_liveliness_assert_period>
+					<sec>5</sec>
+				</participant_liveliness_assert_period>
+				<initial_participant_announcements>
+					10
+				</initial_participant_announcements>
+				<min_initial_participant_announcement_period>
+					<sec>0</sec>
+					<nanosec>100000000</nanosec>
+				</min_initial_participant_announcement_period>
+				<max_initial_participant_announcement_period>
+					<sec>0</sec>
+					<nanosec>100000000</nanosec>
+				</max_initial_participant_announcement_period>
+			</discovery_config>
 				<receiver_pool>
 					<buffer_size>65536</buffer_size>
 				</receiver_pool>

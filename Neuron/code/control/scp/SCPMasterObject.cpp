@@ -55,6 +55,7 @@ bool SCPMasterObject::Send(com::xvd::neuron::scp::Control* _c, int dstId)
     _c->sessionId = sessionId;
     _c->srcId = srcId;
     _c->dstId = dstId;
+    cout << "SCPMasterObject::Send() - src=" << srcId << " and dst=" << dstId << endl;
     return sm->Send(_c,controlHandle);
 }
 

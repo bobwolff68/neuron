@@ -27,6 +27,161 @@ typename StateTypeSupport,
 typename MetricsTypeSupport> class CPInterfaceT : public CPInterface
 {
 private:
+    class BuiltinListener : public DDSDataReaderListener
+    {
+        private:
+            
+            string PartName;
+            
+            bool MatchParticipants(DDS_PropertyQosPolicy &propertyQos,
+                                   DDS_PropertyQosPolicy &discPropertyQos)
+            {
+                int             colonPos,colonPosDisc;
+                int             id,masterId;
+                string          CtrlPlane,CtrlPlaneDisc;
+                string          InterfaceType,InterfaceTypeDisc;
+                DDS_Property_t *property = NULL;
+                DDS_Property_t *propertyDisc = NULL;
+                
+                // If property "CPInterfaceType" not present, then ignore
+                property = DDSPropertyQosPolicyHelper::lookup_property(propertyQos,"CPInterfaceType");
+                if(property==NULL)  return false;
+                
+                // If property "CPInterfaceType" not present in discovered participant, then ignore
+                propertyDisc = DDSPropertyQosPolicyHelper::lookup_property(discPropertyQos,"CPInterfaceType");
+                if(propertyDisc==NULL)  return false;
+                
+                // If control plane names are not the same, then ignore
+                CtrlPlane = property->value;
+                colonPos = CtrlPlane.find(':');
+                CtrlPlane = CtrlPlane.substr(0,colonPos);
+                CtrlPlaneDisc = propertyDisc->value;
+                colonPosDisc = CtrlPlaneDisc.find(':');
+                CtrlPlaneDisc = CtrlPlaneDisc.substr(0,colonPosDisc);
+                if(CtrlPlane!=CtrlPlaneDisc)    return false;
+                
+                // If interface types are the same (Both are masters or slaves), ignore
+                InterfaceType = property->value;
+                InterfaceType = InterfaceType.substr(colonPos+1);
+                InterfaceTypeDisc = propertyDisc->value;
+                InterfaceTypeDisc = InterfaceTypeDisc.substr(colonPosDisc+1);
+                if(InterfaceType==InterfaceTypeDisc)    return false;
+                
+                // If participant is master, and discovered slave's master id is different, ignore
+                // Else if participant is slave and discovered master's id is different, ignore
+                if(InterfaceType=="Master")
+                {
+                    property = DDSPropertyQosPolicyHelper::lookup_property(propertyQos,"Id");
+                    propertyDisc = DDSPropertyQosPolicyHelper::lookup_property(discPropertyQos,"MasterId");
+                    sscanf(property->value,"%d",&id);
+                    sscanf(propertyDisc->value,"%d",&masterId);
+                    if(id!=masterId)    return false;
+                }
+                else
+                {
+                    property = DDSPropertyQosPolicyHelper::lookup_property(propertyQos,"MasterId");
+                    propertyDisc = DDSPropertyQosPolicyHelper::lookup_property(discPropertyQos,"Id");
+                    sscanf(property->value,"%d",&masterId);
+                    sscanf(propertyDisc->value,"%d",&id);
+                    if(masterId!=id)    return false;
+                }
+                
+                //Participants matched
+                /*cout << "Participant '" << PartName << "' matches with:" << endl;
+                cout << "ControlPlane+InterfaceType: " << CtrlPlane << "+" << InterfaceType
+                     << " ==> " << CtrlPlaneDisc << "+" << InterfaceTypeDisc << endl;
+                cout << "Id/MasterId: " << id << "/" << masterId << endl;*/
+                     
+                return true;
+            }
+            
+    public:
+                
+            BuiltinListener(const char *name)
+            {
+                PartName = name;
+            }
+                
+            void on_data_available(DDSDataReader *pGenReader)
+            {
+                DDSDomainParticipant                       *pDomParticipant = NULL;
+                DDSSubscriber                              *pSubscriber = NULL;
+                DDSParticipantBuiltinTopicDataDataReader   *pDiscReader = NULL;
+                DDS_ParticipantBuiltinTopicDataSeq          seqDisc;
+                DDS_SampleInfoSeq                           seqInfo;
+                DDS_DomainParticipantQos                    partQos;
+                DDS_ReturnCode_t                            retCode;
+
+                pSubscriber = pGenReader->get_subscriber();
+                pDomParticipant = pSubscriber->get_participant();
+    
+                retCode = pDomParticipant->get_qos(partQos);
+                if(retCode!=DDS_RETCODE_OK)
+                {
+                    ControlLogError("CPBuiltinListener::on_data_available(): Can't get partQos\n");
+                    throw DDS_RETCODE_BAD_PARAMETER;
+                }
+    
+                pDiscReader =  DDSParticipantBuiltinTopicDataDataReader::narrow(pGenReader);
+                retCode = pDiscReader->take(seqDisc,seqInfo,DDS_LENGTH_UNLIMITED,DDS_ANY_SAMPLE_STATE,
+                                            DDS_ANY_VIEW_STATE,DDS_ANY_INSTANCE_STATE);                                        
+                if(retCode!=DDS_RETCODE_NO_DATA)
+                {
+                    if(retCode!=DDS_RETCODE_OK)
+                    {
+                        cout << "BuiltinListener::on_data_available(): Can't read discovery data" << endl;
+                        return;
+                    }
+                    else
+                    {
+                        for(int i=0; i<seqDisc.length(); i++)
+                        {
+                            if(seqInfo[i].valid_data)
+                            {
+                                if(!MatchParticipants(partQos.property,seqDisc[i].property))
+                                {
+                                    pDomParticipant->ignore_participant(seqInfo[i].instance_handle);
+                                    if(retCode!=DDS_RETCODE_OK)
+                                    {
+                                        ControlLogError("BuiltinListener::on_data_available(): Ignore error");
+                                        throw DDS_RETCODE_BAD_PARAMETER;
+                                    }
+                                }
+                                else
+                                {
+                                    cout << "MATCH: " << PartName << " <==> " << seqDisc[i].participant_name.name << endl;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                pDiscReader->return_loan(seqDisc,seqInfo);
+                return;
+            }
+                
+    };    
+    
+    void SetParticipantFactoryAutoEnableEntities(DDS_Boolean val)
+    {
+        DDS_ReturnCode_t                retCode;
+        DDS_DomainParticipantFactoryQos factQos;
+
+        retCode = pFactory->get_qos(factQos);
+        if(retCode!=DDS_RETCODE_OK)
+        {
+            ControlLogError("MediaParticipant(): Can't get factory qos");
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+        factQos.entity_factory.autoenable_created_entities = val;
+        retCode = pFactory->set_qos(factQos);
+        if(retCode!=DDS_RETCODE_OK)
+        {
+            ControlLogError("MediaParticipant(): Can't set factory qos");
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+    }
+
     void SetPropertyQosPolicy(DDS_PropertyQosPolicy &propertyQos,
                               map<string,string> &PropertyPairs,
                               map<string,DDS_Boolean> &PropagateDiscoveryFlags
@@ -62,9 +217,14 @@ public:
         DDS_SubscriberQos subQos;
         DDS_ReturnCode_t retcode;
         DDSTopic *topic;
+        BuiltinListener *pDiscListener;
+        DDSSubscriber *pDiscSubscriber = NULL;
+        DDSDataReader *pDiscGenReader = NULL;
+        DDSParticipantBuiltinTopicDataDataReader *pDiscReader = NULL;
         const char *type_name;
         
         pFactory = DDSDomainParticipantFactory::get_instance();
+        SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_FALSE);
         
         // TODO: Improve this.The basic idea is that instead of creating
         //       from a profile, get the profile and then modify the profile 
@@ -117,6 +277,22 @@ public:
         
         // TODO: Install listeners if required. Currently all are handlded at
         //       the data-writer entity level
+        pDiscSubscriber = pDomainParticipant->get_builtin_subscriber();
+        pDiscGenReader = pDiscSubscriber->lookup_datareader(DDS_PARTICIPANT_TOPIC_NAME);
+        pDiscReader = DDSParticipantBuiltinTopicDataDataReader::narrow(pDiscGenReader);
+        pDiscListener = new BuiltinListener(name);
+        pDiscReader->set_listener(pDiscListener,DDS_DATA_AVAILABLE_STATUS);
+        //Enable participant
+        retcode = pDomainParticipant->enable();
+        if(retcode!=DDS_RETCODE_OK)
+        {
+            ControlLogError("CPInterfaceT(): Can't enable participant");
+            throw DDS_RETCODE_BAD_PARAMETER;
+        }
+        //Enable autenable of domain participants
+        //SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_TRUE);
+
+        
         pPublisher = pDomainParticipant->create_publisher(pubQos, 
                                                             NULL, 
                                                             DDS_STATUS_MASK_NONE);
@@ -582,6 +758,7 @@ public:
     bool Send(Control *c,DDS_InstanceHandle_t ih)
     {
         DDS_ReturnCode_t retcode;
+	cout << "CPInterfaceT::Send() - script is: " << c->script << endl;
         retcode = controlWriter->write(*c, ih);
         if (retcode != DDS_RETCODE_OK)
         {

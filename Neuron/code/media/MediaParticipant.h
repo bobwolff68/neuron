@@ -17,23 +17,30 @@ class MediaParticipant
     {
         private:
 
-            int sessionId;
+            int     sessionId;
+            string  PartName;
 
         public:
 
-            BuiltinListener(int sessionIdP)
+            BuiltinListener(int sessionIdP,const char *partName)
             {
                 sessionId = sessionIdP;
+                PartName = partName;
             }
 
             void on_data_available(DDSDataReader *pGenReader)
             {
                 DDSParticipantBuiltinTopicDataDataReader   *pDiscReader = NULL;
                 DDS_ParticipantBuiltinTopicDataSeq          seqDisc;
+                DDSSubscriber                              *pSubscriber = NULL;
+                DDSDomainParticipant                       *pDomParticipant = NULL;
                 DDS_SampleInfoSeq                           seqInfo;
                 DDS_ReturnCode_t                            retCode;
 
+                pSubscriber = pGenReader->get_subscriber();
+                pDomParticipant = pSubscriber->get_participant();
                 pDiscReader =  DDSParticipantBuiltinTopicDataDataReader::narrow(pGenReader);
+                
                 retCode = pDiscReader->take(seqDisc,seqInfo,DDS_LENGTH_UNLIMITED,DDS_ANY_SAMPLE_STATE,
                                             DDS_ANY_VIEW_STATE,DDS_ANY_INSTANCE_STATE);
                 if(retCode!=DDS_RETCODE_NO_DATA)
@@ -51,18 +58,13 @@ class MediaParticipant
                             {
                                 int                     discSessionId;
                                 DDS_Property_t         *pSessIdProperty = NULL;
-                                DDSSubscriber          *pSubscriber = NULL;
-                                DDSDomainParticipant   *pDomParticipant = NULL;
 
-                                pSubscriber = pGenReader->get_subscriber();
-                                pDomParticipant = pSubscriber->get_participant();
-
-                                cout << "Discovered participant: " << seqDisc[i].participant_name.name << endl;
+                                //cout << "Discovered participant: " << seqDisc[i].participant_name.name << endl;
 
                                 pSessIdProperty = DDSPropertyQosPolicyHelper::lookup_property(seqDisc[i].property,"sessionId");
                                 if(pSessIdProperty!=NULL)
                                 {
-                                    cout << "Session ID: " << pSessIdProperty->value << ",Current: " << sessionId << endl;
+                                    //cout << "Session ID: " << pSessIdProperty->value << ",Current: " << sessionId << endl;
                                     sscanf(pSessIdProperty->value,"%d",&discSessionId);
                                     if(discSessionId!=sessionId)
                                     {
@@ -74,11 +76,13 @@ class MediaParticipant
                                             exit(0);
                                         }
                                     }
+                                    else
+                                        cout << "MATCH: " << PartName << " <==> " << seqDisc[i].participant_name.name << endl;
                                 }
                                 else
                                 {
                                     //Ignore control plane participants
-                                    stringstream    sstream;
+                                    /*stringstream    sstream;
                                     string          PartName;
                                     char            buf[100];
 
@@ -91,16 +95,16 @@ class MediaParticipant
                                     if(PartName=="ACPMaster"||PartName=="ACPSlave"||PartName=="SCPMaster"||
                                        PartName=="SCPSlave"||PartName=="LSCPMaster"||PartName=="LSCPSlave"||
                                        PartName=="ACP")
-                                    {
-                                        cout << "Ignoring control plane participant "
-                                             << seqDisc[i].participant_name.name << "..." << endl;
+                                    {*/
+                                        //cout << "Ignoring control plane participant "
+                                        //     << seqDisc[i].participant_name.name << "..." << endl;
                                         retCode = pDomParticipant->ignore_participant(seqInfo[i].instance_handle);
                                         if(retCode!=DDS_RETCODE_OK)
                                         {
                                             cout << "BuiltinListener::on_data_available(): Ignore error" << endl;
                                             exit(0);
                                         }
-                                    }
+                                    //}
                                 }
                             }
                         }
@@ -204,7 +208,7 @@ class MediaParticipant
             pDiscSubscriber = pDomParticipant->get_builtin_subscriber();
             pDiscGenReader = pDiscSubscriber->lookup_datareader(DDS_PARTICIPANT_TOPIC_NAME);
             pDiscReader = DDSParticipantBuiltinTopicDataDataReader::narrow(pDiscGenReader);
-            pDiscListener = new BuiltinListener(sessionId);
+            pDiscListener = new BuiltinListener(sessionId,PartName.c_str());
             pDiscReader->set_listener(pDiscListener,DDS_DATA_AVAILABLE_STATUS);
 
             //Enable participant
@@ -216,7 +220,7 @@ class MediaParticipant
             }
 
             //Enable autenable of domain participants
-            SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_TRUE);
+            //SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_TRUE);
 
             //Register type name(s)
             typeName = com::xvd::neuron::media::DataUnitTypeSupport::get_type_name();
