@@ -123,7 +123,7 @@ bool Shell::parseLine(istream& input, bool isScript)
 		static char attr[100];
 
 		linestream >> cmd;
-		strtoupper(cmd);
+		ToUpper<string>(cmd);
 
 		// Command with no subcommand nor attributes will be !.good()
 		if (linestream.good())
@@ -131,7 +131,7 @@ bool Shell::parseLine(istream& input, bool isScript)
 			// Read the sub command now.
 
 			linestream >> subcmd;
-			strtoupper(subcmd);
+			ToUpper<string>(subcmd);
 
 			// Again - subcommand with no attributes will be !.good() here
 			if (linestream.good())
@@ -182,18 +182,6 @@ bool Shell::ProcessScript(const char* fname)
 
 	fin.close();
 	return true;
-}
-
-void Shell::strtoupper(string &s)
-{
-//	std::transform(s.begin(), s.end(), s.begin(), upper);
-	  std::string::iterator i = s.begin();
-	  std::string::iterator end = s.end();
-
-	  while (i != end) {
-	    *i = upper((unsigned char)*i);
-	    ++i;
-	  }
 }
 
 ///
@@ -313,8 +301,8 @@ bool Shell::processCommand(string& cmd, string& subcmd)
 {
 	bool isOK;
 	// Convert cmd and subcmd to upper case for further processing as XML elements.
-	strtoupper(cmd);
-	strtoupper(subcmd);
+	ToUpper<string>(cmd);
+	ToUpper<string>(subcmd);
 
 //	switch(cmd.c_str())
 	{

@@ -26,8 +26,6 @@ public:
 
 protected:
 	bool parseAttributes(const char* inputstr);
-	int upper(int c) { return std::toupper((unsigned char)c); }
-	void strtoupper(string &s);
 	bool processCommand(string& cmd, string& subcmd);
 	bool addToXML(string& cmd, string& subcmd);
 	bool ProcessSingleCommand(const char* tags);

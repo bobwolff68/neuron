@@ -269,7 +269,7 @@ string uBrainManager::FormulateScript(const char* incmd, string& enttype,
     string cmd(incmd);
     stringstream scr;
 
-    strtoupper(cmd);
+    ToUpper<string>(cmd);
 
     if (cmd == "ADD")
     {
@@ -337,7 +337,7 @@ bool uBrainManager::ProcessDDS_SF_ChangeConnection(string& cmd, string& subcmd,
     string entname = nvPairs["entname"];
 
     string enttype = nvPairs["enttype"];
-    strtoupper(enttype);
+    ToUpper<string>(enttype);
 
     sess_id = FromString<int> (nvPairs["sessid"], isOK);
     sf_id = FromString<int> (nvPairs["sfid"], isOK);
@@ -389,7 +389,7 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<
     string entname = nvPairs["entname"];
 
     string enttype = nvPairs["enttype"];
-    strtoupper(enttype);
+    ToUpper<string>(enttype);
 
     sess_id = FromString<int> (nvPairs["sessid"], isOK);
     sf_id = FromString<int> (nvPairs["sfid"], isOK);
@@ -1184,19 +1184,6 @@ bool uBrainManager::requiredAttributesPresent(string& subcmd, map<string,
     }
 
     return true;
-}
-
-void uBrainManager::strtoupper(string &s)
-{
-    //	std::transform(s.begin(), s.end(), s.begin(), upper);
-    std::string::iterator i = s.begin();
-    std::string::iterator end = s.end();
-
-    while (i != end)
-    {
-        *i = upper((unsigned char) *i);
-        ++i;
-    }
 }
 
 void uBrainManager::ReceiveSelectSource(com::xvd::neuron::scp::State* state)

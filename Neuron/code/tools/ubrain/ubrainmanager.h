@@ -41,8 +41,6 @@ public:
 private:
 	int workerBee(void);
 	bool requiredAttributesPresent(string& subcmd, map<string,string>& nvPairs, const char* attr1, const char* attr2="", const char* attr3="", const char* attr4="", const char* attr5="");
-	void strtoupper(string &s);
-	int upper(int c) { return std::toupper((unsigned char)c); }
 	string FormulateScript(const char* incmd, string& enttype, int entid, int ent_src, const char* optName=NULL);
 	int WaitForSFReady(int sfid, int timeInms);
 	int WaitForSessionReadyOnSF(int sessid, int sfid, int timeInms);
