@@ -25,7 +25,6 @@ public:
 	RegServer(uBrainManager* initBrain, map<string, string> rvals, int initport=8181);
 	virtual ~RegServer();
 	int workerBee(void);
-	int getBrainGStun(void) { return globalID++; };
 private:
 	bool bIsEndpoint;
 	bool bIsServerUp;
@@ -35,10 +34,8 @@ private:
 	uBrainManager* theBrain;
 	map<string, string> respvalues;
 	map<string, string> reqParameters;
-	int globalID;
 
 	void Init();
-	int setNonblocking(int fd);
 	void ShutdownServer(void);
 	bool HConnection(int csock);
 	bool ParseRequest(const char* req);

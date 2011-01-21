@@ -29,16 +29,31 @@ using namespace std;
 template<typename T>
 T FromString( string& s, bool& bIsOK)
 {
-	T type;
-	istringstream inStream(s);
+    T type;
+    istringstream inStream(s);
 
-	bIsOK=true;
+    bIsOK=true;
 
-	inStream >> type;
-	if(!inStream)
-		bIsOK=false;
+    inStream >> type;
+    if(!inStream)
+        bIsOK=false;
 
-	return type;
+    return type;
+}
+
+/// \brief FromStringNoChecking<> is a template for converting the frontmost 'word' of a string
+///        into the template type. It does not check for failure-to-parse. Use when you know what's in the string.
+///
+/// Usage -     int i = FromString<int>( stringname );
+template<typename T>
+T FromStringNoChecking( string& s )
+{
+    T type;
+    istringstream inStream(s);
+
+    inStream >> type;
+
+    return type;
 }
 
 template<typename T> string ToString(T type)

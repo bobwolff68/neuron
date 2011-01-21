@@ -25,6 +25,7 @@ public:
 	bool processLocal(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool processDDSOriented(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool processDDS_SF(string& cmd, string& subcmd, map<string, string> & nvPairs);
+	bool ProcessDDS_SF_AddSession(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool ProcessDDS_SF_ChangeConnection(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool ProcessDDS_SF_DeleteEntity(string& cmd, string& subcmd, map<string, string> & nvPairs);
@@ -38,6 +39,8 @@ public:
 	void ReceiveOfferSource(com::xvd::neuron::scp::State* state);
 	void ReceiveSelectSource(com::xvd::neuron::scp::State* state);
 
+	int GetNewGlobalWANID(void) { return globalWANIDMax++; };
+
 private:
 	int workerBee(void);
 	bool requiredAttributesPresent(string& subcmd, map<string,string>& nvPairs, const char* attr1, const char* attr2="", const char* attr3="", const char* attr4="", const char* attr5="");
@@ -48,6 +51,7 @@ private:
 	Controller* pCtrl;
 	LocalItems local;       // Will set the registration server next...
 	SSHManagement ssh;
+	int globalWANIDMax;
 };
 
 #endif /* UBRAINMANAGER_H_ */

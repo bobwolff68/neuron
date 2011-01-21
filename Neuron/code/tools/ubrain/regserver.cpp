@@ -31,8 +31,6 @@ RegServer::RegServer(uBrainManager* initBrain, map<string, string> rvals, int in
 	bIsEndpoint = false;
 	bIsServerUp = false;
 	serverError = 0;
-//	globalID = (128 << 24) | 1;		// Start @ 2^31 and increment. This makes all ep-gid's HIGH and all non-ep-gid's start at zero.
-	globalID = 15;		// Start @ 2^31 and increment. This makes all ep-gid's HIGH and all non-ep-gid's start at zero.
 
 	port = initport;
 	serversock = 0;
@@ -269,9 +267,9 @@ bool RegServer::HConnection(int csock)
 
 	respvalues["client_pub_ip"]=clientIpAddress;
 
-	temp_gid = globalID++;				// Must increment immediately to avoid a conflict.
+	temp_gid = theBrain->GetNewGlobalWANID();
 	respvalues["client_scp_id"] = ToString<int>(temp_gid);
-    temp_gid = globalID++;              // Must increment immediately to avoid a conflict.
+    temp_gid = theBrain->GetNewGlobalWANID();
     respvalues["client_acp_id"] = ToString<int>(temp_gid);
 
 	// Prep the 'static' and recently determined items.
@@ -445,30 +443,4 @@ bool RegServer::ParseRequest(const char* req)
     }
 
 	return true;
-}
-
-/*----------------------------------------------------------------------
- Portable function to set a socket into nonblocking mode.
- Calling this on a socket causes all future read() and write() calls on
- that socket to do only as much as they can immediately, and return
- without waiting.
- If no data can be read or written, they return -1 and set errno
- to EAGAIN (or EWOULDBLOCK).
- Thanks to Bjorn Reese for this code.
-----------------------------------------------------------------------*/
-int RegServer::setNonblocking(int fd)
-{
-    int flags;
-
-    /* If they have O_NONBLOCK, use the Posix way to do it */
-#if defined(O_NONBLOCK)
-    /* Fixme: O_NONBLOCK is defined but broken on SunOS 4.1.x and AIX 3.2.5. */
-    if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
-        flags = 0;
-    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-#else
-    /* Otherwise, use the old way of doing it */
-    flags = 1;
-    return ioctl(fd, FIOBIO, &flags);
-#endif
 }

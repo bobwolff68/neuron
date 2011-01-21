@@ -47,7 +47,7 @@ LocalItems::~LocalItems()
 
 SessInfo::SessInfo()
 {
-	session_in_these_sfs.clear();
+    SessionInfoOnSF.clear();
 	sourceList.clear();
 }
 
@@ -84,7 +84,7 @@ int LocalItems::AddSession(int sessID, const char* sessname)
 /// \brief Adds the sessID to the general sessList if it is not present.
 ///        Then adds the given sfID to the list of sf's involved in this session.
 ///
-int LocalItems::AddSFToSession(int sfID, int sessID, const char* sessname)
+int LocalItems::AddSFToSession(int sfID, int sessID, int wanID, const char* sessname)
 {
 //	cout << "DEBUG: In AddSFToSession " << endl
 //			<< "- #factories=" << GetNumSFs() << endl;
@@ -99,12 +99,23 @@ int LocalItems::AddSFToSession(int sfID, int sessID, const char* sessname)
 
 	assert(pSess->sess_id == sessID);
 
-	if (pSess->session_in_these_sfs[sfID])
+	if (pSess->SessionInfoOnSF[sfID])
 		return DEST_SF_IN_USE;
 	else
 	{
-		pSess->session_in_these_sfs[sfID] = sfList[sfID];
-		pSess->curSessionStateOnSF[sfID] = com::xvd::neuron::OBJECT_STATE_INIT;
+	    pSessOnSFInfo psesssf;
+
+        assert(sfList[sfID]);
+
+	    psesssf = new SessOnSFInfo(sessID, sfList[sfID], wanID);
+	    if (!psesssf)
+	        return GENERIC_ERROR;
+
+	    // Increment the count of how many sessions are inside an sf.
+	    sfList[sfID]->num_sessions++;
+
+	    // Now add it to the list.
+	    pSess->SessionInfoOnSF[sfID] = psesssf;
 	}
 
 //	cout << "DEBUG: Exiting AddSFToSession " << endl
@@ -115,15 +126,40 @@ int LocalItems::AddSFToSession(int sfID, int sessID, const char* sessname)
 
 int LocalItems::RemoveSession(int sessID)
 {
-	if (!sessList[sessID])
-		return ID_NOT_FOUND;
+    pSessInfo pSess;
+
+    pSess = sessList[sessID];
+
+    if (!pSess)
+            return ID_NOT_FOUND;
 
 	// Remove all sources from the session before deleting the session.
+	RemoveAllSourcesFromSession(sessID);
 
-	delete sessList[sessID];
+	// Now remove all session-per-sf info items.
+	SessOnSFInfoList::iterator sit;
+
+    for ( sit=pSess->SessionInfoOnSF.begin() ; sit != pSess->SessionInfoOnSF.end(); sit++ )
+    {
+        // Decrement number of sessions in the sf.
+        assert(sfList[sit->first]);
+        sfList[sit->first]->num_sessions--;
+
+        // delete the entry in the list within the session
+        assert(sit->second);
+        delete sit->second;
+
+        // Finally delete the entry itself and iterate again.
+        pSess->SessionInfoOnSF.erase(sit);
+    }
+
+    assert(pSess->SessionInfoOnSF.size()==0);
+
+    // Now we can actually delete the session info record.
+	delete pSess;
 	sessList.erase(sessID);
 
-	cout << "List of Sessions..." << endl;
+	cout << "Post-Session-Removal: List of Sessions..." << endl;
 	ListSessions();
 
 	return 0;
@@ -177,11 +213,23 @@ int LocalItems::ListSourcesInSession(int sessID)
 ///
 int LocalItems::RemoveSessionFromSF(int sessID, int sfID)
 {
-	if (!sessList[sessID])
+    pSessInfo pSess;
+
+    pSess = sessList[sessID];
+	if (!pSess)
 		return ID_NOT_FOUND;
 
-	if (sessList[sessID]->session_in_these_sfs[sfID])
-		sessList[sessID]->session_in_these_sfs.erase(sfID);
+	if (pSess->SessionInfoOnSF[sfID])
+	{
+	    assert(sfList[sfID]);
+	    sfList[sfID]->num_sessions--;
+
+	    // delete the info entry object.
+	    delete pSess->SessionInfoOnSF[sfID];
+
+	    // Then remove the entry from the list.
+		pSess->SessionInfoOnSF.erase(sfID);
+	}
 	else
 		return DEST_SF_NOT_FOUND;
 
@@ -192,6 +240,7 @@ void LocalItems::ListSessions(void)
 {
 	  SessList::iterator sessit;
 	  SFList::iterator sfit;
+	  SessOnSFInfoList::iterator sessSFit;
 
 	  cout << endl << "Number of Sessions currently: " << sessList.size() << endl;
 
@@ -200,25 +249,28 @@ void LocalItems::ListSessions(void)
 	  {
 	    cout << "Session ID=" << sessit->first;
 	    if (sessit->second->sessName!="")
-            cout << " with name='" << sessit->second->sessName << "'. is found in " << sessit->second->session_in_these_sfs.size() << " Factories." << endl;
+            cout << " with name='" << sessit->second->sessName << "'. is found in " << sessit->second->SessionInfoOnSF.size() << " Factories." << endl;
 	    else
-	        cout << ". Involved in " << sessit->second->session_in_these_sfs.size() << " Factories." << endl;
+	        cout << ". Involved in " << sessit->second->SessionInfoOnSF.size() << " Factories." << endl;
 
 	    // Now list those involved factories.
-	    if (sessit->second->session_in_these_sfs.size())
+	    if (sessit->second->SessionInfoOnSF.size())
 	    {
-	        cout << "   SF ID's with session: ";
-	        for ( sfit=sessit->second->session_in_these_sfs.begin() ; sfit != sessit->second->session_in_these_sfs.end(); sfit++ )
-	        {
-	            cout << sessit->first;      // Output the sfid.
-	            // Now if there is an sfname attached, print it too. Else iterate.
-	            if (sfit->second->sf_name!="")
-	                cout << "/" << sfit->second->sf_name;
+	        cout << "Details of each SF/Session status..." << endl;
+	        cout << " SFID  State MediaWANID SF-Name" << endl;
 
-                cout << ", ";
-	        }
+	        assert (sessit->second);
 
-	        cout << endl;
+            for ( sessSFit=sessit->second->SessionInfoOnSF.begin() ; sessSFit != sessit->second->SessionInfoOnSF.end(); sessSFit++ )
+            {
+                pSessOnSFInfo psInfo;
+                psInfo = sessSFit->second;
+
+                assert(psInfo);
+                assert(psInfo->pSF);
+
+                cout << sessSFit->first << "   " << (int)psInfo->state << "        " << psInfo->media_wan_id << "     " << psInfo->pSF->sf_name << endl;
+            }
 	    }
 
 	  }
@@ -231,23 +283,23 @@ SessInfo* LocalItems::GetSessionInfo(int sessID)
 
 bool LocalItems::GetSFsForSession(int sessID, SFList& sfs, bool bEPOnly)
 {
-	SessList::iterator sessit;
+    pSessInfo pSess;
+
+    pSess = sessList[sessID];
+	if (!pSess)
+	    return false;
 
 	// Find the session first...
-	for ( sessit=sessList.begin() ; sessit != sessList.end(); sessit++ )
-	{
-		if (sessit->first == sessID)
-		{
-			// Found it. Iterate the SF list and return all SFs or only EP SFs if flagged.
-			SFList::iterator sfit;
+    // Found it. Iterate the SF list and return all SFs or only EP SFs if flagged.
+	SessOnSFInfoList::iterator sessSFit;
 
-			for (sfit=sessit->second->session_in_these_sfs.begin() ; sfit != sessit->second->session_in_these_sfs.end() ; sfit++ )
-				if (bEPOnly || sfit->second->is_endpoint)
-					sfs[sfit->first] = sfit->second;
+    for (sessSFit=pSess->SessionInfoOnSF.begin() ; sessSFit != pSess->SessionInfoOnSF.end() ; sessSFit++ )
+    {
+        assert (sessSFit->second && sessSFit->second->pSF);
 
-			return true;
-		}
-	}
+        if (!bEPOnly || (bEPOnly && sessSFit->second->pSF->is_endpoint))
+            sfs[sessSFit->first] = sessSFit->second->pSF;
+    }
 
 	return true;
 }
@@ -257,13 +309,13 @@ com::xvd::neuron::ObjectState LocalItems::GetCurStateInSFForSession(int sfid, in
     if (!sessList[sessid])
         return (com::xvd::neuron::ObjectState)DEST_SESS_NOT_FOUND;
 
-    if (!sessList[sessid]->session_in_these_sfs[sfid])
+    if (!sessList[sessid]->SessionInfoOnSF[sfid])
         return (com::xvd::neuron::ObjectState)DEST_SF_NOT_FOUND;
 
     // Make sure there is a current state registered for the sfid -- should be there.
-    assert(sessList[sessid]->curSessionStateOnSF.find(sfid) != sessList[sessid]->curSessionStateOnSF.end());
+    assert(sessList[sessid]->SessionInfoOnSF[sfid]);
 
-    return sessList[sessid]->curSessionStateOnSF[sfid];
+    return sessList[sessid]->SessionInfoOnSF[sfid]->state;
 };
 
 int LocalItems::UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neuron::ObjectState state)
@@ -271,13 +323,13 @@ int LocalItems::UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neu
     if (!sessList[sessid])
         return DEST_SESS_NOT_FOUND;
 
-    if (!sessList[sessid]->session_in_these_sfs[sfid])
+    if (!sessList[sessid]->SessionInfoOnSF[sfid])
         return DEST_SF_NOT_FOUND;
 
     // Make sure there is a current state registered for the sfid -- should be there.
-    assert(sessList[sessid]->curSessionStateOnSF.find(sfid) != sessList[sessid]->curSessionStateOnSF.end());
+    assert(sessList[sessid]->SessionInfoOnSF[sfid]);
 
-    sessList[sessid]->curSessionStateOnSF[sfid] = state;
+    sessList[sessid]->SessionInfoOnSF[sfid]->state = state;
 
     return 0;
 }
@@ -408,7 +460,18 @@ int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type
 	if (entList[entID])
 		return ID_IN_USE;
 
-	pEntInfo pEnt;
+    // Make sure the SF exists.
+    if (!sfList[sfID])
+        return DEST_SF_NOT_FOUND;
+
+    if (!sessList[sessID])
+        return DEST_SESS_NOT_FOUND;
+
+    // Now ensure the session mentioned does exist on the sfid given.
+    assert(sessList[sessID]->SessionInfoOnSF[sfID]);
+    assert(sessList[sessID]->SessionInfoOnSF[sfID]->pSF == sfList[sfID]);
+
+    pEntInfo pEnt;
 
 	pEnt = new EntInfo;
 	if (!pEnt)
@@ -424,21 +487,11 @@ int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type
 	pEnt->resy = resy;
 	pEnt->entname = entname;
 
-	// Make sure the SF exists.
-	if (!sfList[sfID])
-		return DEST_SF_NOT_FOUND;
-
-	if (!sessList[sessID])
-		return DEST_SESS_NOT_FOUND;
-
 	// Add to the general list.
 	entList[entID] = pEnt;
 
 	// Add entity mapped by name ...
 	entNameList[pEnt->entname] = pEnt;
-
-	// Now add this session to the associated SF.
-	sessList[sessID]->session_in_these_sfs[sfID] = sfList[sfID];
 
 	return 0;
 }
@@ -457,7 +510,8 @@ int LocalItems::AddSourceToSession(int sessID, int sfID, int entID, const char* 
 		return DEST_SESS_NOT_FOUND;
 
 	// Ensure the sf to which the source belongs is marked as "involved" with this session
-	pSF = pSess->session_in_these_sfs[sfID];
+	assert(pSess->SessionInfoOnSF[sfID]);
+	pSF = pSess->SessionInfoOnSF[sfID]->pSF;
 
 	if (!pSF)
 		return DEST_SF_NOT_FOUND;
@@ -513,3 +567,12 @@ void LocalItems::ListEntities(void)
 			  cout << " is found on sfID=" << entit->second->sf_id << " and is in sessionID=" << entit->second->sess_id << "'." << endl;
 	  }
 }
+
+SessOnSFInfo::SessOnSFInfo(int sid, pSFInfo initpSF, int wID)
+{
+    assert(initpSF);
+    sessid=sid;
+    pSF=initpSF;
+    state=com::xvd::neuron::OBJECT_STATE_INIT;
+    media_wan_id=wID;
+};

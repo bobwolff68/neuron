@@ -24,7 +24,7 @@
 class SFInfo
 {
 public:
-	SFInfo() { };
+	SFInfo() { num_sessions=0; };
 	virtual ~SFInfo() { };
 	int sf_id;
     int acp_slave_wan_id;       // Global ID for each SF for the STUN connection
@@ -32,6 +32,7 @@ public:
 	string sf_ipaddress;
 	string sf_name;
 	bool is_endpoint;
+	int num_sessions;
 	com::xvd::neuron::ObjectState curSFState;
 };
 
@@ -55,13 +56,13 @@ typedef map<int,pSourceInfo> SourceInfoList;
 
 class SessOnSFInfo
 {
-    SessOnSFInfo(int sid, pSFInfo initpSF) { assert(initpSF); sessid=sid; pSF=initpSF; state=com::xvd::neuron::OBJECT_STATE_INIT; acp_master_wan_id=-1; scp_master_wan_id=-1;};
-    virtual ~SessOnSFInfo();
+public:
+    SessOnSFInfo(int sid, pSFInfo initpSF, int wID);
+    virtual ~SessOnSFInfo() { };
     pSFInfo pSF;
     int sessid;
     com::xvd::neuron::ObjectState state;
-    int acp_master_wan_id;       // Global ID for each SF for the STUN connection
-    int scp_master_wan_id;       // Global ID for each SF for the STUN connection
+    int media_wan_id;           // Each session on a particular SF will have it's own WAN id. Each of the sessions-on-each-sf will need peers added for these.
 };
 
 typedef SessOnSFInfo* pSessOnSFInfo;
@@ -73,11 +74,10 @@ public:
 	SessInfo();
 	virtual ~SessInfo();
 	int sess_id;
-	SFList session_in_these_sfs;
+//Removed when SessionInfoOnSF[] was instituted.	SFList session_in_these_sfs;
 	SourceInfoList sourceList;
 	string sessName;
 	// ** TODO: RMW - remove this variable and start using SessionInfoOnSF[] mapping instead.
-	map<int,com::xvd::neuron::ObjectState> curSessionStateOnSF;
 	SessOnSFInfoList SessionInfoOnSF;
 };
 
@@ -120,8 +120,8 @@ public:
 	void ClearAll(void) { sfList.clear(); sessList.clear(); entList.clear(); };
 
 	int AddSession(int sessID, const char* sessname);
-	int AddSFToSession(int sfID, int sessID, const char* sessname);
-	int GetNumSFsInSession(int sessID) { return sessList[sessID] ? sessList[sessID]->session_in_these_sfs.size() : -1; };
+	int AddSFToSession(int sfID, int sessID, int wanID, const char* sessname);
+	int GetNumSFsInSession(int sessID) { return sessList[sessID] ? sessList[sessID]->SessionInfoOnSF.size() : -1; };
 	int RemoveSession(int sessID);
 	int AddSourceToSession(int sessID, int sfID, int entID, const char* sourceName);
 	int RemoveAllSourcesFromSession(int sessID);

@@ -27,7 +27,6 @@ extern string logoutfile;
 
 int main(int argc, char** argv)
 {
-	int gstun_id_ubrain;
 	Shell* pShell;
 	map<string, string> respvals;
 
@@ -61,7 +60,6 @@ int main(int argc, char** argv)
 #ifdef  USE_LOCAL_CLIENTSERVER
 
 	RegServer regSrv(&uBrain, respvals, 8181);
-	gstun_id_ubrain = regSrv.getBrainGStun();
 
 #endif
 

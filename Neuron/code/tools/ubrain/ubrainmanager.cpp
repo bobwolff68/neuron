@@ -9,6 +9,8 @@
 
 uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domainId)
 {
+    globalWANIDMax = 15;        // Assignments start at 15
+
     local.setRegServerPublicIP(nvPairs["ubrain_ip"].c_str());
 
     DDSDomainParticipantFactory *factory =
@@ -70,12 +72,11 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     string cmd, subcmd;
     map < string, string > nvP;
     int sfid;
-    bool bok;
 
     if (isEP)
-        sfid = FromString<int>(pairs["ep_sf_id"], bok);
+        sfid = FromStringNoChecking<int>(pairs["ep_sf_id"]);
     else
-        sfid = FromString<int>(pairs["sfid"], bok);
+        sfid = FromStringNoChecking<int>(pairs["sfid"]);
 
     cout << "uBrainManager: RegComplete: sfid is: " << sfid << endl;
 
@@ -116,8 +117,8 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
         assert(psf->acp_slave_wan_id == -1);
         assert(psf->scp_slave_wan_id == -1);
 
-        psf->acp_slave_wan_id = FromString<int>(pairs["client_acp_id"], bok);
-        psf->scp_slave_wan_id = FromString<int>(pairs["client_scp_id"], bok);
+        psf->acp_slave_wan_id = FromStringNoChecking<int>(pairs["client_acp_id"]);
+        psf->scp_slave_wan_id = FromStringNoChecking<int>(pairs["client_scp_id"]);
 
         // Wait for new SF to become ready/online.
         nvP.clear();
@@ -134,7 +135,7 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
 //	assert(isEP);
 
         local.AddSFInternally(sfid, pairs["client_pub_ip"].c_str(),
-                FromString<int>(pairs["client_acp_id"], bok), FromString<int>(pairs["client_scp_id"], bok),
+                FromStringNoChecking<int>(pairs["client_acp_id"]), FromStringNoChecking<int>(pairs["client_scp_id"]),
                 pairs["ep_friendly_name"].c_str(), isEP);
 
         // Wait for new SF to become ready/online.
@@ -193,15 +194,16 @@ bool uBrainManager::RefreshSourcesOnSession(int sessID)
     for (siit = pSess->sourceList.begin(); siit != pSess->sourceList.end() ; siit++)
     {
         // Need the SessionFactory epName (sf_name)
-        if (pSess->session_in_these_sfs[siit->second->sfid])
+        if (pSess->SessionInfoOnSF[siit->second->sfid])
         {
+            assert(pSess->SessionInfoOnSF[siit->second->sfid]->pSF);
             assert(local.GetEntInfo(siit->second->entid));
 
             cout << "Source-Add: "
-                    << pSess->session_in_these_sfs[siit->second->sfid]->sf_name
+                    << pSess->SessionInfoOnSF[siit->second->sfid]->pSF->sf_name
                     << " and SourceName=" << siit->second->sourceName << endl;
 
-            sources << pSess->session_in_these_sfs[siit->second->sfid]->sf_name
+            sources << pSess->SessionInfoOnSF[siit->second->sfid]->pSF->sf_name
                     << "/" << siit->second->sourceName << "~"
                     << siit->second->entid
             // Gotta get resx and resy from the EntInfo pointed to by second->entid
@@ -331,7 +333,6 @@ bool uBrainManager::ProcessDDS_SF_ChangeConnection(string& cmd, string& subcmd,
     int ent_id;
     int src_ent_id;
     int resx, resy;
-    bool isOK;
     stringstream go;
 
     string sfip = nvPairs["sfipaddress"];
@@ -341,12 +342,12 @@ bool uBrainManager::ProcessDDS_SF_ChangeConnection(string& cmd, string& subcmd,
     string enttype = nvPairs["enttype"];
     ToUpper<string>(enttype);
 
-    sess_id = FromString<int> (nvPairs["sessid"], isOK);
-    sf_id = FromString<int> (nvPairs["sfid"], isOK);
-    ent_id = FromString<int> (nvPairs["entid"], isOK);
+    sess_id = FromStringNoChecking<int> (nvPairs["sessid"]);
+    sf_id = FromStringNoChecking<int> (nvPairs["sfid"]);
+    ent_id = FromStringNoChecking<int> (nvPairs["entid"]);
 
     // Used to designate the new connection to which the sink should subscribe
-    src_ent_id = FromString<int> (nvPairs["srcentid"], isOK);
+    src_ent_id = FromStringNoChecking<int> (nvPairs["srcentid"]);
 
     assert(cmd == "SF");
     assert(subcmd == "CHANGECONNECTION");
@@ -375,15 +376,131 @@ bool uBrainManager::ProcessDDS_SF_ChangeConnection(string& cmd, string& subcmd,
     return true;
 }
 
-bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<
-        string, string> & nvPairs)
+bool uBrainManager::ProcessDDS_SF_AddSession(string& cmd, string& subcmd, map<string, string> & nvPairs)
+{
+    int ret;
+    int wan_id;
+    int sess_id;
+    int sf_id;
+    stringstream go;
+
+    assert(cmd=="SF");
+    assert(subcmd=="ADDSESSION");
+
+    string sessname = nvPairs["sessname"];
+
+    sess_id = FromStringNoChecking<int> (nvPairs["sessid"]);
+    sf_id = FromStringNoChecking<int> (nvPairs["sfid"]);
+
+    if (!requiredAttributesPresent(subcmd, nvPairs, "sfid", "sessid"))
+    {
+        cout << "ERROR: Required attribute 'sfid' and/or 'sessid' not found." << endl;
+        return false;
+    }
+
+    wan_id = this->GetNewGlobalWANID();
+
+    ret = local.AddSFToSession(sf_id, sess_id, wan_id, nvPairs["sessname"].c_str());
+
+    switch (ret)
+    {
+    case 0:
+        // All good. Now add via controller
+        // Form command for controller
+        go << "scp create " << sess_id << " " << sf_id;
+
+        // Always produce the media wan id - so prep the script always with a leading double quote.
+        go << " \"";
+        go << "mediawanid " << wan_id;
+
+        // Add the session name if attribute exists.
+        if (nvPairs["sessname"] != "")
+            go << " sessname " << nvPairs["sessname"];
+
+        pSessInfo pSess;
+        int numSFsInvolved;
+        int maxPartIndex;
+
+        pSess = local.GetSessionInfo(FromStringNoChecking<int>(nvPairs["sessid"]));
+        assert(pSess);
+
+        numSFsInvolved = pSess->SessionInfoOnSF.size();
+
+        // Now if there are OTHER SF's involved already in this session, we must send that list for media peer addition.
+        if (numSFsInvolved > 1)
+        {
+            go << " mediapeers ";
+
+            // Now iterate through the list of sf's involved in the session and for all which are *NOT* this SF 'sfid',
+            // the media wan id shall be sent with a max participant index based upon how many SL's are involved on the SF at this point.
+            pSFInfo pSF;
+            SessOnSFInfoList::iterator sfsessit;
+            bool first_entry = true;
+
+            for ( sfsessit=pSess->SessionInfoOnSF.begin() ; sfsessit != pSess->SessionInfoOnSF.end(); sfsessit++ )
+            {
+                pSessOnSFInfo psInfo;
+                psInfo = sfsessit->second;
+
+                assert(psInfo);
+                assert(psInfo->pSF);
+
+                pSF = psInfo->pSF;
+
+                // Only add those which are *NOT* ourselves.
+                if (sfsessit->first != sf_id)
+                {
+                    cout << "SFID:" << sfsessit->first << "   State:" << (int)psInfo->state << "    Media-WAN-ID:" << psInfo->media_wan_id << "   SF-Name:" << psInfo->pSF->sf_name << endl;
+
+                    if (!first_entry)
+                        go << "~";
+
+                    // 0=ACPSlave, 1=SCPSlave, 2=LSCPMaster + for_each_session(LSCPSlave+MediaParticipant)
+                    // So formula is 2 + 2*num_sessions_on_sf
+                    maxPartIndex = 2 + 2*pSF->num_sessions;
+
+                    go << sfsessit->second->media_wan_id << "~" << maxPartIndex;
+
+                    first_entry = false;
+                }
+
+            }
+        }
+
+        // Finalize the script with the trailing double-quote
+        go << "\"";
+
+        cout << "Sending Controller: '" << go.str() << "'" << endl;
+
+        if (!pCtrl->runSingleCommand(go.str().c_str()))
+            return false;
+
+        return true;
+    case DEST_SF_IN_USE:
+        cout << "Warning: SF ADDSESSION -- SFID=" << sf_id
+                << " already has SessionID=" << sess_id << endl;
+        return true;
+    case ID_NOT_FOUND:
+        cout << "Error: SF ADDSESSION -- SessionID=" << sess_id
+                << " does not exist." << endl;
+        return false;
+    default:
+        cout << "Error: SF ADDSESSION failed with error code=" << ret
+                << endl;
+        return false;
+    }
+
+
+    return true;
+}
+
+bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<string, string> & nvPairs)
 {
     int sess_id;
     int sf_id;
     int ent_id;
     int src_ent_id;
     int resx, resy;
-    bool isOK;
     stringstream go;
 
     string sfip = nvPairs["sfipaddress"];
@@ -393,12 +510,12 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<
     string enttype = nvPairs["enttype"];
     ToUpper<string>(enttype);
 
-    sess_id = FromString<int> (nvPairs["sessid"], isOK);
-    sf_id = FromString<int> (nvPairs["sfid"], isOK);
-    ent_id = FromString<int> (nvPairs["entid"], isOK);
-    src_ent_id = FromString<int> (nvPairs["srcentid"], isOK);
-    resx = FromString<int> (nvPairs["resx"], isOK);
-    resy = FromString<int> (nvPairs["resy"], isOK);
+    sess_id = FromStringNoChecking<int> (nvPairs["sessid"]);
+    sf_id = FromStringNoChecking<int> (nvPairs["sfid"]);
+    ent_id = FromStringNoChecking<int> (nvPairs["entid"]);
+    src_ent_id = FromStringNoChecking<int> (nvPairs["srcentid"]);
+    resx = FromStringNoChecking<int> (nvPairs["resx"]);
+    resy = FromStringNoChecking<int> (nvPairs["resy"]);
 
     assert(cmd == "SF");
     assert(subcmd == "ADDENTITY");
@@ -513,10 +630,9 @@ bool uBrainManager::ProcessDDS_SF_DeleteEntity(string& cmd, string& subcmd,
     int ent_id;
     int sf_id;
     int sess_id;
-    bool isOK;
     stringstream go;
 
-    ent_id = FromString<int> (nvPairs["entid"], isOK);
+    ent_id = FromStringNoChecking<int> (nvPairs["entid"]);
 
     assert(cmd.c_str() == "SF");
     assert(subcmd.c_str() == "DELETEENTITY");
@@ -575,14 +691,13 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
 {
     int sess_id;
     int sf_id;
-    bool isOK;
     stringstream go;
 
     string sfip = nvPairs["sfipaddress"];
     string sfname = nvPairs["sfname"];
 
-    sess_id = FromString<int> (nvPairs["sessid"], isOK);
-    sf_id = FromString<int> (nvPairs["sfid"], isOK);
+    sess_id = FromStringNoChecking<int> (nvPairs["sessid"]);
+    sf_id = FromStringNoChecking<int> (nvPairs["sfid"]);
 
     assert(cmd == "SF");
 
@@ -631,50 +746,7 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
 
     if (subcmd == "ADDSESSION")
     {
-        int ret;
-
-        if (!requiredAttributesPresent(subcmd, nvPairs, "sfid", "sessid"))
-        {
-            cout
-                    << "ERROR: Required attribute 'sfid' and/or 'sessid' not found."
-                    << endl;
-            return false;
-        }
-
-        ret = local.AddSFToSession(sf_id, sess_id, nvPairs["sessname"].c_str());
-
-        switch (ret)
-        {
-        case 0:
-            // All good. Now add via controller
-            // Form command for controller
-            go << "scp create " << sess_id << " " << sf_id;
-
-            // Add the session name if attribute exists.
-            if (nvPairs["sessname"] != "")
-                go << " \"sessname " << nvPairs["sessname"] << "\"";
-
-            cout << "Sending Controller: '" << go.str() << "'" << endl;
-
-            if (!pCtrl->runSingleCommand(go.str().c_str()))
-                return false;
-
-            return true;
-        case DEST_SF_IN_USE:
-            cout << "Warning: SF ADDSESSION -- SFID=" << sf_id
-                    << " already has SessionID=" << sess_id << endl;
-            return true;
-        case ID_NOT_FOUND:
-            cout << "Error: SF ADDSESSION -- SessionID=" << sess_id
-                    << " does not exist." << endl;
-            return false;
-        default:
-            cout << "Error: SF ADDSESSION failed with error code=" << ret
-                    << endl;
-            return false;
-        }
-
-        assert(false);
+        return ProcessDDS_SF_AddSession(cmd, subcmd, nvPairs);
     }
     else if (subcmd == "ADDENTITY")
     {
@@ -697,8 +769,7 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
         }
 
         // Do the local removal and then kill it from the DDS controller.
-        bool bok;
-        local.RemoveSession(FromString<int>(nvPairs["sessid"], bok));
+        local.RemoveSession(FromStringNoChecking<int>(nvPairs["sessid"]));
 
         // Form command for controller
         go << "scp delete " << sess_id;
@@ -717,8 +788,7 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
         }
 
         // Do the local removal and then kill it from the DDS controller.
-        bool bok;
-        local.RemoveSF(FromString<int>(nvPairs["sfid"], bok));
+        local.RemoveSF(FromStringNoChecking<int>(nvPairs["sfid"]));
 
         // Form command for controller
         go << "acp shutdown " << sf_id;
@@ -740,8 +810,7 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
 
         cout << endl << "WAITING FOR SF " << nvPairs["sfid"] << " to become ready..." << endl;
 
-        bool bok;
-        ret = WaitForSFReady(FromString<int>(nvPairs["sfid"],bok), FromString<int>(nvPairs["timeout"], bok));
+        ret = WaitForSFReady(FromStringNoChecking<int>(nvPairs["sfid"]), FromStringNoChecking<int>(nvPairs["timeout"]));
         switch (ret)
         {
         case 0:
@@ -770,8 +839,7 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
 
         cout << endl << "WAITING FOR SESSION=" << nvPairs["sessid"] << " on SF ID=" << nvPairs["sfid"] << " to become ready..." << endl;
 
-        bool bok;
-        ret = WaitForSessionReadyOnSF(FromString<int>(nvPairs["sessid"],bok), FromString<int>(nvPairs["sfid"],bok), FromString<int>(nvPairs["timeout"], bok));
+        ret = WaitForSessionReadyOnSF(FromStringNoChecking<int>(nvPairs["sessid"]), FromStringNoChecking<int>(nvPairs["sfid"]), FromStringNoChecking<int>(nvPairs["timeout"]));
         switch (ret)
         {
         case 0:
@@ -803,13 +871,12 @@ bool uBrainManager::processDDSOriented(string& cmd, string& subcmd, map<string,
 {
     int sess_id;
     int sf_id;
-    bool isOK;
 
     string sfip = nvPairs["sfipaddress"];
     string sfname = nvPairs["sfname"];
 
-    sess_id = FromString<int> (nvPairs["sessid"], isOK);
-    sf_id = FromString<int> (nvPairs["sfid"], isOK);
+    sess_id = FromStringNoChecking<int> (nvPairs["sessid"]);
+    sf_id = FromStringNoChecking<int> (nvPairs["sfid"]);
 
     if (cmd == "STATUS")
     {
@@ -894,7 +961,6 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string,
     int sf_id;
     int ent_id;
     int resx, resy;
-    bool isOK;
 
     string sfip = nvPairs["sfipaddress"];
     string sfname = nvPairs["sfname"];
@@ -902,11 +968,11 @@ bool uBrainManager::processLocal(string& cmd, string& subcmd, map<string,
 
     assert(cmd == "LOCAL");
 
-    sess_id = FromString<int> (nvPairs["sessid"], isOK);
-    sf_id = FromString<int> (nvPairs["sfid"], isOK);
-    ent_id = FromString<int> (nvPairs["entid"], isOK);
-    resx = FromString<int> (nvPairs["resx"], isOK);
-    resy = FromString<int> (nvPairs["resy"], isOK);
+    sess_id = FromStringNoChecking<int> (nvPairs["sessid"]);
+    sf_id = FromStringNoChecking<int> (nvPairs["sfid"]);
+    ent_id = FromStringNoChecking<int> (nvPairs["entid"]);
+    resx = FromStringNoChecking<int> (nvPairs["resx"]);
+    resy = FromStringNoChecking<int> (nvPairs["resy"]);
 
     if (subcmd == "GENERATEKEYPAIR")
     {
@@ -1339,8 +1405,11 @@ void uBrainManager::ReceiveOfferSource(com::xvd::neuron::scp::State* state)
 
     // If session is not listed as part of the sf, then add it as it's obviously involved.
     assert(local.GetSessionInfo(sess_id));
-    if (!local.GetSessionInfo(sess_id)->session_in_these_sfs[sf_id])
-        local.AddSFToSession(sf_id, sess_id, "Auto(errant?)-Added-Session");
+    if (!local.GetSessionInfo(sess_id)->SessionInfoOnSF[sf_id])
+    {
+        int wan_id = this->GetNewGlobalWANID();
+        local.AddSFToSession(sf_id, sess_id, wan_id, "Auto(errant?)-Added-Session");
+    }
 
     // Now the SourceInfo must be added to the session's list
     ret = local.AddSourceToSession(sess_id, sf_id, ent_id, buf);
