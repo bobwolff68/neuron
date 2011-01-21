@@ -127,7 +127,8 @@ class SessionLeader : public EventHandlerT<SessionLeader>, public ThreadSingle
 
 	public:
 
-		SessionLeader(IDType,IDType,const char *,int,int);
+		SessionLeader(IDType,IDType,const char *,int,int,map<string,string> &,
+							 map<string,DDS_Boolean> &,map<int,string> &);
 		~SessionLeader();
 
 		IDType	GetId(void)			{ return id; }

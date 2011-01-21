@@ -54,17 +54,15 @@ class MediaParticipant
                     {
                         for(int i=0; i<seqDisc.length(); i++)
                         {
+                            cout << PartName << "has discovered: " << seqDisc[i].participant_name.name << endl;
                             if(seqInfo[i].valid_data)
                             {
                                 int                     discSessionId;
                                 DDS_Property_t         *pSessIdProperty = NULL;
 
-                                //cout << "Discovered participant: " << seqDisc[i].participant_name.name << endl;
-
                                 pSessIdProperty = DDSPropertyQosPolicyHelper::lookup_property(seqDisc[i].property,"sessionId");
                                 if(pSessIdProperty!=NULL)
                                 {
-                                    //cout << "Session ID: " << pSessIdProperty->value << ",Current: " << sessionId << endl;
                                     sscanf(pSessIdProperty->value,"%d",&discSessionId);
                                     if(discSessionId!=sessionId)
                                     {
@@ -81,30 +79,12 @@ class MediaParticipant
                                 }
                                 else
                                 {
-                                    //Ignore control plane participants
-                                    /*stringstream    sstream;
-                                    string          PartName;
-                                    char            buf[100];
-
-                                    sstream << seqDisc[i].participant_name.name;
-                                    sstream.getline(buf,99,':');
-                                    sstream.getline(buf,99,':');
-                                    sstream.getline(buf,99,':');
-                                    PartName = buf;
-
-                                    if(PartName=="ACPMaster"||PartName=="ACPSlave"||PartName=="SCPMaster"||
-                                       PartName=="SCPSlave"||PartName=="LSCPMaster"||PartName=="LSCPSlave"||
-                                       PartName=="ACP")
-                                    {*/
-                                        //cout << "Ignoring control plane participant "
-                                        //     << seqDisc[i].participant_name.name << "..." << endl;
-                                        retCode = pDomParticipant->ignore_participant(seqInfo[i].instance_handle);
-                                        if(retCode!=DDS_RETCODE_OK)
-                                        {
-                                            cout << "BuiltinListener::on_data_available(): Ignore error" << endl;
-                                            exit(0);
-                                        }
-                                    //}
+                                    retCode = pDomParticipant->ignore_participant(seqInfo[i].instance_handle);
+                                    if(retCode!=DDS_RETCODE_OK)
+                                    {
+                                        cout << "BuiltinListener::on_data_available(): Ignore error" << endl;
+                                        exit(0);
+                                    }
                                 }
                             }
                         }
@@ -160,9 +140,34 @@ class MediaParticipant
             return;
         }
 
+        void SetPropertyQosPolicy(DDS_PropertyQosPolicy &propertyQos,
+                                  map<string,string> &PropertyPairs,
+                                  map<string,DDS_Boolean> &PropagateDiscoveryFlags
+                                 )
+        {
+            DDS_ReturnCode_t retCode;
+            
+            for(map<string,string>::iterator it=PropertyPairs.begin(); it!=PropertyPairs.end(); it++)
+            {
+                cout << "Adding Property (" << it->first << " = " << it->second << endl;
+                retCode = DDSPropertyQosPolicyHelper::add_property(propertyQos,it->first.c_str(),
+                          it->second.c_str(),PropagateDiscoveryFlags[it->first]);
+                if(retCode!=DDS_RETCODE_OK)
+                {
+                    
+                    cout << "MediaParticipant::AddProperties(): Failed to add "
+                         << it->first << "=" << it->second << endl;
+                    exit(0);
+                }            
+            }
+        }
+
+
     public:
 
-        MediaParticipant(int domainId,int sessionId,const char *sessionName)
+        MediaParticipant(int domainId,int sessionId,const char *sessionName,
+                         map<string,string> &PropertyPairs,
+                         map<string,DDS_Boolean> &PropagateDiscoveryFlags)
         {
             string                                      PartName(sessionName);
             const char                                 *typeName;
@@ -192,9 +197,12 @@ class MediaParticipant
 
             //Set participant name
             partQos.participant_name.name = DDS_String_dup(PartName.c_str());
-
+            
             //Discovery data
             ConfigDiscovery(partQos);
+
+            //Add Properties
+            SetPropertyQosPolicy(partQos.property,PropertyPairs,PropagateDiscoveryFlags);
 
             //Create domain participant
             pDomParticipant = pPartFactory->create_participant(domainId,partQos,NULL,DDS_STATUS_MASK_NONE);
@@ -269,6 +277,11 @@ class MediaParticipant
                 cout << "MediaParticipant::AddTopic(): Can't add topic '" << topicName << "'" << endl;
                 exit(0);
             }
+        }
+
+inline  bool AddPeer(const char *peerDesc)
+        {
+            return (pDomParticipant->add_peer(peerDesc)==DDS_RETCODE_OK);
         }
 
 inline  DDSDomainParticipant *GetDomParticipant(void)

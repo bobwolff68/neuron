@@ -4,7 +4,10 @@
 #include "sessionleader.h"
 
 SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *nameParam,int domIdParam,
-							 int ownerIdParam) : EventHandlerT<SessionLeader>(),ThreadSingle()
+							 int ownerIdParam,map<string,string> &PropertyPairsMedia,
+							 map<string,DDS_Boolean> &PropagateDiscoveryFlagsMedia,
+							 map<int,string> &PeerDescListMedia):
+EventHandlerT<SessionLeader>(),ThreadSingle()
 {
 	DDS_ReturnCode_t	retCode;
 	char				LSCPSlaveName[100];
@@ -46,10 +49,25 @@ SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *namePa
     metrics = com::xvd::neuron::lscp::MetricsTypeSupport::create_data();
 
     //Init media plane
-    pMediaParticipant = new MediaParticipant(domIdParam,sessionId,name);
+    pMediaParticipant = new MediaParticipant(domIdParam,sessionId,name,PropertyPairsMedia,
+                                             PropagateDiscoveryFlagsMedia);
     MEDIA_TOPIC_NAME(topicName,"video_",sessionId);
     pMediaParticipant->AddTopic("video",topicName);
-
+    for(map<int,string>::iterator it=PeerDescListMedia.begin(); it!=PeerDescListMedia.end(); it++)
+    {
+        cout << "Adding Peer: " << it->second << endl;
+        pMediaParticipant->AddPeer(it->second.c_str());
+    }
+    
+    if(id==11555)
+    {
+        cout << "Adding Peer: 4@wan://::20:1.1.1.1" << endl;
+        if(pMediaParticipant->AddPeer("4@wan://::20:1.1.1.1"))
+            cout << "Successful" << endl;
+    }   
+    
+    cout << "Sleeping for 10 seconds..." << endl;
+    usleep(10000000);
     SetStateStandby();
 }
 

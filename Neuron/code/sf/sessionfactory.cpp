@@ -2,6 +2,44 @@
 #include <unistd.h>
 #include "sessionfactory.h"
 
+//-------------------------------- LOCAL SCOPE FUNCTIONS -------------------------------------------
+bool GetPeerDescListFromPeerList(string &Value,map<int,string> &MediaPeerDescList)
+{
+    char            buf[100];
+    bool            isOk;
+    int             peerWanId;
+    string          PeerMaxPartIdxStr;
+    string          PeerWanIdStr;
+    stringstream    liststream;
+    
+    
+    liststream << Value;
+    while(liststream.good())
+    {
+        string  WanDescriptor = "";
+        
+        liststream.getline(buf,99,'~');
+        PeerWanIdStr = buf;
+        peerWanId = FromString<int>(PeerWanIdStr,isOk);
+        if(!liststream.good())    return false;
+        if(!isOk)   return false;
+        
+        liststream.getline(buf,99,'~');
+        PeerMaxPartIdxStr = buf;
+        FromString<int>(PeerMaxPartIdxStr,isOk);
+        if(!isOk)   return false;
+
+        WanDescriptor += (PeerMaxPartIdxStr+"@wan://::");
+        WanDescriptor += (PeerWanIdStr+":1.1.1.1");
+        MediaPeerDescList[peerWanId] = WanDescriptor;
+        cout << "Descriptor: " << WanDescriptor << endl;
+    }
+    
+    return true;
+}
+
+
+//-------------------------------- SESSION FACTORY MEMBERS -----------------------------------------
 SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType ownerIdParam,
 							   int domId,map<string,string> &nvPairs)
 : EventHandlerT<SessionFactory>(),ThreadSingle()
@@ -133,7 +171,39 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
 				else
 				{
 					// Creating a new RemoteSessionSF Object will create an SL for that session
-					stringstream    sstream;
+					string              SessionName = "";
+					map<string,string>  PropertyPairsMedia;
+                    map<string,DDS_Boolean>  PropagateDiscoveryFlagsMedia;
+                    map<int,string>     PeerDescListMedia;
+                    
+                    if(
+                        ProcessScriptOnNewSession((const char *)pNewSessEvt->GetData()->script,
+                                                  SessionName,PropertyPairsMedia,
+                                                  PropagateDiscoveryFlagsMedia,
+                                                  PeerDescListMedia)
+                      )
+                    {
+                        if(SessionName=="")
+                        {
+                            SessionName = "SF(";
+					        SessionName += (ToString<int>(id)+")=>SL(");
+					        SessionName += (ToString<int>(pSCSlaveObjLocal->GetSessionId())+")");
+    					    cout << "Session name unspecified, using default: "
+    					         << SessionName << endl;
+                        }
+                        
+                        pSession = new RemoteSessionSF(pSCSlave,pSCSlaveObjLocal,pLSCMaster,
+                                                       domId,id,SessionName.c_str(),
+                                                       PropertyPairsMedia,
+                                                       PropagateDiscoveryFlagsMedia,
+                                                       PeerDescListMedia,NEW_SL_THREAD);
+					    SessionList[pSession->GetId()] = pSession;
+					    std::cout << SF_LOG_PROMPT(id) << ": New Session(" << pSession->GetId() <<
+						      ")" << endl;
+                    }
+                    else
+                        cout << "Error processing session init script, aborting..." << endl;
+					/*stringstream    sstream;
 					string          Token;
 
 					sstream << pNewSessEvt->GetData()->script;
@@ -159,7 +229,7 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
 												   Token.c_str(),NEW_SL_THREAD);
 					SessionList[pSession->GetId()] = pSession;
 					std::cout << SF_LOG_PROMPT(id) << ": New Session(" << pSession->GetId() <<
-						")" << endl;
+						")" << endl;*/
 				}
 			}
 		}
@@ -310,3 +380,51 @@ void SessionFactory::EventHandleLoop(void)
 
 	return;
 }
+
+bool SessionFactory::ProcessScriptOnNewSession(const char *script,string &SessionName,
+                                               map<string,string> &PropertyPairs,
+                                               map<string,DDS_Boolean> &PropagateDiscoveryFlags,
+                                               map<int,string> &MediaPeerDescList)
+{
+    string          Name;
+    string          Value;
+    stringstream    scriptstream;
+    
+    scriptstream << script;
+    cout << "New session init script: " << script << endl;
+
+    // Kill leading double-quote
+    if (scriptstream.peek()=='"')
+    	scriptstream.get();
+    
+    while(scriptstream.good())
+    {
+        scriptstream >> Name;
+	if (!scriptstream.good())
+		return false;
+
+        scriptstream >> Value;
+        
+	// Look out for trailing double-quote in value.
+	if (Value.rfind('"')!=string::npos)
+		Value = Value.substr(0, Value.length()-1);
+
+        if(Name=="sessname")
+        {    
+            SessionName = Value;
+            cout << "SessionName: " << Value << endl;
+        }
+        else if(Name=="mediawanid")
+        {
+            PropertyPairs["dds.transport.wan_plugin.wan.transport_instance_id"] = Value;
+	        PropagateDiscoveryFlags["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	        cout << "MediaWanId: " << Value << endl;
+	    }
+	    else if(Name=="mediapeers")
+	        if(!GetPeerDescListFromPeerList(Value,MediaPeerDescList))
+	            return false;
+   }
+   
+   return true;
+}
+

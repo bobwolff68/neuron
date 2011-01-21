@@ -11,6 +11,7 @@
 #define SESSIONFACTORY_H_
 
 #include <string.h>
+#include <sstream>
 #include "ndds_cpp.h"
 #include "neuroncommon.h"
 #include "controlplane.h"
@@ -69,7 +70,9 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 
 			RemoteSessionSF(SCPSlave *pSCSlaveParam,SCPSlaveObject *pSCSlaveObjParam,
 					  		LSCPMaster *pLSCMasterParam,int domIdParam,int ownerIdParam,
-					  		const char *nameParam,int slCreateMode)
+					  		const char *nameParam,map<string,string> &PropertyPairsMedia,
+							 map<string,DDS_Boolean> &PropagateDiscoveryFlagsMedia,
+							 map<int,string> &PeerDescListMedia,int slCreateMode)
 			{
 				ownerId = ownerIdParam;
 				pSCSlave = pSCSlaveParam;
@@ -96,7 +99,9 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 				// Create a new SL
 				if(slCreateMode==NEW_SL_THREAD)
 				{
-					slRef.pSL = new SessionLeader(ownerId,GetId(),nameParam,domIdParam,ownerId);
+					slRef.pSL = new SessionLeader(ownerId,GetId(),nameParam,domIdParam,ownerId,
+					                              PropertyPairsMedia,PropagateDiscoveryFlagsMedia,
+					                              PeerDescListMedia);
 					(slRef.pSL)->startThread();
 				}
 				else
@@ -268,7 +273,9 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
     	com::xvd::neuron::acp::Event   *acEvent;
     	com::xvd::neuron::acp::Metrics *acMetrics;
 
-		void	EventHandleLoop (void);
+		void	EventHandleLoop             (void);
+		bool    ProcessScriptOnNewSession   (const char *,string &,map<string,string> &,
+                                             map<string,DDS_Boolean> &,map<int,string> &);
 
 		/******** Event Handle Functions ************/
 
