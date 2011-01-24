@@ -239,17 +239,43 @@ bool Shell::parseAttributes(const char* inputstr)
 
 		// If next char is '"', we must eat all '"' if more than one and then read until '"'
 		// else just read till next space.
+		bool isSingleQuote=false;
+		bool isDoubleQuote=false;
+		char outerQuote;
+		char innerQuote;
+
+		//
+		// We now support attribute values enclosed in double-quotes (") as well as single-quotes (')
+		// Additionally, within the quoted string, the opposing quote style can be used as a double-quote
+		// Examples:
+		//  LOCAL CONTROLLERDIRECT command="scp create 1001 6000 'sessname NameHere'"
+		// is equal to...
+        //  LOCAL CONTROLLERDIRECT command='scp create 1001 6000 "sessname NameHere"'
+		//
 		if (input.peek()=='\"')
 		{
-			while (input.peek()=='\"')
+		    isDoubleQuote = true;
+		    outerQuote = '\"';
+		    innerQuote = '\'';
+		}
+		else if (input.peek()=='\'')
+        {
+		    isSingleQuote = true;
+		    outerQuote = '\'';
+		    innerQuote = '\"';
+        }
+
+		if (isDoubleQuote || isSingleQuote)
+		{
+			while (input.peek()==outerQuote)
 			{
 				input.get();
 				if (input.eof())
 					return false;
 			}
 
-			// Now first '"' is read...now read till '"'
-			input.getline(buff, 99, '\"');
+			// Now first quote is read...now read till last matching quote is found.
+			input.getline(buff, 99, outerQuote);
 
 			// Eat all trailing ' ' spaces.
 			while (buff[strlen(buff)-1]==' ')
@@ -257,8 +283,9 @@ bool Shell::parseAttributes(const char* inputstr)
 
 			value = buff;
 
+			// Now - only in the case of outer double-quotes do a search and replace of single quotes to double quotes.
 			// Now look for single quotes and if found, substitute with double-quotes.
-			while(1)
+			while(isDoubleQuote)
 			{
 			    size_t index=0;
 
