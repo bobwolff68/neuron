@@ -94,12 +94,13 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     if (!pCtrl->AddACPMasterPeer(descrStrm.str().c_str()))
         cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's ACP Master." << endl;
 
+    stringstream descrStrm2;
     idClient = FromStringNoChecking<int>(pairs["client_scp_id"]);
-    descrStrm << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
+    descrStrm2 << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
 
-    cout << "INFO: RegistrationComplete: SCP PEER-add: " << descrStrm.str() << endl;
+    cout << "INFO: RegistrationComplete: SCP PEER-add: " << descrStrm2.str() << endl;
 
-    if (!pCtrl->AddSCPMasterPeer(descrStrm.str().c_str()))
+    if (!pCtrl->AddSCPMasterPeer(descrStrm2.str().c_str()))
         cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's SCP Master." << endl;
     cout << "Sleeping for 10 seconds..." << endl;
 	usleep(10000000);
