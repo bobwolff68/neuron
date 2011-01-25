@@ -102,8 +102,8 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
 
     if (!pCtrl->AddSCPMasterPeer(descrStrm2.str().c_str()))
         cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's SCP Master." << endl;
-    cout << "Sleeping for 10 seconds..." << endl;
-	usleep(10000000);
+//    cout << "Sleeping for 10 seconds..." << endl;
+//	usleep(10000000);
 
     // TODO - Fill in and correlate all registry data -- and create internal SF for endpoints.
 
