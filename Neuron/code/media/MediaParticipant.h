@@ -54,7 +54,7 @@ class MediaParticipant
                     {
                         for(int i=0; i<seqDisc.length(); i++)
                         {
-                            cout << PartName << "has discovered: " << seqDisc[i].participant_name.name << endl;
+                            //cout << PartName << "has discovered: " << seqDisc[i].participant_name.name << endl;
                             if(seqInfo[i].valid_data)
                             {
                                 int                     discSessionId;
@@ -100,6 +100,7 @@ class MediaParticipant
     private:
 
         int                             sessionId;
+        string                          PartName;
         DDSDomainParticipantFactory    *pPartFactory;
         DDSDomainParticipant           *pDomParticipant;
         map<string,DDSTopic*>           Topics;
@@ -181,6 +182,7 @@ class MediaParticipant
             this->sessionId = sessionId;
             pDomParticipant = NULL;
             PartName += "::Media";
+            this->PartName = PartName;
 
             pPartFactory = DDSDomainParticipantFactory::get_instance();
 
@@ -284,6 +286,57 @@ inline  bool AddPeer(const char *peerDesc)
             return (pDomParticipant->add_peer(peerDesc)==DDS_RETCODE_OK);
         }
 
+        bool AddPeersAndWaitForDiscovery(map<int,string> &PeerDescList,int timeOutMillisecs)
+        {
+            DDS_ParticipantBuiltinTopicData partData;
+            DDS_InstanceHandleSeq           seqPartHandles;
+            DDS_ReturnCode_t                retCode;
+
+            //Add peers
+            cout << "======= " << PartName << "'S PEERS ========" << endl;            
+            for(map<int,string>::iterator it=PeerDescList.begin(); it!=PeerDescList.end(); it++)
+            {
+                cout << PartName << " is adding peer '" << it->second << "':";
+                if(AddPeer(it->second.c_str()))
+                    cout << "success..." << endl;
+                else
+                {
+                    cout << "failure..." << endl;
+                    return false;
+                }
+            }
+            
+            //Wait for peers to be discovered
+            cout << PartName << " is waiting for peers to be discovered..." << endl;
+            for(int i=0; i<10; i++)
+            {
+                usleep(1000*(timeOutMillisecs/10));
+                
+                retCode = pDomParticipant->get_discovered_participants(seqPartHandles);
+                if(retCode!=DDS_RETCODE_OK)
+                {
+                    cout << PartName << ": Unable to get discovered participants' instance handles" << endl;
+                    return false;
+                }
+                
+                cout << "======= " << PartName << "'S DISCOVERED PARTICIPANTS(" << i+1 << ") ========" << endl;
+                for(int j=0; j<seqPartHandles.length(); j++)
+                {
+                    retCode = pDomParticipant->get_discovered_participant_data(partData,seqPartHandles[j]);
+                    if(retCode!=DDS_RETCODE_OK)
+                    {
+                        cout << PartName << ": Unable to get discovered participant's data" << endl;
+                        return false;
+                    }
+                    else
+                        cout << partData.participant_name.name << ",";
+                }
+                cout << endl;
+            }
+            
+            return true;
+        }
+        
 inline  DDSDomainParticipant *GetDomParticipant(void)
         {
             return pDomParticipant;

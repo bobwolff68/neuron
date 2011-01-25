@@ -53,21 +53,19 @@ EventHandlerT<SessionLeader>(),ThreadSingle()
                                              PropagateDiscoveryFlagsMedia);
     MEDIA_TOPIC_NAME(topicName,"video_",sessionId);
     pMediaParticipant->AddTopic("video",topicName);
-    for(map<int,string>::iterator it=PeerDescListMedia.begin(); it!=PeerDescListMedia.end(); it++)
+    pMediaParticipant->AddPeersAndWaitForDiscovery(PeerDescListMedia,10000);
+    /*for(map<int,string>::iterator it=PeerDescListMedia.begin(); it!=PeerDescListMedia.end(); it++)
     {
         cout << "Adding Peer: " << it->second << endl;
         pMediaParticipant->AddPeer(it->second.c_str());
     }
     
-    if(id==11555)
+    if(!PeerDescListMedia.empty())
     {
-        cout << "Adding Peer: 4@wan://::20:1.1.1.1" << endl;
-        if(pMediaParticipant->AddPeer("4@wan://::20:1.1.1.1"))
-            cout << "Successful" << endl;
-    }   
+        cout << "Sleeping for 10 seconds..." << endl;
+        usleep(10000000);
+    }*/
     
-    cout << "Sleeping for 10 seconds..." << endl;
-    usleep(10000000);
     SetStateStandby();
 }
 

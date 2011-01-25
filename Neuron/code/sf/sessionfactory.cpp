@@ -62,7 +62,12 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	ownerId = ownerIdParam;
 
 
-    //If debug dds libs used, set verbosity high
+// Set to WARNING status messages
+    NDDSConfigLogger::get_instance()->
+        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
+                                  NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+
+//If debug dds libs used, set verbosity high
     //NDDSConfigLogger::get_instance()->
     //    set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
     //                              NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
