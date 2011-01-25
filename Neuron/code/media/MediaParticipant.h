@@ -294,11 +294,6 @@ inline  bool AddPeer(const char *peerDesc)
 
             //Add peers
             cout << "======= " << PartName << "'S PEERS ========" << endl;            
-            
-            //Wait for peers to be discovered
-            cout << PartName << " is waiting for peers to be discovered..." << endl;
-            for(int i=0; i<10; i++)
-            {
             for(map<int,string>::iterator it=PeerDescList.begin(); it!=PeerDescList.end(); it++)
             {
                 cout << PartName << " is adding peer '" << it->second << "':";
@@ -310,6 +305,11 @@ inline  bool AddPeer(const char *peerDesc)
                     return false;
                 }
             }
+            
+            //Wait for peers to be discovered
+            cout << PartName << " is waiting for peers to be discovered..." << endl;
+            for(int i=0; i<10; i++)
+            {
                 usleep(1000*(timeOutMillisecs/10));
                 
                 retCode = pDomParticipant->get_discovered_participants(seqPartHandles);
