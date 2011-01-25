@@ -20,6 +20,9 @@ extern string stunserver;
 extern string startupscript;
 extern string logoutfile;
 
+//
+// Note that these IDs and strings are in **HEX** but *MUST NOT* have leading "0x" in the string.
+//
 #define UBRAIN_WAN_ACPID 2
 #define UBRAIN_WAN_ACPID_STR "2"
 #define UBRAIN_WAN_SCPID 1

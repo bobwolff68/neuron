@@ -68,10 +68,10 @@ bool uBrainManager::GetUniqueEntityID(int& entIdOut)
 ///
 bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
 {
-    string descr;
     string cmd, subcmd;
     map < string, string > nvP;
     int sfid;
+    int idClient;
 
     if (isEP)
         sfid = FromStringNoChecking<int>(pairs["ep_sf_id"]);
@@ -84,20 +84,22 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     // Setup acp and scp wan id's in the controller for the newly added client/sf.
     //
 
-    descr = "1@wan://::" + pairs["client_acp_id"];
-    descr += ":1.1.1.1";
+    stringstream descrStrm;
 
-    cout << "INFO: RegistrationComplete: ACP PEER-add: " << descr << endl;
+    idClient = FromStringNoChecking<int>(pairs["client_acp_id"]);
+    descrStrm << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
 
-    if (!pCtrl->AddACPMasterPeer(descr.c_str()))
+    cout << "INFO: RegistrationComplete: ACP PEER-add: " << descrStrm.str() << endl;
+
+    if (!pCtrl->AddACPMasterPeer(descrStrm.str().c_str()))
         cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's ACP Master." << endl;
 
-    descr = "1@wan://::" + pairs["client_scp_id"];
-    descr += ":1.1.1.1";
+    idClient = FromStringNoChecking<int>(pairs["client_scp_id"]);
+    descrStrm << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
 
-    cout << "INFO: RegistrationComplete: SCP PEER-add: " << descr << endl;
+    cout << "INFO: RegistrationComplete: SCP PEER-add: " << descrStrm.str() << endl;
 
-    if (!pCtrl->AddSCPMasterPeer(descr.c_str()))
+    if (!pCtrl->AddSCPMasterPeer(descrStrm.str().c_str()))
         cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's SCP Master." << endl;
     cout << "Sleeping for 10 seconds..." << endl;
 	usleep(10000000);
@@ -542,13 +544,6 @@ bool uBrainManager::ProcessDDS_SF_AddEntity(string& cmd, string& subcmd, map<str
             cout << "ERROR: Required attribute 'srcentid' missing." << endl;
             return false;
         }
-
-/*
- * TODO - RMW-WAN
-connect entid=2345 peer=wan:alsdkfas
-connect entid=6789 peer=wan:dslafkjsdlk
-connect sessid=sdf sfid=sdfs peer=wan:sadfsd
-*/
 
         ret = local.AddEntity(ent_id, sf_id, sess_id,
                 local.entTypeMap[enttype], entname.c_str(), resx, resy,

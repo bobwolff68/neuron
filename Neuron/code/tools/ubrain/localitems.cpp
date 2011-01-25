@@ -371,11 +371,15 @@ int LocalItems::AddSFInternally(int sfID, const char* ip, int acpID, int scpID, 
 int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const char* usernameAt)
 {
     string userString;
+    string sfname;
 
     userString = usernameAt;
+    sfname = name;
+    if (sfname=="")
+        sfname="GenericSF";
 
 	int ret;
-	ret = AddSFInternally(sfID, ip, -1, -1, name, false);
+	ret = AddSFInternally(sfID, ip, -1, -1, sfname.c_str(), false);
 	if (ret)
 		return ret;
 
@@ -390,8 +394,7 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const ch
 	// TODO *MUST* Change commandline on 'sf' and get a REAL owner_id for the parent instead of '0'
 	//
 
-	string namecheck(name); //
-	if (namecheck.find(" ") != string::npos)
+	if (sfname.find(" ") != string::npos)
 	{
 		cout << "Illegal name given. No spaces allowed." << endl;
 		return GENERIC_ERROR;
@@ -406,7 +409,7 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const ch
     extracmd << " rm /tmp/sf_out" << sfID << ".log >/dev/null 2>&1;";
 #endif
 
-    sshnow << "ssh " << userString << ip << " \"source .bashrc;" << extracmd.str() << "./bin/sf " << sfID << " " << name << " 0 67 " << regServerPublic << " ";
+    sshnow << "ssh " << userString << ip << " \"source .bashrc;" << extracmd.str() << "./bin/sf " << sfID << " " << sfname << " 0 67 " << regServerPublic << " ";
 
 #ifdef LOGSF_OUT
 	sshnow << " </dev/null >>/tmp/sf_out" << sfID << ".log 2>&1 &\"";
