@@ -29,8 +29,13 @@ bool GetPeerDescListFromPeerList(string &Value,map<int,string> &MediaPeerDescLis
         FromString<int>(PeerMaxPartIdxStr,isOk);
         if(!isOk)   return false;
 
+	//Convert Peer Wan ID to hex.
+	stringstream int2hexstream;
+	int2hexstream << hex << FromString<int>(PeerWanIdStr,isOk);
+	if(!isOk)   return false;
+
         WanDescriptor += (PeerMaxPartIdxStr+"@wan://::");
-        WanDescriptor += (PeerWanIdStr+":1.1.1.1");
+        WanDescriptor += (int2hexstream.str()+":1.1.1.1");
         MediaPeerDescList[peerWanId] = WanDescriptor;
         cout << "Descriptor: " << WanDescriptor << endl;
     }
