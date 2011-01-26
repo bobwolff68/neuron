@@ -1589,3 +1589,8 @@ int uBrainManager::WaitForSessionReadyOnSF(int sessid, int sfid, int timeInms)
 
     return TIMEOUT;
 }
+
+int uBrainManager::AddSFInternally(int sfID, const char* ip, int acpID, int scpID, const char* name, bool isEP)
+{
+    return local.AddSFInternally(sfID, ip, acpID, scpID, name, isEP);
+}

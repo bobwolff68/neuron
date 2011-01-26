@@ -30,6 +30,7 @@ public:
 	bool ProcessDDS_SF_ChangeConnection(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool ProcessDDS_SF_DeleteEntity(string& cmd, string& subcmd, map<string, string> & nvPairs);
 	bool RefreshSourcesOnSession(int sessID);
+	int AddSFInternally(int sfID, const char* ip, int acpID, int scpID, const char* name, bool isEP);
 
 	// Callback items
 	void NewSFDetected(int id);

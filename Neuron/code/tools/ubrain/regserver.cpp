@@ -197,7 +197,7 @@ bool RegServer::HConnection(int csock)
 	char clientIpAddress[INET6_ADDRSTRLEN];
 	int bytesRead;
 	char request[100];
-	int temp_gid;
+	int temp_acp_gid, temp_scp_gid;
 
 	stringstream header;
 	string headerString;
@@ -266,11 +266,12 @@ bool RegServer::HConnection(int csock)
 	}
 
 	respvalues["client_pub_ip"]=clientIpAddress;
+    respvalues["ep_friendly_name"] = reqParameters["ep_friendly_name"];
 
-	temp_gid = theBrain->GetNewGlobalWANID();
-	respvalues["client_scp_id"] = ToString<int>(temp_gid);
-    temp_gid = theBrain->GetNewGlobalWANID();
-    respvalues["client_acp_id"] = ToString<int>(temp_gid);
+	temp_scp_gid = theBrain->GetNewGlobalWANID();
+	respvalues["client_scp_id"] = ToString<int>(temp_scp_gid);
+    temp_acp_gid = theBrain->GetNewGlobalWANID();
+    respvalues["client_acp_id"] = ToString<int>(temp_acp_gid);
 
 	// Prep the 'static' and recently determined items.
 	AddToStream(body, "client_pub_ip");
@@ -284,6 +285,14 @@ bool RegServer::HConnection(int csock)
         AddToStream(body, "ep_sf_id");
 
 	bodyString = body.str();
+
+	//
+	// Prior to sending back all the info to finalize the 'new' of SessionFactory, we need
+	// to make sure our local database already has the SF initialized for state updates
+	// to be received potentially VERY soon.
+	//
+	if (bIsEndpoint)
+	    theBrain->AddSFInternally(sf_id, respvalues["client_pub_ip"].c_str(), temp_acp_gid, temp_scp_gid, respvalues["ep_friendly_name"].c_str(), bIsEndpoint);
 
 	cout << "INFO: RegServer: Full body sending back to client:" << endl << bodyString << endl;
 
@@ -311,8 +320,6 @@ bool RegServer::HConnection(int csock)
 	// GlobalID-1 is used since it was post-incremented above for safety.
 	// And the actual 'globalID' is not used for safety in case it has been changed already.
 	// TODO
-
-	respvalues["ep_friendly_name"] = reqParameters["ep_friendly_name"];
 
 	theBrain->RegistrationComplete(respvalues, bIsEndpoint);
 
