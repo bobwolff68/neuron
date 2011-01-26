@@ -630,8 +630,8 @@ bool uBrainManager::ProcessDDS_SF_DeleteEntity(string& cmd, string& subcmd,
 
     ent_id = FromStringNoChecking<int> (nvPairs["entid"]);
 
-    assert(cmd.c_str() == "SF");
-    assert(subcmd.c_str() == "DELETEENTITY");
+    assert(cmd == "SF");
+    assert(subcmd == "DELETEENTITY");
 
     if (!requiredAttributesPresent(subcmd, nvPairs, "entid"))
     {
@@ -1536,8 +1536,12 @@ int uBrainManager::WaitForSFReady(int sfid, int timeInms)
     // Now it's inserted, simply wait for the prescribed time in 100ms increments until valid or timeout
     while (waited < timeInms * 1000)
     {
+        assert(local.GetSFInfo(sfid));
+
         if (local.GetCurSFState(sfid)==com::xvd::neuron::OBJECT_STATE_READY)
             return 0;
+        else if (waited % 500000 == 0)
+            cout << "SF State on " << sfid << " is currently " << (int)local.GetCurSFState(sfid) << endl;
 
         usleep(usInterval);
 
