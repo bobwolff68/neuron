@@ -167,7 +167,7 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
         nvP["sfid"] = ToString<int>(sfid);
         // TODO - Hardwired session id 1001 must be removed.
         nvP["sessid"] = ToString<int> (1001);
-        nvP["timeout"] = "25000";
+        nvP["timeout"] = "35000";
         processDDS_SF(cmd, subcmd, nvP);
     }
 
@@ -804,7 +804,7 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
             return false;
         }
 
-        cout << endl << "WAITING FOR SF " << nvPairs["sfid"] << " to become ready..." << endl;
+        cout << endl << "WAITING FOR SF " << nvPairs["sfid"] << " to become ready...(timeout=" << nvPairs["timeout"] << ")" << endl;
 
         ret = WaitForSFReady(FromStringNoChecking<int>(nvPairs["sfid"]), FromStringNoChecking<int>(nvPairs["timeout"]));
         switch (ret)
@@ -817,6 +817,9 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
             break;
         case ID_IN_USE:
             cout << endl << "**FAILURE** -- WaitForSFReady command - SF ID already being waited for." << endl << endl;
+            break;
+        case ID_NOT_FOUND:
+            cout << endl << "**FAILURE** -- WaitForSFReady command - SF ID is not in local database. ID_NOT_FOUND." << endl << endl;
             break;
         default:
             cout << "***ERROR*** - WaitForSFReady command - Unknown return code=" << ret << endl;
@@ -833,7 +836,7 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
             return false;
         }
 
-        cout << endl << "WAITING FOR SESSION=" << nvPairs["sessid"] << " on SF ID=" << nvPairs["sfid"] << " to become ready..." << endl;
+        cout << endl << "WAITING FOR SESSION=" << nvPairs["sessid"] << " on SF ID=" << nvPairs["sfid"] << " to become ready...(timeout=" << nvPairs["timeout"] << ")" << endl;
 
         ret = WaitForSessionReadyOnSF(FromStringNoChecking<int>(nvPairs["sessid"]), FromStringNoChecking<int>(nvPairs["sfid"]), FromStringNoChecking<int>(nvPairs["timeout"]));
         switch (ret)
@@ -846,6 +849,12 @@ bool uBrainManager::processDDS_SF(string& cmd, string& subcmd, map<string,
             break;
         case ID_IN_USE:
             cout << endl << "**FAILURE** -- WaitForSessionReadyOnSF command - SF ID already being waited for." << endl << endl;
+            break;
+        case DEST_SF_NOT_FOUND:
+            cout << endl << "**FAILURE** -- WaitForSessionReadyOnSF command - SF ID was not in local database. DEST_SF_NOT_FOUND." << endl << endl;
+            break;
+        case DEST_SESS_NOT_FOUND:
+            cout << endl << "**FAILURE** -- WaitForSessionReadyOnSF command - SessID was not found for SF. DEST_SESS_NOT_FOUND." << endl << endl;
             break;
         default:
             cout << "***ERROR*** - WaitForSessionReadyOnSF command - Unknown return code=" << ret << endl;
@@ -1456,7 +1465,7 @@ void uBrainManager::NewSFState(com::xvd::neuron::acp::State* state)
       com::xvd::neuron::OBJECT_STATE_DELETED,
     */
 
-//    cout << "***New SF State for SFID=" << state->srcId << " with state->state = " << state->state << endl;
+    cout << "Callback from Controller::***New SF State for SFID=" << state->srcId << " with state->state = " << state->state << endl;
 
     // No matter what the state->state is...update the sf to which it belongs.
     if (!state->state == com::xvd::neuron::OBJECT_STATE_DELETE && !state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
@@ -1487,7 +1496,7 @@ void uBrainManager::NewSessionState(com::xvd::neuron::scp::State* state)
   com::xvd::neuron::OBJECT_STATE_DELETED,
 */
 
-//    cout << "***New Session State for SFID=" << state->srcId << " in Session=" << state->sessionId << " with state->state = " << state->state << endl;
+    cout << "Callback from Controller::***New Session State for SFID=" << state->srcId << " in Session=" << state->sessionId << " with state->state = " << state->state << endl;
 
     // No matter what the state->state is...update the session on the sf to which it belongs.
     if (!state->state == com::xvd::neuron::OBJECT_STATE_DELETE && !state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
