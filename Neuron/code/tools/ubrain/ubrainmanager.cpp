@@ -113,10 +113,9 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     //
     pSFInfo psf;
     psf = local.GetSFInfo(sfid);
-    if (psf)
+    if (!isEP)
     {
         assert(psf->is_endpoint == false);
-	assert(!isEP);
         assert(psf->acp_slave_wan_id == -1);
         assert(psf->scp_slave_wan_id == -1);
 
@@ -134,16 +133,8 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     }
     else
     {
-//        assert(psf->is_endpoint == true);
-//	assert(isEP);
-        int ret;
-
-        ret = local.AddSFInternally(sfid, pairs["client_pub_ip"].c_str(),
-                FromStringNoChecking<int>(pairs["client_acp_id"]), FromStringNoChecking<int>(pairs["client_scp_id"]),
-                pairs["ep_friendly_name"].c_str(), isEP);
-
-        if (ret)
-            coutdbg << "When adding sfid " << sfid << " internally, returned error=" << ret << endl;
+        // internal SF has already been added via RegServer's completion.
+        assert(local.GetSFInfo(sfid));
 
         // Wait for new SF to become ready/online.
         nvP.clear();
