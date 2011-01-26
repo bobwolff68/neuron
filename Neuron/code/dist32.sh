@@ -1,5 +1,6 @@
 #!/bin/sh
 
+sh distributeone.sh rwolff@207.145.121.125
 sh distributeone.sh rwolff@192.168.46.30
 sh distributeone.sh manjesh@192.168.46.74
 sh distributeone.sh rwolff@192.168.46.73

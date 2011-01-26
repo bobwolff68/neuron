@@ -291,6 +291,15 @@ inline  bool AddPeer(const char *peerDesc)
             DDS_ParticipantBuiltinTopicData partData;
             DDS_InstanceHandleSeq           seqPartHandles;
             DDS_ReturnCode_t                retCode;
+            int                             nDiscParts;
+
+            retCode = pDomParticipant->get_discovered_participants(seqPartHandles);
+            if(retCode!=DDS_RETCODE_OK)
+            {
+                cout << "Unable to get discovered participants' instance handles" << endl;
+                return false;
+            }
+            nDiscParts = seqPartHandles.length();        
 
             //Add peers
             cout << "======= " << PartName << "'s peers ========" << endl;            
@@ -318,7 +327,7 @@ inline  bool AddPeer(const char *peerDesc)
                 }
 
                 cout << "Time elapsed: " << i*timeOutMillisecs/10 << ", Participants discovered: " << seqPartHandles.length() << endl;
-                if(seqPartHandles.length()==PeerDescList.size())
+                if((seqPartHandles.length()-nDiscParts)>=PeerDescList.size())
                 {
                     cout << PartName << "Discovered all participants in " << i*timeOutMillisecs/10 << " msec..." << endl;
                     return true;

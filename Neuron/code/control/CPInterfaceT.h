@@ -416,8 +416,17 @@ public:
     bool AddPeerAndWaitForDiscovery(const char *peer,int timeOutMillisecs)
     {
         DDS_ParticipantBuiltinTopicData partData;
-        DDS_InstanceHandleSeq   seqPartHandles;
-        DDS_ReturnCode_t        retcode;
+        DDS_InstanceHandleSeq           seqPartHandles;
+        DDS_ReturnCode_t                retcode;
+        int                             nDiscParts;
+
+        retcode = pDomainParticipant->get_discovered_participants(seqPartHandles);
+        if(retcode!=DDS_RETCODE_OK)
+        {
+            cout << "Unable to get discovered participants' instance handles" << endl;
+            return false;
+        }
+        nDiscParts = seqPartHandles.length();        
 
         //Add peer
         if(!AddPeer(peer))
@@ -434,7 +443,7 @@ public:
             }
 
             cout << "Time elapsed: " << i*timeOutMillisecs/10 << ", Participants discovered: " << seqPartHandles.length() << endl;
-            if(seqPartHandles.length()==1)
+            if(seqPartHandles.length()>nDiscParts)
             {
                 cout << "Discovered participant in " << i*timeOutMillisecs/10 << " msec..." << endl;
                 return true;
