@@ -22,7 +22,7 @@
 
 using namespace std;
 
-#define coutdbg cout << __PRETTY_FUNCTION__
+#define coutdbg cout << __PRETTY_FUNCTION__ << "::"
 
 /// \brief FromString<> is a template for converting the frontmost 'word' of a string
 ///        into the template type. It also allows for failure via the boolean flag.

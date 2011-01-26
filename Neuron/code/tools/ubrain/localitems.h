@@ -24,7 +24,7 @@
 class SFInfo
 {
 public:
-	SFInfo() { num_sessions=0; };
+	SFInfo() { num_sessions=0; curSFState=com::xvd::neuron::OBJECT_STATE_STANDBY; };
 	virtual ~SFInfo() { };
 	int sf_id;
     int acp_slave_wan_id;       // Global ID for each SF for the STUN connection

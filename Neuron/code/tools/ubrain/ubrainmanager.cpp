@@ -136,10 +136,14 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     {
 //        assert(psf->is_endpoint == true);
 //	assert(isEP);
+        int ret;
 
-        local.AddSFInternally(sfid, pairs["client_pub_ip"].c_str(),
+        ret = local.AddSFInternally(sfid, pairs["client_pub_ip"].c_str(),
                 FromStringNoChecking<int>(pairs["client_acp_id"]), FromStringNoChecking<int>(pairs["client_scp_id"]),
                 pairs["ep_friendly_name"].c_str(), isEP);
+
+        if (ret)
+            coutdbg << "When adding sfid " << sfid << " internally, returned error=" << ret << endl;
 
         // Wait for new SF to become ready/online.
         nvP.clear();
@@ -1539,9 +1543,12 @@ int uBrainManager::WaitForSFReady(int sfid, int timeInms)
         assert(local.GetSFInfo(sfid));
 
         if (local.GetCurSFState(sfid)==com::xvd::neuron::OBJECT_STATE_READY)
+        {
+            coutdbg << "Found sfid=" << sfid << " at READY state. Time waited was=" << waited/1000 << "ms." << endl;
             return 0;
+        }
         else if (waited % 500000 == 0)
-            cout << "SF State on " << sfid << " is currently " << (int)local.GetCurSFState(sfid) << endl;
+            coutdbg << "SF State on " << sfid << " is currently " << (int)local.GetCurSFState(sfid) << endl;
 
         usleep(usInterval);
 
@@ -1549,7 +1556,7 @@ int uBrainManager::WaitForSFReady(int sfid, int timeInms)
     }
 
     // Timeout occured.
-    cout << "WaitingForSFReady: Timeout." << endl;
+    coutdbg << "WaitingForSFReady: Timeout." << endl;
     // TODO need mutex around usage.
 
     return TIMEOUT;
