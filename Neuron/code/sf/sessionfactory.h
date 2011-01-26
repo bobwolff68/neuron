@@ -266,6 +266,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 		ACPSlave				   *pACSlave;
 		ACPSlaveObject			   *pACSlaveObj;
 		map<int,RemoteSessionSF *>	SessionList;
+		string                      StunLocator;
 		//ResourceMonitor	   *pResMtrObj;
 
 		com::xvd::neuron::acp::Control *acControl;

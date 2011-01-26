@@ -288,12 +288,11 @@ inline  bool AddPeer(const char *peerDesc)
 
         bool AddPeersAndWaitForDiscovery(map<int,string> &PeerDescList,int timeOutMillisecs)
         {
-            DDS_ParticipantBuiltinTopicData partData;
             DDS_InstanceHandleSeq           seqPartHandles;
             DDS_ReturnCode_t                retCode;
 
             //Add peers
-            cout << "======= " << PartName << "'S PEERS ========" << endl;            
+            cout << "======= " << PartName << "'s peers ========" << endl;            
             for(map<int,string>::iterator it=PeerDescList.begin(); it!=PeerDescList.end(); it++)
             {
                 cout << PartName << " is adding peer '" << it->second << "':";
@@ -310,31 +309,24 @@ inline  bool AddPeer(const char *peerDesc)
             cout << PartName << " is waiting for peers to be discovered..." << endl;
             for(int i=0; i<10; i++)
             {
-                usleep(1000*(timeOutMillisecs/10));
-                
                 retCode = pDomParticipant->get_discovered_participants(seqPartHandles);
                 if(retCode!=DDS_RETCODE_OK)
                 {
                     cout << PartName << ": Unable to get discovered participants' instance handles" << endl;
                     return false;
                 }
-                
-                cout << "======= " << PartName << "'S DISCOVERED PARTICIPANTS(" << i+1 << ") ========" << endl;
-                for(int j=0; j<seqPartHandles.length(); j++)
+
+                if(seqPartHandles.length()==PeerDescList.size())
                 {
-                    retCode = pDomParticipant->get_discovered_participant_data(partData,seqPartHandles[j]);
-                    if(retCode!=DDS_RETCODE_OK)
-                    {
-                        cout << PartName << ": Unable to get discovered participant's data" << endl;
-                        return false;
-                    }
-                    else
-                        cout << partData.participant_name.name << ",";
+                    cout << PartName << "Discovered all participants in " << (i-1)*timeOutMillisecs/10 << " msec..." << endl;
+                    return true;
                 }
-                cout << endl;
+                                
+                usleep(1000*(timeOutMillisecs/10));
             }
-            
-            return true;
+                
+            cout << PartName << " timed out waiting for discovery to complete..." << endl;
+            return false;
         }
         
 inline  DDSDomainParticipant *GetDomParticipant(void)

@@ -166,10 +166,10 @@
 		    				<name>dds.transport.wan_plugin.wan.create_function</name>
 		    				<value>NDDS_Transport_WAN_create</value>
 		    			</element>
-		    			<element>
+		    			<!--<element>
 		    				<name>dds.transport.wan_plugin.wan.server</name>
 		    				<value>207.145.121.125</value>
-		    			</element>
+		    			</element>-->
 		    		</value>
 		    	</property>
         	</participant_qos>
@@ -208,10 +208,10 @@
 		    				<name>dds.transport.wan_plugin.wan.create_function</name>
 		    				<value>NDDS_Transport_WAN_create</value>
 		    			</element>
-		    			<element>
+		    			<!--<element>
 		    				<name>dds.transport.wan_plugin.wan.server</name>
 		    				<value>207.145.121.125</value>
-		    			</element>
+		    			</element>-->
 		    		</value>
 		    	</property>
         	</participant_qos>        
@@ -286,10 +286,10 @@
 		    				<name>dds.transport.wan_plugin.wan.create_function</name>
 		    				<value>NDDS_Transport_WAN_create</value>
 		    			</element>
-		    			<element>
+		    			<!--<element>
 		    				<name>dds.transport.wan_plugin.wan.server</name>
 		    				<value>207.145.121.125</value>
-		    			</element>
+		    			</element>-->
 						<element>
 							<name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
 							<value>65536</value>

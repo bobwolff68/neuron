@@ -83,6 +83,8 @@ int index;
         // The Controller serves as the admin master for all SFs, thus connect as master
 	PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_acp_id"];
 	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	PropertyPairsACP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
+	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
 	PropertyPairsACP["CPInterfaceType"] = "ACP:Master";
 	PropagateDiscoveryFlagsACP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;	
 	PropertyPairsACP["Id"] = ToString<int>(appId);
@@ -92,6 +94,8 @@ int index;
         // The Controller manages sessions, thus connect to the SCP as master	
 	PropertyPairsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_scp_id"];
 	PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	PropertyPairsSCP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
+	PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
 	PropertyPairsSCP["CPInterfaceType"] = "SCP:Master";
 	PropagateDiscoveryFlagsSCP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;	
 	PropertyPairsSCP["Id"] = ToString<int>(appId);
@@ -125,17 +129,23 @@ int index;
     bool Controller::AddSCPMasterPeer(const char* descriptor)
     {
         if (!pSCPMaster)
+	{
+	    cout << "Controller::AddSCPMasterPeer() - No SCP Master yet." << endl;
             return false;
+	}
 
-        return pSCPMaster->AddPeer(descriptor);
+        return pSCPMaster->AddPeerAndWaitForDiscovery(descriptor,5000);
     }
 
     bool Controller::AddACPMasterPeer(const char* descriptor)
     {
         if (!pACPMaster)
+	{
+	    cout << "Controller::AddACPMasterPeer() - No ACP Master yet." << endl;
             return false;
+	}
 
-        return pACPMaster->AddPeer(descriptor);
+        return pACPMaster->AddPeerAndWaitForDiscovery(descriptor,5000);
     }
 
     //! \brief Handle events detetecd on the SCP

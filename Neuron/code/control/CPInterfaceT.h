@@ -408,9 +408,48 @@ public:
     
     bool AddPeer(const char *peer)
     {
-        return (pDomainParticipant->add_peer(peer) == DDS_RETCODE_OK);
+	int ret;
+	ret = pDomainParticipant->add_peer(peer);
+	if (ret != DDS_RETCODE_OK)
+	{
+	  cout << "CPInterfaceT::AddPeer() - Failed with retcode=" << ret << endl;
+	  return false;
+	}
+	else
+	  return true;
     }
 
+    bool AddPeerAndWaitForDiscovery(const char *peer,int timeOutMillisecs)
+    {
+        DDS_InstanceHandleSeq   seqPartHandles;
+        DDS_ReturnCode_t        retcode;
+
+        //Add peer
+        if(!AddPeer(peer))
+	  return false;
+            
+        //Wait for peers to be discovered
+        for(int i=0; i<10; i++)
+        {
+            retcode = pDomainParticipant->get_discovered_participants(seqPartHandles);
+            if(retcode!=DDS_RETCODE_OK)
+            {
+                cout << "Unable to get discovered participants' instance handles" << endl;
+                return false;
+            }
+
+            if(seqPartHandles.length()==1)
+            {
+                cout << "Discovered participant in " << (i-1)*timeOutMillisecs/10 << " msec..." << endl;
+                return true;
+            }
+                            
+            usleep(1000*(timeOutMillisecs/10));
+        }
+                
+        return false;
+    }
+ 
     ~CPInterfaceT()
     {
         DDS_ReturnCode_t retcode;
