@@ -363,7 +363,7 @@ bool RegServer::ParseRequest(const char* req)
 	// Advance pointer beyond neuron-
 	chopped_req = chopped_req.substr(pos+strlen("neuron-"), string::npos);
 
-	cout << "RegServer:: Pre-lop-of-HTTP/ we have:" << chopped_req << endl;
+//	cout << "RegServer:: Pre-lop-of-HTTP/ we have:" << chopped_req << endl;
 
 	// Now lop off the ending from "HTTP/"
 	pos = chopped_req.find("HTTP/");
@@ -373,7 +373,7 @@ bool RegServer::ParseRequest(const char* req)
 		chopped_req = chopped_req.substr(0, pos);
 	}
 
-	cout << "RegServer:: After lopping-of-HTTP/ we have:" << chopped_req << endl;
+//	cout << "RegServer:: After lopping-of-HTTP/ we have:" << chopped_req << endl;
 
     if (chopped_req.substr(0,2)!="sf" && chopped_req.substr(0,2)!="ep")
     {
@@ -437,7 +437,7 @@ bool RegServer::ParseRequest(const char* req)
         else
             reqstream >> value;
 
-        cout << endl << "RegServer::Parse() - PAIR: " << name << "=" << value << endl;
+        coutdbg << "Incoming PAIR: " << name << "=" << value << endl;
 
         // Now what to do with the pair...
         reqParameters[name] = value;

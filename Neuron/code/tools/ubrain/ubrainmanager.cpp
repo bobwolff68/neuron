@@ -1460,7 +1460,20 @@ void uBrainManager::NewSFState(com::xvd::neuron::acp::State* state)
       com::xvd::neuron::OBJECT_STATE_DELETED,
     */
 
-    cout << "Callback from Controller::***New SF State for SFID=" << state->srcId << " with state->state = " << state->state << endl;
+//    cout << "Callback from Controller::***New SF State for SFID=" << state->srcId << " with state->state = " << state->state << endl;
+
+    if (state->state == com::xvd::neuron::OBJECT_STATE_DELETE || state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
+    {
+        if (local.GetSFInfo(state->srcId))
+        {
+            // Delete the SF internally as the controller has told us it is gone.
+            coutdbg "Controller says SFID=" << state->srcId << " has been deleted. We must delete too. Deleting " << state->srcId << endl;
+
+            int ret = local.RemoveSF(state->srcId);
+            if (ret)
+                coutdbg << "Upon deletion of local SF, received error code=" << ret << endl;
+        }
+    }
 
     // No matter what the state->state is...update the sf to which it belongs.
     if (!state->state == com::xvd::neuron::OBJECT_STATE_DELETE && !state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
@@ -1491,7 +1504,7 @@ void uBrainManager::NewSessionState(com::xvd::neuron::scp::State* state)
   com::xvd::neuron::OBJECT_STATE_DELETED,
 */
 
-    cout << "Callback from Controller::***New Session State for SFID=" << state->srcId << " in Session=" << state->sessionId << " with state->state = " << state->state << endl;
+//    cout << "Callback from Controller::***New Session State for SFID=" << state->srcId << " in Session=" << state->sessionId << " with state->state = " << state->state << endl;
 
     // No matter what the state->state is...update the session on the sf to which it belongs.
     if (!state->state == com::xvd::neuron::OBJECT_STATE_DELETE && !state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
@@ -1506,7 +1519,7 @@ void uBrainManager::NewSessionState(com::xvd::neuron::scp::State* state)
         ReceiveOfferSource(state);
         break;
     case com::xvd::neuron::OBJECT_STATE_SELECTSRC:
-        cout << "INFO: Source selected...do something with it - hook 'em up." << endl;
+//        cout << "INFO: Source selected...do something with it - hook 'em up." << endl;
         ReceiveSelectSource(state);
         break;
     case com::xvd::neuron::OBJECT_STATE_READY:
@@ -1538,8 +1551,8 @@ int uBrainManager::WaitForSFReady(int sfid, int timeInms)
             coutdbg << "Found sfid=" << sfid << " at READY state. Time waited was=" << waited/1000 << "ms." << endl;
             return 0;
         }
-        else if (waited % 500000 == 0)
-            coutdbg << "SF State on " << sfid << " is currently " << (int)local.GetCurSFState(sfid) << endl;
+//        else if (waited % 500000 == 0)
+//            coutdbg << "SF State on " << sfid << " is currently " << (int)local.GetCurSFState(sfid) << endl;
 
         usleep(usInterval);
 
@@ -1547,7 +1560,7 @@ int uBrainManager::WaitForSFReady(int sfid, int timeInms)
     }
 
     // Timeout occured.
-    coutdbg << "WaitingForSFReady: Timeout." << endl;
+    coutdbg << "Timeout." << endl;
     // TODO need mutex around usage.
 
     return TIMEOUT;
@@ -1576,7 +1589,7 @@ int uBrainManager::WaitForSessionReadyOnSF(int sessid, int sfid, int timeInms)
     }
 
     // Timeout occured.
-    cout << "WaitingForSessionReadyOnSF: Timeout." << endl;
+    coutdbg << "Timeout." << endl;
 
     return TIMEOUT;
 }
