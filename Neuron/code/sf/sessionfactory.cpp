@@ -68,9 +68,9 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
     StunLocator = nvPairs["stun_ip"];
 
 // Set to WARNING status messages
-    NDDSConfigLogger::get_instance()->
-        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
-                                  NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+    //NDDSConfigLogger::get_instance()->
+    //    set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
+    //                              NDDS_CONFIG_LOG_VERBOSITY_WARNING);
 
 //If debug dds libs used, set verbosity high
     //NDDSConfigLogger::get_instance()->
@@ -107,8 +107,6 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	PropagateDiscoveryFlagsSCP["MasterId"] = DDS_BOOLEAN_TRUE;	
 	pSCSlave = new SCPSlave(this,id,domId,SCPSlaveName,PropertyPairsSCP,PropagateDiscoveryFlagsSCP,"SCP");
     pSCSlave->AddPeerAndWaitForDiscovery(nvPairs["ubrain_scp_desc"].c_str(),5000);
-    //cout << "Sleeping for 10 seconds..." << endl;
-	//usleep(10000000);
 
 	// Create Local Session Control Plane (LSCP) master
 	GEN_CP_INTERFACE_NAME(LSCPMasterName,name,LSCP_MASTER_NAME);
@@ -137,7 +135,6 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	//TRY_NEW(pResMtrObj,ResourceMonitor,"SessionFactory::SessionFactory()/new(ResourceMonitor): ");
 
 	SetStateStandby();
-	//EventHandleLoop();
 }
 
 SessionFactory::~SessionFactory()
@@ -221,33 +218,6 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
                     }
                     else
                         cout << "Error processing session init script, aborting..." << endl;
-					/*stringstream    sstream;
-					string          Token;
-
-					sstream << pNewSessEvt->GetData()->script;
-					sstream.get();	// Remove '"' leading.
-					sstream >> Token;
-
-					if(Token!="sessname")
-					{
-					    Token = "SF(";
-					    Token = Token + ToString<int>(id) + ")=>SL(";
-					    Token = Token + ToString<int>(pSCSlaveObjLocal->GetSessionId()) + ")";
-					    cout << "Session name unspecified, using default: " << Token << endl;
-					}
-					else
-					{
-					    sstream >> Token;
-					    // Remove trailing '"'
-					    Token = Token.substr(0,Token.length()-1);
-                        cout << "Given session name: " << Token << endl;
-					}
-
-					pSession = new RemoteSessionSF(pSCSlave,pSCSlaveObjLocal,pLSCMaster,domId,id,
-												   Token.c_str(),NEW_SL_THREAD);
-					SessionList[pSession->GetId()] = pSession;
-					std::cout << SF_LOG_PROMPT(id) << ": New Session(" << pSession->GetId() <<
-						")" << endl;*/
 				}
 			}
 		}

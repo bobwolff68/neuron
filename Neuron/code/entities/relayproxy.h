@@ -49,7 +49,7 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
                 {
                     char layerPartitionName[50];
                     DetermineSamplePartition(layerPartitionName,pSampleSet,i);
-                    std::cout << "Partition: " << layerPartitionName << std::endl;
+//                    std::cout << "Partition: " << layerPartitionName << std::endl;
                     pOutputObj->Write(layerPartitionName,(*pSampleSet->pSeqData)[i]);
                 }
             }

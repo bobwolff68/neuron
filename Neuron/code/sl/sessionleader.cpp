@@ -54,17 +54,6 @@ EventHandlerT<SessionLeader>(),ThreadSingle()
     MEDIA_TOPIC_NAME(topicName,"video_",sessionId);
     pMediaParticipant->AddTopic("video",topicName);
     pMediaParticipant->AddPeersAndWaitForDiscovery(PeerDescListMedia,10000);
-    /*for(map<int,string>::iterator it=PeerDescListMedia.begin(); it!=PeerDescListMedia.end(); it++)
-    {
-        cout << "Adding Peer: " << it->second << endl;
-        pMediaParticipant->AddPeer(it->second.c_str());
-    }
-    
-    if(!PeerDescListMedia.empty())
-    {
-        cout << "Sleeping for 10 seconds..." << endl;
-        usleep(10000000);
-    }*/
     
     SetStateStandby();
 }

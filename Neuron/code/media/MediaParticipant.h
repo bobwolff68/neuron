@@ -288,6 +288,7 @@ inline  bool AddPeer(const char *peerDesc)
 
         bool AddPeersAndWaitForDiscovery(map<int,string> &PeerDescList,int timeOutMillisecs)
         {
+            DDS_ParticipantBuiltinTopicData partData;
             DDS_InstanceHandleSeq           seqPartHandles;
             DDS_ReturnCode_t                retCode;
 
@@ -316,9 +317,10 @@ inline  bool AddPeer(const char *peerDesc)
                     return false;
                 }
 
+                cout << "Time elapsed: " << i*timeOutMillisecs/10 << ", Participants discovered: " << seqPartHandles.length() << endl;
                 if(seqPartHandles.length()==PeerDescList.size())
                 {
-                    cout << PartName << "Discovered all participants in " << (i-1)*timeOutMillisecs/10 << " msec..." << endl;
+                    cout << PartName << "Discovered all participants in " << i*timeOutMillisecs/10 << " msec..." << endl;
                     return true;
                 }
                                 
@@ -326,6 +328,18 @@ inline  bool AddPeer(const char *peerDesc)
             }
                 
             cout << PartName << " timed out waiting for discovery to complete..." << endl;
+            cout << "Participants discovered: " << endl;
+            for(int i=0; i<seqPartHandles.length(); i++)
+            {
+                retCode = pDomParticipant->get_discovered_participant_data(partData,seqPartHandles[i]);
+                if(retCode!=DDS_RETCODE_OK)
+                {
+                    coutdbg << ":: Unable to get participant data..." << endl;
+                    return false;
+                }
+                cout << i+1 << ". " << partData.participant_name.name << endl;
+            }
+            
             return false;
         }
         

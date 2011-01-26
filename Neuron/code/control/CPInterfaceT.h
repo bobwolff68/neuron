@@ -86,12 +86,6 @@ private:
                     if(masterId!=id)    return false;
                 }
                 
-                //Participants matched
-                /*cout << "Participant '" << PartName << "' matches with:" << endl;
-                cout << "ControlPlane+InterfaceType: " << CtrlPlane << "+" << InterfaceType
-                     << " ==> " << CtrlPlaneDisc << "+" << InterfaceTypeDisc << endl;
-                cout << "Id/MasterId: " << id << "/" << masterId << endl;*/
-                     
                 return true;
             }
             
@@ -421,12 +415,13 @@ public:
 
     bool AddPeerAndWaitForDiscovery(const char *peer,int timeOutMillisecs)
     {
+        DDS_ParticipantBuiltinTopicData partData;
         DDS_InstanceHandleSeq   seqPartHandles;
         DDS_ReturnCode_t        retcode;
 
         //Add peer
         if(!AddPeer(peer))
-	  return false;
+	        return false;
             
         //Wait for peers to be discovered
         for(int i=0; i<10; i++)
@@ -438,13 +433,27 @@ public:
                 return false;
             }
 
+            cout << "Time elapsed: " << i*timeOutMillisecs/10 << ", Participants discovered: " << seqPartHandles.length() << endl;
             if(seqPartHandles.length()==1)
             {
-                cout << "Discovered participant in " << (i-1)*timeOutMillisecs/10 << " msec..." << endl;
+                cout << "Discovered participant in " << i*timeOutMillisecs/10 << " msec..." << endl;
                 return true;
             }
                             
             usleep(1000*(timeOutMillisecs/10));
+        }
+                
+        coutdbg << "::Timed out." << endl << endl;
+        cout << "Participants discovered: " << endl;
+        for(int i=0; i<seqPartHandles.length(); i++)
+        {
+            retcode = pDomainParticipant->get_discovered_participant_data(partData,seqPartHandles[i]);
+            if(retcode!=DDS_RETCODE_OK)
+            {
+                coutdbg << ":: Unable to get participant data..." << endl;
+                return false;
+            }
+            cout << i+1 << ". " << partData.participant_name.name << endl;
         }
                 
         return false;

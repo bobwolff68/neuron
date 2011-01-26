@@ -166,10 +166,6 @@
 		    				<name>dds.transport.wan_plugin.wan.create_function</name>
 		    				<value>NDDS_Transport_WAN_create</value>
 		    			</element>
-		    			<!--<element>
-		    				<name>dds.transport.wan_plugin.wan.server</name>
-		    				<value>207.145.121.125</value>
-		    			</element>-->
 		    		</value>
 		    	</property>
         	</participant_qos>
@@ -208,10 +204,6 @@
 		    				<name>dds.transport.wan_plugin.wan.create_function</name>
 		    				<value>NDDS_Transport_WAN_create</value>
 		    			</element>
-		    			<!--<element>
-		    				<name>dds.transport.wan_plugin.wan.server</name>
-		    				<value>207.145.121.125</value>
-		    			</element>-->
 		    		</value>
 		    	</property>
         	</participant_qos>        
@@ -286,10 +278,6 @@
 		    				<name>dds.transport.wan_plugin.wan.create_function</name>
 		    				<value>NDDS_Transport_WAN_create</value>
 		    			</element>
-		    			<!--<element>
-		    				<name>dds.transport.wan_plugin.wan.server</name>
-		    				<value>207.145.121.125</value>
-		    			</element>-->
 						<element>
 							<name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
 							<value>65536</value>
@@ -323,13 +311,13 @@
 				<history>
 					<depth>20</depth>
 				</history>
-				<!-- <multicast>
+				<multicast>
                    <value>
                         <element>
                             <receive_address>239.255.1.2</receive_address>
                         </element>
                    </value>
-                </multicast>-->
+                </multicast>
 			</datareader_qos>
 			
 			<datawriter_qos>
