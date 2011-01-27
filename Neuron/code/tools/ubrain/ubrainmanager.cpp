@@ -113,6 +113,8 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     //
     pSFInfo psf;
     psf = local.GetSFInfo(sfid);
+    assert(psf);
+
     if (!isEP)
     {
         assert(psf->is_endpoint == false);
@@ -134,7 +136,6 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     else
     {
         // internal SF has already been added via RegServer's completion.
-        assert(local.GetSFInfo(sfid));
 
         // Wait for new SF to become ready/online.
         nvP.clear();
@@ -162,7 +163,7 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
         nvP["sfid"] = ToString<int>(sfid);
         // TODO - Hardwired session id 1001 must be removed.
         nvP["sessid"] = ToString<int> (1001);
-        nvP["timeout"] = "35000";
+        nvP["timeout"] = "60000";
         processDDS_SF(cmd, subcmd, nvP);
     }
 
