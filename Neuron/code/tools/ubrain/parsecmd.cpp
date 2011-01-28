@@ -129,6 +129,7 @@ bool parsecmd(int argc, char**argv)
     {
         cout << "Forcing the use of **LAN** only. No WAN connections." << endl;
         stunserver = "";
+	bUseLANOnly = true;
     }
 
     if (opt->getValue("ubrain") != NULL)
