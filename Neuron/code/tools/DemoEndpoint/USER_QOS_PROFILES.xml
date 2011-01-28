@@ -133,7 +133,6 @@
             
         </qos_profile>
     
-        <!-- No specialization required for the SCP (yet) -->
         <qos_profile name="SCP" base_name="CP">
 			<participant_qos>
 			<discovery_config>
@@ -169,6 +168,11 @@
 		    		</value>
 		    	</property>
         	</participant_qos>
+        </qos_profile>
+
+        <!-- No specialization required for the SCPLAN (yet) -->
+        <qos_profile name="SCPLAN" base_name="CP">
+
         </qos_profile>
 
         <!-- No specialization required for the ACP (yet) -->
@@ -209,6 +213,11 @@
         	</participant_qos>        
         </qos_profile>
     
+        <!-- No specialization required for the ACPLAN (yet) -->
+        <qos_profile name="ACPLAN" base_name="CP">
+
+        </qos_profile>
+
         <!-- ECP is only for local communication between the SF and SL
              Thus, only enable shared memory -->
         <qos_profile name="ECP" base_name="CP">
@@ -278,6 +287,62 @@
 		    				<name>dds.transport.wan_plugin.wan.create_function</name>
 		    				<value>NDDS_Transport_WAN_create</value>
 		    			</element>
+						<element>
+							<name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
+							<value>65536</value>
+						</element>
+						<element>
+							<name>dds.transport.UDPv4.builtin.send_socket_buffer_size</name>
+							<value>65536</value>
+						</element>
+						<element>
+							<name>dds.transport.UDPv4.builtin.recv_socket_buffer_size</name>
+							<value>65536</value>
+						</element>
+						<element>
+							<name>dds.transport.shmem.parent.message_size_max</name>
+							<value>65536</value>
+						</element>
+						<element>
+							<name>dds.transport.shmem.receive_buffer_size</name>
+							<value>65536</value>
+						</element>
+					</value>
+				</property>
+			</participant_qos>
+			<topic_qos>
+				<history>
+					<depth>20</depth>
+				</history>
+			</topic_qos>
+			
+			<datareader_qos>
+				<history>
+					<depth>20</depth>
+				</history>
+				<multicast>
+                   <value>
+                        <element>
+                            <receive_address>239.255.1.2</receive_address>
+                        </element>
+                   </value>
+                </multicast>
+			</datareader_qos>
+			
+			<datawriter_qos>
+				<history>
+					<depth>10</depth>
+				</history>
+			</datawriter_qos>	
+		</qos_profile>
+
+		<qos_profile name="MEDIALAN">
+			<participant_qos>
+				<receiver_pool>
+					<buffer_size>65536</buffer_size>
+				</receiver_pool>
+		    	<property>
+		    		<value>
 						<element>
 							<name>dds.transport.UDPv4.builtin.parent.message_size_max</name>
 							<value>65536</value>

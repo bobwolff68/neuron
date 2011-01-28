@@ -31,7 +31,11 @@ int main(int argc, char *argv[])
 		sfId = FromStringNoChecking<int>(pRegClient->publicPairs["ep_sf_id"]);
 		cout << "Using sf as an appliance with assigned ep_sf_id=" << sfId << endl;
 	}
-
+    if(pRegClient->publicPairs["use_lan_only"]=="true")
+    {
+        cout << "In LAN only mode..." << endl;
+    }
+    
 	SessionFactory	sf(sfId,argv[2],ownerId,domId,pRegClient->publicPairs);
 	
 	sf.startThread();

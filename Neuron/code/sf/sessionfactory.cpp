@@ -52,6 +52,8 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	char	SCPSlaveName[100];
 	char	ACPSlaveName[100];
 	char	LSCPMasterName[100];
+    string  QosProfileACP = "ACPLAN";
+    string  QosProfileSCP = "SCPLAN";
 
     map<string,string>      PropertyPairsACP;
     map<string,DDS_Boolean> PropagateDiscoveryFlagsACP;
@@ -65,12 +67,21 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	this->domId = domId;
 	strcpy(name,nameParam);
 	ownerId = ownerIdParam;
-    StunLocator = nvPairs["stun_ip"];
+	StunLocator = "";
+	lanOnlyMode = true;
+	
+	if(nvPairs["use_lan_only"]!="true")
+	{
+        StunLocator = nvPairs["stun_ip"];
+        QosProfileACP = "ACP";
+        QosProfileSCP = "SCP";
+        lanOnlyMode = false;
+    }        
 
 // Set to WARNING status messages
-    //NDDSConfigLogger::get_instance()->
-    //    set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
-    //                              NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+    NDDSConfigLogger::get_instance()->
+        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
+                                  NDDS_CONFIG_LOG_VERBOSITY_WARNING);
 
 //If debug dds libs used, set verbosity high
     //NDDSConfigLogger::get_instance()->
@@ -79,34 +90,43 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 
 	// Create Admin Control Plane (ACP) slave
 	GEN_CP_INTERFACE_NAME(ACPSlaveName,name,ACP_SLAVE_NAME);
-	PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["client_acp_id"];
-	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
-	PropertyPairsACP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
-	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+	if(!lanOnlyMode)
+	{
+	    PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["client_acp_id"];
+	    PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	    PropertyPairsACP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
+	    PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+	}
 	PropertyPairsACP["CPInterfaceType"] = "ACP:Slave";
 	PropagateDiscoveryFlagsACP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;	
 	PropertyPairsACP["Id"] = ToString<int>(id);
 	PropagateDiscoveryFlagsACP["Id"] = DDS_BOOLEAN_TRUE;	
 	PropertyPairsACP["MasterId"] = ToString<int>(ownerId);
 	PropagateDiscoveryFlagsACP["MasterId"] = DDS_BOOLEAN_TRUE;	
-	pACSlave = new ACPSlave(this,id,domId,ACPSlaveName,PropertyPairsACP,PropagateDiscoveryFlagsACP,"ACP");
-	pACSlave->AddPeerAndWaitForDiscovery(nvPairs["ubrain_acp_desc"].c_str(),5000);
+	pACSlave = new ACPSlave(this,id,domId,ACPSlaveName,PropertyPairsACP,PropagateDiscoveryFlagsACP,QosProfileACP.c_str());
+	if(!lanOnlyMode)
+    	pACSlave->AddPeerAndWaitForDiscovery(nvPairs["ubrain_acp_desc"].c_str(),5000);
 	pACSlaveObj = pACSlave->CreateSlaveObject(id);
 
 	// Create Session Control Plane (SCO) slave
 	GEN_CP_INTERFACE_NAME(SCPSlaveName,name,SCP_SLAVE_NAME);
-	PropertyPairsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["client_scp_id"];
-	PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
-	PropertyPairsSCP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
-	PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+
+	if(!lanOnlyMode)
+	{	
+	    PropertyPairsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["client_scp_id"];
+	    PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	    PropertyPairsSCP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
+	    PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+    }
 	PropertyPairsSCP["CPInterfaceType"] = "SCP:Slave";
 	PropagateDiscoveryFlagsSCP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;	
 	PropertyPairsSCP["Id"] = ToString<int>(id);
 	PropagateDiscoveryFlagsSCP["Id"] = DDS_BOOLEAN_TRUE;	
 	PropertyPairsSCP["MasterId"] = ToString<int>(ownerId);
 	PropagateDiscoveryFlagsSCP["MasterId"] = DDS_BOOLEAN_TRUE;	
-	pSCSlave = new SCPSlave(this,id,domId,SCPSlaveName,PropertyPairsSCP,PropagateDiscoveryFlagsSCP,"SCP");
-    pSCSlave->AddPeerAndWaitForDiscovery(nvPairs["ubrain_scp_desc"].c_str(),5000);
+	pSCSlave = new SCPSlave(this,id,domId,SCPSlaveName,PropertyPairsSCP,PropagateDiscoveryFlagsSCP,QosProfileSCP.c_str());
+	if(!lanOnlyMode)
+        pSCSlave->AddPeerAndWaitForDiscovery(nvPairs["ubrain_scp_desc"].c_str(),5000);
 
 	// Create Local Session Control Plane (LSCP) master
 	GEN_CP_INTERFACE_NAME(LSCPMasterName,name,LSCP_MASTER_NAME);
@@ -203,11 +223,14 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
     					         << SessionName << endl;
                         }
                         
-                        PropertyPairsMedia["dds.transport.wan_plugin.wan.server"] = StunLocator;
-                        PropagateDiscoveryFlagsMedia["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+                        if(!lanOnlyMode)
+                        {
+                            PropertyPairsMedia["dds.transport.wan_plugin.wan.server"] = StunLocator;
+                            PropagateDiscoveryFlagsMedia["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+                        }
                         
                         pSession = new RemoteSessionSF(pSCSlave,pSCSlaveObjLocal,pLSCMaster,
-                                                       domId,id,SessionName.c_str(),
+                                                       domId,id,lanOnlyMode,SessionName.c_str(),
                                                        PropertyPairsMedia,
                                                        PropagateDiscoveryFlagsMedia,
                                                        PeerDescListMedia,NEW_SL_THREAD);
@@ -404,13 +427,21 @@ bool SessionFactory::ProcessScriptOnNewSession(const char *script,string &Sessio
         }
         else if(Name=="mediawanid")
         {
-            PropertyPairs["dds.transport.wan_plugin.wan.transport_instance_id"] = Value;
-	        PropagateDiscoveryFlags["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
-	        cout << "MediaWanId: " << Value << endl;
+            if(!lanOnlyMode)
+            {
+                PropertyPairs["dds.transport.wan_plugin.wan.transport_instance_id"] = Value;
+	            PropagateDiscoveryFlags["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+	            cout << "MediaWanId: " << Value << endl;
+	        }
 	    }
 	    else if(Name=="mediapeers")
-	        if(!GetPeerDescListFromPeerList(Value,MediaPeerDescList))
-	            return false;
+        {	
+            if(!lanOnlyMode)
+            {
+                if(!GetPeerDescListFromPeerList(Value,MediaPeerDescList))
+	                return false;
+	        }
+	    }
    }
    
    return true;

@@ -70,9 +70,10 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 
 			RemoteSessionSF(SCPSlave *pSCSlaveParam,SCPSlaveObject *pSCSlaveObjParam,
 					  		LSCPMaster *pLSCMasterParam,int domIdParam,int ownerIdParam,
-					  		const char *nameParam,map<string,string> &PropertyPairsMedia,
-							 map<string,DDS_Boolean> &PropagateDiscoveryFlagsMedia,
-							 map<int,string> &PeerDescListMedia,int slCreateMode)
+					  		bool lanOnlyMode,const char *nameParam,
+					  		map<string,string> &PropertyPairsMedia,
+							map<string,DDS_Boolean> &PropagateDiscoveryFlagsMedia,
+							map<int,string> &PeerDescListMedia,int slCreateMode)
 			{
 				ownerId = ownerIdParam;
 				pSCSlave = pSCSlaveParam;
@@ -99,9 +100,9 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 				// Create a new SL
 				if(slCreateMode==NEW_SL_THREAD)
 				{
-					slRef.pSL = new SessionLeader(ownerId,GetId(),nameParam,domIdParam,ownerId,
-					                              PropertyPairsMedia,PropagateDiscoveryFlagsMedia,
-					                              PeerDescListMedia);
+					slRef.pSL = new SessionLeader(ownerId,GetId(),nameParam,domIdParam,
+					                              ownerId,lanOnlyMode,PropertyPairsMedia,
+					                              PropagateDiscoveryFlagsMedia,PeerDescListMedia);
 					(slRef.pSL)->startThread();
 				}
 				else
@@ -260,6 +261,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 		IDType						id;
 		IDType						ownerId;
 		int							domId;
+		bool                        lanOnlyMode;
 		char					   	name[100];
 		SCPSlave   				   *pSCSlave;
 		LSCPMaster			   	   *pLSCMaster;

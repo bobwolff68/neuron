@@ -167,7 +167,7 @@ class MediaParticipant
     public:
 
         MediaParticipant(int domainId,int sessionId,const char *sessionName,
-                         map<string,string> &PropertyPairs,
+                         const char *qosProfile,map<string,string> &PropertyPairs,
                          map<string,DDS_Boolean> &PropagateDiscoveryFlags)
         {
             string                                      PartName(sessionName);
@@ -190,7 +190,7 @@ class MediaParticipant
             SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_FALSE);
 
             //Get domain participant qos
-            retCode = pPartFactory->get_participant_qos_from_profile(partQos,"NEURON","MEDIA");
+            retCode = pPartFactory->get_participant_qos_from_profile(partQos,"NEURON",qosProfile);
             if(retCode!=DDS_RETCODE_OK)
             {
                 cout << "MediaParticipant(): Can't get default participant qos" << endl;

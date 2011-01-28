@@ -4,7 +4,7 @@
 #include "sessionleader.h"
 
 SessionLeader::SessionLeader(IDType slIdParam,IDType sIdParam,const char *nameParam,int domIdParam,
-							 int ownerIdParam,map<string,string> &PropertyPairsMedia,
+							 int ownerIdParam,bool lanOnlyMode,map<string,string> &PropertyPairsMedia,
 							 map<string,DDS_Boolean> &PropagateDiscoveryFlagsMedia,
 							 map<int,string> &PeerDescListMedia):
 EventHandlerT<SessionLeader>(),ThreadSingle()
@@ -14,6 +14,7 @@ EventHandlerT<SessionLeader>(),ThreadSingle()
 	char				topicName[50];
 	const char 		   *typeName = NULL;
 
+    string                  QosProfileMedia = "MEDIALAN";
     map<string,string>      PropertyPairsLSCP;
     map<string,DDS_Boolean> PropagateDiscoveryFlagsLSCP;
     
@@ -49,11 +50,14 @@ EventHandlerT<SessionLeader>(),ThreadSingle()
     metrics = com::xvd::neuron::lscp::MetricsTypeSupport::create_data();
 
     //Init media plane
-    pMediaParticipant = new MediaParticipant(domIdParam,sessionId,name,PropertyPairsMedia,
+    if(!lanOnlyMode)    QosProfileMedia = "MEDIA";
+    pMediaParticipant = new MediaParticipant(domIdParam,sessionId,name,
+                                             QosProfileMedia.c_str(),PropertyPairsMedia,
                                              PropagateDiscoveryFlagsMedia);
     MEDIA_TOPIC_NAME(topicName,"video_",sessionId);
     pMediaParticipant->AddTopic("video",topicName);
-    pMediaParticipant->AddPeersAndWaitForDiscovery(PeerDescListMedia,10000);
+    if(!lanOnlyMode)
+        pMediaParticipant->AddPeersAndWaitForDiscovery(PeerDescListMedia,10000);
     
     SetStateStandby();
 }
