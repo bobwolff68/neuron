@@ -80,29 +80,51 @@ int index;
 
         m_appId = appId;
 
-        // The Controller serves as the admin master for all SFs, thus connect as master
-	PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_acp_id"];
-	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
-	PropertyPairsACP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
-	PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
-	PropertyPairsACP["CPInterfaceType"] = "ACP:Master";
-	PropagateDiscoveryFlagsACP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;	
-	PropertyPairsACP["Id"] = ToString<int>(appId);
-	PropagateDiscoveryFlagsACP["Id"] = DDS_BOOLEAN_TRUE;	
-	pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP", PropertyPairsACP, PropagateDiscoveryFlagsACP, "ACP");
+        bool bUseLANOnly = (nvPairs["use_lan_only"]=="true");
 
-        // The Controller manages sessions, thus connect to the SCP as master	
-	PropertyPairsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_scp_id"];
-	PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
-	PropertyPairsSCP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
-	PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
-	PropertyPairsSCP["CPInterfaceType"] = "SCP:Master";
-	PropagateDiscoveryFlagsSCP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;	
-	PropertyPairsSCP["Id"] = ToString<int>(appId);
-	PropagateDiscoveryFlagsSCP["Id"] = DDS_BOOLEAN_TRUE;	
-    pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster", PropertyPairsSCP, PropagateDiscoveryFlagsSCP, "SCP");
+        if (!bUseLANOnly)
+        {
+                // The Controller serves as the admin master for all SFs, thus connect as master
+            PropertyPairsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_acp_id"];
+            PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+            PropertyPairsACP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
+            PropagateDiscoveryFlagsACP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+        }
 
-	m_domainId = domaindId;
+        PropertyPairsACP["CPInterfaceType"] = "ACP:Master";
+        PropagateDiscoveryFlagsACP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;
+        PropertyPairsACP["Id"] = ToString<int>(appId);
+        PropagateDiscoveryFlagsACP["Id"] = DDS_BOOLEAN_TRUE;
+
+        if (!bUseLANOnly)
+            // WAN Case
+            pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP", PropertyPairsACP, PropagateDiscoveryFlagsACP, "ACP");
+        else
+            // LAN Case
+            pACPMaster = new ACPMaster(pSessionEventHandler,appId,domaindId,"Controller::ACP", PropertyPairsACP, PropagateDiscoveryFlagsACP, "ACPLAN");
+
+        if (!bUseLANOnly)
+        {
+                // The Controller manages sessions, thus connect to the SCP as master
+            PropertyPairsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = nvPairs["ubrain_scp_id"];
+            PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.transport_instance_id"] = DDS_BOOLEAN_FALSE;
+            PropertyPairsSCP["dds.transport.wan_plugin.wan.server"] = nvPairs["stun_ip"];
+            PropagateDiscoveryFlagsSCP["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+        }
+
+        PropertyPairsSCP["CPInterfaceType"] = "SCP:Master";
+        PropagateDiscoveryFlagsSCP["CPInterfaceType"] = DDS_BOOLEAN_TRUE;
+        PropertyPairsSCP["Id"] = ToString<int>(appId);
+        PropagateDiscoveryFlagsSCP["Id"] = DDS_BOOLEAN_TRUE;
+
+        if (!bUseLANOnly)
+            // WAN Case
+            pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster", PropertyPairsSCP, PropagateDiscoveryFlagsSCP, "SCP");
+        else
+            // LAN Case
+            pSCPMaster = new SCPMaster(pSessionEventHandler,appId,domaindId,"Contoller::SCPMaster", PropertyPairsSCP, PropagateDiscoveryFlagsSCP, "SCPLAN");
+
+        m_domainId = domaindId;
         // This is using RTI APIs to spawn an event handler thread. Please
         // replace with something more appropriate
         eventThread = RTIOsapiThread_new("controlThread",

@@ -127,8 +127,8 @@ bool parsecmd(int argc, char**argv)
 
     if (opt->getValue("lanonly"))
     {
-        cout << "Use of --lanonly flag is not supported yet." << endl;
-        exit(4);
+        cout << "Forcing the use of **LAN** only. No WAN connections." << endl;
+        stunserver = "";
     }
 
     if (opt->getValue("ubrain") != NULL)
@@ -148,7 +148,8 @@ bool parsecmd(int argc, char**argv)
         }
     }
 
-    cout << "STUN server ip address: " << stunserver << endl;
+    if (stunserver!="")
+        cout << "STUN server ip address: " << stunserver << endl;
 
     if (opt->getValue("script") != NULL)
     {

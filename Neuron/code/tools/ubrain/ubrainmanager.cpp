@@ -11,6 +11,8 @@ uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domain
 {
     globalWANIDMax = 15;        // Assignments start at 15
 
+    bUseLANOnly = (nvPairs["use_lan_only"]=="true");
+
     local.setRegServerPublicIP(nvPairs["ubrain_ip"].c_str());
 
     DDSDomainParticipantFactory *factory =
@@ -84,26 +86,29 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     // Setup acp and scp wan id's in the controller for the newly added client/sf.
     //
 
-    stringstream descrStrm;
+    if (!bUseLANOnly)
+    {
+        stringstream descrStrm;
 
-    idClient = FromStringNoChecking<int>(pairs["client_acp_id"]);
-    descrStrm << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
+        idClient = FromStringNoChecking<int>(pairs["client_acp_id"]);
+        descrStrm << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
 
-    cout << "INFO: RegistrationComplete: ACP PEER-add: " << descrStrm.str() << endl;
+        cout << "INFO: RegistrationComplete: ACP PEER-add: " << descrStrm.str() << endl;
 
-    if (!pCtrl->AddACPMasterPeer(descrStrm.str().c_str()))
-        cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's ACP Master." << endl;
+        if (!pCtrl->AddACPMasterPeer(descrStrm.str().c_str()))
+            cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's ACP Master." << endl;
 
-    stringstream descrStrm2;
-    idClient = FromStringNoChecking<int>(pairs["client_scp_id"]);
-    descrStrm2 << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
+        stringstream descrStrm2;
+        idClient = FromStringNoChecking<int>(pairs["client_scp_id"]);
+        descrStrm2 << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
 
-    cout << "INFO: RegistrationComplete: SCP PEER-add: " << descrStrm2.str() << endl;
+        cout << "INFO: RegistrationComplete: SCP PEER-add: " << descrStrm2.str() << endl;
 
-    if (!pCtrl->AddSCPMasterPeer(descrStrm2.str().c_str()))
-        cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's SCP Master." << endl;
-//    cout << "Sleeping for 10 seconds..." << endl;
-//	usleep(10000000);
+        if (!pCtrl->AddSCPMasterPeer(descrStrm2.str().c_str()))
+            cout << "ERROR: RegistrationComplete failed to add new SF as peer to Controller's SCP Master." << endl;
+    //    cout << "Sleeping for 10 seconds..." << endl;
+    //	usleep(10000000);
+    }
 
     // TODO - Fill in and correlate all registry data -- and create internal SF for endpoints.
 
@@ -1478,7 +1483,8 @@ void uBrainManager::NewSFState(com::xvd::neuron::acp::State* state)
 
     // No matter what the state->state is...update the sf to which it belongs.
     if (!state->state == com::xvd::neuron::OBJECT_STATE_DELETE && !state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
-        assert(local.GetSFInfo(state->srcId) && "State update for non-existent SF??");
+        if (!local.GetSFInfo(state->srcId))
+            coutdbg << "State update for non-existent SF. SFID=" << state->srcId << endl;
 
     if (local.GetSFInfo(state->srcId))
         local.UpdateCurSFState(state->srcId, state->state);
@@ -1509,7 +1515,8 @@ void uBrainManager::NewSessionState(com::xvd::neuron::scp::State* state)
 
     // No matter what the state->state is...update the session on the sf to which it belongs.
     if (!state->state == com::xvd::neuron::OBJECT_STATE_DELETE && !state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
-        assert(local.GetSessionInfo(state->sessionId) && local.GetSFInfo(state->srcId) && "State update for non-existent Session/SF??");
+        if (!local.GetSessionInfo(state->sessionId) || !local.GetSFInfo(state->srcId))
+            coutdbg << "State update for non-existent Session or SF. SFID=" << state->srcId << " and SessionID=" << state->sessionId;
 
     if (local.GetSessionInfo(state->sessionId) && local.GetSFInfo(state->srcId))
         local.UpdateCurStateInSFForSession(state->srcId, state->sessionId, state->state);
@@ -1526,7 +1533,10 @@ void uBrainManager::NewSessionState(com::xvd::neuron::scp::State* state)
     case com::xvd::neuron::OBJECT_STATE_READY:
 //        cout << "New Session State: Session ID=" << state->sessionId << ", SF ID==" << state->srcId << " was found to be READY." << endl;
 
-        assert(local.GetSessionInfo(state->sessionId));
+// Can come to here with an unknown session. So check for it and do nothing in that case.
+        if (!local.GetSessionInfo(state->sessionId))
+            break;
+        // Else we can do something with the update.
         break;
     default:
         break;

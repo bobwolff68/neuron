@@ -19,6 +19,7 @@ extern string ubrain_ip;
 extern string stunserver;
 extern string startupscript;
 extern string logoutfile;
+extern bool bUseLANOnly;
 
 //
 // Note that these IDs and strings are in **HEX** but *MUST NOT* have leading "0x" in the string.
@@ -46,14 +47,22 @@ int main(int argc, char** argv)
     parsecmd(argc, argv);
 
     // Should come from command line.
-    respvals["stun_ip"] = stunserver;
     respvals["ubrain_ip"] = ubrain_ip;
 
-    respvals["ubrain_acp_desc"] = "1@wan://::" UBRAIN_WAN_ACPID_STR ":1.1.1.1";
-    respvals["ubrain_scp_desc"] = "1@wan://::" UBRAIN_WAN_SCPID_STR ":1.1.1.1";
-    respvals["ubrain_acp_id"] = ToString<int>(UBRAIN_WAN_ACPID);
-    respvals["ubrain_scp_id"] = ToString<int>(UBRAIN_WAN_SCPID);
+    if (bUseLANOnly)
+    {
+        respvals["use_lan_only"] = "true";
+        stunserver = "";
+    }
+    else
+    {
+        respvals["stun_ip"] = stunserver;
 
+        respvals["ubrain_acp_desc"] = "1@wan://::" UBRAIN_WAN_ACPID_STR ":1.1.1.1";
+        respvals["ubrain_scp_desc"] = "1@wan://::" UBRAIN_WAN_SCPID_STR ":1.1.1.1";
+        respvals["ubrain_acp_id"] = ToString<int>(UBRAIN_WAN_ACPID);
+        respvals["ubrain_scp_id"] = ToString<int>(UBRAIN_WAN_SCPID);
+    }
 	///
 	/// Now get rolling
 	///

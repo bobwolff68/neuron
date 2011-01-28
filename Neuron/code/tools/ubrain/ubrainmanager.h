@@ -49,6 +49,7 @@ private:
 	int WaitForSFReady(int sfid, int timeInms);
 	int WaitForSessionReadyOnSF(int sessid, int sfid, int timeInms);
 
+	bool bUseLANOnly;
 	Controller* pCtrl;
 	LocalItems local;       // Will set the registration server next...
 	SSHManagement ssh;

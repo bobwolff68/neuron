@@ -268,19 +268,24 @@ bool RegServer::HConnection(int csock)
 	respvalues["client_pub_ip"]=clientIpAddress;
     respvalues["ep_friendly_name"] = reqParameters["ep_friendly_name"];
 
-	temp_scp_gid = theBrain->GetNewGlobalWANID();
-	respvalues["client_scp_id"] = ToString<int>(temp_scp_gid);
-    temp_acp_gid = theBrain->GetNewGlobalWANID();
-    respvalues["client_acp_id"] = ToString<int>(temp_acp_gid);
-
 	// Prep the 'static' and recently determined items.
-	AddToStream(body, "client_pub_ip");
-	AddToStream(body, "stun_ip");
-    AddToStream(body, "ubrain_scp_desc");
-	AddToStream(body, "ubrain_acp_desc");
-    AddToStream(body, "client_scp_id");
-    AddToStream(body, "client_acp_id");
+    if (respvalues["use_lan_only"]=="true")
+        AddToStream(body, "use_lan_only");
+    else
+    {
+        temp_scp_gid = theBrain->GetNewGlobalWANID();
+        respvalues["client_scp_id"] = ToString<int>(temp_scp_gid);
+        temp_acp_gid = theBrain->GetNewGlobalWANID();
+        respvalues["client_acp_id"] = ToString<int>(temp_acp_gid);
 
+        AddToStream(body, "stun_ip");
+        AddToStream(body, "ubrain_scp_desc");
+        AddToStream(body, "ubrain_acp_desc");
+        AddToStream(body, "client_scp_id");
+        AddToStream(body, "client_acp_id");
+    }
+
+	AddToStream(body, "client_pub_ip");
     if (bIsEndpoint)
         AddToStream(body, "ep_sf_id");
 
