@@ -1514,7 +1514,7 @@ void uBrainManager::NewSessionState(com::xvd::neuron::scp::State* state)
 //    cout << "Callback from Controller::***New Session State for SFID=" << state->srcId << " in Session=" << state->sessionId << " with state->state = " << state->state << endl;
 
     // No matter what the state->state is...update the session on the sf to which it belongs.
-    if (!state->state == com::xvd::neuron::OBJECT_STATE_DELETE && !state->state == com::xvd::neuron::OBJECT_STATE_DELETED)
+    if (state->state != com::xvd::neuron::OBJECT_STATE_DELETE && state->state != com::xvd::neuron::OBJECT_STATE_DELETED)
         if (!local.GetSessionInfo(state->sessionId) || !local.GetSFInfo(state->srcId))
             coutdbg << "State update for non-existent Session or SF. SFID=" << state->srcId << " and SessionID=" << state->sessionId;
 

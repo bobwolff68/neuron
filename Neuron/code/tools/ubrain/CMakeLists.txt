@@ -25,7 +25,7 @@ SET (SOURCES ubrain.cpp
    xmlinout.cpp
    regserver.cpp
    ubrainmanager.cpp
-   ../../control/test/controller.cpp
+   controller.cpp
 )
 
 # Hack for survival at the moment...just find and link the library. No true dependencies yet.
@@ -84,9 +84,6 @@ endforeach()
 add_definitions(-g3 -DDEBUG -D_DEBUG)
 add_definitions(-DRTI_LINUX -DRTI_UNIX)
 add_definitions(-DUBRAIN)
-
-# special for controller.cpp to be used as a class and not as a main(), run(), etc.
-add_definitions(-DONLY_CONTROLLER_CLASS)
 
 ADD_EXECUTABLE(ubrain ${SOURCES})
 
