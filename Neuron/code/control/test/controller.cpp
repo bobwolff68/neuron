@@ -1029,6 +1029,12 @@ int index;
             pACmetricsSeq = pACPMasterObject->GetMetrics(m_appId);
 
             printf("SF[%d]\n",m_appId);
+	    if (shutDown)
+	    {
+		printf("\tState=Pending Shutdown\n");
+	    	return;
+	    }
+
             if (pACstate != NULL)
             {
                 printf("\tState=%d\n",pACstate->state);
