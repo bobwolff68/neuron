@@ -19,8 +19,6 @@
 
 #define GENERIC_ERROR	-99
 
-//typedef struct SF_s {
-//} SFInfo, *pSFInfo;
 class SFInfo
 {
 public:
@@ -74,11 +72,10 @@ public:
 	SessInfo();
 	virtual ~SessInfo();
 	int sess_id;
-//Removed when SessionInfoOnSF[] was instituted.	SFList session_in_these_sfs;
 	SourceInfoList sourceList;
 	string sessName;
-	// ** TODO: RMW - remove this variable and start using SessionInfoOnSF[] mapping instead.
 	SessOnSFInfoList SessionInfoOnSF;
+    bool SessOnSFListFind(int sfID) { return (SessionInfoOnSF.find(sfID) != SessionInfoOnSF.end()); };
 };
 
 typedef SessInfo* pSessInfo;
@@ -121,7 +118,7 @@ public:
 
 	int AddSession(int sessID, const char* sessname);
 	int AddSFToSession(int sfID, int sessID, int wanID, const char* sessname);
-	int GetNumSFsInSession(int sessID) { return sessList[sessID] ? sessList[sessID]->SessionInfoOnSF.size() : -1; };
+	int GetNumSFsInSession(int sessID) { return SessListFind(sessID) ? sessList[sessID]->SessionInfoOnSF.size() : -1; };
 	int RemoveSession(int sessID);
 	int AddSourceToSession(int sessID, int sfID, int entID, const char* sourceName);
 	int RemoveAllSourcesFromSession(int sessID);
@@ -136,22 +133,28 @@ public:
 	int AddSFInternally(int sfID, const char* ip, int acpID, int scpID, const char* name, bool isEP);
 	int AddSFLaunch(int sfID, const char* ip, const char* name, const char* usernameAt);
 	int RemoveSF(int sfID);
+	int RemoveSFFromAllSessions(int sfID);
+	int RemoveSFFromSession(int sfID, int sessID);
 	void ListSFs(void);
-    SFInfo* GetSFInfo(int sfid) { return sfList[sfid]; };
+    SFInfo* GetSFInfo(int sfid) { if (SFListFind(sfid)) return sfList[sfid]; };
 	int GetNumSFs(void) { return sfList.size(); };
-	com::xvd::neuron::ObjectState GetCurSFState(int sfid) { if (sfList[sfid]) return sfList[sfid]->curSFState; else return (com::xvd::neuron::ObjectState)ID_NOT_FOUND; };
-	int UpdateCurSFState(int sfid, com::xvd::neuron::ObjectState state) { if (sfList[sfid]) { sfList[sfid]->curSFState = state; return 0; } else return ID_NOT_FOUND;};
+	com::xvd::neuron::ObjectState GetCurSFState(int sfid) { if (SFListFind(sfid)) return sfList[sfid]->curSFState; else return (com::xvd::neuron::ObjectState)ID_NOT_FOUND; };
+	int UpdateCurSFState(int sfid, com::xvd::neuron::ObjectState state) { if (SFListFind(sfid)) { sfList[sfid]->curSFState = state; return 0; } else return ID_NOT_FOUND;};
 
 	int AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, const char* entname, int resx, int resy, int src_ent_id=-1);
 	int RemoveEntity(int entID);
 	void ListEntities(void);
-	EntInfo* GetEntInfo(int entID) { return entList[entID]; };
-	EntInfo* GetEntInfo(const char* entname) { string en=entname; return entNameList[en]; };
+	EntInfo* GetEntInfo(int entID) { if (EntListFind(entID)) return entList[entID]; };
+	EntInfo* GetEntInfo(const char* entname) { string en=entname; if (EntListFind(en.c_str())) return entNameList[en]; };
 
 	map<string,EntInfo::EntType> entTypeMap;
 
 	void setRegServerPublicIP(const char* instr) { regServerPublic = instr; };
 protected:
+    bool SFListFind(int sfid) { return (sfList.find(sfid) != sfList.end()); };
+	bool SessListFind(int sessid) { return (sessList.find(sessid) != sessList.end()); };
+    bool EntListFind(int entID) { return (entList.find(entID) != entList.end()); };
+    bool EntListFind(const char * entname) { string en=entname; return (entNameList.find(en) != entNameList.end()); };
 	SFList sfList;
 	SessList sessList;
 	EntList entList;

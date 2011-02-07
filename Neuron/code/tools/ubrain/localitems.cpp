@@ -62,7 +62,7 @@ SessInfo::~SessInfo()
 int LocalItems::AddSession(int sessID, const char* sessname)
 {
 //	cout << "DEBUG: In Addsession with sessID=" << sessID << endl;
-	if (sessList[sessID])
+	if (SessListFind(sessID))
 		return ID_IN_USE;
 
 	pSessInfo pEnt;
@@ -80,6 +80,43 @@ int LocalItems::AddSession(int sessID, const char* sessname)
 	return 0;
 }
 
+int LocalItems::RemoveSFFromAllSessions(int sfID)
+{
+    SessList::iterator sessit;
+    pSFInfo pSF;
+    SessOnSFInfoList::iterator sessSFit;
+
+    // Iterate through all Sessions
+    for ( sessit=sessList.begin() ; sessit != sessList.end(); sessit++ )
+    {
+        assert(sessit->second);
+
+        // If this session has our sfID involved, then remove the SF from it.
+        if (sessit->second->SessOnSFListFind(sfID))
+            RemoveSFFromSession(sfID, sessit->first);
+    }
+
+    return 0;
+}
+
+int LocalItems::RemoveSFFromSession(int sfID, int sessID)
+{
+    SessInfo* pSess = this->GetSessionInfo(sessID);
+    if (!pSess)
+        return ID_NOT_FOUND;
+
+    if (!SFListFind(sfID))
+        return ID_NOT_FOUND;
+
+    if (!pSess->SessOnSFListFind(sfID))
+        return ID_NOT_FOUND;
+
+    // Now we know it's there....delete it.
+    delete pSess->SessionInfoOnSF[sfID];
+    pSess->SessionInfoOnSF.erase(sfID);
+
+    return 0;
+}
 ///
 /// \brief Adds the sessID to the general sessList if it is not present.
 ///        Then adds the given sfID to the list of sf's involved in this session.
@@ -93,19 +130,19 @@ int LocalItems::AddSFToSession(int sfID, int sessID, int wanID, const char* sess
 
 	pSessInfo pSess;
 
-	pSess = sessList[sessID];
+	pSess = this->GetSessionInfo(sessID);
 	if (!pSess)
 		return ID_NOT_FOUND;
 
 	assert(pSess->sess_id == sessID);
 
-	if (pSess->SessionInfoOnSF[sfID])
+	if (pSess->SessOnSFListFind(sfID))
 		return DEST_SF_IN_USE;
 	else
 	{
 	    pSessOnSFInfo psesssf;
 
-        assert(sfList[sfID]);
+        assert(SFListFind(sfID));
 
 	    psesssf = new SessOnSFInfo(sessID, sfList[sfID], wanID);
 	    if (!psesssf)
@@ -128,8 +165,7 @@ int LocalItems::RemoveSession(int sessID)
 {
     pSessInfo pSess;
 
-    pSess = sessList[sessID];
-
+    pSess = this->GetSessionInfo(sessID);
     if (!pSess)
             return ID_NOT_FOUND;
 
@@ -142,8 +178,9 @@ int LocalItems::RemoveSession(int sessID)
     for ( sit=pSess->SessionInfoOnSF.begin() ; sit != pSess->SessionInfoOnSF.end(); sit++ )
     {
         // Decrement number of sessions in the sf.
-        assert(sfList[sit->first]);
-        sfList[sit->first]->num_sessions--;
+        assert(SFListFind(sit->first));
+        if (SFListFind(sit->first))
+            sfList[sit->first]->num_sessions--;
 
         // delete the entry in the list within the session
         assert(sit->second);
@@ -167,8 +204,7 @@ int LocalItems::RemoveSession(int sessID)
 
 int LocalItems::RemoveAllSourcesFromSession(int sessID)
 {
-	SessInfo* pSess = sessList[sessID];
-
+	SessInfo* pSess = this->GetSessionInfo(sessID);
 	if (!pSess)
 		return ID_NOT_FOUND;
 
@@ -188,8 +224,7 @@ int LocalItems::RemoveAllSourcesFromSession(int sessID)
 
 int LocalItems::ListSourcesInSession(int sessID)
 {
-	SessInfo* pSess = sessList[sessID];
-
+    SessInfo* pSess = this->GetSessionInfo(sessID);
 	if (!pSess)
 		return ID_NOT_FOUND;
 
@@ -213,15 +248,13 @@ int LocalItems::ListSourcesInSession(int sessID)
 ///
 int LocalItems::RemoveSessionFromSF(int sessID, int sfID)
 {
-    pSessInfo pSess;
-
-    pSess = sessList[sessID];
+    SessInfo* pSess = this->GetSessionInfo(sessID);
 	if (!pSess)
 		return ID_NOT_FOUND;
 
-	if (pSess->SessionInfoOnSF[sfID])
+	if (pSess->SessOnSFListFind(sfID))
 	{
-	    assert(sfList[sfID]);
+	    assert(SFListFind(sfID));
 	    sfList[sfID]->num_sessions--;
 
 	    // delete the info entry object.
@@ -278,14 +311,15 @@ void LocalItems::ListSessions(void)
 
 SessInfo* LocalItems::GetSessionInfo(int sessID)
 {
-	return sessList[sessID];
+    if (SessListFind(sessID))
+        return sessList[sessID];
+    else
+        return NULL;
 }
 
 bool LocalItems::GetSFsForSession(int sessID, SFList& sfs, bool bEPOnly)
 {
-    pSessInfo pSess;
-
-    pSess = sessList[sessID];
+    SessInfo* pSess = this->GetSessionInfo(sessID);
 	if (!pSess)
 	    return false;
 
@@ -306,10 +340,10 @@ bool LocalItems::GetSFsForSession(int sessID, SFList& sfs, bool bEPOnly)
 
 com::xvd::neuron::ObjectState LocalItems::GetCurStateInSFForSession(int sfid, int sessid)
 {
-    if (!sessList[sessid])
+    if (!SessListFind(sessid))
         return (com::xvd::neuron::ObjectState)DEST_SESS_NOT_FOUND;
 
-    if (!sessList[sessid]->SessionInfoOnSF[sfid])
+    if (!sessList[sessid]->SessOnSFListFind(sfid))
         return (com::xvd::neuron::ObjectState)DEST_SF_NOT_FOUND;
 
     // Make sure there is a current state registered for the sfid -- should be there.
@@ -320,10 +354,10 @@ com::xvd::neuron::ObjectState LocalItems::GetCurStateInSFForSession(int sfid, in
 
 int LocalItems::UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neuron::ObjectState state)
 {
-    if (!sessList[sessid])
+    if (!SessListFind(sessid))
         return DEST_SESS_NOT_FOUND;
 
-    if (!sessList[sessid]->SessionInfoOnSF[sfid])
+    if (!sessList[sessid]->SessOnSFListFind(sfid))
         return DEST_SF_NOT_FOUND;
 
     // Make sure there is a current state registered for the sfid -- should be there.
@@ -336,7 +370,7 @@ int LocalItems::UpdateCurStateInSFForSession(int sfid, int sessid, com::xvd::neu
 
 int LocalItems::AddSFInternally(int sfID, const char* ip, int acpID, int scpID, const char* name, bool isEP)
 {
-	if (sfList[sfID])
+	if (SFListFind(sfID))
 		return ID_IN_USE;
 
 	pSFInfo pSF;
@@ -424,14 +458,17 @@ int LocalItems::AddSFLaunch(int sfID, const char* ip, const char* name, const ch
 
 int LocalItems::RemoveSF(int sfID)
 {
-	if (!sfList[sfID])
+	if (!SFListFind(sfID))
 		return ID_NOT_FOUND;
+
+	if (!RemoveSFFromAllSessions(sfID))
+	    coutdbg << "While removing SF from all sessions, an error occurred. Continuing to delete SF." << endl;
 
 	delete sfList[sfID];
 	sfList.erase(sfID);
 
-	cout << "List of Factories..." << endl;
-	ListSFs();
+//	cout << "List of Factories..." << endl;
+//	ListSFs();
 
 	return 0;
 }
@@ -460,18 +497,18 @@ void LocalItems::ListSFs(void)
 ///
 int LocalItems::AddEntity(int entID, int sfID, int sessID, EntInfo::EntType type, const char* entname, int resx, int resy, int src_ent_id)
 {
-	if (entList[entID])
+	if (EntListFind(entID))
 		return ID_IN_USE;
 
     // Make sure the SF exists.
-    if (!sfList[sfID])
+    if (!SFListFind(sfID))
         return DEST_SF_NOT_FOUND;
 
-    if (!sessList[sessID])
+    if (!SessListFind(sessID))
         return DEST_SESS_NOT_FOUND;
 
     // Now ensure the session mentioned does exist on the sfid given.
-    assert(sessList[sessID]->SessionInfoOnSF[sfID]);
+    assert(sessList[sessID]->SessOnSFListFind(sfID));
     assert(sessList[sessID]->SessionInfoOnSF[sfID]->pSF == sfList[sfID]);
 
     pEntInfo pEnt;
@@ -507,13 +544,12 @@ int LocalItems::AddSourceToSession(int sessID, int sfID, int entID, const char* 
 	string epName;
 
 	// Find the session - else all bets are off.
-	pSess = sessList[sessID];
-
+	pSess = this->GetSessionInfo(sessID);
 	if (!pSess)
 		return DEST_SESS_NOT_FOUND;
 
 	// Ensure the sf to which the source belongs is marked as "involved" with this session
-	assert(pSess->SessionInfoOnSF[sfID]);
+	assert(pSess->SessOnSFListFind(sfID));
 	pSF = pSess->SessionInfoOnSF[sfID]->pSF;
 
 	if (!pSF)
@@ -538,10 +574,10 @@ int LocalItems::AddSourceToSession(int sessID, int sfID, int entID, const char* 
 
 int LocalItems::RemoveEntity(int entID)
 {
-	if (!entList[entID])
+	if (!EntListFind(entID))
 		return ID_NOT_FOUND;
 
-	if (!entNameList[entList[entID]->entname])
+	if (!EntListFind(entList[entID]->entname.c_str()))
 		return ID_NOT_FOUND;
 
 	// Remove name from the entNameList
