@@ -12,6 +12,7 @@ class StdOutSink : public SessionEntity,public EventHandlerT<StdOutSink>,public 
         int epId;
         DDSInputObject     *pInputObj;
         StdOutOutputObject *pOutputObj;
+        ReorderMap         *pReorderMap;
 
         void EventHandleLoop(void)
         {
@@ -24,7 +25,7 @@ class StdOutSink : public SessionEntity,public EventHandlerT<StdOutSink>,public 
                 if(HandleNextEvent())
                 {
                     count++;
-                    if(count%10==0)
+                    /*if(count%10==0)
                     {
                         std::string CurReaderPartition = ToString<int>(epId) + "/" + layerPartitions[(i-1)%4];
                         std::string NxtReaderPartition = ToString<int>(epId) + "/" + layerPartitions[i%4];
@@ -33,7 +34,7 @@ class StdOutSink : public SessionEntity,public EventHandlerT<StdOutSink>,public 
                         std::cout << MOO_LOG_PROMPT(id) << ": " << CurReaderPartition << "-->" << NxtReaderPartition << std::endl;
 #endif
                         i++;
-                    }
+                    }*/
                 }
             }
 
@@ -46,17 +47,21 @@ class StdOutSink : public SessionEntity,public EventHandlerT<StdOutSink>,public 
         void HandleMediaInputEvent(Event *pEvent)
         {
             DataSampleSet *pSampleSet = reinterpret_cast<MediaInputEvent<DataSampleSet*>*>(pEvent)->GetData();
+            map<long,ReorderMapElement*> OrderedSamples;
 
-            for(int i=0; i<pSampleSet->pSeqData->length(); i++)
+            pReorderMap->InsertSampleSet(pSampleSet);
+            pReorderMap->GetOrderedSamples(OrderedSamples);
+            while(!OrderedSamples.empty())
             {
-                if((*pSampleSet->pSeqInfo)[i].valid_data)
-                {
-                    int num = *(reinterpret_cast<int*>((*pSampleSet->pSeqData)[i].payload.get_contiguous_buffer()));
-                    pOutputObj->Write(num);
-                }
+                int num = *(reinterpret_cast<int*>((*(OrderedSamples.begin()->second->pSample)).payload.get_contiguous_buffer()));
+                int seqNum = (*(OrderedSamples.begin()->second->pSample)).seqNum;
+                
+                cout << "seqNum: " << seqNum << " ";
+                pOutputObj->Write(num);
+                delete OrderedSamples.begin()->second;
+                OrderedSamples.erase(OrderedSamples.begin());
             }
 
-            delete pSampleSet;
             return;
         }
 
@@ -76,12 +81,14 @@ class StdOutSink : public SessionEntity,public EventHandlerT<StdOutSink>,public 
             epId = epIdP;
             pInputObj = new DDSInputObject(idP,this,pOwnerDPP,pTopicP);
             pOutputObj = new StdOutOutputObject(idP);
+            pReorderMap = new ReorderMap();
             AddHandleFunc(&StdOutSink::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
             pInputObj->AddLayerReader(ReaderRegExp.c_str());
         }
 
         ~StdOutSink()
         {
+            delete pReorderMap;
             delete pInputObj;
             delete pOutputObj;
         }

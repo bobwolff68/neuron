@@ -54,10 +54,15 @@ EventHandlerT<SessionLeader>(),ThreadSingle()
     pMediaParticipant = new MediaParticipant(domIdParam,sessionId,name,
                                              QosProfileMedia.c_str(),PropertyPairsMedia,
                                              PropagateDiscoveryFlagsMedia);
+                                             
     MEDIA_TOPIC_NAME(topicName,"video_",sessionId);
     pMediaParticipant->AddTopic("video",topicName);
     if(!lanOnlyMode)
         pMediaParticipant->AddPeersAndWaitForDiscovery(PeerDescListMedia,10000);
+
+    NDDSConfigLogger::get_instance()->
+        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
+                                  NDDS_CONFIG_LOG_VERBOSITY_WARNING);
     
     SetStateStandby();
 }
@@ -237,7 +242,7 @@ void SessionLeader::ProcessScript(const char *script)
 		{
 			case ENTITY_KIND_NATNUMSRC:
 			{
-				NatNumSrc *pSrc = new NatNumSrc(entityId,id,sessionId,20,1,5,
+				NatNumSrc *pSrc = new NatNumSrc(entityId,id,sessionId,20,1,5,1,
                                                 pMediaParticipant->GetDomParticipant(),
                                                 pMediaParticipant->GetTopic("video"));
 				pSrc->startThread();

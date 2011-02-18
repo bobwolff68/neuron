@@ -36,15 +36,16 @@ int main(int argc, char *argv[])
         cout << "In LAN only mode..." << endl;
     }
     
-	SessionFactory	sf(sfId,argv[2],ownerId,domId,pRegClient->publicPairs);
+	SessionFactory	*pSF = new SessionFactory(sfId,argv[2],ownerId,domId,pRegClient->publicPairs);
 	
-	sf.startThread();
-	while(!sf.stop)
+	pSF->startThread();
+	while(!pSF->stop)
 	{
-		usleep(20000);
+		usleep(10000000);
 	}
-	sf.stopThread();
+	pSF->stopThread();
 	
+	delete pSF;
 	delete pRegClient;
 	return 0;
 }

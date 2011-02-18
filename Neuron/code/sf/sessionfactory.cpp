@@ -38,6 +38,7 @@ bool GetPeerDescListFromPeerList(string &Value,map<int,string> &MediaPeerDescLis
         WanDescriptor += (int2hexstream.str()+":1.1.1.1");
         MediaPeerDescList[peerWanId] = WanDescriptor;
         cout << "Descriptor: " << WanDescriptor << endl;
+        
     }
     
     return true;
@@ -79,14 +80,14 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
     }        
 
 // Set to WARNING status messages
-    NDDSConfigLogger::get_instance()->
-        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
-                                  NDDS_CONFIG_LOG_VERBOSITY_WARNING);
+//    NDDSConfigLogger::get_instance()->
+//        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
+//                                  NDDS_CONFIG_LOG_VERBOSITY_WARNING);
 
 //If debug dds libs used, set verbosity high
-    //NDDSConfigLogger::get_instance()->
-    //    set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
-    //                              NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
+//    NDDSConfigLogger::get_instance()->
+//        set_verbosity_by_category(NDDS_CONFIG_LOG_CATEGORY_API,
+//                                  NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
 
 	// Create Admin Control Plane (ACP) slave
 	GEN_CP_INTERFACE_NAME(ACPSlaveName,name,ACP_SLAVE_NAME);
@@ -154,6 +155,7 @@ SessionFactory::SessionFactory(IDType sfIdParam,const char *nameParam,IDType own
 	// Create Resource Monitor Object
 	//TRY_NEW(pResMtrObj,ResourceMonitor,"SessionFactory::SessionFactory()/new(ResourceMonitor): ");
 
+    partIdxAvailable = 3;
 	SetStateStandby();
 }
 
@@ -173,6 +175,7 @@ SessionFactory::~SessionFactory()
 	SetStateDeleted();
 	pACSlave->DeleteSlaveObject(pACSlaveObj);
 	delete pACSlave;
+	DDSDomainParticipantFactory::finalize_instance();
 }
 
 void SessionFactory::HandleNewSessionEvent(Event *pEvent)
@@ -227,6 +230,8 @@ void SessionFactory::HandleNewSessionEvent(Event *pEvent)
                         {
                             PropertyPairsMedia["dds.transport.wan_plugin.wan.server"] = StunLocator;
                             PropagateDiscoveryFlagsMedia["dds.transport.wan_plugin.wan.server"] = DDS_BOOLEAN_FALSE;
+                            PropertyPairsMedia["participant_id"] = ToString<int>(++partIdxAvailable);
+                            partIdxAvailable++;
                         }
                         
                         pSession = new RemoteSessionSF(pSCSlave,pSCSlaveObjLocal,pLSCMaster,

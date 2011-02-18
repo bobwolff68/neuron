@@ -14,6 +14,7 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
         int                 srcId;
         int                 nLayers;
         std::string         curLayerPartition;
+        ReorderMap         *pReorderMap;
         DDSInputObject     *pInputObj;
         DDSOutputObject    *pOutputObj;
         H264BufferParser   *pParser;
@@ -29,32 +30,34 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
             return;
         }
 
-        void DetermineSamplePartition(char *layerPartitionName,DataSampleSet *pSampleSet,int sampIdx)
+        void DetermineSamplePartition(string &Partition,com::xvd::neuron::media::DataUnit *pSample)
         {
-            int             bufSize = (int) (*pSampleSet->pSeqData)[sampIdx].payload.length();
-            unsigned char  *pBuf = reinterpret_cast<unsigned char *>((*pSampleSet->pSeqData)[sampIdx].payload.get_contiguous_buffer());
+            int             bufSize = (int) (*pSample).payload.length();
+            unsigned char  *pBuf = reinterpret_cast<unsigned char *>((*pSample).payload.get_contiguous_buffer());
 
             if(!pParser->ParseBuffer(pBuf,bufSize,0))   return;
-            strcpy(layerPartitionName,(ToString<int>(id)+"/"+ToString<int>(LAYER_TYPE(pParser->type))).c_str());
+            Partition = ToString<int>(id)+"/"+ToString<int>(LAYER_TYPE(pParser->type));
             return;
         }
 
         void HandleMediaInputEvent(Event *pEvent)
         {
-            DataSampleSet *pSampleSet = reinterpret_cast<MediaInputEvent<DataSampleSet*>*>(pEvent)->GetData();
+            DataSampleSet                  *pSampleSet = reinterpret_cast<MediaInputEvent<DataSampleSet*>*>(pEvent)->GetData();
+            map<long,ReorderMapElement*>    OrderedSamples;
+            string                          Partition;
 
-            for(int i=0; i<pSampleSet->pSeqData->length(); i++)
+            pReorderMap->InsertSampleSet(pSampleSet);
+            pReorderMap->GetOrderedSamples(OrderedSamples);
+            while(!OrderedSamples.empty())
             {
-                if((*pSampleSet->pSeqInfo)[i].valid_data)
-                {
-                    char layerPartitionName[50];
-                    DetermineSamplePartition(layerPartitionName,pSampleSet,i);
-//                    std::cout << "Partition: " << layerPartitionName << std::endl;
-                    pOutputObj->Write(layerPartitionName,(*pSampleSet->pSeqData)[i]);
-                }
+                com::xvd::neuron::media::DataUnit *pSample = OrderedSamples.begin()->second->pSample;
+                DetermineSamplePartition(Partition,pSample);
+                pOutputObj->Write(Partition.c_str(),*pSample);
+                delete OrderedSamples.begin()->second;
+                OrderedSamples.erase(OrderedSamples.begin());
             }
 
-            delete pSampleSet;
+            //delete pSampleSet;
             return;
         }
 
@@ -78,12 +81,14 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
             pInputObj = new DDSInputObject(id,this,pOwnerDP,pTopicP);
             pInputObj->AddLayerReader(curLayerPartition.c_str());
             pOutputObj = new DDSOutputObject(id,pOwnerDP,pTopicP);
+            pReorderMap = new ReorderMap();
             for(int i=0; i<nLayers; i++)
                 pOutputObj->AddLayerWriter((ToString<int>(id)+"/"+ToString<int>(i)).c_str());
         }
 
         ~RelayProxy()
         {
+            delete pReorderMap;
             delete pParser;
             delete pInputObj;
             delete pOutputObj;

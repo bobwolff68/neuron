@@ -202,6 +202,10 @@ class MediaParticipant
             
             //Discovery data
             ConfigDiscovery(partQos);
+            
+            //Set participant_id
+            //partQos.wire_protocol.participant_id = (DDS_Long) FromStringNoChecking<int>(PropertyPairs["participant_id"]);
+            PropertyPairs.erase("participant_id");
 
             //Add Properties
             SetPropertyQosPolicy(partQos.property,PropertyPairs,PropagateDiscoveryFlags);
@@ -229,6 +233,7 @@ class MediaParticipant
                 exit(0);
             }
 
+
             //Enable autenable of domain participants
             //SetParticipantFactoryAutoEnableEntities(DDS_BOOLEAN_TRUE);
 
@@ -241,6 +246,7 @@ class MediaParticipant
                 pPartFactory->delete_participant(pDomParticipant);
                 exit(0);
             }
+            cout << "MediaParticipant(): registered type..." << endl;                        
         }
 
         ~MediaParticipant()

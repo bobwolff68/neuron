@@ -15,6 +15,7 @@ class SampleQueueSink : public SessionEntity,public EventHandlerT<SampleQueueSin
         int                         srcId;
         int                         curSeqNum;
         std::string                 curLayerPartition;
+        ReorderMap                 *pReorderMap;
         DDSInputObject             *pInputObj;
         SampleQueueOutputObject    *pOutputObj;
 
@@ -31,23 +32,27 @@ class SampleQueueSink : public SessionEntity,public EventHandlerT<SampleQueueSin
 
         void HandleMediaInputEvent(Event *pEvent)
         {
-            DataSampleSet *pSampleSet = reinterpret_cast<MediaInputEvent<DataSampleSet*>*>(pEvent)->GetData();
+            DataSampleSet                      *pSampleSet = reinterpret_cast<MediaInputEvent<DataSampleSet*>*>(pEvent)->GetData();
+            com::xvd::neuron::media::DataUnit  *pSample = NULL;
+            map<long,ReorderMapElement*>        OrderedSamples;
 
-            for(int i=0; i<pSampleSet->pSeqData->length(); i++)
-                if((*pSampleSet->pSeqInfo)[i].valid_data)
+            pReorderMap->InsertSampleSet(pSampleSet);
+            pReorderMap->GetOrderedSamples(OrderedSamples);
+            while(!OrderedSamples.empty())
+            {
+                pSample = OrderedSamples.begin()->second->pSample;
+                if(((*pSample).seqNum)==0 || curSeqNum>=((*pSample).seqNum))
                 {
-                    if(((*pSampleSet->pSeqData)[i].seqNum)==0 || curSeqNum>=((*pSampleSet->pSeqData)[i].seqNum))
-                    {
-                        pOutputObj->Clear();
-                        std::cout << std::endl << "--------STATS FOR NEW STREAM--------" << std::endl;
-                    }
-
-                    pOutputObj->Write((*pSampleSet->pSeqData)[i].seqNum);
-                    curSeqNum = (*pSampleSet->pSeqData)[i].seqNum;
+                    pOutputObj->Clear();
+                    std::cout << std::endl << "--------STATS FOR NEW STREAM--------" << std::endl;
                 }
 
-            delete pSampleSet;
-
+                pOutputObj->Write((*pSample).seqNum);
+                curSeqNum = (*pSample).seqNum;
+                delete OrderedSamples.begin()->second;
+                OrderedSamples.erase(OrderedSamples.begin());
+            }
+            
             return;
         }
 
@@ -70,10 +75,12 @@ class SampleQueueSink : public SessionEntity,public EventHandlerT<SampleQueueSin
             AddHandleFunc(&SampleQueueSink::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
             pInputObj->AddLayerReader(curLayerPartition.c_str());
             pOutputObj = new SampleQueueOutputObject(idP,maxQueueLenP);
+            pReorderMap = new ReorderMap();
         }
 
         ~SampleQueueSink()
         {
+            delete pReorderMap;
             delete pInputObj;
             delete pOutputObj;
         }

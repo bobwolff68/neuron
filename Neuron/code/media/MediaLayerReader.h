@@ -18,6 +18,8 @@ class DataSampleSet
 {
     public:
 
+    int nSamplesToBeWritten;
+    
     com::xvd::neuron::media::DataUnitDataReader *pReader;
     com::xvd::neuron::media::DataUnitSeq        *pSeqData;
     DDS_SampleInfoSeq                           *pSeqInfo;
@@ -29,6 +31,11 @@ class DataSampleSet
         pReader = pReaderP;
         pSeqData = pSeqDataP;
         pSeqInfo = pSeqInfoP;
+        
+        nSamplesToBeWritten = pSeqData->length();
+        for(int i=0; i<pSeqData->length(); i++)
+            if(!(*pSeqInfo)[i].valid_data)
+                nSamplesToBeWritten--;
     }
 
     ~DataSampleSet()

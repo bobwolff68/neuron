@@ -11,6 +11,7 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
 
         int numLayers;
         long seqNum;
+        bool outOfOrderMode;
         NatNumStreamInputObject *pInputObj;
         DDSOutputObject *pOutputObj;
 
@@ -32,15 +33,22 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
 
         void HandleMediaInputEvent(Event *pEvent)
         {
+            int finalSeqNum;
+            int seqNumArr[10] = {0,2,1,4,3,6,5,8,7,9};
             int num = reinterpret_cast<MediaInputEvent<int> *>(pEvent)->GetData();
             char layerPartitionName[50];
 
             sprintf(layerPartitionName,"%d/%d",id,num%numLayers);
 #ifdef VERBOSE_OUTPUT
-            std::cout << MOO_LOG_PROMPT(id) << ": (data=" << num << ",layer=" << layerPartitionName << ")" << std::endl;
+            std::cout << MOO_LOG_PROMPT(id) << ": (data=" << num << ",layer=" << layerPartitionName << ") ";// << std::endl;
 #endif
-            pOutputObj->Write((const char *)layerPartitionName,seqNum++,
+            if(outOfOrderMode)
+                finalSeqNum = 10*(seqNum/10) + seqNumArr[(seqNum++)%10];
+            else
+                finalSeqNum = seqNum++;
+            pOutputObj->Write((const char *)layerPartitionName,finalSeqNum,
                               (unsigned char *)&num,(int)sizeof(int));
+            cout << "seqNum: " << finalSeqNum << endl;
 
             return;
         }
@@ -53,11 +61,13 @@ class NatNumSrc : public SessionEntity,public EventHandlerT<NatNumSrc>,public Th
 
     public:
 
-        NatNumSrc(int idP,int ownerIdP,int sessionIdP,int uLimitP,int streamPeriodSecsP,int numLayersP,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP):
+        NatNumSrc(int idP,int ownerIdP,int sessionIdP,int uLimitP,int streamPeriodSecsP,int numLayersP,
+        bool oooMode,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP):
         SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_NATNUMSRC),EventHandlerT<NatNumSrc>(),ThreadSingle()
         {
             numLayers = numLayersP;
             seqNum = 0;
+            outOfOrderMode = oooMode;
             pInputObj = new NatNumStreamInputObject(this,idP,uLimitP,streamPeriodSecsP);
             pOutputObj = new DDSOutputObject(idP,pOwnerDPP,pTopicP);
             AddHandleFunc(&NatNumSrc::HandleMediaInputEvent,MEDIA_INPUT_EVENT);

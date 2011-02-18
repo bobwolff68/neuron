@@ -58,7 +58,7 @@ int main(int argc, char** argv)
     {
         respvals["stun_ip"] = stunserver;
 
-        respvals["ubrain_acp_desc"] = "1@wan://::" UBRAIN_WAN_ACPID_STR ":1.1.1.1";
+        respvals["ubrain_acp_desc"] = "0@wan://::" UBRAIN_WAN_ACPID_STR ":1.1.1.1";
         respvals["ubrain_scp_desc"] = "1@wan://::" UBRAIN_WAN_SCPID_STR ":1.1.1.1";
         respvals["ubrain_acp_id"] = ToString<int>(UBRAIN_WAN_ACPID);
         respvals["ubrain_scp_id"] = ToString<int>(UBRAIN_WAN_SCPID);

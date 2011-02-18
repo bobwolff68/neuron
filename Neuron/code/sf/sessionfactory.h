@@ -261,6 +261,7 @@ class SessionFactory : public EventHandlerT<SessionFactory>, public ThreadSingle
 		IDType						id;
 		IDType						ownerId;
 		int							domId;
+		int                         partIdxAvailable;
 		bool                        lanOnlyMode;
 		char					   	name[100];
 		SCPSlave   				   *pSCSlave;

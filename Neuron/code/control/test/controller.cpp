@@ -188,6 +188,12 @@ int index;
         RemoteSessionFactoryMap::iterator it;
         RemoteSessionFactory *rsf;
 
+	/*if (0x2000>(int)state)
+	{
+		coutdbg << "Death? - stateptr=" << hex << state << 
+			", infoptr=" << hex << info << ", info->valid_data=" << dec << info->valid_data << endl;
+	}*/
+
         // TODO MANJESH - this becomes a CRASH if the remote SF has DIED. How can we handle this type of problem?
         it = remoteSF.find(state->srcId);
 
@@ -1159,6 +1165,7 @@ int index;
                     break;
                 case ACP_EVENT_SESSION_STATE_UPDATE:
                     pACstate = (reinterpret_cast<ACPEventSessionStateUpdate*>(e))->GetData();
+		//coutdbg << "pACstate=" << hex << pACstate << dec << endl;
                     controller->RemoteSFUpdate(pACstate,(reinterpret_cast<ACPEventSessionStateUpdate*>(e))->GetSampleInfo());
                     break;
                 case ACP_EVENT_SESSION_METRICS_UPDATE:

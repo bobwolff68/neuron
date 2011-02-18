@@ -121,20 +121,23 @@ bool EventHandlerT<NeuronEntityType>::HandleNextEvent(void)
 
     if(sem_timedwait(&eqSem,&TimeOut)==0)
     {
-    	pEvent = EventQueue.front();
-		EventQueue.pop();
+        if(NumEvents()>0)
+        {
+    	    pEvent = EventQueue.front();
+		    EventQueue.pop();
 	
-		if(pEvent != NULL) 
-		{
-		    if (EventHandleFuncList[pEvent->GetKind()]!=NULL)
-			{
-	    		(((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
-	    		delete pEvent;
-	    		retVal = true;
-			}
-		}
-		else
-			std::cout << "Can't handle null event" << std::endl;
+		    if(pEvent != NULL) 
+		    {
+		        if (EventHandleFuncList[pEvent->GetKind()]!=NULL)
+		    	{
+	        		(((NeuronEntityType*)this)->*EventHandleFuncList[pEvent->GetKind()])(pEvent);
+	        		delete pEvent;
+	        		retVal = true;
+		    	}
+		    }
+		    else
+			    std::cout << "Can't handle null event" << std::endl;
+        }
 	}
 	
 	return retVal;

@@ -79,7 +79,7 @@ int SCPEventSessionStateDisposed::GetDstId()
 
 //! \brief State disposed event
 //!
-SCPEventSessionStateLost::SCPEventSessionStateLost(int _dstId) : Event(SCP_EVENT_SESSION_STATE_UPDATE)
+SCPEventSessionStateLost::SCPEventSessionStateLost(int _dstId) : Event(SCP_EVENT_SESSION_STATE_LOST)
 {
     dstId = _dstId;
 }

@@ -79,6 +79,11 @@ public:
             if (info_seq[i].valid_data)
             {
                 ev = new ACPEventSessionStateUpdate(&data_seq[i],&info_seq[i]);
+	//coutdbg << "ev=" << hex << ev << dec << endl;
+	//com::xvd::neuron::acp::State * pACstate;
+    //     pACstate = (reinterpret_cast<ACPEventSessionStateUpdate*>(ev))->GetData();
+    //            coutdbg << "pACstate=" << hex << pACstate << dec << endl;
+  
                 sm->PostEvent(ev);
             }
         }

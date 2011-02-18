@@ -45,7 +45,7 @@ int ACPEventDeleteSession::GetSessionId()
 
 //! \brief State disposed event
 //!
-ACPEventSessionStateLost::ACPEventSessionStateLost(int _dstId) : Event(ACP_EVENT_SESSION_STATE_UPDATE)
+ACPEventSessionStateLost::ACPEventSessionStateLost(int _dstId) : Event(ACP_EVENT_SESSION_STATE_LOST)
 {
     dstId = _dstId;
 }

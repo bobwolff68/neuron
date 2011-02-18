@@ -21,6 +21,7 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
         int                         count;
         std::string                 DecInFifoName;
         std::string                 curLayerPartition;
+        ReorderMap                 *pReorderMap;
         H264BufferParser           *pParser;
         DDSInputObject             *pInputObj;
         H264DecoderOutputObject    *pOutputObj;
@@ -41,96 +42,101 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
             DataSampleSet *pSampleSet = reinterpret_cast<MediaInputEvent<DataSampleSet*>*>(pEvent)->GetData();
             int spsIdxMap[3] = {SPSQ_STREAM_INDEX,SPSH_STREAM_INDEX,SPSF_STREAM_INDEX};
             const char  *frmTypes[5] = {"i","I","P","B","b"};
+            map<long,ReorderMapElement*> OrderedSamples;
 
             if(pOutputObj==NULL)
                 pOutputObj = new H264DecoderOutputObject(id,DecInFifoName.c_str());
 
-            for(int i=0; i<pSampleSet->pSeqData->length(); i++)
+            pReorderMap->InsertSampleSet(pSampleSet);
+            pReorderMap->GetOrderedSamples(OrderedSamples);
+            
+            while(!OrderedSamples.empty())
             {
-                if((*pSampleSet->pSeqInfo)[i].valid_data)
+                com::xvd::neuron::media::DataUnit *pSample = OrderedSamples.begin()->second->pSample;
+                unsigned char  *pBuf = reinterpret_cast<unsigned char *>((*pSample).payload.get_contiguous_buffer());
+                int             bufSize = (int) (*pSample).payload.length();
+
+                if(!pParser->ParseBuffer(pBuf,bufSize,0))   return;
+
+                if(pParser->type==X264_TYPE_IDR || pParser->type==X264_TYPE_I || pParser->type==X264_TYPE_P)
                 {
-                    unsigned char  *pBuf = reinterpret_cast<unsigned char *>((*pSampleSet->pSeqData)[i].payload.get_contiguous_buffer());
-                    int             bufSize = (int) (*pSampleSet->pSeqData)[i].payload.length();
-
-                    if(!pParser->ParseBuffer(pBuf,bufSize,0))   return;
-
-                    if(pParser->type==X264_TYPE_IDR || pParser->type==X264_TYPE_I || pParser->type==X264_TYPE_P)
+                    //If IDR or I frame, write SEI header if not written
+                    if(pParser->type==X264_TYPE_IDR || pParser->type==X264_TYPE_I)
                     {
-                        //If IDR or I frame, write SEI header if not written
-                        if(pParser->type==X264_TYPE_IDR || pParser->type==X264_TYPE_I)
+                        if(!bSEIWritten)
                         {
-                            if(!bSEIWritten)
+                            if(pParser->vh.streamBuf[SEI_STREAM_INDEX]!=NULL)
                             {
-                                if(pParser->vh.streamBuf[SEI_STREAM_INDEX]!=NULL)
-                                {
-                                   std::cout << "SEI Header (Size: " << pParser->vh.size[SEI_STREAM_INDEX] << ")" << std::endl;
-                                    pOutputObj->Write(pParser->vh.streamBuf[SEI_STREAM_INDEX],pParser->vh.size[SEI_STREAM_INDEX]);
-                                    bSEIWritten = true;
-                                }
+                                std::cout << "SEI Header (Size: " << pParser->vh.size[SEI_STREAM_INDEX] << ")" << std::endl;
+                                pOutputObj->Write(pParser->vh.streamBuf[SEI_STREAM_INDEX],pParser->vh.size[SEI_STREAM_INDEX]);
+                                bSEIWritten = true;
                             }
-                        }
-
-                        //Determine start of a new GOP by comparing frame types, and if true,
-                        //send sps if frame rate change requested
-                        if(pParser->type<=curFrameType)
-                        {
-                            //std::cout << "1" << std::endl;
-                            if(!bSPSWritten || prevLayerULimit!=curLayerULimit)
-                            {
-                                if(prevLayerULimit!=curLayerULimit)
-                                {
-                                    std::string newLayerPartition;
-                                    prevLayerULimit = curLayerULimit;
-                                    newLayerPartition = ToString<int>(srcId) + "/[0-" + ToString<int>(curLayerULimit) + "]";
-                                    pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),newLayerPartition.c_str());
-                                    curLayerPartition = newLayerPartition;
-                                }
-
-                                if(pParser->vh.streamBuf[spsIdxMap[curLayerULimit]]!=NULL)
-                                {
-                                    std::cout << "SPS Header (Index: " << spsIdxMap[curLayerULimit] << ", Size: " << pParser->vh.size[spsIdxMap[curLayerULimit]] << ")" << std::endl;
-                                    pOutputObj->Write(pParser->vh.streamBuf[spsIdxMap[curLayerULimit]],pParser->vh.size[spsIdxMap[curLayerULimit]]);
-                                    bSPSWritten = true;
-                                }
-                            }
-                        }
-
-                        //If IDR or I frame, write PPS header if not written
-                        if(pParser->type==X264_TYPE_IDR || pParser->type==X264_TYPE_I)
-                        {
-                            if(!bPPSWritten)
-                            {
-                                if(pParser->vh.streamBuf[PPS_STREAM_INDEX]!=NULL)
-                                {
-                                    std::cout << "PPS Header (Size: " << pParser->vh.size[PPS_STREAM_INDEX] << ")" << std::endl;
-                                    pOutputObj->Write(pParser->vh.streamBuf[PPS_STREAM_INDEX],pParser->vh.size[PPS_STREAM_INDEX]);
-                                    bPPSWritten = true;
-                                }
-                            }
-                        }
-
-                        //Write frame
-                        if(bSEIWritten && bSPSWritten && bPPSWritten)
-                        {
-                            //std::cout << (*pSampleSet->pSeqData)[i].seqNum << " :\t" << frmTypes[pParser->type-1] << " :\t" << bufSize << std::endl;
-                            pOutputObj->Write(pBuf,bufSize);
-                            curFrameType = pParser->type;
                         }
                     }
-                    else if(pParser->type==X264_TYPE_BREF || pParser->type==X264_TYPE_B)
+
+                    //Determine start of a new GOP by comparing frame types, and if true,
+                    //send sps if frame rate change requested
+                    if(pParser->type<=curFrameType)
                     {
-                        //Write frame
-                        if(bSEIWritten && bSPSWritten && bPPSWritten)
+                        //std::cout << "1" << std::endl;
+                        if(!bSPSWritten || prevLayerULimit!=curLayerULimit)
                         {
-                            //std::cout << (*pSampleSet->pSeqData)[i].seqNum << " :\t" << frmTypes[pParser->type-1] << " :\t" << bufSize << std::endl;
-                            pOutputObj->Write(pBuf,bufSize);
-                            curFrameType = pParser->type;
+                            if(prevLayerULimit!=curLayerULimit)
+                            {
+                                std::string newLayerPartition;
+                                prevLayerULimit = curLayerULimit;
+                                newLayerPartition = ToString<int>(srcId) + "/[0-" + ToString<int>(curLayerULimit) + "]";
+                                pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),newLayerPartition.c_str());
+                                curLayerPartition = newLayerPartition;
+                            }
+
+                            if(pParser->vh.streamBuf[spsIdxMap[curLayerULimit]]!=NULL)
+                            {
+                                std::cout << "SPS Header (Index: " << spsIdxMap[curLayerULimit] << ", Size: " 
+                                          << pParser->vh.size[spsIdxMap[curLayerULimit]] << ")" << std::endl;
+                                pOutputObj->Write(pParser->vh.streamBuf[spsIdxMap[curLayerULimit]],pParser->vh.size[spsIdxMap[curLayerULimit]]);
+                                bSPSWritten = true;
+                            }
                         }
+                    }
+
+                    //If IDR or I frame, write PPS header if not written
+                    if(pParser->type==X264_TYPE_IDR || pParser->type==X264_TYPE_I)
+                    {
+                        if(!bPPSWritten)
+                        {
+                            if(pParser->vh.streamBuf[PPS_STREAM_INDEX]!=NULL)
+                            {
+                                std::cout << "PPS Header (Size: " << pParser->vh.size[PPS_STREAM_INDEX] << ")" << std::endl;
+                                pOutputObj->Write(pParser->vh.streamBuf[PPS_STREAM_INDEX],pParser->vh.size[PPS_STREAM_INDEX]);
+                                bPPSWritten = true;
+                            }
+                        }
+                    }
+
+                    //Write frame
+                    if(bSEIWritten && bSPSWritten && bPPSWritten)
+                    {
+                        //std::cout << (*pSampleSet->pSeqData)[i].seqNum << " :\t" << frmTypes[pParser->type-1] << " :\t" << bufSize << std::endl;
+                        pOutputObj->Write(pBuf,bufSize);
+                        curFrameType = pParser->type;
                     }
                 }
+                else if(pParser->type==X264_TYPE_BREF || pParser->type==X264_TYPE_B)
+                {
+                    //Write frame
+                    if(bSEIWritten && bSPSWritten && bPPSWritten)
+                    {
+                        //std::cout << (*pSampleSet->pSeqData)[i].seqNum << " :\t" << frmTypes[pParser->type-1] << " :\t" << bufSize << std::endl;
+                        pOutputObj->Write(pBuf,bufSize);
+                        curFrameType = pParser->type;
+                    }
+                }
+
+                delete OrderedSamples.begin()->second;
+                OrderedSamples.erase(OrderedSamples.begin());
             }
 
-            delete pSampleSet;
             return;
         }
 
@@ -160,10 +166,12 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
             AddHandleFunc(&H264DecoderSink::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
             pInputObj->AddLayerReader(curLayerPartition.c_str());
             pOutputObj = NULL;
+            pReorderMap = new ReorderMap();
         }
 
         ~H264DecoderSink()
         {
+            delete pReorderMap;
             delete pParser;
             delete pInputObj;
             delete pOutputObj;
