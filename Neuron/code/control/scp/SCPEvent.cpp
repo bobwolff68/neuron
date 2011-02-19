@@ -91,12 +91,12 @@ SCPEventDeleteSession::SCPEventDeleteSession(int _srcId,int _sessionId) : SCPEve
 
 //! \brief State disposed event
 //!
-SCPEventSessionStateLost::SCPEventSessionStateLost(int _dstId) : Event(SCP_EVENT_SESSION_STATE_LOST)
+SCPEventSessionStateLost::SCPEventSessionStateLost(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId, SCP_EVENT_SESSION_STATE_LOST)
 {
 }
-
+ 
 //! \brief State disposed event
 //!
-SCPEventSessionStateLost::SCPEventSessionStateLost(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId,SCP_EVENT_SESSION_STATE_LOST)
+SCPEventSessionStateDisposed::SCPEventSessionStateDisposed(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId, SCP_EVENT_SESSION_STATE_DISPOSED)
 {
 }
