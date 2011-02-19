@@ -64,8 +64,12 @@ void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
                 sl->PostEvent(ev);
                 break;
             case DDS_NOT_NEW_VIEW_STATE:
-                ev = new SCPEventUpdateSession(&data_seq[i],&info_seq[i]);
-                sl->PostEvent(ev);
+				if (!info_seq[i].valid_data) {
+                    // TODO: Error logging
+                } else {					
+					ev = new SCPEventUpdateSession(&data_seq[i],&info_seq[i]);
+					sl->PostEvent(ev);
+				}
                 break;
             default:
                 // TODO: Error logging
@@ -75,20 +79,21 @@ void SCPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
 
         switch (info_seq[i].instance_state) {
             case DDS_ALIVE_INSTANCE_STATE:
-                // This is typically only interesting if a key is disposed and
-                // comes back
                 break;
             case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
-                // TODO: This should be handled, what if the session master goes away?
-                if (info_seq[i].valid_data) {
-                    // TODO
-                } else {
-                }
-                break;
             case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
                 control = com::xvd::neuron::scp::ControlTypeSupport::create_data();
                 m_reader->get_key_value(*control,info_seq[i].instance_handle);
-                ev = new SCPEventDeleteSession(control->sessionId);
+				
+				if (info_seq[i].instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
+				{
+					ev = new SCPEventLostSession(control->srcId,control->sessionId);
+				} 
+				else
+				{
+					ev = new SCPEventDeleteSession(control->srcId,control->sessionId);
+				}
+				
                 com::xvd::neuron::scp::ControlTypeSupport::delete_data(control);
                 sl->PostEvent(ev);
                 break;

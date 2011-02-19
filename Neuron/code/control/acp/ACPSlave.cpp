@@ -78,7 +78,7 @@ void ACPSlaveControlReaderListener::on_data_available(DDSDataReader* reader)
 
                 if (info_seq[i].instance_state == DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE)
                 {
-                    ev = new ACPEventSessionStateLost(control->srcId);
+                    ev = new ACPEventLostSession(control->srcId);
                 }
                 else
                 {

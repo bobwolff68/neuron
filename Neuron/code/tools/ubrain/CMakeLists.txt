@@ -28,6 +28,11 @@ SET (SOURCES ubrain.cpp
    controller.cpp
 )
 
+SET (TEST_CONTROLLER_SOURCES
+ 	controller.cpp
+ 	test/test_controller.cpp
+)
+
 # Hack for survival at the moment...just find and link the library. No true dependencies yet.
 find_library(COMMON libneuroncommon.a ../../lib)
 find_library(CONTROL libcontrolplane.a ../../lib)
@@ -96,6 +101,13 @@ TARGET_LINK_LIBRARIES(
    ${LIBC} ${LIBM} ${PT_LIB}
    -lncurses
    -lidn -lssl -ldl -lrt
+)
+
+ADD_EXECUTABLE(test_controller ${TEST_CONTROLLER_SOURCES})
+TARGET_LINK_LIBRARIES(
+	test_controller
+ 	${CONTROL} ${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE}
+ 	-lidn -ldl
 )
 
 ###################

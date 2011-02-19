@@ -18,11 +18,12 @@
 #define ACP_EVENT_NEW_SESSION               (ACP_EVENT_BASE+0)
 #define ACP_EVENT_UPDATE_SESSION            (ACP_EVENT_BASE+1)
 #define ACP_EVENT_DELETE_SESSION            (ACP_EVENT_BASE+2)
-#define ACP_EVENT_SESSION_STATE_UPDATE      (ACP_EVENT_BASE+3)
-#define ACP_EVENT_SESSION_STATE_LOST        (ACP_EVENT_BASE+4)
-#define ACP_EVENT_SESSION_STATE_DISPOSED    (ACP_EVENT_BASE+5)
-#define ACP_EVENT_SESSION_EVENT             (ACP_EVENT_BASE+6)
-#define ACP_EVENT_SESSION_METRICS_UPDATE    (ACP_EVENT_BASE+7)
+#define ACP_EVENT_LOST_SESSION              (ACP_EVENT_BASE+3)
+#define ACP_EVENT_SESSION_STATE_UPDATE      (ACP_EVENT_BASE+4)
+#define ACP_EVENT_SESSION_STATE_LOST        (ACP_EVENT_BASE+5)
+#define ACP_EVENT_SESSION_STATE_DISPOSED    (ACP_EVENT_BASE+6)
+#define ACP_EVENT_SESSION_EVENT             (ACP_EVENT_BASE+7)
+#define ACP_EVENT_SESSION_METRICS_UPDATE    (ACP_EVENT_BASE+8)
 
 //! \class ACPEventNewSession
 //!
@@ -46,15 +47,27 @@ private:
     com::xvd::neuron::acp::Control *data;
 };
 
-class ACPEventDeleteSession : public Event {
+class ACPEventSession : public Event {
 public:
-    ACPEventDeleteSession(int _sessionId);
+    ACPEventSession(int _sessionId,int _event);
     int GetSessionId();
-    ~ACPEventDeleteSession();
+    ~ACPEventSession();
     
 private:
-    int sessionId;
+    int sessionId;	
 };
+
+class ACPEventDeleteSession : public ACPEventSession {
+public:
+	ACPEventDeleteSession(int _sessionId);
+};
+
+class ACPEventLostSession : public ACPEventSession {
+public:
+	ACPEventLostSession(int _sessionId);
+};
+
+//--------------------------------------------------
 
 class ACPEventSessionStateLost : public Event {
 public:
@@ -65,6 +78,17 @@ public:
 private:
     int dstId;
 };
+
+class ACPEventSessionStateDisposed : public Event {
+public:
+    ACPEventSessionStateDisposed(int dstId);
+    int GetDstId();
+    ~ACPEventSessionStateDisposed();
+    
+private:
+    int dstId;
+};
+
 
 //! \class ACPEventT
 //!

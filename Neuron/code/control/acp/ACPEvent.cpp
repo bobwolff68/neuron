@@ -33,14 +33,35 @@ ACPEventNewSession::~ACPEventNewSession()
     com::xvd::neuron::acp::ControlTypeSupport::delete_data(data);
 }
 
-ACPEventDeleteSession::ACPEventDeleteSession(int _sessionId) : Event(ACP_EVENT_DELETE_SESSION)
+
+//! \brief Post delete session event
+//!
+//! \param [in] _sessionId    - session id to delete
+//!
+ACPEventSession::ACPEventSession(int _sessionId,int _event) : Event(_event)
 {
     sessionId = _sessionId;
 }
 
-int ACPEventDeleteSession::GetSessionId()
+//! \brief Post delete session event
+//!
+//! \param [in] _sessionId    - session id to delete
+//!
+int ACPEventSession::GetSessionId()
 {
-    return sessionId;
+	return sessionId;
+}
+
+//! \brief Post delete session event
+//!
+//! \param [in] _sessionId    - session id to delete
+//!
+ACPEventLostSession::ACPEventLostSession(int _sessionId) : ACPEventSession(_sessionId,ACP_EVENT_LOST_SESSION)
+{
+}
+
+ACPEventDeleteSession::ACPEventDeleteSession(int _sessionId) : ACPEventSession(_sessionId,ACP_EVENT_DELETE_SESSION)
+{
 }
 
 //! \brief State disposed event
@@ -57,3 +78,16 @@ int ACPEventSessionStateLost::GetDstId()
     return dstId;
 }
 
+//! \brief State disposed event
+//!
+ACPEventSessionStateDisposed::ACPEventSessionStateDisposed(int _dstId) : Event(ACP_EVENT_SESSION_STATE_DISPOSED)
+{
+    dstId = _dstId;
+}
+
+//! \brief Get instance if state disposed event
+//!
+int ACPEventSessionStateDisposed::GetDstId()
+{
+    return dstId;
+}

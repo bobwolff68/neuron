@@ -42,8 +42,8 @@ public:
         Event *ev;
         com::xvd::neuron::acp::StateDataReader *m_reader = com::xvd::neuron::acp::StateDataReader::narrow(reader);
         com::xvd::neuron::acp::State *state;
-
-        // NOTE: We do not track instance state for state/control/event
+		
+        // NOTE: We do not track instance state for control/event
         retcode = m_reader->read(data_seq,
                                  info_seq,
                                  DDS_LENGTH_UNLIMITED,
@@ -72,6 +72,13 @@ public:
                     sm->PostEvent(ev);
                     com::xvd::neuron::acp::StateTypeSupport::delete_data(state);
                     break;
+				case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
+                    state = com::xvd::neuron::acp::StateTypeSupport::create_data();
+                    m_reader->get_key_value(*state, info_seq[i].instance_handle);
+                    ev = new ACPEventSessionStateDisposed(state->srcId);
+                    sm->PostEvent(ev);
+                    com::xvd::neuron::acp::StateTypeSupport::delete_data(state);
+                    break;					
                 default:
                     break;
             }
@@ -242,7 +249,7 @@ bool ACPMaster::DeleteMasterObject(ACPMasterObject* aSession)
     DDS_ReturnCode_t retcode;
     bool retval = false;
 
-    retcode = controlWriter->get_key_value(*control,aSession->GetControlInstanceHandle());
+     retcode = controlWriter->get_key_value(*control,aSession->GetControlInstanceHandle());
     if (retcode != DDS_RETCODE_OK)
     {
         //TODO: Replace with real error logging

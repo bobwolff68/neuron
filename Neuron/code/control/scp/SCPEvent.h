@@ -17,12 +17,13 @@
 #define SCP_EVENT_BASE                      0x00000100
 #define SCP_EVENT_NEW_SESSION               (SCP_EVENT_BASE+0)
 #define SCP_EVENT_UPDATE_SESSION            (SCP_EVENT_BASE+1)
-#define SCP_EVENT_DELETE_SESSION            (SCP_EVENT_BASE+2)
-#define SCP_EVENT_SESSION_STATE_UPDATE      (SCP_EVENT_BASE+3)
-#define SCP_EVENT_SESSION_STATE_LOST        (SCP_EVENT_BASE+4)
-#define SCP_EVENT_SESSION_STATE_DISPOSED    (SCP_EVENT_BASE+5)
-#define SCP_EVENT_SESSION_EVENT             (SCP_EVENT_BASE+6)
-#define SCP_EVENT_SESSION_METRICS_UPDATE    (SCP_EVENT_BASE+7)
+#define SCP_EVENT_LOST_SESSION              (SCP_EVENT_BASE+2)
+#define SCP_EVENT_DELETE_SESSION            (SCP_EVENT_BASE+3)
+#define SCP_EVENT_SESSION_STATE_UPDATE      (SCP_EVENT_BASE+4)
+#define SCP_EVENT_SESSION_STATE_LOST        (SCP_EVENT_BASE+5)
+#define SCP_EVENT_SESSION_STATE_DISPOSED    (SCP_EVENT_BASE+6)
+#define SCP_EVENT_SESSION_EVENT             (SCP_EVENT_BASE+7)
+#define SCP_EVENT_SESSION_METRICS_UPDATE    (SCP_EVENT_BASE+8)
 
 //! \class SCPEventNewSession
 //!
@@ -45,46 +46,52 @@ private:
     com::xvd::neuron::scp::Control *data;
 };
 
+class SCPEventSession : public Event {
+public:
+    SCPEventSession(int _srcId,int _sessionId,int _event);
+    int GetSrcId();
+    int GetSessionId();
+    ~SCPEventSession();
+    
+private:
+	int srcId;
+    int sessionId;
+};
+
 //! \class SCPEventDeleteSession
 //!
 //! \brief Deleted session detected on the SCP.
 //!
-class SCPEventDeleteSession : public Event {
+class SCPEventDeleteSession : public SCPEventSession {
 public:
-    SCPEventDeleteSession(int _sessionId);
-    int GetSessionId();
-    ~SCPEventDeleteSession();
-    
-private:
-    int sessionId;
+    SCPEventDeleteSession(int _srcId,int _sessionId);
+};
+
+//! \class SCPEventDeleteSession
+//!
+//! \brief Deleted session detected on the SCP.
+//!
+class SCPEventLostSession : public SCPEventSession {
+public:
+    SCPEventLostSession(int _srcId,int _sessionId);
 };
 
 //! \class SCPEventSessionStateDisposed
 //!
 //! \brief Deleted session state detected on the SCP.
 //!
-class SCPEventSessionStateDisposed : public Event {
+class SCPEventSessionStateDisposed : public SCPEventSession {
 public:
-    SCPEventSessionStateDisposed(int dstId);
-    int GetDstId();
-    ~SCPEventSessionStateDisposed();
-    
-private:
-    int dstId;
+    SCPEventSessionStateDisposed(int srcId,int sessionId);
 };
 
 //! \class SCPEventSessionStateDisposed
 //!
 //! \brief Lost session state detected on the SCP.
 //!
-class SCPEventSessionStateLost : public Event {
+class SCPEventSessionStateLost : public SCPEventSession {
 public:
-    SCPEventSessionStateLost(int dstId);
-    int GetDstId();
-    ~SCPEventSessionStateLost();
-    
-private:
-    int dstId;
+    SCPEventSessionStateLost(int srcId,int sessionId);
 };
 
 

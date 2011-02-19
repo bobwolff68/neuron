@@ -49,44 +49,54 @@ SCPEventNewSession::~SCPEventNewSession()
 //!
 //! \param [in] _sessionId    - session id to delete
 //!
-SCPEventDeleteSession::SCPEventDeleteSession(int _sessionId) : Event(SCP_EVENT_DELETE_SESSION)
+SCPEventSession::SCPEventSession(int _srcId,int _sessionId,int _event) : Event(_event)
 {
+    srcId = _srcId;
     sessionId = _sessionId;
 }
 
-//! \brief Get session id from session delete object
+//! \brief Post delete session event
 //!
-//! \return session id in delete session object
+//! \param [in] _sessionId    - session id to delete
 //!
-int SCPEventDeleteSession::GetSessionId()
+int SCPEventSession::GetSessionId()
 {
-    return sessionId;
+	return sessionId;
 }
 
-//! \brief State disposed event
+//! \brief Post delete session event
 //!
-SCPEventSessionStateDisposed::SCPEventSessionStateDisposed(int _dstId) : Event(SCP_EVENT_SESSION_STATE_DISPOSED)
+//! \param [in] _sessionId    - session id to delete
+//!
+int SCPEventSession::GetSrcId()
 {
-    dstId = _dstId;
+	return srcId;
 }
 
-//! \brief Get instance if state disposed event
+//! \brief Post delete session event
 //!
-int SCPEventSessionStateDisposed::GetDstId()
+//! \param [in] _sessionId    - session id to delete
+//!
+SCPEventLostSession::SCPEventLostSession(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId,SCP_EVENT_LOST_SESSION)
 {
-    return dstId;
+}
+
+//! \brief Post delete session event
+//!
+//! \param [in] _sessionId    - session id to delete
+//!
+SCPEventDeleteSession::SCPEventDeleteSession(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId,SCP_EVENT_DELETE_SESSION)
+{
 }
 
 //! \brief State disposed event
 //!
 SCPEventSessionStateLost::SCPEventSessionStateLost(int _dstId) : Event(SCP_EVENT_SESSION_STATE_LOST)
 {
-    dstId = _dstId;
 }
 
-//! \brief Get instance if state disposed event
+//! \brief State disposed event
 //!
-int SCPEventSessionStateLost::GetDstId()
+SCPEventSessionStateLost::SCPEventSessionStateLost(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId,SCP_EVENT_SESSION_STATE_LOST)
 {
-    return dstId;
 }
