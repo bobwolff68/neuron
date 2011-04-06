@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<!DOCTYPE neuron-ubrain SYSTEM "ubrain.dtd">
+<neuron-ubrain>
+<MACROGROUP>
+  <SETUP>
+    <VERBOSITY level="14"/>
+  </SETUP>
+  <STATUS>
+    <FACTORIES/>
+    <ENTITIES/>
+  </STATUS>
+  <LOCAL>
+    <CREATESF sfid="1122" sfipaddress="192.168.46.78" sfname="Factory in Dallas TX" />
+    <CREATESESSION sessid="1" sessionname="Engineering Status Conference" />
+  </LOCAL>
+  <SF>
+    <ADDSESSION sfid="1122" sessid="1" sessionname="Engineering Status Conference" />
+    <ADDENTITY sfid="1122" sessid="1" entid="1001" enttype="RP" entname="First RP Entity" />
+  </SF>
+</MACROGROUP>
+</neuron-ubrain>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

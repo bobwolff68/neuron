@@ -1,0 +1,43 @@
+#include "CPInterfaceIDL.idl"
+
+module com {
+    module xvd {
+        module neuron {
+            module lscp {
+                struct Control {
+                    long srcId;//@key
+                    long dstId;
+                    long sessionId;//@key
+                    long actionId;
+                    string<MAX_SCRIPT_LENGTH> script;
+                };
+                
+                struct Event {
+                    long srcId;//@key
+                    long sessionId;//@key
+                    long eventCode;
+                };
+                
+                struct State {
+                    long srcId;//@key
+                    long sessionId;//@key
+                    ObjectState state;
+                    long epoch;
+                    long lastControlSrcId;
+                    long lastControlActionId;
+                    string<MAX_SCRIPT_LENGTH> payload;
+                };
+                
+                struct Metrics {
+                    long srcId;//@key
+                    long sessionId;//@key
+                    long entityCount;
+                    long bytesSent;
+                    long bytesReceived;
+                };
+            };
+        };
+    };
+};
+
+            
