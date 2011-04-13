@@ -1,6 +1,12 @@
 #!/bin/sh
 
-cd neuroncommon/netlib
+cd neuroncommon
+
+# Only re-build cppunit if needed. It is a shared-library item so it should be built once
+# per time of revision publishing.
+# sh ./buildcppunit
+
+cd netlib
 sh ./buildcurl.sh
 
 cd ..
