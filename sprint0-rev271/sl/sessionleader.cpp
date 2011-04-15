@@ -57,6 +57,9 @@ EventHandlerT<SessionLeader>(),ThreadSingle()
                                              
     MEDIA_TOPIC_NAME(topicName,"video_",sessionId);
     pMediaParticipant->AddTopic("video",topicName);
+    MEDIA_TOPIC_NAME(topicName,"entinfo_",sessionId);
+    pMediaParticipant->AddTopic("entinfo",topicName);
+
     if(!lanOnlyMode)
         pMediaParticipant->AddPeersAndWaitForDiscovery(PeerDescListMedia,10000);
 
@@ -266,8 +269,22 @@ void SessionLeader::ProcessScript(const char *script)
 
 			case ENTITY_KIND_RELAYPROXY:
 			{
+				string	KeyWord("");
+				string	StrongestSrcIdStr("");
+				char 	buf[100];
+				int		strongestSrcId;
+
+				ScriptStream.getline(buf,99,':');
+				KeyWord += buf;
+				cout << "SPRINT0-TA9: Keyword: " << KeyWord << endl;
+				ScriptStream.getline(buf,99,'/');
+				StrongestSrcIdStr += buf;
+				strongestSrcId = FromStringNoChecking<int>(StrongestSrcIdStr);
+				cout << "SPRINT0-TA9: StrongestSrcId: " << strongestSrcId << endl;
 				ScriptStream >> srcId;
-				RelayProxy *pRelay = new RelayProxy(entityId,srcId,id,sessionId,
+				cout << "SPRINT0-TA9: TrueSrcId: " << srcId << endl;
+
+				RelayProxy *pRelay = new RelayProxy(entityId,srcId,strongestSrcId,id,sessionId,
                                                     pMediaParticipant->GetDomParticipant(),
                                                     pMediaParticipant->GetTopic("video"),
                                                     3,"*");
@@ -312,13 +329,27 @@ void SessionLeader::ProcessScript(const char *script)
 			case ENTITY_KIND_H264DECODERSINK:
 			{
 				std::string	DecInFifoName;
+				string	KeyWord("");
+				string	StrongestSrcIdStr("");
+				char 	buf[100];
+				int		strongestSrcId;
 
+				ScriptStream.getline(buf,99,':');
+				KeyWord += buf;
+				cout << "SPRINT0-TA9: Keyword: " << KeyWord << endl;
+				ScriptStream.getline(buf,99,'/');
+				StrongestSrcIdStr += buf;
+				strongestSrcId = FromStringNoChecking<int>(StrongestSrcIdStr);
+				cout << "SPRINT0-TA9: StrongestSrcId: " << strongestSrcId << endl;
 				ScriptStream >> srcId;
+				cout << "SPRINT0-TA9: TrueSrcId: " << srcId << endl;
+
 				DecInFifoName = ToString<int>(srcId) + ".264";
 				std::cout << "Input Fifo: " << DecInFifoName << std::endl;
 
-				std::cout << "Source ID: " << srcId << std::endl;
-				H264DecoderSink *pSink = new H264DecoderSink(entityId,srcId,id,sessionId,DecInFifoName.c_str(),
+				//std::cout << "Source ID: " << srcId << std::endl;
+				H264DecoderSink *pSink = new H264DecoderSink(entityId,srcId,strongestSrcId,id,
+															 sessionId,DecInFifoName.c_str(),
                                                              pMediaParticipant->GetDomParticipant(),
                                                              pMediaParticipant->GetTopic("video"),"*");
 				pSink->startThread();

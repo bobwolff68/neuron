@@ -61,6 +61,32 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
             return;
         }
 
+        //New sample of upline entity's info
+        void HandleEntInfoInputEvent(Event *pEvent)
+        {
+        	UplineEntityInfo = reinterpret_cast<EntInfoInputEvent*>(pEvent)->GetEntInfo();
+        	pInfo->hopsFromTrueSource = UplineEntityInfo.hopsFromTrueSource + 1;
+        	pInfo->uplineSourceId = UplineEntityInfo.entityId;
+        	PublishEntityInfo();
+        	return;
+        }
+
+        void HandleUplineEntLostEvent(Event *pEvent)
+        {
+        	cout << "Upline Entity(Id: " << pInfo->uplineSourceId << ") lost..." << endl;
+        	cout << "Trying to connect to Entity(Id: " << UplineEntityInfo.uplineSourceId << ")..."<< endl;
+        	UpdateVideoSource(UplineEntityInfo.uplineSourceId);
+        	return;
+        }
+
+        void HandleUplineEntShutdownEvent(Event *pEvent)
+        {
+        	cout << "Upline Entity(Id: " << pInfo->uplineSourceId << ") shut down..." << endl;
+        	cout << "Trying to connect to Entity(Id: " << UplineEntityInfo.uplineSourceId << ")..."<< endl;
+        	UpdateVideoSource(UplineEntityInfo.uplineSourceId);
+        	return;
+        }
+
         int workerBee(void)
         {
             EventHandleLoop();
@@ -69,14 +95,19 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
 
     public:
 
-        RelayProxy(int idP,int epIdP,int ownerIdP,int sessionIdP,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP,int nLayersP,const char *layerRegExp):
+        RelayProxy(int idP,int epIdP,int srcIdP,int ownerIdP,int sessionIdP,DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP,int nLayersP,const char *layerRegExp):
         EventHandlerT<RelayProxy>(),SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_RELAYPROXY),ThreadSingle()
         {
             epId = epIdP;
-            srcId = epId;
+            srcId = srcIdP;
             nLayers = nLayersP;
             curLayerPartition = ToString<int>(srcId)+"/"+layerRegExp;
             AddHandleFunc(&RelayProxy::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
+            AddHandleFunc(&RelayProxy::HandleEntInfoInputEvent,ENTINFO_INPUT_EVENT);
+            AddHandleFunc(&RelayProxy::HandleUplineEntLostEvent,UPLINE_ENTITY_LOST_EVENT);
+            AddHandleFunc(&RelayProxy::HandleUplineEntShutdownEvent,UPLINE_ENTITY_SHUTDOWN_EVENT);
+            StartupEntInfoSub(this,srcId,epId);
+            StartupEntInfoPub();
             pParser = new H264BufferParser();
             pInputObj = new DDSInputObject(id,this,pOwnerDP,pTopicP);
             pInputObj->AddLayerReader(curLayerPartition.c_str());
@@ -88,6 +119,8 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
 
         ~RelayProxy()
         {
+        	ShutdownEntInfoSub();
+        	ShutdownEntInfoPub();
             delete pReorderMap;
             delete pParser;
             delete pInputObj;
@@ -96,6 +129,13 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
 
         void UpdateVideoSource(int newSrcId)
         {
+        	string	Partition("");
+
+        	pInfo->uplineSourceId = newSrcId;
+        	Partition = ToString<int>(pInfo->trueSourceId) + "/";
+        	Partition += ToString<int>(pInfo->uplineSourceId);
+        	SetEntInfoSubPartition(Partition);
+
             srcId = newSrcId;
             std::string LayerRegExp = curLayerPartition.substr(curLayerPartition.find('/'));
             pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),(ToString<int>(srcId)+LayerRegExp).c_str());

@@ -33,7 +33,7 @@ INCLUDE_DIRECTORIES(../../include ../../sf ../../sl ../../neuroncommon ../../sl 
 INCLUDE_DIRECTORIES(../../control ../../control/scp ../../control/lscp ../../control/acp ../../control/ecp)
 INCLUDE_DIRECTORIES(../../control/idl ../../control/scp/idl ../../control/lscp/idl ../../control/acp/idl ../../control/ecp/idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
-INCLUDE_DIRECTORIES(../../media ../../media/H264 ../../media/idl ../../entities ../../neuroncommon ../ubrain)
+INCLUDE_DIRECTORIES(../../media ../../media/H264 ../../media/idl ../../media/entity_info_idl ../../entities ../../neuroncommon ../ubrain)
 INCLUDE_DIRECTORIES(/usr/include/SDL ${GTK_INCLUDEDIR} ${GTK_INCLUDE_DIRS})
 
 message("GTK: ${GTK_LIBRARIES}")
@@ -91,6 +91,9 @@ ADD_EXECUTABLE(
    ../../media/idl/media.cxx
    ../../media/idl/mediaSupport.cxx
    ../../media/idl/mediaPlugin.cxx
+   ../../media/entity_info_idl/entityinfo.cxx
+   ../../media/entity_info_idl/entityinfoSupport.cxx
+   ../../media/entity_info_idl/entityinfoPlugin.cxx
 )
 
 TARGET_LINK_LIBRARIES(

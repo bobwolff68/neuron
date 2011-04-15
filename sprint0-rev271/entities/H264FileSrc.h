@@ -75,6 +75,12 @@ class H264FileSrc : public SessionEntity,public EventHandlerT<H264FileSrc>,publi
             in >> fps;
             in.close();
 
+            StartupEntInfoPub();
+            pInfo->uplineSourceId = id;
+            pInfo->trueSourceId = id;
+            pInfo->hopsFromTrueSource = 0;
+            PublishEntityInfo();
+
             std::cout << "FPS selected " << fps << std::endl;
             pInputObj = new H264FileInputObject(this,idP,FileName.c_str(),fps);
             pOutputObj = new DDSOutputObject(idP,pOwnerDPP,pTopicP);
@@ -92,6 +98,7 @@ class H264FileSrc : public SessionEntity,public EventHandlerT<H264FileSrc>,publi
 
         ~H264FileSrc()
         {
+        	ShutdownEntInfoPub();
             delete pInputObj;
             delete pOutputObj;
         }
