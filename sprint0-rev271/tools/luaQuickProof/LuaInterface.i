@@ -1,4 +1,6 @@
 /* First try at C and C++ bindings to Lua */
+/* USES SWIG to generate the class bindings file. */
+
 %module LuaInterface
 %{
 
