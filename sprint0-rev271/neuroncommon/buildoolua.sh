@@ -19,6 +19,15 @@ make config=debug oolua
 make config=release oolua
 
 # copy .a libraries up to n
+if ! test -d ../../lib
+then
+  if test -e ../../lib 
+  then
+    echo $0: Failure: Cannot copy library files to ../lib as there is not a directory.
+  else
+    mkdir ../../lib
+  fi
+fi
 cp bin/Debug/* ../../lib/
 cp bin/Release/* ../../lib/
 
