@@ -13,7 +13,13 @@ cd neuroncommon
 sh ./buildoolua.sh
 
 cd netlib
-sh ./buildcurl.sh
+if ! test -e libcurl.a
+then
+	sh ./buildcurl.sh
+else
+	echo "Skipping re-build of libCurl as it already is present."
+	echo "You may manually force a rebuild by executing 'cd netlib;./buildcurl.sh'"
+fi
 
 cd ..
 cmake -G "Unix Makefiles"
