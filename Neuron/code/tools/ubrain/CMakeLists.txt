@@ -28,11 +28,6 @@ SET (SOURCES ubrain.cpp
    controller.cpp
 )
 
-SET (TEST_CONTROLLER_SOURCES
- 	controller.cpp
- 	test/test_controller.cpp
-)
-
 # Hack for survival at the moment...just find and link the library. No true dependencies yet.
 find_library(COMMON libneuroncommon.a ../../lib)
 find_library(CONTROL libcontrolplane.a ../../lib)
@@ -73,7 +68,7 @@ else()
 endif()
 endif()
 
-INCLUDE_DIRECTORIES( ../../include ../../neuroncommon ../../entities ) # add to include path
+INCLUDE_DIRECTORIES( ../../include ../../neuroncommon ../../entities ../../media ../../media/entity_info_idl) # add to include path
 INCLUDE_DIRECTORIES( ../../control ../../control/include ../../control/idl ) # add to include path
 
 INCLUDE_DIRECTORIES( /usr/include/libxml2 )
@@ -101,13 +96,6 @@ TARGET_LINK_LIBRARIES(
    ${LIBC} ${LIBM} ${PT_LIB}
    -lncurses
    -lidn -lssl -ldl -lrt
-)
-
-ADD_EXECUTABLE(test_controller ${TEST_CONTROLLER_SOURCES})
-TARGET_LINK_LIBRARIES(
-	test_controller
- 	${CONTROL} ${COMMON} ${NDDSCPP} ${NDDSC} ${NDDSCORE}
- 	-lidn -ldl
 )
 
 ###################

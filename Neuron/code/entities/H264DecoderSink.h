@@ -140,6 +140,31 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
             return;
         }
 
+        //New sample of upline entity's info
+        void HandleEntInfoInputEvent(Event *pEvent)
+        {
+        	UplineEntityInfo = reinterpret_cast<EntInfoInputEvent*>(pEvent)->GetEntInfo();
+        	pInfo->hopsFromTrueSource = UplineEntityInfo.hopsFromTrueSource + 1;
+        	pInfo->uplineSourceId = UplineEntityInfo.entityId;
+        	return;
+        }
+
+        void HandleUplineEntLostEvent(Event *pEvent)
+        {
+        	cout << "Upline Entity(Id: " << pInfo->uplineSourceId << ") lost..." << endl;
+        	cout << "Trying to connect to Entity(Id: " << UplineEntityInfo.uplineSourceId << ")..."<< endl;
+        	UpdateVideoSource(UplineEntityInfo.uplineSourceId);
+        	return;
+        }
+
+        void HandleUplineEntShutdownEvent(Event *pEvent)
+        {
+        	cout << "Upline Entity(Id: " << pInfo->uplineSourceId << ") shut down..." << endl;
+        	cout << "Trying to connect to Entity(Id: " << UplineEntityInfo.uplineSourceId << ")..."<< endl;
+        	UpdateVideoSource(UplineEntityInfo.uplineSourceId);
+        	return;
+        }
+
         int workerBee(void)
         {
             EventHandleLoop();
@@ -148,12 +173,12 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
 
     public:
 
-        H264DecoderSink(int idP,int epIdP,int ownerIdP,int sessionIdP,const char *decInFifoNameP,
+        H264DecoderSink(int idP,int epIdP,int srcIdP,int ownerIdP,int sessionIdP,const char *decInFifoNameP,
                         DDSDomainParticipant *pOwnerDPP,DDSTopic *pTopicP,const char *layerRegExp):
         SessionEntity(pOwnerDPP,idP,ownerIdP,sessionIdP,ENTITY_KIND_H264DECODERSINK),EventHandlerT<H264DecoderSink>(),ThreadSingle()
         {
             epId = epIdP;
-            srcId = epId;
+            srcId = srcIdP;
             curFrameType = X264_TYPE_B;
             prevLayerULimit = 0;
             curLayerULimit = 2;
@@ -164,6 +189,10 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
             pParser->isOwnerRP = false;
             pInputObj = new DDSInputObject(idP,this,pOwnerDPP,pTopicP);
             AddHandleFunc(&H264DecoderSink::HandleMediaInputEvent,MEDIA_INPUT_EVENT);
+            AddHandleFunc(&H264DecoderSink::HandleEntInfoInputEvent,ENTINFO_INPUT_EVENT);
+            AddHandleFunc(&H264DecoderSink::HandleUplineEntLostEvent,UPLINE_ENTITY_LOST_EVENT);
+            AddHandleFunc(&H264DecoderSink::HandleUplineEntShutdownEvent,UPLINE_ENTITY_SHUTDOWN_EVENT);
+            StartupEntInfoSub(this,srcId,epId);
             pInputObj->AddLayerReader(curLayerPartition.c_str());
             pOutputObj = NULL;
             pReorderMap = new ReorderMap();
@@ -171,6 +200,7 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
 
         ~H264DecoderSink()
         {
+        	ShutdownEntInfoSub();
             delete pReorderMap;
             delete pParser;
             delete pInputObj;
@@ -179,7 +209,14 @@ class H264DecoderSink : public SessionEntity,public EventHandlerT<H264DecoderSin
 
         void UpdateVideoSource(int newSrcId)
         {
-            srcId = newSrcId;
+        	string	Partition("");
+
+        	pInfo->uplineSourceId = newSrcId;
+        	Partition = ToString<int>(pInfo->trueSourceId) + "/";
+        	Partition += ToString<int>(pInfo->uplineSourceId);
+        	SetEntInfoSubPartition(Partition);
+
+        	srcId = newSrcId;
             std::string LayerRegExp = curLayerPartition.substr(curLayerPartition.find('/'));
             pInputObj->SetLayerReaderPartition(curLayerPartition.c_str(),(ToString<int>(srcId)+LayerRegExp).c_str());
             curLayerPartition = (ToString<int>(srcId)+LayerRegExp).c_str();

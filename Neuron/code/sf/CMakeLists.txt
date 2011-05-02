@@ -22,7 +22,7 @@ INCLUDE_DIRECTORIES(../control ../control/scp ../control/lscp ../control/acp ../
 INCLUDE_DIRECTORIES(../control/idl ../control/scp/idl ../control/lscp/idl ../control/acp/idl ../control/ecp/idl)
 INCLUDE_DIRECTORIES($ENV{NDDSHOME}/include $ENV{NDDSHOME}/include/ndds)
 INCLUDE_DIRECTORIES(../media ../media/H264 ../media/idl ../entities ../neuroncommon)# ../tools/DemoEndpoint)
-INCLUDE_DIRECTORIES(../tools/ubrain)
+INCLUDE_DIRECTORIES(../tools/ubrain ../media/entity_info_idl)
 
 add_definitions(-DRTI_LINUX)
 add_definitions(-DRTI_UNIX)
@@ -73,6 +73,9 @@ ADD_EXECUTABLE(
    ../media/idl/media.cxx
    ../media/idl/mediaSupport.cxx
    ../media/idl/mediaPlugin.cxx
+   ../media/entity_info_idl/entityinfo.cxx
+   ../media/entity_info_idl/entityinfoSupport.cxx
+   ../media/entity_info_idl/entityinfoPlugin.cxx
 )
 
 TARGET_LINK_LIBRARIES(
