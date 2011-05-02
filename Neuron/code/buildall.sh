@@ -6,6 +6,9 @@ cd neuroncommon
 # per time of revision publishing.
 # sh ./buildcppunit
 
+# Very simple/fast recompile for lua bindings from C/C++ to Lua functions and classes
+sh ./buildtolua++.sh
+
 cd netlib
 sh ./buildcurl.sh
 
