@@ -30,6 +30,7 @@ class TestingSamples : public CppUnit::TestFixture
   CPPUNIT_TEST( unit );
   CPPUNIT_TEST( sanity );
   CPPUNIT_TEST( invalid );
+  CPPUNIT_TEST( LuaReturns );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -52,6 +53,7 @@ protected:
   void unit();
   void sanity();
   void invalid();
+  void LuaReturns();
 
 };
 

@@ -25,6 +25,8 @@ SET (SOURCES LuaQuickProof.cpp
 find_library(COMMON libneuroncommon.a ../../lib)
 find_library(CONTROL libcontrolplane.a ../../lib)
 
+find_library(OOLUA liboolua.a ../../lib)
+
 find_library(PT_LIB pthread)
 
 find_library(LIBC libc.a)
@@ -47,6 +49,8 @@ endforeach()
 find_library(LIBLUA liblua5.1.a)
 INCLUDE_DIRECTORIES( /usr/include/lua5.1 ) # add to include path
 
+INCLUDE_DIRECTORIES( ../../include/oolua ) # add to include path
+
 INCLUDE_DIRECTORIES( ../../include ../../neuroncommon ../../entities ) # add to include path
 INCLUDE_DIRECTORIES( ../../control ../../control/include ../../control/idl ) # add to include path
 
@@ -58,6 +62,7 @@ ADD_EXECUTABLE(luatest ${SOURCES})
 TARGET_LINK_LIBRARIES(
    luatest                            # to foo link
    ${COMMON}
+   ${OOLUA}
    ${LIBLUA}
    ${LIBCPPUNIT_SO}
    ${LIBC} ${LIBM} ${PT_LIB}

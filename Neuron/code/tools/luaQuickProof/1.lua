@@ -1,3 +1,32 @@
+
+function luasimple() 
+	print "Inside Lua:: luasimple() -  Called from C. "
+end
+
+function luasinglearg(a)
+	print ("Inside Lua:: luasinglearg() -  Called from C with ARG=", a)
+end
+
+--[[
+function luasingleargwithreturn(a,b)
+	print ("Inside Lua:: luasingleargwithreturn() -  Called from C with ARG=", a)
+	print ("Inside Lua:: luasingleargwithreturn() -  Called from C with 2nd-ARG=", b)
+	print ('Changing ret to 5 and attempting to return...')
+	b = 5
+	return b
+end
+--]]
+
+function luasingleargwithreturn(a,ret)
+	print ('Inside Lua:: luasingleargwithreturn() -  Called from C with ARG=', a)
+	print ('Inside Lua:: luasingleargwithreturn() -  and 2nd-arg-ret=', ret)
+	print ('Changing ret to 5 and attempting to return...')
+	ret = 5
+	return 5
+end
+
+
+
 print ("Hello there from lua.")
 
 local v = LuaInterface.printvalueplusone(7)
