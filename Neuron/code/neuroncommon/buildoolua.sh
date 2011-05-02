@@ -14,6 +14,7 @@ fi
 export CPATH=/usr/include/lua5.1
 cd oolua
 ../premake4 gmake linux
+make clean
 make config=debug oolua
 make config=release oolua
 
@@ -24,7 +25,8 @@ cp bin/Release/* ../../lib/
 # copy include files to neuron's code/include/oolua/
 if ! test -d ../../include/oolua
 then
-  if test -e ../../include/oolua then
+  if test -e ../../include/oolua 
+  then
     echo $0: Failure: Cannot copy include files to ../include/tolua as there is not a directory.
   else
     mkdir ../../include/oolua
