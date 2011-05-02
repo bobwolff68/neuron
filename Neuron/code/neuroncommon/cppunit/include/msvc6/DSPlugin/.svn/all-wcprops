@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/msvc6/DSPlugin
+END
+TestRunnerDSPluginVC6.h
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/msvc6/DSPlugin/TestRunnerDSPluginVC6.h
+END
+TestRunnerDSPluginVC6_i.c
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/msvc6/DSPlugin/TestRunnerDSPluginVC6_i.c
+END

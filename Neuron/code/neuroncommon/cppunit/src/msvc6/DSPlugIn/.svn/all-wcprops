@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn
+END
+StdAfx.h
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/StdAfx.h
+END
+DSPlugIn.rgs
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/DSPlugIn.rgs
+END
+DSPlugIn.def
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/DSPlugIn.def
+END
+TestRunnerDSPlugin.idl
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/TestRunnerDSPlugin.idl
+END
+DSAddIn.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/DSAddIn.cpp
+END
+DSPlugIn.rc
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/DSPlugIn.rc
+END
+DSAddIn.h
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/DSAddIn.h
+END
+COMHelper.h
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/COMHelper.h
+END
+DSPlugIn.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/DSPlugIn.cpp
+END
+StdAfx.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/StdAfx.cpp
+END
+DSPlugIn.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/DSPlugIn.dsp
+END
+ReadMe.txt
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/ReadMe.txt
+END
+DSPlugIn.h
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/DSPlugIn.h
+END
+resource.h
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/resource.h
+END
+.cvsignore
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/DSPlugIn/.cvsignore
+END

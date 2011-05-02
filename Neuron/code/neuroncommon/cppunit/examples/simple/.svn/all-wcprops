@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple/Makefile.in
+END
+Main.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple/Main.cpp
+END
+ExampleTestCase.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple/ExampleTestCase.cpp
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple/Makefile.am
+END
+SimplePlugIn.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple/SimplePlugIn.cpp
+END
+simple_plugin.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple/simple_plugin.dsp
+END
+ExampleTestCase.h
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple/ExampleTestCase.h
+END
+simple.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/simple/simple.dsp
+END

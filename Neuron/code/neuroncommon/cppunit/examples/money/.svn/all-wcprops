@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money
+END
+StdAfx.h
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/StdAfx.h
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/Makefile.in
+END
+money.dsw
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/money.dsw
+END
+configure.in
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/configure.in
+END
+MoneyTest.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/MoneyTest.cpp
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/Makefile.am
+END
+MoneyApp.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/MoneyApp.cpp
+END
+StdAfx.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/StdAfx.cpp
+END
+money.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/money.dsp
+END
+Money.h
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/Money.h
+END
+MoneyTest.h
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/money/MoneyTest.h
+END

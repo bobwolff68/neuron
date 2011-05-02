@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy
+END
+BoardGame.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/BoardGame.cpp
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/Makefile.in
+END
+hierarchy.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/hierarchy.dsp
+END
+main.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/main.cpp
+END
+Chess.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/Chess.cpp
+END
+BoardGame.h
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/BoardGame.h
+END
+BoardGameTest.h
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/BoardGameTest.h
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/Makefile.am
+END
+hierarchy.dsw
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/hierarchy.dsw
+END
+Chess.h
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/Chess.h
+END
+ChessTest.h
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/hierarchy/ChessTest.h
+END

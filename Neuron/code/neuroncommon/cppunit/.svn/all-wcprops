@@ -1,0 +1,143 @@
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit
+END
+cppunit.spec.in
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/cppunit.spec.in
+END
+configure
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/configure
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/Makefile.in
+END
+INSTALL-WIN32.txt
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/INSTALL-WIN32.txt
+END
+cppunit-config.1
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/cppunit-config.1
+END
+AUTHORS
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/AUTHORS
+END
+configure.in
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/configure.in
+END
+INSTALL-unix
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/INSTALL-unix
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/ChangeLog
+END
+THANKS
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/THANKS
+END
+cppunit.pc.in
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/cppunit.pc.in
+END
+CodingGuideLines.txt
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/CodingGuideLines.txt
+END
+cppunit-config.in
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/cppunit-config.in
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/README
+END
+BUGS
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/BUGS
+END
+cppunit.m4
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/cppunit.m4
+END
+TODO
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/TODO
+END
+INSTALL
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/INSTALL
+END
+COPYING
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/COPYING
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/Makefile.am
+END
+cppunit.spec
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/cppunit.spec
+END
+NEWS
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/NEWS
+END
+aclocal.m4
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/aclocal.m4
+END

@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn
+END
+WinNtTimer.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/WinNtTimer.cpp
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/Makefile.in
+END
+ClockerPlugIn.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ClockerPlugIn.cpp
+END
+ClockerModel.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ClockerModel.cpp
+END
+WinNtTimer.h
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/WinNtTimer.h
+END
+ClockerPlugIn.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ClockerPlugIn.dsp
+END
+ClockerModel.h
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ClockerModel.h
+END
+Timer.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/Timer.cpp
+END
+ClockerXmlHook.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ClockerXmlHook.cpp
+END
+Timer.h
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/Timer.h
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/Makefile.am
+END
+ClockerListener.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ClockerListener.cpp
+END
+ClockerXmlHook.h
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ClockerXmlHook.h
+END
+ReadMe.txt
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ReadMe.txt
+END
+ClockerListener.h
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/ClockerPlugIn/ClockerListener.h
+END

@@ -1,0 +1,209 @@
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner
+END
+StdAfx.h
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/StdAfx.h
+END
+ProgressBar.h
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ProgressBar.h
+END
+ResourceLoaders.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ResourceLoaders.cpp
+END
+TestRunnerDlg.h
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunnerDlg.h
+END
+MostRecentTests.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/MostRecentTests.cpp
+END
+TestRunnerApp.h
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunnerApp.h
+END
+ActiveTest.h
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ActiveTest.h
+END
+MsDevCallerListCtrl.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 123
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/MsDevCallerListCtrl.cpp
+END
+ListCtrlFormatter.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ListCtrlFormatter.cpp
+END
+TestRunner.def
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunner.def
+END
+TreeHierarchyDlg.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TreeHierarchyDlg.cpp
+END
+ListCtrlSetter.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ListCtrlSetter.cpp
+END
+StdAfx.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/StdAfx.cpp
+END
+ProgressBar.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ProgressBar.cpp
+END
+TestRunner.rc
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunner.rc
+END
+.cvsignore
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/.cvsignore
+END
+MfcTestRunner.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/MfcTestRunner.cpp
+END
+TestRunnerModel.h
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunnerModel.h
+END
+TestRunnerDlg.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunnerDlg.cpp
+END
+ResourceLoaders.h
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ResourceLoaders.h
+END
+TestRunnerApp.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunnerApp.cpp
+END
+ActiveTest.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ActiveTest.cpp
+END
+MostRecentTests.h
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/MostRecentTests.h
+END
+TestRunner.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunner.dsp
+END
+Change-Diary-ResourceBugFix.txt
+K 25
+svn:wc:ra_dav:version-url
+V 131
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/Change-Diary-ResourceBugFix.txt
+END
+SynchronizedTestResult.h
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/SynchronizedTestResult.h
+END
+MfcSynchronizationObject.h
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/MfcSynchronizationObject.h
+END
+TestResultDecorator.h
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestResultDecorator.h
+END
+MsDevCallerListCtrl.h
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/MsDevCallerListCtrl.h
+END
+ListCtrlFormatter.h
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ListCtrlFormatter.h
+END
+TreeHierarchyDlg.h
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TreeHierarchyDlg.h
+END
+TestRunnerModel.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/TestRunnerModel.cpp
+END
+Resource.h
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/Resource.h
+END
+ListCtrlSetter.h
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/ListCtrlSetter.h
+END

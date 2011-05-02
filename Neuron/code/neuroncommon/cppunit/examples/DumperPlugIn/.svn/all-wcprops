@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/DumperPlugIn
+END
+DumperPlugIn.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/DumperPlugIn/DumperPlugIn.dsp
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/DumperPlugIn/Makefile.in
+END
+DumperListener.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/DumperPlugIn/DumperListener.cpp
+END
+DumperListener.h
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/DumperPlugIn/DumperListener.h
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/DumperPlugIn/Makefile.am
+END
+DumperPlugIn.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/examples/DumperPlugIn/DumperPlugIn.cpp
+END

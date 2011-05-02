@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability
+END
+Stream.h
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/Stream.h
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/Makefile.in
+END
+FloatingPoint.h
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/FloatingPoint.h
+END
+CppUnitSet.h
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/CppUnitSet.h
+END
+CppUnitMap.h
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/CppUnitMap.h
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/Makefile.am
+END
+CppUnitVector.h
+K 25
+svn:wc:ra_dav:version-url
+V 122
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/CppUnitVector.h
+END
+CppUnitDeque.h
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/CppUnitDeque.h
+END
+CppUnitStack.h
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/portability/CppUnitStack.h
+END

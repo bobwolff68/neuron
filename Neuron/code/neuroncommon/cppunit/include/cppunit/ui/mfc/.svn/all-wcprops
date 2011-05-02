@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/ui/mfc
+END
+TestRunner.h
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/ui/mfc/TestRunner.h
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/ui/mfc/Makefile.in
+END
+MfcTestRunner.h
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/ui/mfc/MfcTestRunner.h
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/include/cppunit/ui/mfc/Makefile.am
+END

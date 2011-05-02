@@ -1,0 +1,119 @@
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow
+END
+cdxCDynamicWnd.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 132
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicWnd.cpp
+END
+cdxCDynamicWndEx.h
+K 25
+svn:wc:ra_dav:version-url
+V 132
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicWndEx.h
+END
+SizeCBar.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/SizeCBar.cpp
+END
+cdxCDynamicWnd.h
+K 25
+svn:wc:ra_dav:version-url
+V 130
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicWnd.h
+END
+cdxCDynamicFormView.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 137
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicFormView.cpp
+END
+cdxCDynamicControlsManager.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 144
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicControlsManager.cpp
+END
+cdxCDynamicDialog.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 135
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicDialog.cpp
+END
+SizeCBar.h
+K 25
+svn:wc:ra_dav:version-url
+V 124
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/SizeCBar.h
+END
+cdxCDynamicFormView.h
+K 25
+svn:wc:ra_dav:version-url
+V 135
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicFormView.h
+END
+cdxCDynamicControlsManager.h
+K 25
+svn:wc:ra_dav:version-url
+V 142
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicControlsManager.h
+END
+cdxCSizeIconCtrl.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 134
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCSizeIconCtrl.cpp
+END
+cdxCDynamicDialog.h
+K 25
+svn:wc:ra_dav:version-url
+V 133
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicDialog.h
+END
+cdxCDynamicBar.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 132
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicBar.cpp
+END
+cdxCSizeIconCtrl.h
+K 25
+svn:wc:ra_dav:version-url
+V 132
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCSizeIconCtrl.h
+END
+cdxCDynamicPropSheet.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 138
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicPropSheet.cpp
+END
+cdxCDynamicBar.h
+K 25
+svn:wc:ra_dav:version-url
+V 130
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicBar.h
+END
+SizeCBar.html
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/SizeCBar.html
+END
+cdxCDynamicPropSheet.h
+K 25
+svn:wc:ra_dav:version-url
+V 136
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicPropSheet.h
+END
+cdxCDynamicWndEx.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 134
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testrunner/DynamicWindow/cdxCDynamicWndEx.cpp
+END

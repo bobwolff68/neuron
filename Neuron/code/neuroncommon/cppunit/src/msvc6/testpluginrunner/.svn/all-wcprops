@@ -1,0 +1,107 @@
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner
+END
+TestPlugInRunnerApp.h
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInRunnerApp.h
+END
+TestPlugIn.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 120
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugIn.cpp
+END
+StdAfx.h
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/StdAfx.h
+END
+TestPlugIn.h
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugIn.h
+END
+TestPlugInRunnerModel.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 131
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInRunnerModel.cpp
+END
+TestPlugInRunner.rc
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInRunner.rc
+END
+TestPlugInException.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInException.cpp
+END
+TestPlugInRunnerModel.h
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInRunnerModel.h
+END
+TestPlugInRunnerDlg.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInRunnerDlg.cpp
+END
+TestPlugInException.h
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInException.h
+END
+TestPlugInRunnerDlg.h
+K 25
+svn:wc:ra_dav:version-url
+V 127
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInRunnerDlg.h
+END
+TestPlugInRunnerApp.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 129
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInRunnerApp.cpp
+END
+StdAfx.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/StdAfx.cpp
+END
+ReadMe.txt
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/ReadMe.txt
+END
+Resource.h
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/Resource.h
+END
+TestPlugInRunner.dsp
+K 25
+svn:wc:ra_dav:version-url
+V 126
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/TestPlugInRunner.dsp
+END
+.cvsignore
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/codebase/!svn/ver/277/branches/Neuron/sprint0-rev271/neuroncommon/cppunit/src/msvc6/testpluginrunner/.cvsignore
+END
