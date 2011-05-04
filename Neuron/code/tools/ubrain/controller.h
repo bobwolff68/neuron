@@ -27,230 +27,6 @@
 #include <map>
 #include <list>
 
-//! \class ControllerListener
-//!
-//! \brief Listener notifying on SF and Session changes. 
-//!
-//! Listeners can be installed by an application to listen to changes to
-//! SF and Session objects. The listeners work at a slighty higher abstraction
-//! than the controller, hiding some DDS concepts. The controller manages the
-//! state of the obkjects, while the upper layer manages the state of the 
-//! system. 
-//!
-//! A listener can only be installed by passing it to the constructor, thus it 
-//! is immutable and non-chainable.
-class Controller;
-class ControllerListener {
-	
-public:
-	
-	//! \brief A new SF has been detected
-	//!
-	//! \param [in] srcId - srcId of the new SF
-	//!
-	//! \return 
-	//!		- true if this SF is allowed into the system
-	//!		- false if this SF is rejected from the system
-	//!
-	//! This listener is called when the controller has determined that a new
-	//! has been detected. This callback is called <em> before </em> the 
-	//! the controller starts to track the state of this SF. If the upper layer
-	//! returns false on this callback, the controller will ignore all future
-	//! events from the SF.
-	virtual bool onSFDetect(Controller *c,int srcId) { return true; };
-	
-	//! \brief A state change has been detected on an SF
-	//!
-	//! \param [in] srcId - srcId of the SF
-	//! \param [in] state - state of the SF
-	//!
-	//! \return 
-	//!		- true if the listener has updated its state
-	//!		- false if the listener failed to update its state	
-	//! 
-	//! This listener is called when the controller has detected a state-change
-	//! on a known SF, that is a SF the controller already has detected 
-	//! <em> and </em> the listener has accepted.
-	//!
-	//! If the listeners returns false, the controller will not update its 
-	//! state, ensuring that the listener and the controller has a consistent 
-	//! view. However, note that this does not mean it is a correct view since
-	//! the state change already has occured. In general, this funtion should
-	//! return true.
-	virtual bool onSFStateChange(Controller *c,int srcId,com::xvd::neuron::acp::State *state) { return true; };
-	
-	//! \brief A SF has been succesfully deleted.
-	//!
-	//! \param [in] srcId - srcId of the SF
-	//!
-	//! \return 
-	//!		- true if the listener has accepted the deletion
-	//!		- false if the listener rejected the deletion
-	//!
-	//! This listener is called when the controller has detected that
-	//! a known SF, that is a SF the controller already has detected 
-	//! <em> and </em> the listener has accepted, has deleted itself after
-	//! being instructed to do so via the controller.
-	//!
-	//! If the listeners returns false, the controller will not update its 
-	//! state and will not remove the SF from its own data-structures, 
-	//! ensuring that the listener and the controller has a consistent 
-	//! view. However, note that this does not mean it is a correct view since
-	//! the SF already has been deleted. In general, this funtion should
-	//! return true.
-	virtual bool onSFDelete(Controller *c,int srcId) { return true; };
-	
-	//! \brief A SF has terminated.
-	//!
-	//! \param [in] srcId - srcId of the SF
-	//!
-	//! \return 
-	//!		- true if the listener has accepted the deletion
-	//!		- false if the listener rejected the deletion
-	//!
-	//! This listener is called when the controller has detected that
-	//! a known SF, that is a SF the controller already has detected 
-	//! <em> and </em> the listener has accepted, has deleted itself 
-	//! <b>without</b> being instructed to do so via the controller.
-	//!
-	//! If the listeners returns false, the controller will not update its 
-	//! state and will not remove the SF from its own data-structures, 
-	//! ensuring that the listener and the controller has a consistent 
-	//! view. However, note that this does not mean it is a correct view since
-	//! the SF already has been deleted. In general, this funtion should
-	//! return true;
-	virtual bool onSFTerminate(Controller *c,int srcId) { return true; };
-	
-	//! \brief A SF generated an event
-	//!
-	//! \param [in] srcId - srcId of the SF
-	//!
-	//! <em> TODO: Define the correct interface, add event? </em> 
-	virtual void onSFEvent(Controller *c,int srcId,com::xvd::neuron::acp::Event *event) { return; };
-	
-	
-	//! \brief A SF generated a metric update
-	//!
-	//! \param [in] srcId - srcId of the SF
-	//!
-	//! <em> TODO: Define the correct interface, add metrics? </em> 
-	virtual void onSFMetricUpdate(Controller *c,int srcId,com::xvd::neuron::acp::Metrics *metrics) { return; };
-
-	// ------------------------------------------------------------------------
-	// -------------------- SESSION Listeners ---------------------------------
-	// ------------------------------------------------------------------------
-
-	//! \brief A new Session has been detected
-	//!
-	//! \param [in] srcId     - srcId of the SF creating the session
-	//!
-	//! \return 
-	//!		- true if this Session created by this SF is allowed
-	//!		- false if this Session from the SF is rejected
-	//!
-	//! This listener is called when the controller has determined that a new
-	//! session from a SF has been detected. This callback is called <em> before 
-	//! </em> the the controller starts to track the state of this SF. If the upper layer
-	//! returns false on this callback, the controller will ignore all future
-	//! events from the SF.
-	virtual bool onSessionDetect(Controller *c,int sessionId) { return true; };
-
-	//! \brief A  Session has been deleted
-	//!
-	//! \param [in] srcId     - srcId of the SF creating the session
-	//
-	//! \param [in] sessionId - sessionId. Id of the session
-	//!
-	//! \return 
-	//!		- true if this Session created by this SF is allowed
-	//!		- false if this Session from the SF is rejected
-	//!
-	virtual bool onSessionDelete(Controller *c,int sessionId) { return true; };
-	
-	//! \brief A state change has been detected on an session
-	//!
-	//! \param [in] sessionId - Id of the session
-	//! \param [in] srcId     - srcId of the SF reporting the state
-	//! \param [in] state     - state of the session
-	//!
-	//! \return 
-	//!		- true if the listener has updated its state
-	//!		- false if the listener failed to update its state	
-	//! 
-	//! This listener is called when the controller has detected a state-change
-	//! on a known session at a known SF, that is a SF the controller already 
-	//! has detected <em> and </em> the listener has accepted.
-	//!
-	//! If the listeners returns false, the controller will not update its 
-	//! state, ensuring that the listener and the controller has a consistent 
-	//! view. However, note that this does not mean it is a correct view since
-	//! the state change already has occured. In general, this funtion should
-	//! return true.
-	virtual bool onSFSessionStateChange(Controller *c,
-									  int sessionId, 
-									  int srcId,
-									  com::xvd::neuron::scp::State *state) { return true; };
-	
-	//! \brief A session has been succesfully deleted on a SF
-	//!
-	//! \param [in] sessionId - sessionId of the SF
-	//!
-	//! \param [in] srcId     - srcId of the SF
-	//!
-	//! \return 
-	//!		- true if the listener has accepted the deletion
-	//!		- false if the listener rejected the deletion
-	//!
-	//! This listener is called when the controller has detected that
-	//! a known SF, that is a SF the controller already has detected 
-	//! <em> and </em> the listener has accepted, has deleted itself after
-	//! being instructed to do so via the controller.
-	//!
-	//! If the listeners returns false, the controller will not update its 
-	//! state and will not remove the SF from its own data-structures, 
-	//! ensuring that the listener and the controller has a consistent 
-	//! view. However, note that this does not mean it is a correct view since
-	//! the SF already has been deleted. In general, this funtion should
-	//! return true.
-	virtual bool onSFSessionDelete(Controller *c,int sessionId,int srcId) { return true; };
-	
-	//! \brief A SF has terminated.
-	//!
-	//! \param [in] srcId - srcId of the SF
-	//!
-	//! \return 
-	//!		- true if the listener has accepted the deletion
-	//!		- false if the listener rejected the deletion
-	//!
-	//! This listener is called when the controller has detected that
-	//! a known SF, that is a SF the controller already has detected 
-	//! <em> and </em> the listener has accepted, has deleted itself 
-	//! <b>without</b> being instructed to do so via the controller.
-	//!
-	//! If the listeners returns false, the controller will not update its 
-	//! state and will not remove the SF from its own data-structures, 
-	//! ensuring that the listener and the controller has a consistent 
-	//! view. However, note that this does not mean it is a correct view since
-	//! the SF already has been deleted. In general, this funtion should
-	//! return true;
-	virtual bool onSFSessionTerminate(Controller *c,int sessionId,int srcId) { return true; };
-	
-	//! \brief A SF generated an event
-	//!
-	//! \param [in] srcId - srcId of the SF
-	//!
-	//! <em> TODO: Define the correct interface, add event? </em> 
-	virtual void onSFSessionEvent(Controller *c,int sessionId,int srcId,com::xvd::neuron::scp::Event *event) { return; };
-	
-	
-	//! \brief A SF generated a metric update
-	//!
-	//! \param [in] srcId - srcId of the SF
-	//!
-	//! <em> TODO: Define the correct interface, add metrics? </em> 
-	virtual void onSFSessionMetricUpdate(Controller *c,int sessionId,int srcId,com::xvd::neuron::scp::Metrics *metrics) { return; };	
-};
-
 //! \class Controller
 //!
 //! \brief Trial manager of a network
@@ -264,24 +40,23 @@ class Controller
 
 public:
     
-    Controller(int appId,int domaindId,map<string,string> &nvPairs,ControllerListener *listener);
+    Controller(int appId,int domaindId,map<string,string> &nvPairs);
     ~Controller();
-    void RemoteSessionStateUpdate(com::xvd::neuron::scp::State *state,DDS_SampleInfo *info);
-	void RemoteSessionDeleted(int srcId,int sessionId);
+    void RemoteSessionUpdate(com::xvd::neuron::scp::State *state,DDS_SampleInfo *info);
     void RemoteSFUpdate(com::xvd::neuron::acp::State *state,DDS_SampleInfo *info);
-	void RemoteSFDeleted(int srcId);
     void CmdHelp();
-    bool CmdACP(int *argc,int max_argc,char **argv);
-    bool CmdSCP(int *argc,int max_argc,char **argv);
-    bool CmdSF(int *argc,int max_argc,char **argv);
+    void CmdACP(int *argc,int max_argc,char **argv);
+    void CmdSCP(int *argc,int max_argc,char **argv);
+    void CmdSF(int *argc,int max_argc,char **argv);
     void ListRemoteSF();
     void ListSF();
     void ShutdownRemoteSF(int sfId);
     void CreateOrUpdateSession(int sessionId, set<int> *_sfs,const char *script,bool update);
     void ListSession();
     Session* GetSession(int sessionId);
-    void DeleteSession(int sId,set<int>);
+    void DeleteSession(int sId);
     bool runSingleCommand(const char*cmdIn);
+    void SetCallback(CallbackBase* pc) { pCallback = pc; };
     bool AddSCPMasterPeer(const char* descriptor);
     bool AddACPMasterPeer(const char* descriptor);
 #ifndef ONLY_CONTROLLER_CLASS
@@ -289,23 +64,7 @@ public:
 #endif
 
 private:
-
-	//! \class Session
-    //!
-    //! \brief Manage sessions
-    //!
-    //! This class represents a session from a controllers point of view
-    //! Each session object creates a SCPMasterObject that manages one
-    //! session. Note that a MasterObect can send to multiple SF.
-    class RemoteSessionFactorySession
-    {
-	public:
-		RemoteSessionFactorySession() {}
-		com::xvd::neuron::ObjectState _state;
-		com::xvd::neuron::ObjectState _expectedState;
-    };
-	
-    //! \class Session
+    //! \class RemoteSessionFactory
     //!
     //! \brief Manage sessions
     //!
@@ -326,19 +85,11 @@ private:
         bool SlavesAreReady(set<int> *pending);
         bool SendCommand(const char *script,int slaveId);
         void ReportSessionStatus(void);
-		void Delete();
-		void DeleteSF(int sfId);
-		bool IsDeleted();
-		bool IsSFDeleted(int sfId);
-		void UpdateSFSessionState(int srcId,com::xvd::neuron::scp::State *state);
-		com::xvd::neuron::ObjectState localState;
     private:
         SCPMaster *sm;
         SCPMasterObject *scp;
         com::xvd::neuron::scp::Control *control;
-		//std::set<int> sfs;
-		std::map<int,RemoteSessionFactorySession*> sfs;
-		bool locallyDeleted;
+        std::set<int> sfs;
     };
 
     //! \class RemoteSessionFactory
@@ -369,7 +120,6 @@ private:
         void enable();
         void ping();
         bool isSame(DDS_Long _rank);
-		
     private:
         enum {
             INIT,
@@ -408,7 +158,7 @@ private:
 
     typedef std::map<int,RemoteSessionFactory *> RemoteSessionFactoryMap;
     typedef std::map<int,Session *> SessionMap;
-	typedef std::map<int,RemoteSessionFactorySession*> RemoteSessionFactorySessionMap;
+
     //! \var pSCPMaster 
     //! \brief Attachment to the SCP plane
     std::map<int,pid_t> SFList;
@@ -440,7 +190,6 @@ private:
     
     int m_appId;
 
-    ControllerListener* pListener;
+    CallbackBase* pCallback;
     RTIOsapiThread *eventThread;
-	pthread_mutex_t lock;
 };

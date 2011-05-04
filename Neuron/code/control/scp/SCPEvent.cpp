@@ -49,54 +49,44 @@ SCPEventNewSession::~SCPEventNewSession()
 //!
 //! \param [in] _sessionId    - session id to delete
 //!
-SCPEventSession::SCPEventSession(int _srcId,int _sessionId,int _event) : Event(_event)
+SCPEventDeleteSession::SCPEventDeleteSession(int _sessionId) : Event(SCP_EVENT_DELETE_SESSION)
 {
-    srcId = _srcId;
     sessionId = _sessionId;
 }
 
-//! \brief Post delete session event
+//! \brief Get session id from session delete object
 //!
-//! \param [in] _sessionId    - session id to delete
+//! \return session id in delete session object
 //!
-int SCPEventSession::GetSessionId()
+int SCPEventDeleteSession::GetSessionId()
 {
-	return sessionId;
-}
-
-//! \brief Post delete session event
-//!
-//! \param [in] _sessionId    - session id to delete
-//!
-int SCPEventSession::GetSrcId()
-{
-	return srcId;
-}
-
-//! \brief Post delete session event
-//!
-//! \param [in] _sessionId    - session id to delete
-//!
-SCPEventLostSession::SCPEventLostSession(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId,SCP_EVENT_LOST_SESSION)
-{
-}
-
-//! \brief Post delete session event
-//!
-//! \param [in] _sessionId    - session id to delete
-//!
-SCPEventDeleteSession::SCPEventDeleteSession(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId,SCP_EVENT_DELETE_SESSION)
-{
+    return sessionId;
 }
 
 //! \brief State disposed event
 //!
-SCPEventSessionStateLost::SCPEventSessionStateLost(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId, SCP_EVENT_SESSION_STATE_LOST)
+SCPEventSessionStateDisposed::SCPEventSessionStateDisposed(int _dstId) : Event(SCP_EVENT_SESSION_STATE_DISPOSED)
 {
+    dstId = _dstId;
 }
- 
+
+//! \brief Get instance if state disposed event
+//!
+int SCPEventSessionStateDisposed::GetDstId()
+{
+    return dstId;
+}
+
 //! \brief State disposed event
 //!
-SCPEventSessionStateDisposed::SCPEventSessionStateDisposed(int _srcId,int _sessionId) : SCPEventSession(_srcId,_sessionId, SCP_EVENT_SESSION_STATE_DISPOSED)
+SCPEventSessionStateLost::SCPEventSessionStateLost(int _dstId) : Event(SCP_EVENT_SESSION_STATE_LOST)
 {
+    dstId = _dstId;
+}
+
+//! \brief Get instance if state disposed event
+//!
+int SCPEventSessionStateLost::GetDstId()
+{
+    return dstId;
 }

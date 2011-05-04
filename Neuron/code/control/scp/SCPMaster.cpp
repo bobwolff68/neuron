@@ -41,8 +41,7 @@ public:
         int i;
         Event *ev;
         com::xvd::neuron::scp::StateDataReader *m_reader = com::xvd::neuron::scp::StateDataReader::narrow(reader);
-		com::xvd::neuron::scp::State *state;
-	
+
         // NOTE: We do not track instance state for state/control/event
         retcode = m_reader->read(data_seq,
                                  info_seq,
@@ -66,26 +65,6 @@ public:
 
         for (i = 0; i < data_seq.length(); ++i)
         {
-			switch (info_seq[i].instance_state)
-            {
-                case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
-                    state = com::xvd::neuron::scp::StateTypeSupport::create_data();
-                    m_reader->get_key_value(*state, info_seq[i].instance_handle);
-                    ev = new SCPEventSessionStateLost(state->srcId,state->sessionId);
-                    sm->PostEvent(ev);
-                    com::xvd::neuron::scp::StateTypeSupport::delete_data(state);
-                    break;
-				case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
-                    state = com::xvd::neuron::scp::StateTypeSupport::create_data();
-                    m_reader->get_key_value(*state, info_seq[i].instance_handle);
-                    ev = new SCPEventSessionStateDisposed(state->srcId,state->sessionId);
-                    sm->PostEvent(ev);
-                    com::xvd::neuron::scp::StateTypeSupport::delete_data(state);
-                    break;				
-                default:
-                    break;
-            }
-			
             if (info_seq[i].valid_data)
             {
                 ev = new SCPEventSessionStateUpdate(&data_seq[i],&info_seq[i]);

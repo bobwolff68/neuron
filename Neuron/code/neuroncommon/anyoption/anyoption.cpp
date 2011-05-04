@@ -60,7 +60,7 @@
  */
 
 #ifdef __APPLE__
-/* #include "mac.h" */
+#include "mac.h"
 #endif
 
 #include "anyoption.h"
