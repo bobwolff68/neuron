@@ -290,9 +290,9 @@ string uBrainManager::FormulateScript(const char* incmd, string& enttype,
         else if (enttype == "vfsrc")
             scr << " " << optName;
         else if (enttype == "vdsink")
-            scr << " " << ent_src;
+            scr << " strongest_src:" << ent_src << "/" << ent_src;
         else if (enttype == "rp")
-            scr << " " << ent_src;
+            scr << " strongest_src:" << ent_src << "/" << ent_src;
         else if (enttype == "sqsink")
             scr << " " << ent_src;
         else

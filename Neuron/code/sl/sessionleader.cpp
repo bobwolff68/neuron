@@ -56,9 +56,10 @@ EventHandlerT<SessionLeader>(),ThreadSingle()
                                              PropagateDiscoveryFlagsMedia);
                                              
     MEDIA_TOPIC_NAME(topicName,"video_",sessionId);
-    pMediaParticipant->AddTopic("video",topicName);
+    pMediaParticipant->AddTopic("video",topicName,com::xvd::neuron::media::DataUnitTypeSupport::get_type_name());
     MEDIA_TOPIC_NAME(topicName,"entinfo_",sessionId);
-    pMediaParticipant->AddTopic("entinfo",topicName);
+    cout << "Entity Info Topic Name: " << topicName << endl;
+    pMediaParticipant->AddTopic("entinfo",topicName,com::xvd::neuron::media::EntityInfoTypeSupport::get_type_name());
 
     if(!lanOnlyMode)
         pMediaParticipant->AddPeersAndWaitForDiscovery(PeerDescListMedia,10000);
@@ -239,7 +240,7 @@ void SessionLeader::ProcessScript(const char *script)
 		ScriptStream >> entityId;
 		ScriptStream >> EntityType;
 		entityType = EntityTypeMap[EntityType];
-		std::cout << entityId << "," << entityType << std::endl;
+		std::cout << entityId << " <==> " << entityType << std::endl;
 
 		switch(entityType)
 		{

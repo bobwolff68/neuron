@@ -16,7 +16,7 @@ bool GetPeerDescListFromPeerList(string &Value,map<int,string> &MediaPeerDescLis
     liststream << Value;
     while(liststream.good())
     {
-        string  WanDescriptor = "";
+        string  WanDescriptor = "[";
         
         liststream.getline(buf,99,'~');
         PeerWanIdStr = buf;
@@ -34,11 +34,10 @@ bool GetPeerDescListFromPeerList(string &Value,map<int,string> &MediaPeerDescLis
 	    int2hexstream << hex << FromString<int>(PeerWanIdStr,isOk);
 	    if(!isOk)   return false;
 
-        WanDescriptor += (PeerMaxPartIdxStr+"@wan://::");
+        WanDescriptor += (PeerMaxPartIdxStr+"]@wan://::");
         WanDescriptor += (int2hexstream.str()+":1.1.1.1");
         MediaPeerDescList[peerWanId] = WanDescriptor;
         cout << "Descriptor: " << WanDescriptor << endl;
-        
     }
     
     return true;

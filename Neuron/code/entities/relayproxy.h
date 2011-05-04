@@ -64,26 +64,51 @@ class RelayProxy : public SessionEntity,public EventHandlerT<RelayProxy>,public 
         //New sample of upline entity's info
         void HandleEntInfoInputEvent(Event *pEvent)
         {
-        	UplineEntityInfo = reinterpret_cast<EntInfoInputEvent*>(pEvent)->GetEntInfo();
-        	pInfo->hopsFromTrueSource = UplineEntityInfo.hopsFromTrueSource + 1;
-        	pInfo->uplineSourceId = UplineEntityInfo.entityId;
-        	PublishEntityInfo();
+        	if(reinterpret_cast<EntInfoInputEvent*>(pEvent)->GetEntInfo().entityId==srcId)
+        	{
+				UplineEntityInfo = reinterpret_cast<EntInfoInputEvent*>(pEvent)->GetEntInfo();
+				pInfo->hopsFromTrueSource = UplineEntityInfo.hopsFromTrueSource + 1;
+				pInfo->uplineSourceId = UplineEntityInfo.entityId;
+				PublishEntityInfo();
+        	}
         	return;
         }
 
         void HandleUplineEntLostEvent(Event *pEvent)
         {
-        	cout << "Upline Entity(Id: " << pInfo->uplineSourceId << ") lost..." << endl;
-        	cout << "Trying to connect to Entity(Id: " << UplineEntityInfo.uplineSourceId << ")..."<< endl;
-        	UpdateVideoSource(UplineEntityInfo.uplineSourceId);
+        	/*cout << "Upline Entity(Id: " << pInfo->uplineSourceId << ") lost..." << endl;
+           	if(UplineEntityInfo.uplineSourceId>-1)
+            {
+            	if(GetUplineEntityInfo(UplineEntityInfo.uplineSourceId))
+            	{
+            		UpdateVideoSource(UplineEntityInfo.entityId);
+            		pInfo->hopsFromTrueSource = UplineEntityInfo.hopsFromTrueSource + 1;
+            	    pInfo->uplineSourceId = UplineEntityInfo.entityId;
+            	    PublishEntityInfo();
+               	}
+            	else
+            		UpdateVideoSource(UplineEntityInfo.uplineSourceId);
+            }*/
+
         	return;
         }
 
         void HandleUplineEntShutdownEvent(Event *pEvent)
         {
         	cout << "Upline Entity(Id: " << pInfo->uplineSourceId << ") shut down..." << endl;
-        	cout << "Trying to connect to Entity(Id: " << UplineEntityInfo.uplineSourceId << ")..."<< endl;
-        	UpdateVideoSource(UplineEntityInfo.uplineSourceId);
+        	if(UplineEntityInfo.uplineSourceId>-1)
+        	{
+        		if(GetUplineEntityInfo(UplineEntityInfo.uplineSourceId))
+        		{
+        			pInfo->hopsFromTrueSource = UplineEntityInfo.hopsFromTrueSource + 1;
+        		    pInfo->uplineSourceId = UplineEntityInfo.entityId;
+        		    PublishEntityInfo();
+        		    UpdateVideoSource(UplineEntityInfo.entityId);
+            	}
+        		else
+        			UpdateVideoSource(UplineEntityInfo.uplineSourceId);
+        	}
+
         	return;
         }
 

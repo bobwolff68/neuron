@@ -1,0 +1,20 @@
+module com
+{
+    module xvd
+    {
+        module neuron
+        {
+            module media
+            {
+                struct EntityInfo
+                {
+                    long    entityId;//@key
+                    long    uplineSourceId;
+                    long    hopsFromTrueSource;
+                    long    trueSourceId;
+                };
+            };
+        };
+    };
+};
+

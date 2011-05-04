@@ -407,18 +407,6 @@
 		</qos_profile>
 
         <qos_profile name="ENTITYINFO">
-	    <datawriter_qos>
-		<reliability>
-		    <kind>RELIABLE_RELIABILITY_QOS</kind>
-		</reliability>
-		<history>
-		    <kind>KEEP_LAST_HISTORY_QOS</kind>
-		    <depth>10</depth>
-		</history>
-		<durability>
-		    <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
-		</durability>
-	    </datawriter_qos>
             <datareader_qos>
                 <reliability>
                     <kind>RELIABLE_RELIABILITY_QOS</kind>

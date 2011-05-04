@@ -75,10 +75,12 @@ class H264FileSrc : public SessionEntity,public EventHandlerT<H264FileSrc>,publi
             in >> fps;
             in.close();
 
-            StartupEntInfoPub();
-            pInfo->uplineSourceId = id;
+            pInfo->entityId = id;
+            pInfo->uplineSourceId = -1;
             pInfo->trueSourceId = id;
             pInfo->hopsFromTrueSource = 0;
+            StartupEntInfoPub();
+
             PublishEntityInfo();
 
             std::cout << "FPS selected " << fps << std::endl;

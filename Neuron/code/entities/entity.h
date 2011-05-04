@@ -52,7 +52,7 @@ class EntityInfoListener : public DDSDataReaderListener
             {
             	if(retCode!=DDS_RETCODE_OK)
             	{
-            		cout << "EntityInfoListener::on_data_available(): Error in pEntInfoReader->take()" << endl;
+            		cout << "EntityInfoListener::on_data_available(): Error in pEntInfoReader->read()" << endl;
             		return;
             	}
 
@@ -60,6 +60,7 @@ class EntityInfoListener : public DDSDataReaderListener
             	{
             		if(seqInfo[i].valid_data)
             		{
+            			com::xvd::neuron::media::EntityInfoTypeSupport::print_data(&seqEntInfo[i]);
             			EntInfoInputEvent *pEvent = new EntInfoInputEvent(seqEntInfo[i]);
             			pOwnerEventHandler->SignalEvent(pEvent);
             		}
@@ -191,7 +192,14 @@ class SessionEntity
         	retCode = pEntInfoSub->delete_contained_entities();
         	if(retCode!=DDS_RETCODE_OK)
         	{
-        		cout << "~SessionEntity(): Error in pEntInfoSub->delete_contained_entities()" << endl;
+        		cout << "~SessionEntity()::ShutdownEntInfoSub(): Error in pEntInfoSub->delete_contained_entities()" << endl;
+        		exit(0);
+        	}
+
+        	retCode = pOwnerDP->delete_subscriber(pEntInfoSub);
+        	if(retCode!=DDS_RETCODE_OK)
+        	{
+        		cout << "SessionEntity()::ShutdownEntInfoSub(): Error in pOwnerDP->delete_subscriber()" << endl;
         		exit(0);
         	}
 
@@ -223,6 +231,9 @@ class SessionEntity
         		exit(0);
         	}
 
+        	//Tell reader to ignore local writer
+        	pOwnerDP->ignore_publication(pEntInfoWriter->get_instance_handle());
+
         	//Register EntityInfo instance
         	pWriter = com::xvd::neuron::media::EntityInfoDataWriter::narrow(pEntInfoWriter);
         	EntInfoInstanceHandle = pWriter->register_instance(*pInfo);
@@ -244,20 +255,27 @@ class SessionEntity
         	retCode = pWriter->get_key_value(*pInfo,EntInfoInstanceHandle);
         	if(retCode!=DDS_RETCODE_OK)
         	{
-        		cout << "~SessionEntity(): Error in pWriter->get_key_value()" << endl;
+        		cout << "SessionEntity()::ShutdownEntInfoPub(): Error in pWriter->get_key_value()" << endl;
         		exit(0);
         	}
         	retCode = pWriter->dispose(*pInfo,EntInfoInstanceHandle);
         	if(retCode!=DDS_RETCODE_OK)
         	{
-        		cout << "~SessionEntity(): Error in pWriter->dispose()" << endl;
+        		cout << "SessionEntity()::ShutdownEntInfoPub(): Error in pWriter->dispose()" << endl;
         		exit(0);
         	}
 
         	retCode = pEntInfoPub->delete_contained_entities();
         	if(retCode!=DDS_RETCODE_OK)
         	{
-        		cout << "~SessionEntity(): Error in pEntInfoPub->delete_contained_entities()" << endl;
+        		cout << "SessionEntity()::ShutdownEntInfoPub(): Error in pEntInfoPub->delete_contained_entities()" << endl;
+        		exit(0);
+        	}
+
+        	retCode = pOwnerDP->delete_publisher(pEntInfoPub);
+        	if(retCode!=DDS_RETCODE_OK)
+        	{
+        		cout << "SessionEntity()::ShutdownEntInfoPub(): Error in pOwnerDP->delete_publisher()" << endl;
         		exit(0);
         	}
 
@@ -355,6 +373,47 @@ class SessionEntity
         int GetId(void)
         {
             return id;
+        }
+
+        com::xvd::neuron::media::EntityInfo &GetUplineEntityInfo(void)
+        {
+        	return UplineEntityInfo;
+        }
+
+        bool GetUplineEntityInfo(int uplineEntityId)
+        {
+        	com::xvd::neuron::media::EntityInfo 			EntInfo;
+        	com::xvd::neuron::media::EntityInfoDataReader  *pReader = NULL;
+        	DDS_InstanceHandle_t							InstHandle;
+
+        	if(uplineEntityId>-1)
+        	{
+				pReader = com::xvd::neuron::media::EntityInfoDataReader::narrow(pEntInfoReader);
+				EntInfo.entityId = uplineEntityId;
+				InstHandle = pReader->lookup_instance(EntInfo);
+				if(!DDS_InstanceHandle_is_nil(&InstHandle))
+				{
+					com::xvd::neuron::media::EntityInfoSeq	seqEntInfo;
+					DDS_SampleInfoSeq						seqSampInfo;
+					DDS_ReturnCode_t						retCode;
+
+					//Reader has history.depth = 1
+					retCode = pReader->read_instance(seqEntInfo,seqSampInfo,(DDS_Long)1,InstHandle,
+													 DDS_ANY_SAMPLE_STATE,DDS_ANY_VIEW_STATE,
+													 DDS_ANY_INSTANCE_STATE);
+					if(retCode!=DDS_RETCODE_NO_DATA)
+					{
+						if(retCode!=DDS_RETCODE_OK)		return false;
+						if(!seqSampInfo[0].valid_data)	return false;
+						UplineEntityInfo = seqEntInfo[0];
+						pReader->return_loan(seqEntInfo,seqSampInfo);
+						return true;
+					}
+
+					pReader->return_loan(seqEntInfo,seqSampInfo);
+				}
+        	}
+        	return false;
         }
 };
 

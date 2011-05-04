@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include "media.h"
 #include "mediaSupport.h"
+#include "entityinfo.h"
+#include "entityinfoSupport.h"
 #include "neuroncommon.h"
 
 using namespace std;
@@ -246,7 +248,17 @@ class MediaParticipant
                 pPartFactory->delete_participant(pDomParticipant);
                 exit(0);
             }
-            cout << "MediaParticipant(): registered type..." << endl;                        
+            cout << "MediaParticipant(): registered type " << typeName << endl;
+
+            typeName = com::xvd::neuron::media::EntityInfoTypeSupport::get_type_name();
+            retCode = com::xvd::neuron::media::EntityInfoTypeSupport::register_type(pDomParticipant,typeName);
+            if(retCode!=DDS_RETCODE_OK)
+            {
+                cout << "MediaParticipant(): Can't register type '" << typeName << "'" << endl;
+                pPartFactory->delete_participant(pDomParticipant);
+                exit(0);
+            }
+            cout << "MediaParticipant(): registered type " << typeName << endl;
         }
 
         ~MediaParticipant()
@@ -272,13 +284,12 @@ class MediaParticipant
             }
         }
 
-        void AddTopic(const char *mediaType,const char *topicName)
+        void AddTopic(const char *mediaType,const char *topicName,const char *typeName)
         {
             string MediaType(mediaType);
 
             Topics[MediaType] = NULL;
-            Topics[MediaType] = pDomParticipant->create_topic(topicName,
-                                com::xvd::neuron::media::DataUnitTypeSupport::get_type_name(),
+            Topics[MediaType] = pDomParticipant->create_topic(topicName,typeName,
                                 DDS_TOPIC_QOS_DEFAULT,NULL,DDS_STATUS_MASK_NONE);
             if(Topics[MediaType]==NULL)
             {

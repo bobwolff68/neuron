@@ -233,7 +233,6 @@ class MediaLayerReader
         {
             DDS_ReturnCode_t    retCode;
 
-            delete pListener;
             retCode = pSub->delete_contained_entities();
             if(retCode!=DDS_RETCODE_OK)
             {
@@ -241,6 +240,7 @@ class MediaLayerReader
                 exit(0);
             }
 
+            delete pListener;
             retCode = pOwnerDP->delete_subscriber(pSub);
             if(retCode!=DDS_RETCODE_OK)
             {
