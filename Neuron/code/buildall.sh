@@ -7,6 +7,17 @@ cd neuroncommon
 # Newer script automatically decides to make or not make/install cppunit.
 sh ./buildcppunit.sh
 
+# Make sure lua and liblua/dev are installed.
+if not which lua
+then
+  sudo apt-get install lua5.1
+fi
+
+# now validate the include files are ready.
+if not -e /usr/include/lua5.1/lua.h
+then
+  sudo apt-get install liblua5.1-0-dev
+fi
 # Very simple/fast recompile for lua bindings from C/C++ to Lua functions and classes
 # Unnecessary as of April 27th. Replaced for now with OOLUA. sh ./buildtolua++.sh
 
