@@ -27,10 +27,10 @@ make clean
 make
 
 cd ../media/idl
-rtiddsgen -replace -namespace media.idl
+$NDDSHOME/scripts/rtiddsgen -replace -namespace media.idl
 
 cd ../entity_info_idl
-rtiddsgen -replace -namespace entityinfo.idl
+$NDDSHOME/scripts/rtiddsgen -replace -namespace entityinfo.idl
 
 cd ../../sf
 cmake -G "Unix Makefiles"
