@@ -8,13 +8,13 @@ cd neuroncommon
 sh ./buildcppunit.sh
 
 # Make sure lua and liblua/dev are installed.
-if not which lua
+if ! which lua
 then
   sudo apt-get install lua5.1
 fi
 
 # now validate the include files are ready.
-if not -e /usr/include/lua5.1/lua.h
+if ! test -e /usr/include/lua5.1/lua.h
 then
   sudo apt-get install liblua5.1-0-dev
 fi
