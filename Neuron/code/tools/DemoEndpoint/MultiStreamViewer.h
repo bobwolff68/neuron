@@ -100,7 +100,8 @@ class H264StreamWindow
             gtk_fixed_put(GTK_FIXED(pFixedFrame),pCurFramerateLabel,resWidthP+10,5+3*resHeightP/4);
 
             //Add rp chain length label
-            pRPChainLengthLabel = gtk_label_new("Current relay proxy\nchain length: 0");
+            pRPChainLengthLabel = gtk_label_new(NULL);
+            gtk_label_set_markup(GTK_LABEL(pRPChainLengthLabel),"<span size=\"large\"># of relays\n</span><span weight=\"bold\" size=\"xx-large\">0</span>");
             gtk_widget_set_size_request(pRPChainLengthLabel,135,resHeightP/8);
             gtk_fixed_put(GTK_FIXED(pFixedFrame),pRPChainLengthLabel,resWidthP+10,5+7*resHeightP/8);
 
@@ -168,12 +169,14 @@ class H264StreamWindow
         void UpdateRPChainLength(SessionFactory *pSF)
         {
             int         timesParsed = pSF->GetTimesParsed(1001,srcEntId);
-            std::string RPChainLenLblText = "Current relay proxy\nchain length: ";
+            std::string RPChainLenLblText = "<span size=\"large\"># of relays</span><span weight=\"bold\" size=\"xx-large\">\n";
 
             RPChainLenLblText = RPChainLenLblText + ToString<int>(timesParsed);
             if(timesParsed>=3)  RPChainLenLblText = RPChainLenLblText + "(or more)";
+            RPChainLenLblText += "</span>";
 
-            gtk_label_set_text(GTK_LABEL(pRPChainLengthLabel),RPChainLenLblText.c_str());
+            //gtk_label_set_text(GTK_LABEL(pRPChainLengthLabel),RPChainLenLblText.c_str());
+            gtk_label_set_markup(GTK_LABEL(pRPChainLengthLabel),RPChainLenLblText.c_str());
 
             return;
         }

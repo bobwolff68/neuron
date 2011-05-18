@@ -91,7 +91,7 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
         stringstream descrStrm;
 
         idClient = FromStringNoChecking<int>(pairs["client_acp_id"]);
-        descrStrm << "0@wan://::" << hex << idClient << ":1.1.1.1" << dec;
+        descrStrm << "[0]@wan://::" << hex << idClient << ":1.1.1.1" << dec;
 
         cout << "INFO: RegistrationComplete: ACP PEER-add: " << descrStrm.str() << endl;
 
@@ -100,7 +100,7 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
 
         stringstream descrStrm2;
         idClient = FromStringNoChecking<int>(pairs["client_scp_id"]);
-        descrStrm2 << "1@wan://::" << hex << idClient << ":1.1.1.1" << dec;
+        descrStrm2 << "[1]@wan://::" << hex << idClient << ":1.1.1.1" << dec;
 
         cout << "INFO: RegistrationComplete: SCP PEER-add: " << descrStrm2.str() << endl;
 
