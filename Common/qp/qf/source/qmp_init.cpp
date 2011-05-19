@@ -45,12 +45,21 @@ void QMPool::init(void *poolSto, uint32_t poolSize, QMPoolSize blockSize) {
                     > blockSize));
 
     //lint -e923                       ignore MISRA Rule 45 in this expression
+#if _WIN64 || __x86_64__
+    uint64_t corr = ((uint64_t)poolSto
+                      & ((uint64_t)sizeof(QFreeBlock) - (uint64_t)1));
+    if (corr != (uint64_t)0) {                            // alignment needed?
+        corr = (uint64_t)sizeof(QFreeBlock) - corr; // amount to align poolSto
+        poolSize -= corr;                    // reduce the available pool size
+    }
+#else
     uint32_t corr = ((uint32_t)poolSto
                       & ((uint32_t)sizeof(QFreeBlock) - (uint32_t)1));
     if (corr != (uint32_t)0) {                            // alignment needed?
         corr = (uint32_t)sizeof(QFreeBlock) - corr; // amount to align poolSto
         poolSize -= corr;                    // reduce the available pool size
     }
+#endif
     //lint -e826   align the head of free list at the free block-size boundary
     m_free = (void *)((uint8_t *)poolSto + corr);
 

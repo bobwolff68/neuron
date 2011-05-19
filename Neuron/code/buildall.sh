@@ -1,5 +1,36 @@
 #!/bin/sh
 
+# Make bin/ and lib/
+mkdir -p bin
+mkdir -p lib
+
+if test $1 = "clean"
+then
+  CLEAN=1
+  rm lib/*
+  rm neuroncommon/netlib/libcurl.a
+fi
+
+# Now make the qp libraries and copy the resultant .a files into Neuron/code/lib
+cd ../../Common/qp/ports/80x86/linux/gnu
+if test $CLEAN -eq 1
+then
+  echo "cleaning..."
+  make dbg_clean
+  make rel_clean
+  make spy_clean
+fi
+echo "making..."
+
+make dbg
+make rel
+# cannot do this yet - make spy
+echo "Skipping make of 'spy' - technical issues to solve."
+
+cp rel/*.a ../../../../../../Neuron/code/lib/
+cp dbg/libqep.a ../../../../../../Neuron/code/lib/libqep_d.a
+cp dbg/libqf.a ../../../../../../Neuron/code/lib/libqf_d.a
+
 cd neuroncommon
 
 # Only re-build cppunit if needed. It is a shared-library item so it should be built once
