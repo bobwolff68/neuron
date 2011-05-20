@@ -31,7 +31,7 @@ cp rel/*.a ../../../../../../Neuron/code/lib/
 cp dbg/libqep.a ../../../../../../Neuron/code/lib/libqep_d.a
 cp dbg/libqf.a ../../../../../../Neuron/code/lib/libqf_d.a
 
-cd neuroncommon
+cd ../../../../../../Neuron/code/neuroncommon
 
 # Only re-build cppunit if needed. It is a shared-library item so it should be built once
 # per time of revision publishing.

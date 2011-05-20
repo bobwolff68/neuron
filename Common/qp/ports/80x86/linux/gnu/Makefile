@@ -130,7 +130,7 @@ $(LIBDIR)/libqep.a: \
 	$(BINDIR)/qhsm_dis.o \
 	$(BINDIR)/qhsm_top.o \
 	$(BINDIR)/qhsm_in.o
-	-$(RM) $(BINDIR)/*.o
+	-$(RM) -f $(BINDIR)/*.o
 
 $(BINDIR)/qep.o: $(QEP_SRCDIR)/qep.cpp
 	$(CC) $(CCFLAGS) $(CCINC) -I$(QEP_SRCDIR) $<
@@ -217,7 +217,7 @@ $(LIBDIR)/libqf.a: \
 	$(BINDIR)/qte_darm.o \
 	$(BINDIR)/qte_rarm.o \
 	$(BINDIR)/qf_port.o
-	-$(RM) $(BINDIR)/*.o
+	-$(RM) -f $(BINDIR)/*.o
 
 $(BINDIR)/qa_defer.o: $(QF_SRCDIR)/qa_defer.cpp
 	$(CC) $(CCFLAGS) $(CCINC) -I$(QF_SRCDIR) $<
@@ -331,7 +331,7 @@ $(LIBDIR)/libqs.a: \
 	$(BINDIR)/qs_mem.o \
 	$(BINDIR)/qs_str.o \
 	$(BINDIR)/qs_port.o
-	-$(RM) $(BINDIR)/*.o
+	-$(RM) -f $(BINDIR)/*.o
 
 $(BINDIR)/qs.o: $(QS_SRCDIR)/qs.cpp
 	$(CC) $(CCFLAGS) $(CCINC) -I$(QS_SRCDIR) $<
@@ -363,6 +363,6 @@ $(BINDIR)/qs_port.o: src/qs_port.cpp
 endif    # spy
 
 clean:
-	-$(RM) $(BINDIR)/*.o
-	-$(RM) $(LIBDIR)/*.a
+	-$(RM) -f $(BINDIR)/*.o
+	-$(RM) -f $(LIBDIR)/*.a
 
