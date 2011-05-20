@@ -39,20 +39,40 @@ public:
 	RegistrationClient(const char* pIp_address, int sfid, int portnum=8181, bool bIsEndpoint=false, const char* friendlyname=NULL);
 	virtual ~RegistrationClient();
 	bool setupNetwork(void);
-	bool registerClient(void);
+	virtual bool registerClient(void);
+	bool abort(void);
 	// Accessed from 'outside' via the write callback
 	char response[1000];
 	int respLength;
 	map<string, string> publicPairs;
 
 protected:
+    static int CURLProgressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
     static size_t CURLWriteCallback(void *ptr, size_t size, size_t nmemb, void *ourpointer);
     CURL* hCurl;
 	string ip_address;
 	int port_to_use;
 	string url;
+	bool bAbortRequested;
+	bool bIsCompleted;
 };
 
 //bool RegistrationClient::bCurlReady=false;
+
+class RegistrationClientAsync : public RegistrationClient, private ThreadSingle
+{
+public:
+	RegistrationClientAsync(const char* pIp_address, int sfid, int portnum=8181, bool bIsEndpoint=false, const char* friendlyname=NULL);
+	virtual ~RegistrationClientAsync();
+	
+	bool registerClient(void);
+private:	
+	int  workerBee(void);
+public:	
+	// Called with (true) when a real response was received. 
+	// If aborted or other curl_error happens, it will be called with (false)
+	virtual void ResponseReceived(bool bSuccessful) = 0;
+};
+
 
 #endif /* REGISTRATION_H_ */

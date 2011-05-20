@@ -8,10 +8,15 @@
 #include "registration.h"
 #include <cstring>	// Necessary for memcpy
 
+//
 // Our static refcount being initialized for CurlGlobal::
 int CurlGlobal::refCount = 0;
+// Our static refcount being initialized for CurlGlobal::
+//
+
 
 RegistrationClient::RegistrationClient(const char* pIp_address, int sfid, int portnum, bool bIsEndpoint, const char* friendlyname)
+: 	bAbortRequested(false), bIsCompleted(false)
 {
 	// TODO Auto-generated constructor stub
 	stringstream intconv;
@@ -70,6 +75,10 @@ size_t RegistrationClient::CURLWriteCallback(void *ptr, size_t size, size_t nmem
 
   pParent = (RegistrationClient*)ourpointer;
 
+  // Signal curl library that we've 'had an error' so it can abort the transfer.
+  if (pParent->bAbortRequested)
+	return -1;
+	
   if (pParent->respLength==0)
 	  pDest = pParent->response;
   else
@@ -82,6 +91,22 @@ size_t RegistrationClient::CURLWriteCallback(void *ptr, size_t size, size_t nmem
   return realsize;
 }
 
+int RegistrationClient::CURLProgressCallback(void *clientp, double dltotal, double dlnow,
+						double ultotal, double ulnow)
+{
+  RegistrationClient* pParent;
+
+  pParent = (RegistrationClient*)clientp;
+
+	cout << "Progress callback called..." << endl;
+	
+  // Signal curl library that we've 'had an error' so it can abort the transfer.
+  if (pParent->bAbortRequested)
+	return -1;
+  else
+	return 0;	
+}
+
 bool RegistrationClient::registerClient(void)
 {
 	CURLcode retcode;
@@ -91,8 +116,16 @@ bool RegistrationClient::registerClient(void)
 	publicPairs.clear();
 
 	retcode = curl_easy_perform( hCurl );
-
-	if (retcode != CURLE_OK)
+	bIsCompleted = true;	// Regardless of error / abort / etc
+	
+	if (retcode == CURLE_ABORTED_BY_CALLBACK)
+	{
+		cerr << "CURL_ERROR: Aborted: " << curl_easy_strerror( retcode ) << endl;
+		assert(bAbortRequested);
+		bAbortRequested = false;
+		return false;
+	}
+	else if (retcode != CURLE_OK)
 	{
 		cerr << "CURL_ERROR: " << curl_easy_strerror( retcode ) << endl;
 		return false;
@@ -155,7 +188,7 @@ bool RegistrationClient::setupNetwork(void)
 #endif
 
 	curl_easy_setopt( hCurl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt( hCurl, CURLOPT_NOPROGRESS, true );
+	curl_easy_setopt( hCurl, CURLOPT_NOPROGRESS, false );
 
 //Skip headers altogether.	curl_easy_setopt( hCurl, CURLOPT_WRITEHEADER, stdout);
 	// Do not return the headers to me. Only the body.
@@ -166,5 +199,76 @@ bool RegistrationClient::setupNetwork(void)
 	curl_easy_setopt( hCurl, CURLOPT_WRITEFUNCTION, CURLWriteCallback);
 	curl_easy_setopt( hCurl, CURLOPT_WRITEDATA, (void*)this);
 
+	// Callback for progress. Makes aborting so much easier.
+	curl_easy_setopt( hCurl, CURLOPT_PROGRESSFUNCTION, CURLProgressCallback);
+	curl_easy_setopt( hCurl, CURLOPT_PROGRESSDATA, (void*)this);
+	
 	return true;
+}
+
+bool RegistrationClient::abort(void)
+{
+	bAbortRequested = true;
+	usleep(500000);	// give a little time. Abort isn't instantaneous and requires curl's threads to be fed.
+	
+	int count=0;
+	while (!bIsCompleted)
+	{
+		usleep(500000);
+		if (count++ > 10)
+		{
+			cerr << "During ~RegistrationClientAsync(), abort incomplete. Exiting." << endl;
+			return false;	// Thread is still running. Bad news.
+		}
+	}
+	
+	cout << "INFO: Abort took " << 500 + count*500 << "ms to complete." << endl;
+	return true;
+}
+	
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+RegistrationClientAsync::RegistrationClientAsync(const char* pIp_address, int sfid, int portnum, bool bIsEndpoint, const char* friendlyname)
+  : RegistrationClient(pIp_address, sfid, portnum, bIsEndpoint, friendlyname)
+{
+}
+
+RegistrationClientAsync::~RegistrationClientAsync()
+{
+	if (!RegistrationClient::bIsCompleted)
+		abort();
+	
+	int count=0;
+	while (!RegistrationClient::bIsCompleted)
+	{
+		usleep(500000);
+		if (count++ > 10)
+		{
+			cerr << "During ~RegistrationClientAsync(), abort incomplete. Exiting." << endl;
+			break;	// Thread is still running. Bad news.
+		}
+	}
+	
+}
+
+bool RegistrationClientAsync::registerClient(void)
+{
+	// Because we're doing this async, we only setup the thread here and then
+	// have the workerBee do the real registering.
+	startThread();
+	
+	return true;
+}
+
+int RegistrationClientAsync::workerBee(void)
+{
+	// Our job (in a new thread) is to call the REAL regClient() and await its result.
+	bool res = RegistrationClient::registerClient();
+	
+	cout << "regClient returned in the thread...result = " << (res==true ? "success" : "fail/abort") << endl;
+	
+	ResponseReceived(res);
+		
+	RegistrationClient::bIsCompleted = true;
+	return res;
 }
