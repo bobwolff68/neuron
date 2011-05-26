@@ -9,6 +9,8 @@
 #include "ubrainmanager.h"
 #include "regserver.h"
 
+#include "luatester.h"
+
 #include <cstring>
 
 #include <readline/readline.h>
@@ -20,6 +22,8 @@ extern string stunserver;
 extern string startupscript;
 extern string logoutfile;
 extern bool bUseLANOnly;
+extern string luascripts[16];
+extern int luascriptsInUse;
 
 //
 // Note that these IDs and strings are in **HEX** but *MUST NOT* have leading "0x" in the string.
@@ -29,10 +33,13 @@ extern bool bUseLANOnly;
 #define UBRAIN_WAN_SCPID 1
 #define UBRAIN_WAN_SCPID_STR "1"
 
+extern lua_State* SetupLua(void);
+
 int main(int argc, char** argv)
 {
 	Shell* pShell;
 	map<string, string> respvals;
+	lua_State* ubrainLua;
 
 	// Static items -- I think they are static?
 #if 0
@@ -41,11 +48,37 @@ int main(int argc, char** argv)
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
 #endif
 
+  ubrainLua = MinibrainTestInstance::getInstance()->getLuaState();
+  if (!ubrainLua)
+    cout << "MinibrainTestInstance::getLuaState() - Setup failed." << endl;
+  
     ///
     /// Parse the command line and setup variables for options. Then start rolling for real.
     ///
     parsecmd(argc, argv);
+   
+    cout << endl << "Summary of all lua scripts requested on command line:" << endl;
+    for (int iScr=0;iScr<luascriptsInUse;iScr++)
+    {
+	cout << "Running Script["<<iScr<<"] = "<<luascripts[iScr]<<endl;
+	MinibrainTestInstance::getInstance()->RunScript(luascripts[iScr].c_str());
+    }
 
+    if (MinibrainTestInstance::getInstance()->ForceCallback("testing 1 2 3"))
+	cout << "C++::returned true" << endl;
+    else
+	cout << "C++::returned false" << endl;
+    
+    cout << endl << "Next test..." << endl;
+    if (MinibrainTestInstance::getInstance()->ForceCallback("yes"))
+	cout << "C++::returned true" << endl;
+    else
+	cout << "C++::returned false" << endl;
+
+    cout << endl;
+    
+exit(-1);    
+	
     // Should come from command line.
     respvals["ubrain_ip"] = ubrain_ip;
 
@@ -169,4 +202,3 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-

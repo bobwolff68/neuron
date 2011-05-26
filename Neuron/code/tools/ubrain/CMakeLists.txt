@@ -26,11 +26,32 @@ SET (SOURCES ubrain.cpp
    regserver.cpp
    ubrainmanager.cpp
    controller.cpp
+   luatester.cpp
 )
 
 # Hack for survival at the moment...just find and link the library. No true dependencies yet.
 find_library(COMMON libneuroncommon.a ../../lib)
 find_library(CONTROL libcontrolplane.a ../../lib)
+
+find_library(OOLUA liboolua.a ../../lib)
+find_library(LIBCPPUNIT_SO libcppunit.so)
+
+# Lua and SWIG
+set(SWIG_SOURCES LuaInterface.i)
+foreach(i_file ${SWIG_SOURCES})
+    string(REGEX REPLACE "\\.i" ""  basename ${i_file})
+    add_custom_command(
+        OUTPUT ${basename}_wrap.cxx
+        COMMAND swig -c++ -lua ${CMAKE_CURRENT_SOURCE_DIR}/${i_file}
+	    DEPENDS /usr/bin/swig ${CMAKE_CURRENT_SOURCE_DIR}/${i_file}
+    )
+    list (APPEND SOURCES ${basename}_wrap.cxx)
+endforeach()
+
+find_library(LIBLUA liblua5.1.a)
+INCLUDE_DIRECTORIES( /usr/include/lua5.1 ) # add to include path
+
+INCLUDE_DIRECTORIES( ../../include/oolua ) # add to include path
 
 find_library(PT_LIB pthread)
 
@@ -93,6 +114,9 @@ TARGET_LINK_LIBRARIES(
    ${LIBXML2}
    ${LIBCURL}		# Temporarily necessary
    ${READLINE}
+   ${OOLUA}
+   ${LIBLUA}
+   ${LIBCPPUNIT_SO}
    ${LIBC} ${LIBM} ${PT_LIB}
    -lncurses
    -lidn -lssl -ldl -lrt

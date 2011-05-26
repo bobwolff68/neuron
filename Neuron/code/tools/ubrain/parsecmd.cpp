@@ -21,6 +21,8 @@
 	string startupscript = "";
 	string logoutfile = "";
 	string ubrain_ip = "50.18.56.81";
+	string luascripts[16];
+	int luascriptsInUse = 0;
 //
 //};
 //
@@ -64,6 +66,10 @@ bool parsecmd(int argc, char**argv)
 			" --stun <ip>[:<port>]      Address and port of stun server for udpwan.");
 	opt->addUsage(
 			" --script <scriptname>     Macro script file to run upon startup.");
+	opt->addUsage(
+			" --luascripts <scriptname.lua>[,scriptname2.lua...]     Lua script(s) to run upon startup.");
+	opt->addUsage(
+			" --luascript <scriptname.lua>     Single Lua script to run upon startup.");
     opt->addUsage(
             " --lanonly                 Operate without STUN, WAN, etc. LAN only. (default is WAN)");
 
@@ -97,6 +103,8 @@ bool parsecmd(int argc, char**argv)
     opt->setOption("ubrain");
     opt->setOption("stun");
     opt->setOption("script");
+    opt->setOption("luascripts");
+    opt->setOption("luascript");
 
     opt->setFlag("monitor", 'o');
 //	opt->setFlag("flowctrl", 'f');
@@ -158,6 +166,33 @@ bool parsecmd(int argc, char**argv)
         cout << "Initial script is: " << startupscript << endl;
     }
 
+    if (opt->getValue("luascripts") != NULL)
+    {
+	char scr[100];
+	stringstream allscripts(opt->getValue("luascripts"));
+	
+	while (allscripts)
+	{
+		allscripts.getline(scr, 99, ',');
+		
+		if (*scr == 0) break;	// Last entry read already.
+		
+//		cout << "--luascripts Iterating: Current script==" << scr << endl;
+		luascripts[luascriptsInUse++] = scr;
+	}
+    }
+    
+    if (opt->getValue("luascript") != NULL)
+    {
+        if (luascriptsInUse)
+	{
+	  cout << "Single lua script OVERRIDES prior --luascripts option. Ignoring --luascripts" << endl;
+	  luascriptsInUse=0;
+	}
+	
+        luascripts[luascriptsInUse++] = opt->getValue("luascript");
+//        cout << "Single lua script listed is: " << luascripts[luascriptsInUse-1] << endl;
+    }
 
 
 	if (opt->getValue('i') != NULL || opt->getValue("IP") != NULL)

@@ -92,10 +92,10 @@ OOLUA::Script s1;
   luaL_openlibs(L);
   luaopen_LuaInterface(L); 
 
-  if (s1.run_file(argv[1])==0)  // Load and run file
+  if (! s1.run_file(argv[1]))  // Load and run file
     {
     cout << "Unable to load or run " << argv[1] << endl;
-    cout << "Error from lua load -- " << lua_tostring(L, -1) << endl;
+    cout << "Error from lua load -- " << OOLUA::get_last_error(L) << endl;
     }
 
   // Now try calling down to Lua from C/C++
