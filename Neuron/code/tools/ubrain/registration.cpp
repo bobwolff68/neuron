@@ -15,6 +15,17 @@ int CurlGlobal::refCount = 0;
 //
 
 
+/**
+ * RegistrationClient::RegistrationClient
+ * 
+ * @param const char* pIp_address
+ * @param int sfid
+ * @param int portnum
+ * @param bool bIsEndpoint
+ * @param const char* friendlyname
+ * @brief 
+ */
+
 RegistrationClient::RegistrationClient(const char* pIp_address, int sfid, int portnum, bool bIsEndpoint, const char* friendlyname)
 : 	bAbortRequested(false), bIsCompleted(false)
 {
@@ -91,8 +102,7 @@ size_t RegistrationClient::CURLWriteCallback(void *ptr, size_t size, size_t nmem
   return realsize;
 }
 
-int RegistrationClient::CURLProgressCallback(void *clientp, double dltotal, double dlnow,
-						double ultotal, double ulnow)
+int RegistrationClient::CURLProgressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
 {
   RegistrationClient* pParent;
 
@@ -122,6 +132,10 @@ bool RegistrationClient::registerClient(void)
 	{
 		cerr << "CURL_ERROR: Aborted: " << curl_easy_strerror( retcode ) << endl;
 		assert(bAbortRequested);
+		
+		// If there is a over-ridden function, let them know we're aborted now.
+		AbortCallback();
+		
 		bAbortRequested = false;
 		return false;
 	}
@@ -206,23 +220,27 @@ bool RegistrationClient::setupNetwork(void)
 	return true;
 }
 
-bool RegistrationClient::abort(void)
+bool RegistrationClient::abort(bool blockingWait)
 {
 	bAbortRequested = true;
-	usleep(500000);	// give a little time. Abort isn't instantaneous and requires curl's threads to be fed.
+	
+	if (!blockingWait)
+		return true;
+		
+	usleep(100000);	// give a little time. Abort isn't instantaneous and requires curl's threads to be fed.
 	
 	int count=0;
 	while (!bIsCompleted)
 	{
-		usleep(500000);
-		if (count++ > 10)
+		usleep(100000);
+		if (count++ > 50)
 		{
 			cerr << "During ~RegistrationClientAsync(), abort incomplete. Exiting." << endl;
 			return false;	// Thread is still running. Bad news.
 		}
 	}
 	
-	cout << "INFO: Abort took " << 500 + count*500 << "ms to complete." << endl;
+	cout << "INFO: Abort took " << 100 + count*100 << "ms to complete." << endl;
 	return true;
 }
 	
@@ -236,7 +254,7 @@ RegistrationClientAsync::RegistrationClientAsync(const char* pIp_address, int sf
 RegistrationClientAsync::~RegistrationClientAsync()
 {
 	if (!RegistrationClient::bIsCompleted)
-		abort();
+		abort(true);
 	
 	int count=0;
 	while (!RegistrationClient::bIsCompleted)

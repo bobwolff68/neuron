@@ -1,3 +1,4 @@
+
 /*
  * registration.h
  *
@@ -33,6 +34,14 @@ private:
         static void init() { curl_global_init(CURL_GLOBAL_ALL); };
 };
 
+//!
+//! \class RegistrationClient
+//! 
+//! \brief 
+//! 
+//! \todo 
+//! 
+
 class RegistrationClient : private CurlGlobal
 {
 public:
@@ -40,11 +49,13 @@ public:
 	virtual ~RegistrationClient();
 	bool setupNetwork(void);
 	virtual bool registerClient(void);
-	bool abort(void);
+	bool abort(bool blockingWait);
 	// Accessed from 'outside' via the write callback
 	char response[1000];
 	int respLength;
 	map<string, string> publicPairs;
+	
+	virtual void AbortCallback(void) { cerr << "INFO: Abort completed. Override for custom handler." << endl; };
 
 protected:
     static int CURLProgressCallback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
