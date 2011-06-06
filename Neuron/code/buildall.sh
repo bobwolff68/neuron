@@ -3,13 +3,17 @@
 # Make bin/ and lib/
 mkdir -p bin
 mkdir -p lib
+mkdir -p html_doxygen
 
 if test $1 = "clean"
 then
   CLEAN=1
   rm lib/*
   rm neuroncommon/netlib/libcurl.a
+  rm -rf html_doxygen/*
 fi
+
+doxygen
 
 # Now make the qp libraries and copy the resultant .a files into Neuron/code/lib
 cd ../../Common/qp/ports/80x86/linux/gnu

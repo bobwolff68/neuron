@@ -1,7 +1,8 @@
 
 print ("Hello there from lua.")
 
-function myLuaCallback(a)
+function myLuaCallback(fn_caller, a)
+	print ("Lua:: myLuaCallback() -  Called from C function=", fn_caller)
 	print ("Lua:: myLuaCallback() -  Called from C with ARG=", a)
 	if a=="yes" then
 	  return true

@@ -1,3 +1,5 @@
+#ifndef _LUATESTER_H_
+#define _LUATESTER_H_
 //!
 //! \file luatester.h
 //! \brief Beginnings of test support infrastructure to allow lua to control existing class frameworks.
@@ -9,6 +11,13 @@
 #include <iostream>
 
 using namespace std;
+
+class MinibrainTestInstance;
+
+#include "neuroncommon.h"
+
+#include "controller.h"
+#include "ubrainmanager.h"
 
 extern "C"
 {
@@ -22,6 +31,8 @@ extern int luaopen_LuaInterface(lua_State* L);  // declaration of auto-generated
 
 #include "oolua.h"
 #include "neuronluascript.h"
+
+#define LUACALL(arg, txt) (MinibrainTestInstance::getInstance()->MakeLuaCallback(__FUNCTION__, arg, txt))
 
 //!
 //! \class MinibrainTestInstance
@@ -47,10 +58,20 @@ public:
     return &singleton;
   }
 
-  bool SetLuaCallback(const char* callbackName)
+  //static uBrainManager*
+//!
+//! \brief Function used by Lua to set its callback (or disable it).
+//!
+//! \note Callback has a particular definition / parameter list. This is not documented here
+//!	as this is sure to change over time. See ForceCallback/LuaCallback member(s).
+//!
+//! \param [in] callbackName - a const char pointer to the function name to be called or NULL to disable callbacks.
+//! \return 
+//!   - true is a success.
+//!   - false if there was an error (currently no way to get an error)
+//!  
+bool SetLuaCallback(const char* callbackName)
   {
-    if (!callbackName) return false;
-    if (strlen(callbackName) > 63) return false;
     callback = callbackName;
     return true;
   };
@@ -58,13 +79,20 @@ public:
   lua_State* getLuaState(void) { return luaScript; };
   
   void PrintHello(void) { cout << endl << "C++::MinibrainTestInstance::HelloWorld - Hi y'all." << endl << endl; };
-  bool ForceCallback(const char* strArg);
+  bool MakeLuaCallback(const char* fn_caller, int arg, const char* strArg);
   bool RunScript(const char* script);
-  bool CallLua(const char* functionname);
+  
+  void setMiniBrain(uBrainManager* mBrain) { miniBrain = mBrain; };
+  uBrainManager* getMiniBrain(void) { return miniBrain; };
+  
+  void setController(Controller* ctrl) { controller = ctrl; };
+  Controller* getController(void) { return controller; };
   
 // Other non-static member functions
 private:
   MinibrainTestInstance() {
+    miniBrain = NULL;
+    controller = NULL;
     assert(getLuaState());
     luaopen_base(getLuaState());
     luaL_openlibs(getLuaState());
@@ -77,5 +105,8 @@ private:
   
   string callback;
   NeuronLuaScript luaScript;
+  uBrainManager* miniBrain;
+  Controller* controller;
 };
+#endif
 

@@ -14,6 +14,7 @@
 //!
 
 #include "controller.h"
+#include "luatester.h"
 
 #include <string>
 #include <sstream>
@@ -225,13 +226,21 @@ int index;
                 // want to deal with it as a valid SF
             }
 
-            // Informative call back ...
-            if (pCallback)
-                pCallback->NewSFDetected(state->srcId);
+//!
+//! \brief If we have a hook on new sf being detected, then let's check 
+//! 	with Lua and see if we should modify our behavior or not.
+//!
+	    if (IsHooked(NEW_SF_DETECTED))
+	    	if (ContinueNow(NEW_SF_DETECTED, __FUNCTION__))
+	    	{
+		    // Informative call back ...
+		    if (pCallback)
+			pCallback->NewSFDetected(state->srcId);
 
-            // Informative callback for upper watcher.
-            if (pCallback)
-                pCallback->NewSFState(state);
+		    // Informative callback for upper watcher.
+		    if (pCallback)
+			pCallback->NewSFState(state);
+	    	}
         }
         else
         {

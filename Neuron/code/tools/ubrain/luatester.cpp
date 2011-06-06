@@ -11,7 +11,7 @@ int printvalueplusone(int input)
   return input+1;
 }
 
-bool MinibrainTestInstance::ForceCallback(const char* strArg)
+bool MinibrainTestInstance::MakeLuaCallback(const char* fn_caller, int arg, const char* strArg)
 {
   cout << "C++::Executing a callback to Lua ... " << endl;
   
@@ -25,7 +25,7 @@ bool MinibrainTestInstance::ForceCallback(const char* strArg)
     return false;
   }
   
-  success = luaScript.call(callback, strArg);
+  success = luaScript.call(callback, fn_caller, arg, strArg);
   if (!success)
   {
     cout << "C++::Calling Lua callback function " << callback << "() failed." << endl;
@@ -66,18 +66,3 @@ bool MinibrainTestInstance::RunScript(const char* script)
     return true;
 }
 
-bool MinibrainTestInstance::CallLua(const char* functionname)
-{
-bool success;
-
-  assert(functionname);
-  if (!functionname)
-  {
-    cout << "Function name is NULL. ERROR." << endl;
-    return false;
-  }
-
-  success = luaScript.call(functionname);
-  
-  return success;
-}

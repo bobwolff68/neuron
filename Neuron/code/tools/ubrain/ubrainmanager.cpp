@@ -6,6 +6,7 @@
  */
 
 #include "ubrainmanager.h"
+#include "luatester.h"
 
 uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domainId)
 {
@@ -24,6 +25,7 @@ uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domain
     fqos.resource_limits.max_objects_per_thread = 8192;
     factory->set_qos(fqos);
 
+	LUACALL(1234, "Starting up Controller next...in uBrain constructor right now.");
     pCtrl = new Controller(brainId, domainId, nvPairs);
 
     pCtrl->SetCallback(this);
@@ -32,7 +34,10 @@ uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domain
 uBrainManager::~uBrainManager()
 {
     if (pCtrl)
+    {
+    	pCtrl->SetCallback(NULL);
         delete pCtrl;
+    }
 }
 
 int uBrainManager::workerBee(void)
@@ -74,6 +79,8 @@ bool uBrainManager::RegistrationComplete(map<string,string> pairs, bool isEP)
     map < string, string > nvP;
     int sfid;
     int idClient;
+
+	LUACALL(4321, "reg completing...kill it?");
 
     if (isEP)
         sfid = FromStringNoChecking<int>(pairs["ep_sf_id"]);
@@ -1449,6 +1456,7 @@ void uBrainManager::ReceiveOfferSource(com::xvd::neuron::scp::State* state)
 ///
 void uBrainManager::NewSFDetected(int id)
 {
+cout << "DEBUG: TESTJIG: NewSF has been detected by the uBrainManager callback class." << endl;
 //    cout << << "uBrainManager knows of a new SF ID=" << id << endl;
 //            << endl << "Need IP, Name, GID to auto-populate in uBrain lists."
 //            << endl << "****" << endl;

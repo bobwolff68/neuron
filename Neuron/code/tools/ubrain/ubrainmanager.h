@@ -8,11 +8,13 @@
 #ifndef UBRAINMANAGER_H_
 #define UBRAINMANAGER_H_
 
+class uBrainManager;
+
 #include "neuroncommon.h"
 #include "localitems.h"
 #include "sshmgmt.h"
 
-#include "../../control/test/controller.h"
+#include "controller.h"
 
 class uBrainManager : ThreadSingle, CallbackBase
 {
@@ -41,6 +43,8 @@ public:
 	void ReceiveSelectSource(com::xvd::neuron::scp::State* state);
 
 	int GetNewGlobalWANID(void) { return globalWANIDMax++; };
+
+	Controller* getController(void) { return pCtrl; };
 
 private:
 	int workerBee(void);

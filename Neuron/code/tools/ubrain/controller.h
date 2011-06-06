@@ -9,6 +9,9 @@
 //! This code is provided "as is", without warranty, expressed or implied.
 //!
 
+#ifndef CONTROLLER_H_
+#define CONTROLLER_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -27,13 +30,18 @@
 #include <map>
 #include <list>
 
+class Controller;
+
+#include "luatester.h"
+#include "testjigsupport.h"
+
 //! \class Controller
 //!
 //! \brief Trial manager of a network
 //!
 //! This class not only sets up the DDS planes but manages factories,
 //! Sessions, events, and statefulness of the network.
-class Controller
+class Controller : TestJigSupport
 {
 
 	class Session;
@@ -62,6 +70,10 @@ public:
 #ifndef ONLY_CONTROLLER_CLASS
     void run();
 #endif
+//! \brief Callback to Lua is defined in terms of the controlling singleton TestInstance
+    bool MakeLuaCallback(const char* fnName, int id, const char* txt)
+		{ return MinibrainTestInstance::getInstance()->MakeLuaCallback(fnName, (int)id, "junk"); }
+
 
 private:
     //! \class RemoteSessionFactory
@@ -193,3 +205,4 @@ private:
     CallbackBase* pCallback;
     RTIOsapiThread *eventThread;
 };
+#endif

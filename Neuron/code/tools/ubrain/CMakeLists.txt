@@ -42,7 +42,7 @@ foreach(i_file ${SWIG_SOURCES})
     string(REGEX REPLACE "\\.i" ""  basename ${i_file})
     add_custom_command(
         OUTPUT ${basename}_wrap.cxx
-        COMMAND swig -c++ -lua ${CMAKE_CURRENT_SOURCE_DIR}/${i_file}
+        COMMAND swig -c++ -I../../neuroncommon -lua ${CMAKE_CURRENT_SOURCE_DIR}/${i_file}
 	    DEPENDS /usr/bin/swig ${CMAKE_CURRENT_SOURCE_DIR}/${i_file}
     )
     list (APPEND SOURCES ${basename}_wrap.cxx)

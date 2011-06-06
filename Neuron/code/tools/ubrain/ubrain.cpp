@@ -6,6 +6,7 @@
 #include "sshmgmt.h"
 #include "shell.h"
 #include "registration.h"
+
 #include "ubrainmanager.h"
 #include "regserver.h"
 
@@ -48,37 +49,11 @@ int main(int argc, char** argv)
                                   NDDS_CONFIG_LOG_VERBOSITY_STATUS_ALL);
 #endif
 
-  ubrainLua = MinibrainTestInstance::getInstance()->getLuaState();
-  if (!ubrainLua)
-    cout << "MinibrainTestInstance::getLuaState() - Setup failed." << endl;
-  
     ///
     /// Parse the command line and setup variables for options. Then start rolling for real.
     ///
     parsecmd(argc, argv);
    
-    cout << endl << "Summary of all lua scripts requested on command line:" << endl;
-    for (int iScr=0;iScr<luascriptsInUse;iScr++)
-    {
-	cout << "Running Script["<<iScr<<"] = "<<luascripts[iScr]<<endl;
-	MinibrainTestInstance::getInstance()->RunScript(luascripts[iScr].c_str());
-    }
-
-    if (MinibrainTestInstance::getInstance()->ForceCallback("testing 1 2 3"))
-	cout << "C++::returned true" << endl;
-    else
-	cout << "C++::returned false" << endl;
-    
-    cout << endl << "Next test..." << endl;
-    if (MinibrainTestInstance::getInstance()->ForceCallback("yes"))
-	cout << "C++::returned true" << endl;
-    else
-	cout << "C++::returned false" << endl;
-
-    cout << endl;
-    
-exit(-1);    
-	
     // Should come from command line.
     respvals["ubrain_ip"] = ubrain_ip;
 
@@ -100,6 +75,36 @@ exit(-1);
 	/// Now get rolling
 	///
 	uBrainManager uBrain(0, respvals);
+
+#if 0
+    cout << endl << "Summary of all lua scripts requested on command line:" << endl;
+    for (int iScr=0;iScr<luascriptsInUse;iScr++)
+    {
+	cout << "Running Script["<<iScr<<"] = "<<luascripts[iScr]<<endl;
+	MinibrainTestInstance::getInstance()->RunScript(luascripts[iScr].c_str());
+    }
+#endif
+
+// Make sure to setup the uBrainManager and the Controller with this immediately.
+  ubrainLua = MinibrainTestInstance::getInstance()->getLuaState();
+  if (!ubrainLua)
+    cout << "MinibrainTestInstance::getLuaState() - Setup failed." << endl;
+
+// Finalize setup of the Lua portion.
+    MinibrainTestInstance::getInstance()->setMiniBrain(&uBrain);
+    MinibrainTestInstance::getInstance()->setController(uBrain.getController());
+    
+    if (LUACALL(11, "testing 1 2 3"))
+	cout << "C++::returned true" << endl;
+    else
+	cout << "C++::returned false" << endl;
+    
+    cout << endl << "Next test..." << endl;
+    
+    if (LUACALL(23, "yes"))
+	cout << "C++::returned true" << endl;
+    else
+	cout << "C++::returned false" << endl;
 
 #define USE_LOCAL_CLIENTSERVER
 #ifdef  USE_LOCAL_CLIENTSERVER

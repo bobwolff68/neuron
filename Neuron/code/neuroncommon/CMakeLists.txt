@@ -11,6 +11,7 @@ set(SOURCES
    threading/NeuronBasics/ThreadMultiple.cpp
    eventhandling/eventhandler.cpp
    anyoption/anyoption.cpp
+   testjigsupport.cpp
    )
 
 ###################

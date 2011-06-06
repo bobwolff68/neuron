@@ -16,6 +16,7 @@
 #endif
 #include "anyoption/anyoption.h"
 
+#include "testjigsupport.h"
 
 #include <string>
 #include <sstream>
@@ -93,8 +94,25 @@ public:
 	virtual void NewSFState(com::xvd::neuron::acp::State* state)=0;
 	// Process both Select and Offer -- and in the future more items.
 	virtual void NewSessionState(com::xvd::neuron::scp::State* state)=0;
+//	virtual void MakeLuaCall(const char* fn, int arg, const char* txt)=0;
 
 };
+
+//!
+//! \class ModifierBase
+//! 
+//! \brief 
+//! 
+//! \todo 
+//! 
+
+class ModifierBase
+{
+public:
+	ModifierBase() { };
+	virtual ~ModifierBase() { };
+};
+
 #endif
 
 #endif

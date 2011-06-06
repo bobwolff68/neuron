@@ -48,6 +48,7 @@ core
 .project
 
 # Specific Neuron oddities
+Neuron/code/html_doxygen/
 Neuron/code/include/oolua/
 
 Neuron/code/neuroncommon/netlib/curl/include/curl/curlbuild.h
