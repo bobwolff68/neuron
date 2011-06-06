@@ -19,6 +19,7 @@
 
 bool TestJigSupport::Hook(HookID id)
 {
+	cout << "C++::Hook() - Hooking id=" << (int)id << endl;
 	if (HookedItems[id])
 		return false;
 	
@@ -42,7 +43,21 @@ bool TestJigSupport::ContinueNow(HookID id, const char* fnName)
 
 	assert(fnName);
 
-	MakeLuaCallback(fnName, (int)id, "junk");
+	return MakeLuaCallback(fnName, (int)id, "junk");
 	
 }
+
+#if 1
+void TestJigSupport::ShowHooks(void)
+{
+	map<HookID, bool>::iterator it;
+
+	cout << "Printing Hooked items - just integers for verification." << endl;
+	if (HookedItems.empty())
+		cout << "No Hooked items yet." << endl;
+		
+	for (it = HookedItems.begin() ; it != HookedItems.end() ; it++)
+		cout << "  ----> Hooked ID=" << (int)it->first << endl;
+}
+#endif
 

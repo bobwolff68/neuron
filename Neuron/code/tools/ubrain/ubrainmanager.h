@@ -9,6 +9,7 @@
 #define UBRAINMANAGER_H_
 
 class uBrainManager;
+class MinibrainTestInstance;
 
 #include "neuroncommon.h"
 #include "localitems.h"
@@ -36,8 +37,9 @@ public:
 
 	// Callback items
 	void NewSFDetected(int id);
-    void NewSFState(com::xvd::neuron::acp::State* state);
+	void NewSFState(com::xvd::neuron::acp::State* state);
 	void NewSessionState(com::xvd::neuron::scp::State* state);
+	bool MakeLuaCallback(const char* fn, int arg, const char* txt);
 	// Associated with Callback
 	void ReceiveOfferSource(com::xvd::neuron::scp::State* state);
 	void ReceiveSelectSource(com::xvd::neuron::scp::State* state);

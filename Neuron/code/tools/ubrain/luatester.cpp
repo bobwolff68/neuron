@@ -13,7 +13,7 @@ int printvalueplusone(int input)
 
 bool MinibrainTestInstance::MakeLuaCallback(const char* fn_caller, int arg, const char* strArg)
 {
-  cout << "C++::Executing a callback to Lua ... " << endl;
+//  cout << "C++::Executing a callback to Lua ... " << endl;
   
   bool success;
   bool moveOn;
@@ -35,7 +35,7 @@ bool MinibrainTestInstance::MakeLuaCallback(const char* fn_caller, int arg, cons
   success = luaScript.ReturnValue(moveOn);
   if (success)		// Callback was good. Now the RESULT of the callback is in 'moveOn'
   {
-    cout << "Callback Says: " << (moveOn ? "Move On." : "Do not continue.") << endl;
+//    cout << "Callback Says: " << (moveOn ? "Move On." : "Do not continue.") << endl;
     return moveOn;
   }
   else

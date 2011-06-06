@@ -13,6 +13,8 @@
 using namespace std;
 
 class MinibrainTestInstance;
+class uBrainManager;
+class Controller;
 
 #include "neuroncommon.h"
 
@@ -25,7 +27,7 @@ extern "C"
 #include "lualib.h"
 #include "lauxlib.h"
 
-extern int luaopen_LuaInterface(lua_State* L);  // declaration of auto-generated entry point
+extern int luaopen_Neuron(lua_State* L);  // declaration of auto-generated entry point
 
 }
 
@@ -86,7 +88,7 @@ bool SetLuaCallback(const char* callbackName)
   uBrainManager* getMiniBrain(void) { return miniBrain; };
   
   void setController(Controller* ctrl) { controller = ctrl; };
-  Controller* getController(void) { return controller; };
+  Controller* getController(void) { if (!controller) cout << "INFO:getController() - NULL" << endl; return controller; };
   
 // Other non-static member functions
 private:
@@ -96,7 +98,7 @@ private:
     assert(getLuaState());
     luaopen_base(getLuaState());
     luaL_openlibs(getLuaState());
-    luaopen_LuaInterface(getLuaState()); 
+    luaopen_Neuron(getLuaState()); 
 
   };                                 // Private constructor
   

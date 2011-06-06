@@ -32,7 +32,6 @@
 
 class Controller;
 
-#include "luatester.h"
 #include "testjigsupport.h"
 
 //! \class Controller
@@ -41,7 +40,7 @@ class Controller;
 //!
 //! This class not only sets up the DDS planes but manages factories,
 //! Sessions, events, and statefulness of the network.
-class Controller : TestJigSupport
+class Controller : public TestJigSupport
 {
 
 	class Session;
@@ -72,7 +71,8 @@ public:
 #endif
 //! \brief Callback to Lua is defined in terms of the controlling singleton TestInstance
     bool MakeLuaCallback(const char* fnName, int id, const char* txt)
-		{ return MinibrainTestInstance::getInstance()->MakeLuaCallback(fnName, (int)id, "junk"); }
+		{ if (pCallback) return pCallback->MakeLuaCallback(fnName, (int)id, "junk"); 
+		  else return false; };
 
 
 private:

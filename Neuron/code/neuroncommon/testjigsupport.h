@@ -23,7 +23,7 @@ using namespace std;
 
 enum HookID {
 	// Control plane (Controller) related items.
-	NEW_SF_DETECTED = 0,
+	NEW_SF_DETECTED = 10,
 	
 	// MiniBrain (uBrainManager) related.
 	REGISTRATION_COMPLETING,
@@ -51,9 +51,12 @@ public:
 	bool UnHook(HookID id);
 	inline bool IsHooked(HookID id) { return HookedItems[id]; };
 	bool ContinueNow(HookID id, const char* fnName);
+	void ShowHooks(void);
+	HookID testid;
 protected:
 	map<HookID, bool> HookedItems;
 	
 	virtual bool MakeLuaCallback(const char* fn, int arg, const char* txt) = 0;
 };
 #endif
+

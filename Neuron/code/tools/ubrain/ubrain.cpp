@@ -71,28 +71,35 @@ int main(int argc, char** argv)
         respvals["ubrain_acp_id"] = ToString<int>(UBRAIN_WAN_ACPID);
         respvals["ubrain_scp_id"] = ToString<int>(UBRAIN_WAN_SCPID);
     }
+    
+    //!
+    //! Get Lua rolling
+    //!
+#if 1
+	    cout << endl << "Summary of all lua scripts requested on command line:" << endl;
+	    for (int iScr=0;iScr<luascriptsInUse;iScr++)
+	    {
+		cout << "Running Script["<<iScr<<"] = "<<luascripts[iScr]<<endl;
+		MinibrainTestInstance::getInstance()->RunScript(luascripts[iScr].c_str());
+	    }
+#endif
+
+	// Make sure to setup the uBrainManager and the Controller with this immediately.
+	  ubrainLua = MinibrainTestInstance::getInstance()->getLuaState();
+	  if (!ubrainLua)
+	    cout << "MinibrainTestInstance::getLuaState() - Setup failed." << endl;
+
 	///
 	/// Now get rolling
 	///
 	uBrainManager uBrain(0, respvals);
 
-#if 0
-    cout << endl << "Summary of all lua scripts requested on command line:" << endl;
-    for (int iScr=0;iScr<luascriptsInUse;iScr++)
-    {
-	cout << "Running Script["<<iScr<<"] = "<<luascripts[iScr]<<endl;
-	MinibrainTestInstance::getInstance()->RunScript(luascripts[iScr].c_str());
-    }
-#endif
-
-// Make sure to setup the uBrainManager and the Controller with this immediately.
-  ubrainLua = MinibrainTestInstance::getInstance()->getLuaState();
-  if (!ubrainLua)
-    cout << "MinibrainTestInstance::getLuaState() - Setup failed." << endl;
-
 // Finalize setup of the Lua portion.
     MinibrainTestInstance::getInstance()->setMiniBrain(&uBrain);
     MinibrainTestInstance::getInstance()->setController(uBrain.getController());
+    //! Must call 'INITIALIZE' on our interface AFTER setting Minibrain and Controller
+    if (!LUACALL(1, "INITIALIZE"))
+    	cout << "C++: Lua interface did not initialize properly." << endl;
     
     if (LUACALL(11, "testing 1 2 3"))
 	cout << "C++::returned true" << endl;

@@ -8,6 +8,8 @@
 #include "ubrainmanager.h"
 #include "luatester.h"
 
+#include "controller.h"
+
 uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domainId)
 {
     globalWANIDMax = 15;        // Assignments start at 15
@@ -25,7 +27,6 @@ uBrainManager::uBrainManager(int brainId, map<string,string> nvPairs, int domain
     fqos.resource_limits.max_objects_per_thread = 8192;
     factory->set_qos(fqos);
 
-	LUACALL(1234, "Starting up Controller next...in uBrain constructor right now.");
     pCtrl = new Controller(brainId, domainId, nvPairs);
 
     pCtrl->SetCallback(this);
@@ -1617,3 +1618,10 @@ int uBrainManager::AddSFInternally(int sfID, const char* ip, int acpID, int scpI
 {
     return local.AddSFInternally(sfID, ip, acpID, scpID, name, isEP);
 }
+
+bool uBrainManager::MakeLuaCallback(const char* fn, int arg, const char* txt)
+{ 
+	return MinibrainTestInstance::getInstance()->MakeLuaCallback(fn, arg, txt); 
+}
+
+
