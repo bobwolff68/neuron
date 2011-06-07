@@ -36,6 +36,7 @@
 #include "qspy.h"
 #include "hal.h"
 #include "getopt.h"
+#include "qsddslogreader.h"
 
 //............................................................................
 #define FNAME_SIZE 256
@@ -45,7 +46,8 @@ enum TargetLink {
     NO_LINK,
     FILE_LINK,
     SERIAL_LINK,
-    TCP_LINK
+    TCP_LINK,
+    DDS_LINK
 };
 
 //............................................................................
@@ -56,10 +58,12 @@ int main(int argc, char *argv[]) {
     char outFileName[FNAME_SIZE];
     char savFileName[FNAME_SIZE];
     char matFileName[FNAME_SIZE];
+    char topicName[FNAME_SIZE];
     TargetLink link = NO_LINK;
                                               // default configuration options
     strcpy(inpFileName, "qs.bin");
     strcpy(comPort, "COM1");
+    strcpy(topicName,"QSLOG");
     int tcpPort          = 6601;
     int baudRate         = 38400;
     uint8_t quiet        = 0;
@@ -72,6 +76,7 @@ int main(int argc, char *argv[]) {
     uint8_t poolCtrSize  = 2;
     uint8_t poolBlkSize  = 2;
     uint8_t tevtCtrSize  = 2;
+    uint32_t domainId    = 67;
     outFileName[0]       = '\0';                  // Output file not specified
     savFileName[0]       = '\0';                    // Save file not specified
     matFileName[0]       = '\0';                  // Matlab file not specified
@@ -103,10 +108,11 @@ int main(int argc, char *argv[]) {
         "-Q<queue_counter_size>    1        queue counter size (bytes)\n"
         "-P<pool_counter_size>     2        pool counter size (bytes)\n"
         "-B<pool_blocksize_size>   2        pool blocksize size (bytes)\n"
-        "-C<QTimeEvt_counter_size> 2        QTimeEvt counter size\n";
+        "-C<QTimeEvt_counter_size> 2        QTimeEvt counter size\n"
+        "-d<domainId:topicName>    67:QSLOG DDS mode\n";
 
     while ((optChar = getopt(argc, argv,
-                             "hqo:s:m:c:b:tp:f:T:O:F:S:E:Q:P:B:C:")) != -1)
+                             "hqo:s:m:c:b:tp:f:d:T:O:F:S:E:Q:P:B:C:")) != -1)
     {
         switch (optChar) {
             case 'q': {                                          // quiet mode
@@ -178,6 +184,15 @@ int main(int argc, char *argv[]) {
                 tcpPort = (int)strtoul(optarg, NULL, 10);
                 printf("-p %d\n", tcpPort);
                 link = TCP_LINK;
+                break;
+            }
+            case 'd': {
+                if(link!=NO_LINK) {
+                    printf("-d not compatible with other link modes\n");
+                    return -1;
+                }
+                link = DDS_LINK;
+                sscanf(optarg,"%u:%s",&domainId,topicName);
                 break;
             }
             case 'T': {                                      // timestamp size
@@ -308,6 +323,27 @@ int main(int argc, char *argv[]) {
                 }
             }
             tcpClose();
+            break;
+        }
+        case DDS_LINK: {
+            QSDDSLogReader::CreateTheInstance(domainId,topicName);
+            if(!QSDDSLogReader::TheInstance()->DDSStartup()){
+                return -1;
+            }
+            else {
+                printf("DDS domain participant created with domain ID %d "
+                       "and topic name %s,\n"
+                       "hit any key to quit..."
+                       "(the target must be stopped)\n",domainId,topicName);
+            }
+            while((n=read(QSDDSLogReader::TheInstance()->QspyPipeSource(),buf,sizeof(buf))) > 0) {
+                qsParse(buf,n);
+                if(savFile != (FILE*)0) {
+                    fwrite(buf,1,n,savFile);
+                }
+            }
+            QSDDSLogReader::TheInstance()->DDSTeardown();
+            QSDDSLogReader::DestroyTheInstance();
             break;
         }
     }

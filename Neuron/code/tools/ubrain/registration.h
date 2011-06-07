@@ -70,7 +70,7 @@ protected:
 
 //bool RegistrationClient::bCurlReady=false;
 
-class RegistrationClientAsync : public RegistrationClient, private ThreadSingle
+class RegistrationClientAsync : public RegistrationClient, public ThreadSingle
 {
 public:
 	RegistrationClientAsync(const char* pIp_address, int sfid, int portnum=8181, bool bIsEndpoint=false, const char* friendlyname=NULL);

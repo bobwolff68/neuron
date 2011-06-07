@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="1.1.02" framework="qpcpp">
+  <package name="Events" stereotype="0x01"/>
+  <package name="AOs" stereotype="0x02">
+    <class name="SfsmRegistration" superclass="../../0/1">
+      <documentation>//!
+//! \class SFStateMachine_Registration
+//!
+//! \brief State machine for session factory registration with minibrain.
+//!</documentation>
+      <attribute name="nRegAttempts" type="uint32_t" visibility="0x00" properties="0x00">
+        <documentation>//!
+//! \var nRegAttempts
+//!
+//! \brief Number of registration attempts left.
+//!
+</documentation>
+      </attribute>
+      <attribute name="pFactory" type="SessionFactory*" visibility="0x00" properties="0x00">
+        <documentation>//!
+//! \var pFactory
+//!
+//! \brief Pointer to the singleton instance of the SessionFactory class.
+//!</documentation>
+      </attribute>
+      <attribute name="regTimeoutEvt" type="QTimeEvt" visibility="0x00" properties="0x00"/>
+      <attribute name="evtQ[MAX_REG_EVT_Q_SIZE]" type="QEvent const *" visibility="0x00" properties="0x00"/>
+      <attribute name="mBrainIP" type="std::string" visibility="0x00" properties="0x00"/>
+      <attribute name="httpPort" type="uint32_t" visibility="0x00" properties="0x00"/>
+      <operation name="SfsmRegistration" type="QActive((QStateHandler)&amp;SfsmRegistration::initial),pFactory((SessionFactory*)0),regTimeoutEvt(REG_TIMEOUT_SIG)" visibility="0x00" properties="0x00"/>
+      <operation name="Start" type="void" visibility="0x00" properties="0x00">
+        <parameter name="priority" type="uint8_t"/>
+        <parameter name="pInitEvt" type="QEvent const *"/>
+        <code>AOBJ(this)-&gt;start(priority,evtQ,Q_DIM(evtQ),(void*)0,0,pInitEvt);</code>
+      </operation>
+      <operation name="~SfsmRegistration" type="" visibility="0x00" properties="0x00"/>
+      <operation name="Stop" type="void" visibility="0x00" properties="0x00">
+        <code>stop();</code>
+      </operation>
+      <statechart>
+        <initial target="../1">
+          <action brief="Configure sf's minibrain reg client;">static uint8_t dictOn;
+
+if(!dictOn)
+{
+    QS_FUN_DICTIONARY(&amp;QHsm::top);
+    QS_FUN_DICTIONARY(&amp;SfsmRegistration::initial);
+    QS_FUN_DICTIONARY(&amp;SfsmRegistration::RegAttempt);
+    QS_FUN_DICTIONARY(&amp;SfsmRegistration::RegSuccess);
+    QS_FUN_DICTIONARY(&amp;SfsmRegistration::RegFail);
+    QS_FUN_DICTIONARY(&amp;SfsmRegistration::WaitForAbort);
+    dictOn = (uint8_t)1;
+}
+
+QS_SIG_DICTIONARY(REG_RESPONSE_RECVD_SIG,me);
+QS_SIG_DICTIONARY(REG_ABORT_DONE_SIG,me);
+QS_SIG_DICTIONARY(REG_TIMEOUT_SIG,me);
+
+me-&gt;pFactory = SessionFactory::TheInstance();
+me-&gt;subscribe(REG_ABORT_DONE_SIG);
+me-&gt;subscribe(REG_RESPONSE_RECVD_SIG);
+me-&gt;nRegAttempts = MAX_REG_ATTEMPTS;
+me-&gt;mBrainIP = MINIBRAIN_INFO_EVENT(e)-&gt;mBrainIP;
+me-&gt;httpPort = MINIBRAIN_INFO_EVENT(e)-&gt;httpPort;</action>
+        </initial>
+        <state name="RegAttempt">
+          <entry brief="me -&gt; pFactory -&gt; Register_With_Minibrain(timeout=REG_TIMEOUT_PERIOD); me-&gt;nRegAttempts--;">cout &lt;&lt; &quot;-----------------REGATTEMPT------------------&quot; &lt;&lt; endl;
+cout &lt;&lt; &quot;Attempt no. &quot; &lt;&lt; MAX_REG_ATTEMPTS-me-&gt;nRegAttempts+1
+     &lt;&lt; &quot; to register with ubrain...&quot; &lt;&lt; endl;
+me-&gt;regTimeoutEvt.postIn(AOBJ(me),REG_TIMEOUT_PERIOD);
+me-&gt;nRegAttempts--;
+me-&gt;pFactory-&gt;ConfigMbrainRegClient(me-&gt;mBrainIP,me-&gt;httpPort);
+me-&gt;pFactory-&gt;RegWithMbrain();</entry>
+          <exit/>
+          <tran trig="REG_TIMEOUT" target="../../4"/>
+          <tran trig="REG_RESPONSE_RECVD">
+            <choice guard="REG_RESPONSE_EVENT(e)-&gt;bRegSuccess" target="../../../3">
+              <action brief="Display regserver response;">cout &lt;&lt; &quot;Minibrain response: &quot; &lt;&lt; REG_RESPONSE_EVENT(e)-&gt;response &lt;&lt; endl;</action>
+            </choice>
+            <choice guard="else" target="../../../2">
+              <action/>
+            </choice>
+          </tran>
+        </state>
+        <state name="RegFail">
+          <entry brief="Display fail message;">cout &lt;&lt; &quot;-----------------REGFAIL------------------&quot; &lt;&lt; endl;
+cout &lt;&lt; &quot;Registration with minibrain failed...&quot; &lt;&lt; endl;
+#ifdef Q_SPY
+sleep(2);
+#endif
+me-&gt;Stop();
+QF::stop();</entry>
+          <exit/>
+        </state>
+        <state name="RegSuccess">
+          <entry brief="Display success message;">cout &lt;&lt; &quot;-----------------REGSUCCESS------------------&quot; &lt;&lt; endl;
+cout &lt;&lt; &quot;Registration Process Successful...&quot; &lt;&lt; endl;
+#ifdef Q_SPY
+sleep(2);
+#endif
+me-&gt;Stop();
+QF::stop();</entry>
+          <exit/>
+        </state>
+        <state name="WaitForAbort">
+          <entry brief="abort registration and wait;">me-&gt;pFactory-&gt;ReqAbortReg();
+cout &lt;&lt; &quot;-----------------WAITFORABORT------------------&quot; &lt;&lt; endl;
+cout &lt;&lt; &quot;Reg attempt timed out, aborting...&quot; &lt;&lt; flush;</entry>
+          <exit/>
+          <tran trig="REG_ABORT_DONE">
+            <action brief="Stop registration thread;">me-&gt;pFactory-&gt;StopRegThread();
+cout &lt;&lt; &quot;done&quot; &lt;&lt; endl;</action>
+            <choice guard="me-&gt;nRegAttempts==0" target="../../../2">
+              <action>cout &lt;&lt; &quot;Registration timed out...&quot; &lt;&lt; endl;</action>
+            </choice>
+            <choice guard="else" target="../../../1">
+              <action/>
+            </choice>
+          </tran>
+        </state>
+        <state_diagram size="116,88">
+          <state_glyph ref="1" node="52,8,55,28">
+            <text box="1,2,53,4"/>
+          </state_glyph>
+          <state_glyph ref="2" node="24,67,27,11">
+            <text box="1,2,21,2"/>
+          </state_glyph>
+          <state_glyph ref="3" node="24,53,27,11">
+            <text box="1,2,22,2"/>
+          </state_glyph>
+          <state_glyph ref="4" node="79,43,28,20">
+            <text box="1,2,22,2"/>
+          </state_glyph>
+          <tran_glyph ref="1/0" conn="94,36,2,0,7">
+            <text box="1,2,11,3"/>
+          </tran_glyph>
+          <tran_glyph ref="1/1" conn="52,22,3,-1,-15,16">
+            <text box="-33,7,18,2"/>
+          </tran_glyph>
+          <choice_glyph ref="1/1/0" conn="37,38,4,0,15">
+            <text box="-30,7,30,4"/>
+          </choice_glyph>
+          <initial_glyph ref="0" conn="22,12,5,3,30">
+            <text box="3,-3,23,2"/>
+          </initial_glyph>
+          <choice_glyph ref="1/1/1" conn="37,38,5,3,-33,35,20">
+            <text box="-18,1,5,2"/>
+          </choice_glyph>
+          <tran_glyph ref="4/0" conn="94,63,2,-1,12">
+            <text box="-15,3,15,4"/>
+          </tran_glyph>
+          <choice_glyph ref="4/0/0" conn="94,75,4,2,6,-57,-3">
+            <text box="-34,7,16,2"/>
+          </choice_glyph>
+          <choice_glyph ref="4/0/1" conn="94,75,5,2,-28,-39">
+            <text box="-27,-21,6,2"/>
+          </choice_glyph>
+        </state_diagram>
+      </statechart>
+    </class>
+  </package>
+  <filesystem path=".">
+    <directory name="qmcode">
+      <file name="sfregevents.h">
+        <text>#ifndef SFREGEVENTS_H_
+#define SFREGEVENTS_H_
+
+#include &lt;string.h&gt;
+#include &lt;stdint.h&gt;
+#include &quot;qp_port.h&quot;
+
+#define MAX_REG_EVT_Q_SIZE    20
+
+#define MINIBRAIN_INFO_EVENT(pEvt) ((MinibrainInfoEvent *)(pEvt))
+#define REG_RESPONSE_EVENT(pEvt)   ((RegResponseEvent *)(pEvt))
+
+//$declare(Events::MinibrainInfoEvent)
+//$declare(Events::RegResponseEvent)
+
+struct MinibrainInfoEvent : public QEvent
+{
+    public:
+        char mBrainIP[50];
+        uint32_t httpPort;
+};
+
+struct RegResponseEvent : public QEvent
+{
+    public:
+        char response[50];
+        bool bRegSuccess;
+};
+
+#endif //SFREGEVENTS_H_</text>
+      </file>
+      <file name="sfevents.h">
+        <text>#ifndef SFEVENTS_H_
+#define SFEVENTS_H_
+
+#include &quot;sfregevents.h&quot;
+
+#define MAX_EVENTS_HANDLED 50
+
+#define SF_EVENT(pSpecEvt) ((QEvent *)(pSpecEvt))
+
+enum SFEvents
+{
+    //----------- Published Event Signals -----------
+        //Events handled during registration
+        REG_RESPONSE_RECVD_SIG = Q_USER_SIG,
+        MINIBRAIN_INFO_SIG,
+        REG_ABORT_DONE_SIG,
+
+        MAX_PUB_EVT_SIG,
+
+    //----------- Posted Event Signals -----------
+        //Events handled during registration
+        REG_TIMEOUT_SIG
+};
+
+static union Events
+{
+    void *minSize;
+    QEvent GenericEvt;
+    MinibrainInfoEvent mBrainInfoEvt;
+    RegResponseEvent RegRespEvt;
+} evtPool[MAX_EVENTS_HANDLED];
+
+static QSubscrList evtSubList[MAX_PUB_EVT_SIG];
+
+#endif //SFEVENTS_H_</text>
+      </file>
+      <file name="sfsmregistration.h">
+        <text>#ifndef SFSMREGISTRATION_H_
+#define SFSMREGISTRATION_H_
+
+#include &quot;sfevents.h&quot;
+#include &quot;sessionfactory.h&quot;
+
+#define REG_TIMEOUT_PERIOD   100
+#define MAX_REG_ATTEMPTS       3
+
+#define AOBJ(pSMO)   ((QActive *)(pSMO))
+#define SFSMREG(pSM) ((SfsmRegistration *)(pSM))
+
+$declare(AOs::SfsmRegistration)
+
+#endif //SFSM_REGISTRATION_H_</text>
+      </file>
+      <file name="sfsmregistration.cpp">
+        <text>#include &lt;iostream&gt;
+#include &quot;sfsmregistration.h&quot;
+
+Q_DEFINE_THIS_FILE
+
+using namespace std;
+
+$define(AOs::SfsmRegistration)
+</text>
+      </file>
+    </directory>
+  </filesystem>
+</model>

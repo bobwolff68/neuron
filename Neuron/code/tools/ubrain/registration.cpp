@@ -136,7 +136,7 @@ bool RegistrationClient::registerClient(void)
 		// If there is a over-ridden function, let them know we're aborted now.
 		AbortCallback();
 		
-		bAbortRequested = false;
+		//bAbortRequested = false;
 		return false;
 	}
 	else if (retcode != CURLE_OK)
@@ -150,7 +150,7 @@ bool RegistrationClient::registerClient(void)
 		string name;
 		string value;
 		char buffer[100];
-
+		
 		// Now the response body is in our buffer 'response' -- parse it for name/value pairs.
 
 		bodystr.write(response, respLength);
@@ -266,7 +266,6 @@ RegistrationClientAsync::~RegistrationClientAsync()
 			break;	// Thread is still running. Bad news.
 		}
 	}
-	
 }
 
 bool RegistrationClientAsync::registerClient(void)
@@ -285,7 +284,10 @@ int RegistrationClientAsync::workerBee(void)
 	
 	cout << "regClient returned in the thread...result = " << (res==true ? "success" : "fail/abort") << endl;
 	
-	ResponseReceived(res);
+	if(bAbortRequested)
+	    bAbortRequested = false;
+	else
+	    ResponseReceived(res);
 		
 	RegistrationClient::bIsCompleted = true;
 	return res;

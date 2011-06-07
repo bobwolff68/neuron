@@ -1,0 +1,18 @@
+module com
+{
+    module xvd
+    {
+        module neuron
+        {
+            module qslogger
+            {
+                const long MAX_PAYLOAD_SIZE = 1024;
+                struct LogItem
+                {
+                    sequence<octet,MAX_PAYLOAD_SIZE> payload;
+                };
+            };
+        };
+    };
+};
+

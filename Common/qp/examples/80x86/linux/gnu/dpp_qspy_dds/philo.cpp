@@ -49,7 +49,7 @@ private:
 // Local objects -------------------------------------------------------------
 static Philo l_philo[N_PHILO];                       // storage for all Philos
 
-#define THINK_TIME  57
+#define THINK_TIME  47
 #define EAT_TIME    55
                               // helper macro to provide the ID of Philo "me_"
 #define PHILO_ID(me_)    ((uint8_t)((me_) - l_philo))
