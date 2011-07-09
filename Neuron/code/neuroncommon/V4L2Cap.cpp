@@ -20,6 +20,8 @@
 #include "neuroncommon.h"
 #include "V4L2Cap.h"
 
+#include <iomanip>
+
 #define CLEAR(x) memset (&(x), 0, sizeof (x))
 
 typedef struct v4l2def {
@@ -80,6 +82,7 @@ public:
 	bool bFinalSample;
 };
 
+//! \todo During ReleaseOutputSide or clear, we need to lock the mutex, clean up the semaphore, and re-enqueue all driver buffers.
 class RTBuffer {
 public:
 	RTBuffer(void);
@@ -87,8 +90,12 @@ public:
 	bool FullBufferEnQ(V4L2BufferInfo& BI);
 	bool FullBufferDQ(V4L2BufferInfo& BI);
 	void Shutdown(void);
+
+	// \brief Used by stop_capture() (or the Dequeue side--not-preferred) for releasing its interest in the buffer.
+	void ReleaseOutputSide(void) { bReleased = true; };
 	//! \brief To be implemented by the capture side in case buffers need to be released back to the driver.
 	virtual bool EmptyBufferRelease(V4L2BufferInfo& BI) = 0;
+
 	int Qsize(void) { return bufferQ.size(); };
 	void clear(void) { bufferQ.clear(); };
 	
@@ -96,6 +103,7 @@ protected:
 	deque<V4L2BufferInfo> bufferQ;
 	pthread_mutex_t         mutex;
 	sem_t sem_numbuffers;
+	bool bReleased;
 };
 
 class V4L2CapBuffer : public RTBuffer {
@@ -134,14 +142,15 @@ RTBuffer::RTBuffer(void)
 { 
 	pthread_mutex_init(&mutex, NULL);
 	sem_init(&sem_numbuffers, 0, 0); 
+	bReleased = false;
 };
 
 RTBuffer::~RTBuffer(void) 
 { 
-	if (bufferQ.size())
+	if (bufferQ.size() && !bReleased)
 	{
 		cerr << "~RTBuffer() is waiting on " << bufferQ.size() << " samples to be cleared before shutdown." << flush;
-		while (bufferQ.size())
+		while (bufferQ.size() && !bReleased)
 		{
 			cerr << "." << flush;
 			usleep(100000);
@@ -149,6 +158,7 @@ RTBuffer::~RTBuffer(void)
 	}
 	
 	pthread_mutex_destroy(&mutex);
+	sem_destroy(&sem_numbuffers);
 };
 
 bool V4L2CapBuffer::EmptyBufferRelease(V4L2BufferInfo& BI)
@@ -158,6 +168,7 @@ bool V4L2CapBuffer::EmptyBufferRelease(V4L2BufferInfo& BI)
 	if (-1 == xioctl (fd, VIDIOC_QBUF, &(BI.buf)))
 		errno_exit ("VIDIOC_QBUF");
 	
+	return true;
 }
 
 bool RTBuffer::FullBufferEnQ(V4L2BufferInfo& BI)
@@ -178,7 +189,6 @@ bool RTBuffer::FullBufferEnQ(V4L2BufferInfo& BI)
   // Enqueue the item sent in.
   bufferQ.push_back(BI);
 
- 
   sem_post(&sem_numbuffers);	// Release the semaphore by incrementing by one.
 
   rc = pthread_mutex_unlock(&mutex);
@@ -189,13 +199,6 @@ bool RTBuffer::FullBufferEnQ(V4L2BufferInfo& BI)
   	return false;
   }
   
-#if 0
-  if (bufferQ.size() > 4)
-  {
-  	V4L2BufferInfo bi;
-  	FullBufferDQ(bi);
-  }
-#endif
   return true;
 }
 
@@ -216,12 +219,19 @@ bool RTBuffer::FullBufferDQ(V4L2BufferInfo& BI)
 {
   int rc=0;
   int val;
+  bool ret = true;
   assert(sem_getvalue(&sem_numbuffers, &val)==0 && val==bufferQ.size());
+  
+  if (bReleased)
+  {
+  	BI.bFinalSample=true;
+  	return true;
+  }
   
   sem_wait(&sem_numbuffers);	// Waits in blocked mode until there is a frame ready.
   // Note that this occurs BEFORE the mutex is locked. Else the post and wait will
   // deadlock each other.
-	  
+
   rc = pthread_mutex_lock(&mutex);
   if (rc)
   {
@@ -229,10 +239,19 @@ bool RTBuffer::FullBufferDQ(V4L2BufferInfo& BI)
   	assert(false && "Lock Failed");
   	return false;
   }
-  
-  BI = bufferQ.front();  
-  // DeQueue the item at the front.
-  bufferQ.pop_front();
+
+  if (bufferQ.size()==0)
+  {
+  	// Must have been cleared out from under us. Return false.
+  	ret = false;
+  }
+  else
+  {  
+	  BI = bufferQ.front();  
+	  // DeQueue the item at the front.
+	  bufferQ.pop_front();
+	  ret = true;
+  }
   
   rc = pthread_mutex_unlock(&mutex);
   if (rc)
@@ -242,7 +261,7 @@ bool RTBuffer::FullBufferDQ(V4L2BufferInfo& BI)
   	return false;
   }
   
-  return true;
+  return ret;
 }
 
 
@@ -259,7 +278,6 @@ bool RTBuffer::FullBufferDQ(V4L2BufferInfo& BI)
 //! \todo 
 //! \todo 
 //! 
-
 class V4L2Cap : public ThreadSingle {
 public:
 	V4L2Cap(const char* indev=NULL, int w=0, int h=0, const char* fmt=NULL);
@@ -298,7 +316,8 @@ protected:
 	unsigned int     n_buffers;
 
 public:
-	V4L2CapBuffer* testGetBuff(void) { return pRTBuffer; };
+	V4L2CapBuffer* GetBufferPointer(void) { return pRTBuffer; };
+	void GetCurrentFormat(int width, int height, string& colorspace) { width = def.width; height = def.height; colorspace=def.format; };
 };
 
 //!
@@ -367,9 +386,6 @@ V4L2Cap::V4L2Cap(const char* indev, int w, int h, const char* fmt)
 
 V4L2Cap::~V4L2Cap(void) 
 {
-	pRTBuffer->Shutdown();
-	// Give the shutdown a little time prior to the deletion.
-	
 	DeInitDevice();
 	
 	delete pRTBuffer;
@@ -643,6 +659,9 @@ void V4L2Cap::stop_capturing                  (void)
 	if (IsRunning())
 		stopThread();
 
+	pRTBuffer->Shutdown();
+	// Give the shutdown a little time prior to the deletion.
+	
 	switch (io) {
 	case IO_METHOD_READ:
 		/* Nothing to do. */
@@ -657,6 +676,9 @@ void V4L2Cap::stop_capturing                  (void)
 
 		break;
 	}
+	
+	pRTBuffer->clear();
+	pRTBuffer->ReleaseOutputSide();
 }
 
 void V4L2Cap::start_capturing                 (void)
@@ -731,6 +753,19 @@ int V4L2Cap::read_frame			(void)
 	V4L2BufferInfo bi;
 	string st;
 
+	assert(pRTBuffer);
+	if (pRTBuffer->Qsize() >= 7)
+	{
+		cerr << "-S-" << flush;
+		usleep(10000);
+		return 0;
+	}
+	
+		// This will remain dequeued from the capture driver until the encoder is DONE with it.
+
+		//RMW:Test - re-enqueue after we're 4 deep so we never get to eight.
+//		if (pRTBuffer->Qsize() <= 4)
+
 	switch (io) {
 	case IO_METHOD_READ:
 	assert(false);
@@ -765,15 +800,17 @@ assert(false);
             			cerr << "-burp-" << flush;
                     		return 0;
 
+			case EINVAL:	// INVALID paramter(s)
+				cerr << "-INV-" << flush;
+				usleep(500000);
+				return 0;
+				
 			case EIO:
+				cerr << "-EIO-" << flush;
 				/* Could ignore EIO, see spec. */
 
 				/* fall through */
 
-			case 22:	// EINVALID
-				cerr << "-INV-" << flush;
-				return 0;
-				
 			default:
 				errno_exit ("VIDIOC_DQBUF");
 			}
@@ -789,11 +826,11 @@ cout << "." << pRTBuffer->Qsize() << flush;
 		// This will remain dequeued from the capture driver until the encoder is DONE with it.
 
 		//RMW:Test - re-enqueue after we're 4 deep so we never get to eight.
-		if (pRTBuffer->Qsize() <= 4)
+//		if (pRTBuffer->Qsize() <= 4)
 			pRTBuffer->FullBufferEnQ(bi);
-		else
-			if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
-				errno_exit ("VIDIOC_QBUF");
+//		else
+//			if (-1 == xioctl (fd, VIDIOC_QBUF, &buf))
+//				errno_exit ("VIDIOC_QBUF");
 
 
 		break;
@@ -898,8 +935,7 @@ int main(int argc, char** argv)
 	pcap->start_capturing();
 
 	cout << "Press a LETTER followed by <enter> to quit capturing...." << endl;	
-	sleep(2);
-	cout << "Capturing frames." << endl;
+	usleep(150000);
 	
 	// Test1
 	// Show realtime buffer filling in tight loop.
@@ -908,17 +944,68 @@ int main(int argc, char** argv)
 	{
 		int i, f;
 		
-		f = pcap->testGetBuff()->Qsize();
+		f = pcap->GetBufferPointer()->Qsize();
 		for (i=0;i<f;i++)
 		  cout << "=";
 		  
 		cout << "> (" << f << ")" << endl;
 		
 		usleep(10000);	// attempt a 10ms delay and allow for an effective yeild()
-		if (count++ > 20)
+		if (count++ > 10)
 			break;
 	}
 	
+
+	cout << endl << "Giving back some buffers...." << endl;
+	count = 0;
+	long start=0;
+	
+	long last=0;
+	long cur=0;
+	while(true)
+	{
+		int i, f;
+		int w = cout.width();
+		
+		// Take a sample off the queue.
+		V4L2BufferInfo bi;
+		bool tr = pcap->GetBufferPointer()->FullBufferDQ(bi);
+		assert(tr && "Dequeue of full buffer failed.");
+
+		// Init state.
+		if (start==0)
+			start = bi.buf.timestamp.tv_sec;
+			
+		if (last==0)
+			last = (bi.buf.timestamp.tv_sec - start) * 1000 + (bi.buf.timestamp.tv_usec/1000);
+		
+		cur = (bi.buf.timestamp.tv_sec - start) * 1000 + (bi.buf.timestamp.tv_usec/1000);
+#if 0
+		cout << endl << "Giving buffer back to driver. Timestamp(s.us)=" << 
+				bi.buf.timestamp.tv_sec-start << "." << setw(6) << bi.buf.timestamp.tv_usec << setw(w) <<
+				"/" << (bi.buf.timestamp.tv_usec/1000) << "ms" << endl;
+#endif
+		cout << endl << "Giving buffer back to driver. Timestamp(s.ms)=" << bi.buf.timestamp.tv_sec-start << "." << 
+				setfill('0') << setw(3) << (bi.buf.timestamp.tv_usec/1000) << setw(w) << setfill(' ') <<
+				" diff(" << setw(3) << cur-last << setw(w) <<"ms)   ";
+	
+		last = cur;
+		
+		tr = pcap->GetBufferPointer()->EmptyBufferRelease(bi);
+		assert(tr && "Giving buffer back to Driver failed.");
+
+
+		f = pcap->GetBufferPointer()->Qsize();
+		for (i=0;i<f;i++)
+		  cout << "=";
+		  
+		cout << "> (" << f << ")" << endl;
+		
+		usleep(30000);	// attempt a 10ms delay and allow for an effective yeild()
+		if (count++ > 15)
+			break;
+	}
+
 	
 #if 0
 	// Test 2
