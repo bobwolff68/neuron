@@ -31,6 +31,7 @@ Neuron/code/media/idl/*.cxx
 Neuron/code/media/idl/*.h
 Neuron/code/media/entity_info_idl/*.cxx
 Neuron/code/media/entity_info_idl/*.h
+Neuron/code/tools/ubrain/*.cxx
 
 # General
 bin/
