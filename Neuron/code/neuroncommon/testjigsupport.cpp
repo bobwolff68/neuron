@@ -43,7 +43,7 @@ bool TestJigSupport::ContinueNow(HookID id, const char* fnName)
 
 	assert(fnName);
 
-	return MakeLuaCallback(fnName, (int)id, "junk");
+	return MakeLuaCallback(fnName, (int)id, "ContinueOrNot");
 	
 }
 

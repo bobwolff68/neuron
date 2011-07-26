@@ -115,6 +115,8 @@ public:
 	  }
 	}
 
+	bool IsRunning(void) { return isRunning; };
+	bool IsStopRequested(void) { return isStopRequested; };
 private:
 	pthread_t thread;
 	volatile bool isRunning;
