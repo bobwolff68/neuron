@@ -1,0 +1,183 @@
+                          VSofts H.264 Codec 4.6
+              AVC/SVC/MVC Codec/Decoder SDK for Windows/Mac/Linux
+
+                         Samples Instructions
+
+
+1. Compilation
+--------------
+Please consult to a file "build.txt" from your distribution on how to
+build samples.
+
+2. How to run sample applications
+---------------------------------
+a) Sample Encoder
+Encoder application is designed to compress raw video and write
+H.264 compliant video stream in output Annex B format binary file.
+
+USAGE:
+         > sample_enc [-option value] [param=value]
+WHERE:
+-i (-yf): [-input-file] name of input raw YUV file;
+-- (-y1): [-view-1-file] name of input raw YUV for view 1;
+-- (-y2): [-view-2-file] name of input raw YUV for view 2;
+-- (-y3): [-view-3-file] name of input raw YUV for view 3;
+-o (-hf): [-output-file] name of output H.264 file;
+-c (-cf): [-config-file] name of encoder config file;
+-- (-cc): [-cc-file] name of input CC text file (one line per frame);
+-- (-pd): [-pd-file] name of input private data text file (one line per frame);
+-w (-fw): [-frame-width] input frame width, pixels (divisible by 2);
+-h (-fh): [-frame-height] input frame height, pixels (divisible by 2);
+-f (-fr): [-frame-rate] input frame rate (frames per 10,000 sec);
+-- (-fs): [-frame-start] first frame number to encode;
+-k (-fk): [-frame-skip] encode every N-th frame (numbering starts from zero);
+-n (-fn): [-frame-count] max number of input frames to process;
+-u (-fc): [-colorspace] colorspace: 0=IYUV,I420; 1=YV12; 2=YUYV,YUY2; 3=YVYU; 4=UYVY; 
+5=RGB555; 6=RGB565; 7=RGB24; 8=RGB32, 9=4:0:0, 10=4:2:2;
+-- (-fb): [-bits-per-pel] input frame: bits per pixel (8..14);
+-b (-br): [-bitrate] desired bitrate, kbps;
+-m (-mt): [-threads] number of threads (-1=auto, 0=disable);
+-v (-vb): [-verbose] level of verbose messages (0/1/2);
+-- (-fv): [-forever] rewind input stream and run N loops;
+-- (---): [-async-feed] use asynchronous data feed (0/1);
+-- (---): [-async-receive] use asynchronous data receive (0/1);
+-- (---): [-preload] preload N frames on input;
+-- (---): [-change-bitrate-period] change bitrate period (every N-th frame);
+-- (---): [-change-bitrate-ratio] change bitrate ratio, 100:1 (125=1.25);
+-- (-fp): [-fp-type] use side-by-side(3) or top-bottom(4) frame packing;
+-- (-ed): [-ext_data_string] extra data string (use " " for string with spaces);
+
+b) Sample Decoder
+Decoder application is designed to decompress H.264 compliant Annex B video stream 
+and write output raw video file in planar YUV format. Please note that actual YUV
+format depends on H.264 contents and could be YUV 4:0:0, 4:2:0 or 4:2:2.
+
+USAGE:
+         > sample_dec [input file] [output file] [-option value]
+WHERE:
+-i (-yf): [-input-file] name of input file;
+-o (-hf): [-output-file] name of output file;
+-e (-ef): [-svc-output-file] name of extracted SVC stream output file;
+-r (-rf): [-ref-file] name of reference file for PSNR and SSIM calculations;
+-n (-fn): [-frame-count] max number of input frames to process;
+-- (-fs): [-frame-start] specify number of frame to start writing from;
+-f (-fr): [-frame-rate] input frame rate (frames per 10,000 sec);
+-u (-fc): [-colorspace] colorspace: 0=IYUV,I420; 1=YV12; 2=YUYV,YUY2; 3=YVYU; 4=UYVY; 5=RGB555; 6=RGB565; 7=RGB24; 8=RGB32, 9=4:0:0, 10=4:2:2;
+-b (-br): [-bitrate] desired bitrate, kbps;
+-m (-mt): [-threads] number of threads (-1=auto, 0=disable);
+-v (-vb): [-verbose] level of verbose messages (0/1/2);
+-- (-od): [-output-delay] h264 decoder output delay;
+-s (-ds): [-sei] decode SEI messages (0/1);
+-t (-dt): [-telecine] interpret telecine (0/1);
+-l (-sl): [-select-layer] select SVC/MVC layers/views by priority id (-1=all, 0=base, .. 63=max);
+-- (-st): [-select-t-id] select SVC/MVC layers/views by temporal id (-1=all, 0=base, .. 7=max);
+-d (-dq): [-select-dq-id] select SVC layers by dq_id ( = 16*dep_id+quality_id) (-1=all, 0=base, .. 127=max);
+-- (-sb): [-svc-bitrate] target SVC bitrate, kbps;
+-- (-vd): [-vbv-delay] target VBV delay, ms (0 means no VBV control);
+-5 (-md): [-md5] calculate md5 sum for output YUV file (0/1);
+-- (-ow): [-out-width] force output frame width, pixels;
+-- (-oh): [-out-height] force output frame height, pixels;
+-- (-ec): [-error-concealment] enable EC (error concealment);
+-- (-mp): [-max_psnr] max psnr value;
+-- (-es): [-enable_ssim] enable SSIM calculation;
+-- (-fv): [-forever] rewind input stream and run N loops;
+-- (-fp): [-fp_flag] enable frame unpacking;
+         
+c) Sample Stream Analyzer
+Stream analysis sample application is intended to analyze H.264 streams in Annex B file format,
+ i.e. NAL units separated with 4-byte startcodes.
+
+USAGE:
+        sample_ana [-option value]
+WHERE:
+-i (-yf): [-input-file] name of input file;
+-v (-vb): [-verbose] enable extended verbose messages (0/1);
+-b (-ba): [-buffer-analyzer] enable HRD buffer analyzer (1=nal, 2=vcl);
+-l (-sl): [-select-layer] select SVC/MVC layers/views by priority id (-1=all, 0=base, .. 63=max);
+-- (-st): [-select-t-id] select SVC/MVC layers/views by temporal id (-1=all, 0=base, .. 7=max);
+-d (-dq): [-select-dq-id] select SVC layers by dq_id ( = 16*dep_id+quality_id) (-1=all, 0=base, .. 127=max);
+-- (-br): [-bitrate] desired bitrate for VBV buffer model, kbps;
+-f (-fr): [-framerate] input frame rate (frames per 10,000 sec);
+LEGEND:
+	Every line:
+		file offset(NAL length): [RefIDC|NAL type]
+	SPS[SPS_IDC]:
+	PPS[SPS_IDC,PPS_IDC]:
+		QPU[] - chroma qp offset
+		QPV[] - second chroma qp offset
+		DB    - deblocking parameters present flag
+		CIP   - constrained intra prediction flag
+		WP    - weighted pred flag
+		WB    - weighted bi-pred idc
+		T8x8  - transform 8x8 flag
+		SM    - scaling matrix present flag
+	SLICEEXT: or PREFIX:
+		[Priority][Dependency|Temporal|Quality]
+	SLICEEXT MVC:
+		[Priority][Temporal|View]
+	SEI: (if verbose > 0)
+		SEI #Type (Uncompressed SEI data length): SEI Name: SEI parameters
+
+d) Sample VPL
+The program is designed to demonstrate Video Processing Library (VPL) usage.
+It is very useful, for example, to produce SVC-compatible resizes and so on.
+USAGE:
+sample_vpl.exe [-yabc... | -uabc... | -vabc... | -r_w_h | -cab | -d | -b_y_u_v] -p_l_t_w_h -w width -h height -n frames_number -i input.yuv [-o output.yuv] [-e] -l 
+    -e: emulate file operations;
+    -s: skip frames counter;
+    -y, -u, -v: describe luma and chroma processing chains;
+    -r: enables image resize;
+    -c: select input and output colorspaces;
+    -l: treat input file as interlaced;
+	 -g: turn RGB upside down;
+
+	-y[xyz...]  -u[xyz...] -v[xyz...] subkey values:
+		a: blur3x3
+		b: blur5x5
+		c: sharpen3x3
+		d: sharpen5x5
+		e: median3x3
+		f: median5x3
+		g: temporal denoise  -g_s_b, where s=strength [1..10], b=buffer [2..7];
+	-d[t|b|a]: deinterlace:
+		t = duplicate top field;
+		b = duplicate bottom field;
+		a = adaptive blur;
+	-r_w_h] resize (-r_234_128 = resize to 234x128)
+	-p_l_t_w_h: crop source frame (left, top, width, height);
+	-b_y_u_v: set bit depth for y u and v planes, [8,14], default values 8,8,8;
+
+	-c[xy]: select colorspace (x = input, y = output), default IYUV->IYUV;
+		a: colorspace IYUV
+		b: colorspace YV12
+		c: colorspace YUY2
+		d: colorspace YVYU
+		e: colorspace UYVY
+		f: colorspace RGB555
+		g: colorspace RGB565
+		h: colorspace RGB24
+		i: colorspace RGB32
+		j: colorspace YUV400
+		k: colorspace YUV422
+
+NOTE:
+	keys -y -u -v and -r could be specified several times;
+
+e) Sample Transcode
+Transcoder application gets H.264 encoded file on input and then makes encode 
+using H.264 macroblock data from the input file.
+
+USAGE:
+	 > sample_transcode [-option value] [param=value]
+WHERE:
+-i (-yf): [-input-file] name of input H.264 file;
+-o (-hf): [-output-file] name of output H.264 file;
+-- (-of): [-orig-file] name of input original yuv file;
+-c (-cf): [-config-file] name of encoder config file;
+-w (-fw): [-frame-width] input frame width, pixels (divisible by 2);
+-h (-fh): [-frame-height] input frame height, pixels (divisible by 2);
+-n (-fn): [-frame-count] max number of input frames to process;
+-s (-fs): [-frame-start] frame to start encoding;
+-v (-vb): [-verbose] level of verbose messages (0/1/2);
+-m (-mt): [-threads] number of threads in decoder(-1=auto, 0=disable);
+-t (-tm): [-transcode] transcode mode (0 - simple recode; 1-transcode);

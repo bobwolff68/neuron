@@ -1,0 +1,93 @@
+                          VSofts H.264 Codec 4.6
+              AVC/SVC/MVC Codec/Decoder SDK for Windows/Mac/Linux
+
+                          Package Contents
+
+The SDK is shipped in the form of ZIP archive (Windows) or tar.gz archive (Linux, Mac). 
+After downloading you'll need to extract original SDK files
+along with the directory structure.
+
+Please note that some encoder specific files are not available in Decoder SDK package.
+
+readme.txt		- readme file;
+relnotes.txt		- release notes;
+build.txt		- build instructions;
+samples.txt		- samples description;
+listing.txt		- package contents file listing (this file);
+
+bin/			- binary files
+bin/v4enc.cfg		- full configuration file for the encoder;
+
+doc/			- SDK documentation and API reference
+doc/vss_version_4_6_What_s_new.doc	- what's new in codec version 4.6;
+doc/VSS H.264 Encoder Advanced Settings.pdf	- advanced encoder settings description;
+doc/SDK-dec-doc-v4.chm	- decoder API reference, CHM compiled file (Windows);
+doc/SDK-dec-doc-v4.zip	- decoder API reference, HTML pages (Linux, Mac);
+doc/SDK-enc-doc-v4.chm	- encoder API reference, CHM compiled file (Windows);
+doc/SDK-enc-doc-v4.zip	- encoder API reference, HTML pages (Linux, Mac);
+doc/VSofts ARIB Settings.pdf - how to configure Encoder for ARIB compatibility;
+doc/VSofts Blu-ray Settings.pdf - how to configure Encoder for Blu-ray compatibility;
+
+inc/			- "C" header files
+inc/v4_error.h		- return and error codes;
+inc/v4_media_sample.h	- media sample C header file;
+inc/v4_nalu.h		- H.264 parsing API;
+inc/v4_types.h		- common types definitions;
+inc/v4_stdint.h		- stdint header file for Windows;
+inc/v4d_api.h		- decoder API C header file;
+inc/v4d_settings.h	- decoder settings C header file;
+inc/v4e_api.h		- encoder API C header file;
+inc/v4e_preproc_settings.h - preprocessing settings;
+inc/v4e_settings.h	- encoder settings C header file;
+inc/v4_platform.h	- platform dependent definitions;
+inc/v4_pragmas.h	- compiler pragmas;
+inc/v4_substr_extract.h	- SVC/MVC substream extractor API;
+inc/vp.h		- video processing library C header file;
+
+src/			- "C" code samples
+src/Makefile		- master make file;
+src/samples.sln		- Visual Studio 8.0 solution file (Windows only);
+src/samples_dec.sln	- Visual Studio 8.0 solution file for Decoder SDK (Windows only);
+src/sample_ana.vcproj	- Visual Studio 8.0 project file (Windows only);
+src/sample_dec.vcproj	- Visual Studio 8.0 project file (Windows only);
+src/sample_enc.vcproj	- Visual Studio 8.0 project file (Windows only);
+src/sample_transcode.vcproj	- Visual Studio 8.0 project file (Windows only);
+src/sample_vpl.vcproj	- Visual Studio 8.0 project file (Windows only);
+src/sample_ana.c	- sample analysis program;
+src/sample_dec.c 	- sample decoder program;
+src/sample_enc.c	- sample encoder program;
+src/sample_transcode.c	- sample transcoder program;
+src/sample_vpl.c	- sample video processing (VPL) program;
+src/v4timer.h		- OS independent timer;
+src/v4info.h		- codec information;
+src/v4args.h		- command line arguments handling;
+src/v4file.h		- common file operations;
+src/md5.h		- md5 calculation;
+src/gen_losses.h	- losses generator;
+src/h264dec_unit.h	- independent decoder unit definition;
+src/h264enc_unit.h	- independent encoder unit definition;
+src/h264dec_file.h	- file decoder unit;
+src/psnr_ssim.h		- PSNR/SSIM quality metrics calculation;
+
+lib/			- static libraries
+lib/libv4codecsdk-OBCEX-ALL-MT.lib	- codec SDK library;
+lib/libv4decsdk-OBCEX-ALL-MT.lib	- decoder SDK library;
+where:
+	OBCEX - platform abbreviation (e.g. w32i, w32ie, w32ix, w32ixe):
+		O = OS (w=win, l=lin, m=mac);
+		B = bits (32 / 64);
+		C = compiler (i=intel, g=gcc);
+		E = eval (e);;
+		X = extra bit depth (x);
+
+	ALL - profiles supported:
+		all = all profiles supported;
+		avc = AVC only;
+		svc = AVC + SVC;
+		mvc = AVC + MVC;
+
+	MT  - runtime linkage option:
+		mt  = static release;
+		mtd = static debug;
+		md  = dynamic release;
+		mdd = dynamic debug;
