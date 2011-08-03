@@ -115,6 +115,16 @@ public:
 	  }
 	}
 
+    bool IsRunning(void) const
+    {
+        return isRunning;
+    }
+
+    bool IsStopRequested(void) const
+    {
+        return isStopRequested;
+    }
+
 private:
 	pthread_t thread;
 	volatile bool isRunning;
