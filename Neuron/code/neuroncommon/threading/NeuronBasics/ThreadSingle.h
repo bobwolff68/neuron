@@ -26,7 +26,11 @@ using namespace std;
 #ifdef REPORT_ERROR
 #undef REPORT_ERROR
 #endif
+#if defined(__APPLE__) & defined(__MACH__)
+#define REPORT_ERROR(a,b) (NSLog(@a,b))
+#else
 #define REPORT_ERROR(a,b) printf(a,b)
+#endif
 
 //!
 //! \class ThreadSingle
@@ -79,7 +83,8 @@ public:
 	void startThread()
 	{
 	  int ret;
-	  assert(!isRunning);
+        assert(!isRunning);
+        assert(!isStopRequested);
 	  // Now set to running and create the thread -- and in an error condition, set to 'NOT running' again.
 	  isRunning = true;
 	  ret = pthread_create(&thread, 0, &(ThreadSingle::threadLaunchpoint), this);
@@ -112,6 +117,7 @@ public:
                 REPORT_ERROR("ending/joining thread failed. Err:%d", ret);
             }
             isRunning = false;
+          isStopRequested = false;
 	  }
 	}
 
