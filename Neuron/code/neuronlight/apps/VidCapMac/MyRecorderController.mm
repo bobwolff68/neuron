@@ -235,6 +235,7 @@
     
     // Now down to the business at hand. Enqueue the new frame.
     
+    CVBufferRetain(videoFrame);
     BI.pFrame = videoFrame;
 
     // Counting on FullBufferEnQ() to lock down the videoFrame for us.

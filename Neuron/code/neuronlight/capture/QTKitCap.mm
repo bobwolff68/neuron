@@ -19,10 +19,10 @@
 
 using namespace std;
 
-bool QTKitCapBuffer::EmptyBufferRelease(QTKitBufferInfo& BI)
+bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase& BI)
 {
     // This BI has already been taken off the internal Queue with DQ call
-    CVBufferRelease(BI.pFrame);
+    CVBufferRelease(((QTKitBufferInfo&)BI).pFrame);
 	
 	return true;
 }
@@ -82,7 +82,7 @@ void RTBuffer::Shutdown(void)
     mRefusedCount=0;
 }
 
-bool RTBuffer::FullBufferEnQ(QTKitBufferInfo& BI)
+bool RTBuffer::FullBufferEnQ(RTBufferInfoBase& BI)
 {
   int rc=0;
     
@@ -98,7 +98,7 @@ bool RTBuffer::FullBufferEnQ(QTKitBufferInfo& BI)
 
     if (Qsize() >= MAX_QUEUE_SIZE)
     {
-      NSLog(@"RTBuffer full: Enqueue refused.");
+//      NSLog(@"RTBuffer full: Enqueue refused.");
       mRefusedCount++;
       return false;
     }
@@ -121,8 +121,6 @@ bool RTBuffer::FullBufferEnQ(QTKitBufferInfo& BI)
 
     mFrameCount++;
     
-    CVBufferRetain(BI.pFrame);
-
     rc = pthread_mutex_unlock(&mutex);
   if (rc)
   {
@@ -147,7 +145,7 @@ bool RTBuffer::FullBufferEnQ(QTKitBufferInfo& BI)
 //! 
 //! 
 
-bool RTBuffer::FullBufferDQ(QTKitBufferInfo& BI)
+bool RTBuffer::FullBufferDQ(RTBufferInfoBase& BI)
 {
   int rc=0;
   int val;

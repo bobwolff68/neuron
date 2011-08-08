@@ -10,26 +10,25 @@
 #ifndef V4L2CAP_H_
 #define V4L2CAP_H_
 
-#ifdef TEST
-#define SKIP_DDS
-#endif
-
 #include <iostream>
 #include <deque>
 #include <sstream>
 #include "ThreadSingle.h"
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#if 0
 #include <fcntl.h>              /* low-level i/o */
 #include <unistd.h>
-#include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#endif
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 #include <semaphore.h>
 
 // Apple Mac 'ifdef' for future reference.
@@ -65,14 +64,25 @@ static void errno_exit(const char * s)
         exit (EXIT_FAILURE);
 }
 
-#if defined(__APPLE__) & defined(__MACH__)
-class QTKitBufferInfo {
+class RTBufferInfoBase {
 public:
-	QTKitBufferInfo(void) { bFinalSample=false; pBuffer=NULL; };
-	virtual ~QTKitBufferInfo(void) { };
-	void* pBuffer;
+	RTBufferInfoBase(void) { bFinalSample=false; pBuffer=NULL; };
+	virtual ~RTBufferInfoBase(void) { };
+	void* pBuffer;      // Single pointer to a contiguous block of data regardless of planar or non-
 	bool bFinalSample;
+};
+
+
+#if defined(__APPLE__) & defined(__MACH__)
+class QTKitBufferInfo : public RTBufferInfoBase {
+public:
+	QTKitBufferInfo(void) { pY=NULL; pCb=NULL; pCr=NULL; };
+	virtual ~QTKitBufferInfo(void) { };
     CVImageBufferRef pFrame;
+    // TODO - consider making three distinct planar pointers in addition to a non-planar pointer
+    void* pY;
+    void* pCb;
+    void* pCr;
 };
 #endif
 
@@ -83,14 +93,14 @@ class RTBuffer {
 public:
 	RTBuffer(void);
 	virtual ~RTBuffer(void);
-	bool FullBufferEnQ(QTKitBufferInfo& BI);
-	bool FullBufferDQ(QTKitBufferInfo& BI);
+	bool FullBufferEnQ(RTBufferInfoBase& BI);
+	bool FullBufferDQ(RTBufferInfoBase& BI);
 	void Shutdown(void);
 
 	// \brief Used by stop_capture() (or the Dequeue side--not-preferred) for releasing its interest in the buffer.
 	void ReleaseOutputSide(void) { bReleased = true; };
 	//! \brief To be implemented by the capture side in case buffers need to be released back to the driver.
-	virtual bool EmptyBufferRelease(QTKitBufferInfo& BI) = 0;
+	virtual bool EmptyBufferRelease(RTBufferInfoBase& BI) = 0;
 
 	int Qsize(void) { return bufferQ.size(); };
 	void clear(void) { bufferQ.clear(); mFrameCount=0; mRefusedCount=0; };
@@ -102,7 +112,7 @@ public:
     int mRefusedCount;
 
 protected:
-	deque<QTKitBufferInfo> bufferQ;
+	deque<RTBufferInfoBase> bufferQ;
 	pthread_mutex_t         mutex;
 	sem_t sem_numbuffers;
 	bool bReleased;
@@ -112,8 +122,8 @@ protected:
 class QTKitCapBuffer : public RTBuffer {
 public:
 	QTKitCapBuffer() { };
-	virtual ~QTKitCapBuffer(void) { };
-	bool EmptyBufferRelease(QTKitBufferInfo& BI);
+	~QTKitCapBuffer(void) { };
+	bool EmptyBufferRelease(RTBufferInfoBase& BI);
 };
 
 
