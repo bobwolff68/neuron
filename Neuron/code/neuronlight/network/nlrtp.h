@@ -9,6 +9,8 @@
 #ifndef NLRTP_H_
 #define NLRTP_H_
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
@@ -24,8 +26,12 @@
 #define RTP_HDR_SIZE        12
 #define RTP_MAX_PAY_SIZE    32768
 
-#define LOG_OUT(msg)    cout << __func__ << "> "\
-                             << msg << endl
+#ifdef BUILD_DEBUG
+    #define LOG_OUT(msg)    cout << __func__ << "> "\
+                                 << msg << endl
+#else
+    #define LOG_OUT(msg)    ((void*)0)
+#endif
 
 #define LOG_ERR(msg)    cerr << __FILE__ << "|"\
                              << __LINE__ << "|"\

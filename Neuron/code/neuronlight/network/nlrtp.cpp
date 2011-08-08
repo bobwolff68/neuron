@@ -18,9 +18,10 @@ nl_pkthdl_retcode_t nl_rtp_packet_handler_t::write(
     const uint32_t pay_size
 )
 {
-    const uint32_t pkt_size = RTP_HDR_SIZE+pay_size;
-    
-    memcpy((void*)packet.payload, p_pay, (size_t)pay_size);
+    const uint32_t pkt_size = RTP_HDR_SIZE + pay_size;
+
+    memcpy((void*)(packet.payload), p_pay, (size_t)pay_size);
+
     if (sendto(sockd,
                (const void*)&packet,
                (size_t)pkt_size,
@@ -28,7 +29,7 @@ nl_pkthdl_retcode_t nl_rtp_packet_handler_t::write(
                (const struct sockaddr*)p_dest,
                (socklen_t)sizeof(*p_dest)) != pkt_size)
     {
-        LOG_ERR("sendto() error");
+        LOG_ERR("sendto(RTP) error");
         return NL_PKTHDL_RETCODE_ERR_SOCK_WRITE;
     }
     

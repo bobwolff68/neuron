@@ -92,7 +92,7 @@ nl_rtpstream_retcode_t nl_rtpstream_t::dist_packet(
     rtp_pkt_hdl.set_pt(pay_type);
     for(it=dests.begin(); it!=dests.end(); it++)
     {
-        LOG_OUT("writing: " << (const char*)p_pay << " to " << it->first);
+        LOG_OUT("writing: to " << it->first);
         if(rtp_pkt_hdl.write(
                 sockd,
                 &it->second,

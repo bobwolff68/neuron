@@ -13,21 +13,33 @@
 #include "vp.h"
 #include "ThreadSingle.h"
 
+#define LOG_ERR(msg)    cerr << __FILE__ << "|"\
+                             << __LINE__ << "|"\
+                             << __func__ << "> "\
+                             << msg << endl
+
+#ifdef BUILD_DEBUG
+    #define LOG_OUT(msg)    cout << __func__ << "> "\
+                                 << msg << endl
+#else
+    #define LOG_OUT(msg)    ((void*)0)
+#endif
+
 //!
 //! \enum RTEnc_ReturnCode_t
 //! \brief Return codes of v4_rtenc_t member functions
 //!
 enum RTEnc_ReturnCode_t
 {
-    RTENC_RETCODE_ERR_DEFAULT_SETTINGS = -8,
+    RTENC_RETCODE_OK = 0,
+    RTENC_RETCODE_ERR_DEFAULT_SETTINGS,
     RTENC_RETCODE_ERR_READ_CFG_FILE,
     RTENC_RETCODE_ERR_OPEN,
     RTENC_RETCODE_ERR_CLOSE,
     RTENC_RETCODE_ERR_GET_SETTINGS,
     RTENC_RETCODE_ERR_WRITE_CFG_FILE,
     RTENC_RETCODE_ERR_LOCK_HANDLE,
-    RTENC_RETCODE_ERR_UNLOCK_HANDLE,
-    RTENC_RETCODE_OK
+    RTENC_RETCODE_ERR_UNLOCK_HANDLE
 };
 
 //!
@@ -50,7 +62,7 @@ class v4_rtenc_t: public ThreadSingle
         //!
         void* p_handle;
 
-	pthread_mutex_t handle_mutex;
+        pthread_mutex_t handle_mutex;
         
         //!
         //! \var settings
@@ -95,7 +107,7 @@ class v4_rtenc_t: public ThreadSingle
         //!
         //! \brief Destructor
         //!
-        ~v4_rtenc_t();
+        virtual ~v4_rtenc_t();
 
         //!
         //! \brief Function to set encoder settings
@@ -109,8 +121,8 @@ class v4_rtenc_t: public ThreadSingle
         void* Handle(void) const;
         RTEnc_ReturnCode_t Open(void);
         RTEnc_ReturnCode_t Close(void);
-	RTEnc_ReturnCode_t LockHandle(void);
-	RTEnc_ReturnCode_t UnlockHandle(void);
+        RTEnc_ReturnCode_t LockHandle(void);
+        RTEnc_ReturnCode_t UnlockHandle(void);
 };
 
 #endif

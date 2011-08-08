@@ -1,6 +1,5 @@
-#include <stdio.h>
+#include <iostream>
 #include "v4rtenc.h"
-#include "logger.h"
 
 using namespace std;
 
