@@ -49,12 +49,16 @@
 #import "MyRecorderController.h"
 #import "CoreVideo/CVPixelBuffer.h"
 
+// Helper function to convert QTTime value into raw micro-seconds.
+#define QTT_US(Q) ((1000000*Q.timeValue)/Q.timeScale)
+
 @implementation MyRecorderController
 
 - (void)awakeFromNib
 {
     
     curDrops = 0;
+    bSendAudioSamples = true;
     
 // Create the capture session
     
@@ -116,7 +120,6 @@
             }
         }
         
-#if 1
         mCaptureDecompressedVideoOutput = [[QTCaptureDecompressedVideoOutput alloc] init];
         
         [mCaptureDecompressedVideoOutput setDelegate:self];
@@ -136,17 +139,27 @@
         if (!success) {
             // Handle error
         }
-#endif
 	} 
 
-// Associate the capture view in the UI with the session
-        
+    // Setup for raw audio capture interleaved in the output.
+    mCaptureDecompressedAudioOutput = [[QTCaptureDecompressedAudioOutput alloc] init];
+    [mCaptureDecompressedAudioOutput setDelegate:self];
+    
+    // Finally add the output to the session.
+    success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
+    if (!success) {
+        // Handle error
+    }
+
+    // Associate the capture view in the UI with the session
+    
     [mCaptureView setCaptureSession:mCaptureSession];
 
     pCap = new QTKitCap(mCaptureSession, mCaptureDecompressedVideoOutput);
 //Not defaulting to capture -- let use press it.    pCap->start_capturing();    
 //        [mCaptureSession startRunning];
     
+    pTVC = new TVidCap(pCap);
     //TODO Here's where we inform Manjesh's code that we have a VidCap for him.
     // setQTKitCap(pCap);
         
@@ -174,6 +187,11 @@
 
 - (void)dealloc
 {
+    assert(pTVC->bIsReleased);
+    
+    delete pTVC;
+    pTVC = NULL;
+    
     delete pCap;
     pCap = NULL;
     
@@ -181,6 +199,9 @@
 	[mCaptureVideoDeviceInput release];
     [mCaptureAudioDeviceInput release];
 	
+    [mCaptureDecompressedVideoOutput release];
+    [mCaptureDecompressedAudioOutput release];
+    
 	[super dealloc];
 }
 
@@ -194,6 +215,9 @@
     int frameHeight;
     OSType pixType;
     QTKitBufferInfo BI;
+    void* pCb;
+    void* pCr;
+    void* pBuff;
 
 //    PlanarComponentInfo* pinfo;
 //    struct PlanarComponentInfo {
@@ -211,7 +235,10 @@
     // get size of the frame
     CVPixelBufferLockBaseAddress(videoFrame, 0); //LOCK_FLAGS);
 
-    BI.pBuffer = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 0);
+    pBuff = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 0);
+    pCb = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 1);
+    pCr = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 2);
+
     //void* baseAddress = CVPixelBufferGetBaseAddress(videoFrame);
 //    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(videoFrame);
     frameWidth = CVPixelBufferGetWidth(videoFrame);
@@ -237,6 +264,19 @@
     
     CVBufferRetain(videoFrame);
     BI.pVideoFrame =(void*) videoFrame;
+    
+    BI.bIsVideo = true;
+    
+    BI.pAudioSamples = NULL;
+
+    BI.pBuffer = pBuff;
+    BI.pY = BI.pBuffer;
+    BI.pCb = pCb;
+    BI.pCr = pCr;
+    
+    BI.timeStamp_uS = QTT_US([sampleBuffer presentationTime]);
+    
+    assert([sampleBuffer numberOfSamples]==1);
 
     // Counting on FullBufferEnQ() to lock down the videoFrame for us.
     // Only did this for symmetry of responsibility between enque and dq
@@ -256,6 +296,61 @@
     [mDrops setIntValue:curDrops];
 }
 
+- (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputAudioSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
+{
+    QTKitBufferInfo BI;
+    QTTime qtt;
+    
+    if (!bSendAudioSamples)
+    {
+//        NSLog(@"Skipping audio samples.");
+        return;
+    }
+    
+    BI.bIsVideo = false;
+    
+    qtt = [sampleBuffer presentationTime];
+    
+    // Add a hold on this sample
+    [sampleBuffer incrementSampleUseCount];
+    
+    BI.pVideoFrame=NULL;
+    BI.pAudioSamples = sampleBuffer;
+
+    BI.pY = NULL;
+    BI.pCb = NULL;
+    BI.pCr = NULL;
+    
+    BI.timeStamp_uS = QTT_US(qtt);
+    
+    NSLog(@"Audio: %d samples, %d bytes-total, timestamp: %lld, scale: %ld Ticks/sec, reported_uS:%lld", 
+          [sampleBuffer numberOfSamples], [sampleBuffer lengthForAllSamples], qtt.timeValue, qtt.timeScale, BI.timeStamp_uS);
+    
+    NSDictionary *pd;
+    pd = [sampleBuffer sampleBufferAttributes];
+
+    // We know this should be incoming with LPCM audio samples, but we're gonna make sure.
+    QTFormatDescription* pfd;
+    pfd = [sampleBuffer formatDescription];
+    uint32 fourb;
+    fourb=[pfd formatType];
+    assert(fourb==kAudioFormatLinearPCM);
+
+    AudioBufferList* pAbufflist;
+    pAbufflist = [sampleBuffer audioBufferListWithOptions:0];
+    
+    BI.pBuffer = (void*)pAbufflist;
+
+    // Counting on FullBufferEnQ() to lock down the videoFrame for us.
+    // Only did this for symmetry of responsibility between enque and dq
+    if (!pCap->GetBufferPointer()->FullBufferEnQ(BI))
+    {
+        //        NSLog(@"Enqueue failed above. Marking as dropped.");
+        
+        curDrops++;
+        [mDrops setIntValue:curDrops];
+    }
+}
 // Add these start and stop recording actions, and specify the output destination for your recorded media. The output is a QuickTime movie.
 
 - (IBAction)startRecording:(id)sender
@@ -306,6 +401,10 @@
 
 - (IBAction)quitApplication:(id)sender {
     [NSApp terminate:self];
+}
+
+- (IBAction)sendAudioSamples:(id)sender {
+    bSendAudioSamples = [sender state]==NSOnState;
 }
 
 @end

@@ -74,6 +74,7 @@
 							<int key="NSvFlags">289</int>
 							<string key="NSFrame">{{312, 21}, {96, 32}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSNextKeyView"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="894915894">
 								<int key="NSCellFlags">-2080244224</int>
@@ -201,6 +202,7 @@
 							<int key="NSvFlags">289</int>
 							<string key="NSFrame">{{206, 31}, {42, 17}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSNextKeyView" ref="963165226"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="667215032">
 								<int key="NSCellFlags">68288064</int>
@@ -300,7 +302,7 @@
 					<reference key="NSSuperview"/>
 					<reference key="NSNextKeyView" ref="72214172"/>
 				</object>
-				<string key="NSScreenRect">{{0, 0}, {1440, 878}}</string>
+				<string key="NSScreenRect">{{0, 0}, {1920, 1178}}</string>
 				<string key="NSMinSize">{213, 107}</string>
 				<string key="NSMaxSize">{10000000000000, 10000000000000}</string>
 				<bool key="NSWindowIsRestorable">YES</bool>
@@ -1353,7 +1355,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">500235</int>
+			<int key="maxID">500239</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes"/>
 		<int key="IBDocument.localizationMode">0</int>

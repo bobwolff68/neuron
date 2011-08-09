@@ -61,15 +61,19 @@ Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.
     
     QTCaptureSession            *mCaptureSession;
     QTCaptureDecompressedVideoOutput *mCaptureDecompressedVideoOutput;
+    QTCaptureDecompressedAudioOutput *mCaptureDecompressedAudioOutput;
     QTCaptureDeviceInput        *mCaptureVideoDeviceInput;
     QTCaptureDeviceInput        *mCaptureAudioDeviceInput;
     
     QTKitCap* pCap;
+    TVidCap* pTVC;
+    bool bSendAudioSamples;
 }
 - (IBAction)startRecording:(id)sender;
 - (IBAction)stopRecording:(id)sender;
 - (IBAction)captureMode:(id)sender;
 - (IBAction)resetDrops:(id)sender;
 - (IBAction)quitApplication:(id)sender;
+- (IBAction)sendAudioSamples:(id)sender;
 
 @end

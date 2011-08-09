@@ -10,9 +10,6 @@
 //! \author rwolff
 //! \date Thu 30 Jun 2011 11:01:47 AM 
 //! 
-
-// When compiling from code/neuroncommon/
-// testing-compilation: g++ -g3 V4L2Cap.cpp -I../include -I. -lpthread
 #include "QTKitCap.h"
 #import "RTBuffer.h"
 
@@ -23,7 +20,14 @@ using namespace std;
 bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase& BI)
 {
     // This BI has already been taken off the internal Queue with DQ call
+<<<<<<< Updated upstream
     CVBufferRelease((CVImageBufferRef)((QTKitBufferInfo&)BI).pVideoFrame);
+=======
+    if (((QTKitBufferInfo&)BI).bIsVideo)
+        CVBufferRelease(((QTKitBufferInfo&)BI).pVideoFrame);
+    else
+        [((QTSampleBuffer*)((QTKitBufferInfo&)BI).pAudioSamples) decrementSampleUseCount];
+>>>>>>> Stashed changes
 	
 	return true;
 }
