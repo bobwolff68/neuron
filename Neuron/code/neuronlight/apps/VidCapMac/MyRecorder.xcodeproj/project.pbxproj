@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2B531E1B0BBB3FBD00F42B98 /* Icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2B531E1A0BBB3FBD00F42B98 /* Icon.icns */; };
 		2BAB8A530BBB551900143BEF /* MyRecorder Help in Resources */ = {isa = PBXBuildFile; fileRef = 2BAB8A510BBB551900143BEF /* MyRecorder Help */; };
+		3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */; };
 		34AA4D0813EB77DB003F68AE /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34AA4D0713EB77DB003F68AE /* CoreVideo.framework */; };
 		34DE7EE013ECA2CE007B30F0 /* QTKitCap.mm in Sources */ = {isa = PBXBuildFile; fileRef = 34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */; };
 		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
@@ -29,6 +30,8 @@
 		2B531E1A0BBB3FBD00F42B98 /* Icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Icon.icns; sourceTree = "<group>"; };
 		2BAB8A520BBB551900143BEF /* English */ = {isa = PBXFileReference; lastKnownFileType = folder; name = English; path = "English.lproj/MyRecorder Help"; sourceTree = "<group>"; };
 		32CA4F630368D1EE00C91783 /* MyRecorder_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyRecorder_Prefix.pch; sourceTree = "<group>"; };
+		3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RTBuffer.cpp; path = ../../capture/RTBuffer.cpp; sourceTree = "<group>"; };
+		3426E93713F0BAFB00897BA7 /* RTBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RTBuffer.h; path = ../../capture/RTBuffer.h; sourceTree = "<group>"; };
 		34AA4D0713EB77DB003F68AE /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = SDKs/MacOSX10.7.sdk/System/Library/Frameworks/CoreVideo.framework; sourceTree = DEVELOPER_DIR; };
 		34DE7EDD13EC9BA0007B30F0 /* ThreadSingle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ThreadSingle.h; path = ../../../neuroncommon/threading/NeuronBasics/ThreadSingle.h; sourceTree = "<group>"; };
 		34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = QTKitCap.mm; path = ../../capture/QTKitCap.mm; sourceTree = "<group>"; };
@@ -83,6 +86,8 @@
 		29B97314FDCFA39411CA2CEA /* MyRecorder */ = {
 			isa = PBXGroup;
 			children = (
+				3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */,
+				3426E93713F0BAFB00897BA7 /* RTBuffer.h */,
 				34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */,
 				34DE7EDF13ECA2CE007B30F0 /* QTKitCap.h */,
 				34DE7EDD13EC9BA0007B30F0 /* ThreadSingle.h */,
@@ -186,6 +191,7 @@
 				8D11072D0486CEB800E47090 /* main.mm in Sources */,
 				C5E698F30BA8735700382716 /* MyRecorderController.mm in Sources */,
 				34DE7EE013ECA2CE007B30F0 /* QTKitCap.mm in Sources */,
+				3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
