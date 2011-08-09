@@ -20,14 +20,10 @@ using namespace std;
 bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase& BI)
 {
     // This BI has already been taken off the internal Queue with DQ call
-<<<<<<< Updated upstream
-    CVBufferRelease((CVImageBufferRef)((QTKitBufferInfo&)BI).pVideoFrame);
-=======
     if (((QTKitBufferInfo&)BI).bIsVideo)
-        CVBufferRelease(((QTKitBufferInfo&)BI).pVideoFrame);
+        CVBufferRelease((CVImageBufferRef)((QTKitBufferInfo&)BI).pVideoFrame);
     else
         [((QTSampleBuffer*)((QTKitBufferInfo&)BI).pAudioSamples) decrementSampleUseCount];
->>>>>>> Stashed changes
 	
 	return true;
 }

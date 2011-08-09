@@ -99,6 +99,20 @@ public:
 	void GetCurrentFormat(int width, int height, string& colorspace) { width = def.width; height = def.height; colorspace=def.format; };
 };
 
+class TVidCap : public TempVidCapBase {
+public:
+    TVidCap(QTKitCap* pC) { pCap = pC; pRTBuffer = pCap->GetBufferPointer(); bIsReleased = false; };
+    ~TVidCap() { };
+    void start_capturing(void) { pCap->start_capturing(); };
+    void stop_capturing(void) { pCap->stop_capturing(); };
+    void release(void) { bIsReleased = true; };
+    
+    bool bIsReleased;
+
+protected:
+    QTKitCap *pCap;
+};
+
 
 #endif
 
