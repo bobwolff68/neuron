@@ -1,11 +1,25 @@
 
 #include "RTBuffer.h"
+#include <unistd.h>
 
 RTBuffer::RTBuffer(void) 
 { 
+    int pid;
+    pid = getpid();
+    stringstream semname;
+    semname << "neuron_sem_" << pid;
+    
+    cout << "Semaphore name is: " << semname.str() << endl;
+    
 	pthread_mutex_init(&mutex, NULL);
-	sem_init(&sem_numbuffers, 0, 0); 
-	bReleased = false;
+    p_sem_numbuffers = sem_open(semname.str().c_str(), O_CREAT, S_IRWXU, 0);
+	//ok = sem_init(&sem_numbuffers, 0, 0); 
+    //val = errno;
+    string str;
+    errnostr(str);
+    assert(p_sem_numbuffers!=SEM_FAILED);
+	
+    bReleased = false;
     
     mFrameCount=0;
     mRefusedCount=0;
@@ -17,6 +31,7 @@ RTBuffer::~RTBuffer(void)
 { 
 	if (bufferQ.size() && !bReleased)
 	{
+        // TODO - May want to iteratively flush just like 'clear()' is going to have to do.
 		cerr << "~RTBuffer() is waiting on " << bufferQ.size() << " samples to be cleared before shutdown." << flush;
 		while (bufferQ.size() && !bReleased)
 		{
@@ -26,7 +41,7 @@ RTBuffer::~RTBuffer(void)
 	}
 	
 	pthread_mutex_destroy(&mutex);
-	sem_destroy(&sem_numbuffers);
+	sem_close(p_sem_numbuffers);
 };
 
 //!
@@ -44,11 +59,11 @@ RTBuffer::~RTBuffer(void)
 //! 
 void RTBuffer::Shutdown(void)
 {
-    QTKitBufferInfo bi;
+    QTKitBufferInfo* pbi = new QTKitBufferInfo;
     
-    bi.bFinalSample = true;
+    pbi->bFinalSample = true;
     
-    FullBufferEnQ(bi);	
+    FullBufferEnQ(pbi);	
     
     pauseRunning();
     
@@ -56,12 +71,9 @@ void RTBuffer::Shutdown(void)
     mRefusedCount=0;
 }
 
-bool RTBuffer::FullBufferEnQ(RTBufferInfoBase& BI)
+bool RTBuffer::FullBufferEnQ(RTBufferInfoBase* pBI)
 {
     int rc=0;
-    
-    //TODO WARNING: inbound BI must be copied to a new allocated BI
-    // prior to enqueuing as these were stack objects inbound.
     
     if (!bIsRunning)
     {
@@ -74,6 +86,10 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase& BI)
     {
         //      NSLog(@"RTBuffer full: Enqueue refused.");
         mRefusedCount++;
+        
+        // Special case -- when enQ fails, who deletes the pointer? We do internally.
+        this->EmptyBufferRelease(pBI);
+        
         return false;
     }
     
@@ -85,13 +101,17 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase& BI)
         cerr << "errno=" << errno << " at this moment." << endl;
         cerr << "Equates to: " << errnostr(st) << endl;
         assert(false && "Lock Failed");
+
+        // Special case -- when enQ fails, who deletes the pointer? We do internally.
+        this->EmptyBufferRelease(pBI);
+        
         return false;
     }
     
     // Enqueue the item sent in.
-    bufferQ.push_back(BI);
+    bufferQ.push_back(pBI);
     
-    sem_post(&sem_numbuffers);	// Release the semaphore by incrementing by one.
+    sem_post(p_sem_numbuffers);	// Release the semaphore by incrementing by one.
     
     mFrameCount++;
     
@@ -100,6 +120,9 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase& BI)
     {
         cerr << "UnLock failed with returncode = " << rc << endl;
         assert(false && "Unlock Failed");
+
+        // We do **NOT** delete the inbound pointer on this failure as it's already bee pushed onto the queue.
+        
         return false;
     }
     
@@ -119,22 +142,19 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase& BI)
 //! 
 //! 
 
-bool RTBuffer::FullBufferDQ(RTBufferInfoBase& BI)
+bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI)
 {
     int rc=0;
-    int val;
     bool ret = true;
-    assert(sem_getvalue(&sem_numbuffers, &val)==0 && val==bufferQ.size());
     
-    if (bReleased)
-    {
-        BI.bFinalSample=true;
-        return true;
-    }
-    
-    sem_wait(&sem_numbuffers);	// Waits in blocked mode until there is a frame ready.
+    sem_wait(p_sem_numbuffers);	// Waits in blocked mode until there is a frame ready.
     // Note that this occurs BEFORE the mutex is locked. Else the post and wait will
     // deadlock each other.
+    
+    // There is an odd case where the RTBuffer may be getting flushed after the sem_wait has released.
+    // So, all flush operations must have their own mutex.
+//TODO    Need to do a mutex lock-try. If we fail to get it, this oddity has happened. So dont dequeue. Just fail.
+//TODO        If we do get the lock, then release it inside the queue mutex.
     
     rc = pthread_mutex_lock(&mutex);
     if (rc)
@@ -151,8 +171,9 @@ bool RTBuffer::FullBufferDQ(RTBufferInfoBase& BI)
     }
     else
     {  
-        BI = bufferQ.front();  
-        // TODO WARNING: on dequeue, must deallocate BI that pops from the fifo
+        *ppBI = bufferQ.front();
+        // Deletion of this pointer is handled by the RELEASE -- not by dequeuing it.
+        // It is always the responsibility of the DQ person to call release on every buffer it receives.
         
         // DeQueue the item at the front.
         bufferQ.pop_front();

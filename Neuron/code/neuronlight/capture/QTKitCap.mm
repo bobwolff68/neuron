@@ -17,13 +17,25 @@
 
 using namespace std;
 
-bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase& BI)
+bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI)
 {
+    QTKitBufferInfo* pQTB;
+//    pQTB = (QTKitBufferInfo*)pBI;
+
+    pQTB = static_cast<QTKitBufferInfo*>(pBI);
+    
     // This BI has already been taken off the internal Queue with DQ call
-    if (((QTKitBufferInfo&)BI).bIsVideo)
-        CVBufferRelease((CVImageBufferRef)((QTKitBufferInfo&)BI).pVideoFrame);
+    if (pQTB->bIsVideo)
+        CVBufferRelease((CVImageBufferRef)pQTB->pVideoFrame);
     else
-        [((QTSampleBuffer*)((QTKitBufferInfo&)BI).pAudioSamples) decrementSampleUseCount];
+    {
+        QTSampleBuffer* pSamp;
+        int count;
+        pSamp = static_cast<QTSampleBuffer*>(pQTB->pAudioSamples);
+        count = [pSamp sampleUseCount];
+        
+        [pSamp decrementSampleUseCount];
+    }
 	
 	return true;
 }
@@ -166,14 +178,30 @@ int QTKitCap::workerBee(void)
     int sleep_ms=250;
     int i=0;
     
+    RTBufferInfoBase* pbibase;
+    QTKitBufferInfo* pbi;
+    bool bOK;
+    
     while(1) {
 
 		// Time to kill the thread?
 		if (IsStopRequested())
 			break;
 
-		if (i % modulo == 0)
-            NSLog(@"STATUS: Running: %ds, Qdepth:%d, Frames:%d, Refused:%d",i*sleep_ms/1000,pRTBuffer->Qsize(),pRTBuffer->mFrameCount,pRTBuffer->mRefusedCount);
+#if 1
+        bOK = pRTBuffer->FullBufferDQ(&pbibase);
+        if (!bOK)
+            cout << "Error in dequeue?" << endl;
+        
+        assert(pbibase);
+        pbi = static_cast<QTKitBufferInfo*>(pbibase);
+        assert(pbi);
+        
+        pRTBuffer->EmptyBufferRelease(pbi);
+#endif
+        
+//		if (i % modulo == 0)
+//            NSLog(@"STATUS: Running: %ds, Qdepth:%d, Frames:%d, Refused:%d",i*sleep_ms/1000,pRTBuffer->Qsize(),pRTBuffer->mFrameCount,pRTBuffer->mRefusedCount);
         
         usleep(sleep_ms*1000);
         i++;
