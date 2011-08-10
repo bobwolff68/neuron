@@ -145,11 +145,11 @@
     mCaptureDecompressedAudioOutput = [[QTCaptureDecompressedAudioOutput alloc] init];
     [mCaptureDecompressedAudioOutput setDelegate:self];
     
-    // Finally add the output to the session.
-    success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
-    if (!success) {
-        // Handle error
-    }
+    // Finally add the AUDIO output to the session.
+//    success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
+//    if (!success) {
+//        // Handle error
+//    }
 
     // Associate the capture view in the UI with the session
     
@@ -214,7 +214,7 @@
     int frameWidth;
     int frameHeight;
     OSType pixType;
-    QTKitBufferInfo BI;
+    QTKitBufferInfo* pBI;
     void* pCb;
     void* pCr;
     void* pBuff;
@@ -232,10 +232,13 @@
 //    };
 //    typedef struct PlanarPixmapInfoYUV420   PlanarPixmapInfoYUV420;
 
+    pBI = new QTKitBufferInfo;
+    assert(pBI);
+    
     // get size of the frame
     CVPixelBufferLockBaseAddress(videoFrame, 0); //LOCK_FLAGS);
 
-    pBuff = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 0);
+    pBuff = CVPixelBufferGetBaseAddress(videoFrame);
     pCb = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 1);
     pCr = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 2);
 
@@ -263,24 +266,24 @@
     // Now down to the business at hand. Enqueue the new frame.
     
     CVBufferRetain(videoFrame);
-    BI.pVideoFrame =(void*) videoFrame;
+    pBI->pVideoFrame =(void*) videoFrame;
     
-    BI.bIsVideo = true;
+    pBI->bIsVideo = true;
     
-    BI.pAudioSamples = NULL;
+    pBI->pAudioSamples = NULL;
 
-    BI.pBuffer = pBuff;
-    BI.pY = BI.pBuffer;
-    BI.pCb = pCb;
-    BI.pCr = pCr;
+    pBI->pBuffer = pBuff;
+    pBI->pY = pBI->pBuffer;
+    pBI->pCb = pCb;
+    pBI->pCr = pCr;
     
-    BI.timeStamp_uS = QTT_US([sampleBuffer presentationTime]);
+    pBI->timeStamp_uS = QTT_US([sampleBuffer presentationTime]);
     
     assert([sampleBuffer numberOfSamples]==1);
 
     // Counting on FullBufferEnQ() to lock down the videoFrame for us.
     // Only did this for symmetry of responsibility between enque and dq
-    if (!pCap->GetBufferPointer()->FullBufferEnQ(BI))
+    if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))
     {
 //        NSLog(@"Enqueue failed above. Marking as dropped.");
         
@@ -298,7 +301,7 @@
 
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputAudioSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
 {
-    QTKitBufferInfo BI;
+    QTKitBufferInfo* pBI;
     QTTime qtt;
     
     if (!bSendAudioSamples)
@@ -307,24 +310,30 @@
         return;
     }
     
-    BI.bIsVideo = false;
+    pBI = new QTKitBufferInfo;
+    assert(pBI);
+    
+    pBI->bIsVideo = false;
     
     qtt = [sampleBuffer presentationTime];
     
+    NSLog(@"Audio sample count pre-increment: %d", [sampleBuffer sampleUseCount]);
     // Add a hold on this sample
     [sampleBuffer incrementSampleUseCount];
+    NSLog(@"Audio sample count post-increment: %d", [sampleBuffer sampleUseCount]);
     
-    BI.pVideoFrame=NULL;
-    BI.pAudioSamples = sampleBuffer;
+    pBI->pVideoFrame=NULL;
+    pBI->pAudioSamples = sampleBuffer;
 
-    BI.pY = NULL;
-    BI.pCb = NULL;
-    BI.pCr = NULL;
+    pBI->pY = NULL;
+    pBI->pCb = NULL;
+    pBI->pCr = NULL;
     
-    BI.timeStamp_uS = QTT_US(qtt);
+    pBI->timeStamp_uS = QTT_US(qtt);
     
+    NSLog(@"Audio sampleBuffer ptr=0x%p", sampleBuffer);
     NSLog(@"Audio: %d samples, %d bytes-total, timestamp: %lld, scale: %ld Ticks/sec, reported_uS:%lld", 
-          [sampleBuffer numberOfSamples], [sampleBuffer lengthForAllSamples], qtt.timeValue, qtt.timeScale, BI.timeStamp_uS);
+          [sampleBuffer numberOfSamples], [sampleBuffer lengthForAllSamples], qtt.timeValue, qtt.timeScale, pBI->timeStamp_uS);
     
     NSDictionary *pd;
     pd = [sampleBuffer sampleBufferAttributes];
@@ -339,11 +348,11 @@
     AudioBufferList* pAbufflist;
     pAbufflist = [sampleBuffer audioBufferListWithOptions:0];
     
-    BI.pBuffer = (void*)pAbufflist;
+    pBI->pBuffer = (void*)pAbufflist;
 
     // Counting on FullBufferEnQ() to lock down the videoFrame for us.
     // Only did this for symmetry of responsibility between enque and dq
-    if (!pCap->GetBufferPointer()->FullBufferEnQ(BI))
+    if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))
     {
         //        NSLog(@"Enqueue failed above. Marking as dropped.");
         

@@ -81,16 +81,17 @@ class RTBuffer {
 public:
 	RTBuffer(void);
 	virtual ~RTBuffer(void);
-	bool FullBufferEnQ(RTBufferInfoBase& BI);
-	bool FullBufferDQ(RTBufferInfoBase& BI);
+	bool FullBufferEnQ(RTBufferInfoBase* pBI);
+	bool FullBufferDQ(RTBufferInfoBase** ppBI);
 	void Shutdown(void);
     
-	// \brief Used by stop_capture() (or the Dequeue side--not-preferred) for releasing its interest in the buffer.
-	void ReleaseOutputSide(void) { bReleased = true; };
 	//! \brief To be implemented by the capture side in case buffers need to be released back to the driver.
-	virtual bool EmptyBufferRelease(RTBufferInfoBase& BI) = 0;
+	virtual bool EmptyBufferRelease(RTBufferInfoBase* pBI) = 0;
     
 	int Qsize(void) { return bufferQ.size(); };
+    //TODO - Need to think about doing a pauseRunning() followed by a wait of some kind
+    //       to wait for the queue to be drained. If not drained, how do we delete the
+    //       samples? Call EmptyBufferRelease() manually on each sample remaining? Possibly.
 	void clear(void) { bufferQ.clear(); mFrameCount=0; mRefusedCount=0; };
     
     void startRunning(void) { bIsRunning=true; };
@@ -99,10 +100,13 @@ public:
     int mFrameCount;
     int mRefusedCount;
     
+	// \brief Used by stop_capture() (or the Dequeue side--not-preferred) for releasing its interest in the buffer.
+	void ReleaseOutputSide(void) { bReleased = true; };
+
 protected:
-	deque<RTBufferInfoBase> bufferQ;
+	deque<RTBufferInfoBase*> bufferQ;
 	pthread_mutex_t         mutex;
-	sem_t sem_numbuffers;
+	sem_t* p_sem_numbuffers;
 	bool bReleased;
     bool bIsRunning;
 };
@@ -111,7 +115,7 @@ class QTKitCapBuffer : public RTBuffer {
 public:
 	QTKitCapBuffer() { };
 	~QTKitCapBuffer(void) { };
-	bool EmptyBufferRelease(RTBufferInfoBase& BI);
+	bool EmptyBufferRelease(RTBufferInfoBase* pBI);
 };
 
 class TempVidCapBase {
