@@ -157,6 +157,7 @@ void QTKitCap::start_capturing(void)
 
 	if (IsRunning())
 	{
+        assert(false);
 		cerr << "start_capturing: Thread is already running...hmm...skipping start..." << endl;
 		return;
 	}

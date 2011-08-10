@@ -26,11 +26,11 @@ using namespace std;
 #ifdef REPORT_ERROR
 #undef REPORT_ERROR
 #endif
-#if defined(__APPLE__) & defined(__MACH__)
-#define REPORT_ERROR(a,b) (NSLog(@a,b))
-#else
+//#if defined(__APPLE__) & defined(__MACH__)
+//#define REPORT_ERROR(a,b) (NSLog(@a,b))
+//#else
 #define REPORT_ERROR(a,b) printf(a,b)
-#endif
+//#endif
 
 //!
 //! \class ThreadSingle
@@ -95,6 +95,7 @@ public:
 	    REPORT_ERROR("thread creation failed. Err:%d", ret);
 	  }
 	}
+    
 
         //!
         //! \brief Parent calls stopThread() when they are ready to close/stop the thread.

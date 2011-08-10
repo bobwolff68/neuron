@@ -6,8 +6,19 @@
 	objectVersion = 46;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7B5CFB2F13F1D3A0007479E1 /* cpp_main.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B5CFB2E13F1D3A0007479E1 /* cpp_main.h */; };
+		7B5CFB3113F1D406007479E1 /* cpp_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B5CFB3013F1D406007479E1 /* cpp_main.cpp */; };
+		7B8B589D13F0AB5D006CEE3B /* nlrtcamstream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B8B589B13F0AB5D006CEE3B /* nlrtcamstream.cpp */; };
+		7B8B589E13F0AB5D006CEE3B /* nlrtcamstream.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B8B589C13F0AB5D006CEE3B /* nlrtcamstream.h */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		7B5CFB2E13F1D3A0007479E1 /* cpp_main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cpp_main.h; sourceTree = "<group>"; };
+		7B5CFB3013F1D406007479E1 /* cpp_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpp_main.cpp; sourceTree = "<group>"; };
 		7B8B589413F0AB4C006CEE3B /* librtcamstream.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtcamstream.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B8B589B13F0AB5D006CEE3B /* nlrtcamstream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = nlrtcamstream.cpp; path = ../../nlrtcamstream.cpp; sourceTree = "<group>"; };
+		7B8B589C13F0AB5D006CEE3B /* nlrtcamstream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nlrtcamstream.h; path = ../../nlrtcamstream.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -24,6 +35,10 @@
 		7B8B588913F0AB4C006CEE3B = {
 			isa = PBXGroup;
 			children = (
+				7B5CFB3013F1D406007479E1 /* cpp_main.cpp */,
+				7B5CFB2E13F1D3A0007479E1 /* cpp_main.h */,
+				7B8B589B13F0AB5D006CEE3B /* nlrtcamstream.cpp */,
+				7B8B589C13F0AB5D006CEE3B /* nlrtcamstream.h */,
 				7B8B589513F0AB4C006CEE3B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +58,8 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7B8B589E13F0AB5D006CEE3B /* nlrtcamstream.h in Headers */,
+				7B5CFB2F13F1D3A0007479E1 /* cpp_main.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +113,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7B8B589D13F0AB5D006CEE3B /* nlrtcamstream.cpp in Sources */,
+				7B5CFB3113F1D406007479E1 /* cpp_main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -150,16 +169,28 @@
 		7B8B589913F0AB4C006CEE3B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
+				"HEADER_SEARCH_PATHS[arch=*]" = (
+					../../../../../capture,
+					../../../../../codec,
+					../../../../../network,
+					../../../../../../neuroncommon/threading/NeuronBasics,
+					"../../../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
+					"../../../../../../../../Common/live555/**",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "../../../../../network ../../../../../codec ../../../../../capture ../../../../../../neuroncommon/**";
 			};
 			name = Debug;
 		};
 		7B8B589A13F0AB4C006CEE3B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "../../../../../network ../../../../../codec ../../../../../capture ../../../../../../neuroncommon/threading/NeuronBasics";
 			};
 			name = Release;
 		};
@@ -182,6 +213,7 @@
 				7B8B589A13F0AB4C006CEE3B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

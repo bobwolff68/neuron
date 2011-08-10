@@ -167,6 +167,7 @@ bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI)
     if (bufferQ.size()==0)
     {
         // Must have been cleared out from under us. Return false.
+        cout << "Hello world. It is raining." << endl;
         ret = false;
     }
     else
@@ -177,7 +178,7 @@ bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI)
         
         // DeQueue the item at the front.
         bufferQ.pop_front();
-        ret = true;
+        ret = true;    
     }
     
     rc = pthread_mutex_unlock(&mutex);

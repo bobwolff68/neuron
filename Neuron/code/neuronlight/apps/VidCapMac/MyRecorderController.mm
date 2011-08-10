@@ -55,8 +55,7 @@
 @implementation MyRecorderController
 
 - (void)awakeFromNib
-{
-    
+{    
     curDrops = 0;
     bSendAudioSamples = true;
     
@@ -145,11 +144,11 @@
     mCaptureDecompressedAudioOutput = [[QTCaptureDecompressedAudioOutput alloc] init];
     [mCaptureDecompressedAudioOutput setDelegate:self];
     
-    // Finally add the AUDIO output to the session.
-//    success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
-//    if (!success) {
-//        // Handle error
-//    }
+    // Finally add the output to the session.
+    /*success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
+    if (!success) {
+        // Handle error
+    }*/
 
     // Associate the capture view in the UI with the session
     
@@ -162,7 +161,8 @@
     pTVC = new TVidCap(pCap);
     //TODO Here's where we inform Manjesh's code that we have a VidCap for him.
     // setQTKitCap(pCap);
-        
+    
+    p_pipeline_runner = new RunPipeline(pTVC,640,360,"UYVY");
 }
     
 // Handle window closing notifications for your device input
@@ -189,6 +189,9 @@
 {
     assert(pTVC->bIsReleased);
     
+    delete p_pipeline_runner;
+    p_pipeline_runner = NULL;
+    
     delete pTVC;
     pTVC = NULL;
     
@@ -213,6 +216,7 @@
     static int storedHeight=0;
     int frameWidth;
     int frameHeight;
+    int framebuffersize;
     OSType pixType;
     QTKitBufferInfo* pBI;
     void* pCb;
@@ -247,7 +251,9 @@
     frameWidth = CVPixelBufferGetWidth(videoFrame);
     frameHeight = CVPixelBufferGetHeight(videoFrame);
     pixType = CVPixelBufferGetPixelFormatType(videoFrame);
-
+    framebuffersize = [sampleBuffer lengthForAllSamples];
+    assert(framebuffersize > frameWidth * frameHeight * 2);
+    
     CVPixelBufferUnlockBaseAddress(videoFrame, 0); // LOCK_FLAGS);
 
     assert(pixType==kCVPixelFormatType_422YpCbCr8); // Make sure '2vuy' is active. Eventually we'll allow for conversions etc, but for now we need AGREEMENT.
@@ -260,7 +266,7 @@
         storedWidth = frameWidth;
         storedHeight = frameHeight;
         
-        NSLog(@"Capture CHANGE: WxH=%dx%d pixType=%c%c%c%c",frameWidth, frameHeight, (pixType>>24)&0xff, (pixType>>16)&0xff, (pixType>>8)&0xff, pixType&0xff);
+        NSLog(@"Capture CHANGE: WxH=%dx%d pixType=%c%c%c%c",frameWidth, frameHeight, (char)(pixType>>24)&0xff, (char)(pixType>>16)&0xff, (char)(pixType>>8)&0xff, (char)pixType&0xff);
     }
     
     // Now down to the business at hand. Enqueue the new frame.
@@ -350,6 +356,8 @@
     
     pBI->pBuffer = (void*)pAbufflist;
 
+    NSLog(@"Enque about to occur: pBuffer=0x%p", pBI->pBuffer);
+    
     // Counting on FullBufferEnQ() to lock down the videoFrame for us.
     // Only did this for symmetry of responsibility between enque and dq
     if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))

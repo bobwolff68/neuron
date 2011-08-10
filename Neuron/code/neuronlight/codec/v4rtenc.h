@@ -8,10 +8,18 @@
 
 #include <map>
 #include <string>
-#include "V4L2Cap.h"
-#include "v4e_api.h"
-#include "vp.h"
-#include "ThreadSingle.h"
+
+#if (defined (__APPLE__) & defined (__MACH__))
+    #include <RTBuffer.h>
+#else
+    #include <V4L2Cap.h>
+#endif
+
+#include <v4e_api.h>
+#include <vp.h>
+#include <ThreadSingle.h>
+
+#define BUILD_DEBUG
 
 #define LOG_ERR(msg)    cerr << __FILE__ << "|"\
                              << __LINE__ << "|"\
@@ -54,8 +62,12 @@ class v4_rtenc_t: public ThreadSingle
         //! \var p_rtcap_buf
         //! \brief Pointer to frame capture buffer
         //!
+#if (defined (__APPLE__) & defined (__MACH__))
+        QTKitCapBuffer* p_rtcap_buf;
+#else
         V4L2CapBuffer* p_rtcap_buf;
-
+#endif
+    
         //!
         //! \var p_handle
         //! \brief Pointer to vsofts H.264 encoder handle
@@ -93,7 +105,7 @@ class v4_rtenc_t: public ThreadSingle
         //! \param[in] p_frame_buf - Pointer to the capture buffer
         //! \return void
         //!
-        void SetRawFrameBuffers(void* p_frame_buf);
+        void SetRawFrameBuffers(unsigned char* p_frame_buf);
 
     public:
 
@@ -102,8 +114,12 @@ class v4_rtenc_t: public ThreadSingle
         //! \param[in] cfg_file - Path-appended name of the encoder config file
         //! \param[in] _p_rtcap_buf - Pointer to the real-time capture buffer
         //!
+#if (defined (__APPLE__) & defined (__MACH__))
+        v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf);
+#else
         v4_rtenc_t(const char* cfg_file,V4L2CapBuffer* _p_rtcap_buf);
-
+#endif
+    
         //!
         //! \brief Destructor
         //!
