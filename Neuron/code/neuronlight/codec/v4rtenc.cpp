@@ -27,11 +27,16 @@ void v4_rtenc_t::InitRawFrameSettings(void)
         frame.vp_frame.colorspace = VP_YUY2;
         frame.vp_frame.stride[0] = settings.input.width<<1;
     }
+    else if(settings.input.colorspace==COLORSPACE_E_UYVY)
+    {
+        frame.vp_frame.colorspace = VP_UYVY;
+        frame.vp_frame.stride[0] = settings.input.width<<1;
+    }
 
     return;
 }
 
-void v4_rtenc_t::SetRawFrameBuffers(void* p_frame_buf)
+void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf)
 {
 
     if(settings.input.colorspace==COLORSPACE_E_YV12)
@@ -42,17 +47,25 @@ void v4_rtenc_t::SetRawFrameBuffers(void* p_frame_buf)
         frame.vp_frame.data[1] = p_frame_buf + v_offset;
         frame.vp_frame.data[2] = p_frame_buf + u_offset;
     }
-    else if(settings.input.colorspace==COLORSPACE_E_YUY2)
+    else if(settings.input.colorspace==COLORSPACE_E_YUY2 ||
+            settings.input.colorspace==COLORSPACE_E_UYVY)
         frame.vp_frame.data[0] = p_frame_buf;
     
     return;
 }
 
+#if (defined (__APPLE__) & defined (__MACH__))
+v4_rtenc_t::v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf):
+#else
 v4_rtenc_t::v4_rtenc_t(const char* cfg_file,V4L2CapBuffer* _p_rtcap_buf):
+#endif
 p_rtcap_buf(_p_rtcap_buf)
 {
+    int err;
     p_handle = NULL;
-    handle_mutex = PTHREAD_MUTEX_INITIALIZER;
+    //handle_mutex = PTHREAD_MUTEX_INITIALIZER;
+    err = pthread_mutex_init(&handle_mutex, NULL);
+    assert(err==0);
     settings.size = sizeof(v4e_settings_t);
     LOG_OUT("checkpoint: get default encoder settings");
 
@@ -75,6 +88,7 @@ p_rtcap_buf(_p_rtcap_buf)
 
 v4_rtenc_t::~v4_rtenc_t()
 {
+    pthread_mutex_destroy(&handle_mutex);
 }
 
 void* v4_rtenc_t::Handle(void) const
@@ -157,6 +171,8 @@ void v4_rtenc_t::SetEncSettings(map<string,string>& nvpairs)
                 settings.input.colorspace = COLORSPACE_E_YUY2;
             else if(it->second=="YV12")
                 settings.input.colorspace = COLORSPACE_E_YV12;
+            else if(it->second=="UYVY")
+                settings.input.colorspace = COLORSPACE_E_UYVY;
         }
     }
 
@@ -167,23 +183,59 @@ int v4_rtenc_t::workerBee(void)
 {
     while(1)
     {
+#if (defined (__APPLE__) & defined (__MACH__))
+        QTKitBufferInfo* p_bi;
+        RTBufferInfoBase* p_bib;
+#else
         V4L2BufferInfo buf_info;
-
-        if(p_rtcap_buf->FullBufferDQ(buf_info)==false)
+#endif
+        
+        if(p_rtcap_buf->FullBufferDQ(&p_bib)==false)
         {
+            cout << "OUCH - Bad Deque" << endl;
             LOG_ERR("capture buffer dequeue error");
             return -1;
         }
 
-        if(buf_info.bFinalSample)
+        if(p_bib->bFinalSample)
         {
+            if(p_rtcap_buf->EmptyBufferRelease(p_bib)==false)
+            {
+                LOG_ERR("empty capture buffer release error");
+                return -1;
+            }
             LOG_OUT("checkpoint: final sample");
             break;
         }
 
-        LOG_OUT("checkpoint: set raw frame buffer");
-        SetRawFrameBuffers(buf_info.pBuffer);
+        //LOG_OUT("checkpoint: set raw frame buffer");
+        
+#if (defined (__APPLE__) & defined (__MACH__))
+        p_bi = static_cast<QTKitBufferInfo*>(p_bib);
+        if(p_bi->bIsVideo)
+        {
+            int lastvalue;
+            lastvalue = ((unsigned char*)p_bi->pBuffer)[640*360*2 - 1];
+            SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer));
+            
+            cout << "p_bi->pBuffer address: " << hex << p_bi->pBuffer << dec << endl;
+            assert(p_bi->pBuffer);
+            
+            frame.timestamp = p_bi->timeStamp_uS;
+            //LOG_OUT("checkpoint: send raw frame to encoder");
+            LockHandle();
+            if(v4e_set_vp_frame(p_handle,&frame,1)!=VSSH_OK)
+            {
+                LOG_ERR("v4e_set_vp_frame() error");
+                return -1;
+            }
+            UnlockHandle();
+        }
+#else
+        SetRawFrameBuffers((unsigned char*)(buf_info.pBuffer));
         frame.timestamp = buf_info.buf.timestamp.tv_sec*1000 + buf_info.buf.timestamp.tv_usec/1000;
+
+        
         LOG_OUT("checkpoint: send raw frame to encoder");
 
         LockHandle();
@@ -193,12 +245,15 @@ int v4_rtenc_t::workerBee(void)
             return -1;
         }
         UnlockHandle();
-
-        if(p_rtcap_buf->EmptyBufferRelease(buf_info)==false)
+#endif
+        
+        cout << "Before releasing" << endl;
+        if(p_rtcap_buf->EmptyBufferRelease(p_bib)==false)
         {
             LOG_ERR("empty capture buffer release error");
             return -1;
         }
+        cout << "After releasing" << endl;
     }
 
     LOG_OUT("checkpoint: flush encoder");

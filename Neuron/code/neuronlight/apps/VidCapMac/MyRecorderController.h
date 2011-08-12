@@ -51,6 +51,8 @@ Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.
 #import <Foundation/Foundation.h>
 
 #import "QTKitCap.h"
+#import "cpp_main.h"
+
 
 @interface MyRecorderController : NSObject {
     
@@ -65,6 +67,7 @@ Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.
     QTCaptureDeviceInput        *mCaptureVideoDeviceInput;
     QTCaptureDeviceInput        *mCaptureAudioDeviceInput;
     
+    RunPipeline* p_pipeline_runner;
     QTKitCap* pCap;
     TVidCap* pTVC;
     bool bSendAudioSamples;

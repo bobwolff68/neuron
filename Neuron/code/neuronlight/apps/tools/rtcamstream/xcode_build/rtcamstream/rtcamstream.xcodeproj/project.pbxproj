@@ -1,0 +1,221 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7B5CFB2F13F1D3A0007479E1 /* cpp_main.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B5CFB2E13F1D3A0007479E1 /* cpp_main.h */; };
+		7B5CFB3113F1D406007479E1 /* cpp_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B5CFB3013F1D406007479E1 /* cpp_main.cpp */; };
+		7B8B589D13F0AB5D006CEE3B /* nlrtcamstream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B8B589B13F0AB5D006CEE3B /* nlrtcamstream.cpp */; };
+		7B8B589E13F0AB5D006CEE3B /* nlrtcamstream.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B8B589C13F0AB5D006CEE3B /* nlrtcamstream.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		7B5CFB2E13F1D3A0007479E1 /* cpp_main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cpp_main.h; sourceTree = "<group>"; };
+		7B5CFB3013F1D406007479E1 /* cpp_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpp_main.cpp; sourceTree = "<group>"; };
+		7B8B589413F0AB4C006CEE3B /* librtcamstream.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = librtcamstream.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B8B589B13F0AB5D006CEE3B /* nlrtcamstream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = nlrtcamstream.cpp; path = ../../nlrtcamstream.cpp; sourceTree = "<group>"; };
+		7B8B589C13F0AB5D006CEE3B /* nlrtcamstream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nlrtcamstream.h; path = ../../nlrtcamstream.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7B8B589113F0AB4C006CEE3B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7B8B588913F0AB4C006CEE3B = {
+			isa = PBXGroup;
+			children = (
+				7B5CFB3013F1D406007479E1 /* cpp_main.cpp */,
+				7B5CFB2E13F1D3A0007479E1 /* cpp_main.h */,
+				7B8B589B13F0AB5D006CEE3B /* nlrtcamstream.cpp */,
+				7B8B589C13F0AB5D006CEE3B /* nlrtcamstream.h */,
+				7B8B589513F0AB4C006CEE3B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7B8B589513F0AB4C006CEE3B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7B8B589413F0AB4C006CEE3B /* librtcamstream.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		7B8B589213F0AB4C006CEE3B /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B8B589E13F0AB5D006CEE3B /* nlrtcamstream.h in Headers */,
+				7B5CFB2F13F1D3A0007479E1 /* cpp_main.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		7B8B589313F0AB4C006CEE3B /* rtcamstream */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7B8B589813F0AB4C006CEE3B /* Build configuration list for PBXNativeTarget "rtcamstream" */;
+			buildPhases = (
+				7B8B589013F0AB4C006CEE3B /* Sources */,
+				7B8B589113F0AB4C006CEE3B /* Frameworks */,
+				7B8B589213F0AB4C006CEE3B /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = rtcamstream;
+			productName = rtcamstream;
+			productReference = 7B8B589413F0AB4C006CEE3B /* librtcamstream.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7B8B588B13F0AB4C006CEE3B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				ORGANIZATIONNAME = XVDTH;
+			};
+			buildConfigurationList = 7B8B588E13F0AB4C006CEE3B /* Build configuration list for PBXProject "rtcamstream" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 7B8B588913F0AB4C006CEE3B;
+			productRefGroup = 7B8B589513F0AB4C006CEE3B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7B8B589313F0AB4C006CEE3B /* rtcamstream */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7B8B589013F0AB4C006CEE3B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B8B589D13F0AB5D006CEE3B /* nlrtcamstream.cpp in Sources */,
+				7B5CFB3113F1D406007479E1 /* cpp_main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		7B8B589613F0AB4C006CEE3B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		7B8B589713F0AB4C006CEE3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		7B8B589913F0AB4C006CEE3B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				EXECUTABLE_PREFIX = lib;
+				"HEADER_SEARCH_PATHS[arch=*]" = (
+					../../../../../capture,
+					../../../../../codec,
+					../../../../../network,
+					../../../../../../neuroncommon/threading/NeuronBasics,
+					"../../../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
+					"../../../../../../../../Common/live555/**",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "../../../../../network ../../../../../codec ../../../../../capture ../../../../../../neuroncommon/**";
+			};
+			name = Debug;
+		};
+		7B8B589A13F0AB4C006CEE3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "../../../../../network ../../../../../codec ../../../../../capture ../../../../../../neuroncommon/threading/NeuronBasics";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7B8B588E13F0AB4C006CEE3B /* Build configuration list for PBXProject "rtcamstream" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7B8B589613F0AB4C006CEE3B /* Debug */,
+				7B8B589713F0AB4C006CEE3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7B8B589813F0AB4C006CEE3B /* Build configuration list for PBXNativeTarget "rtcamstream" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7B8B589913F0AB4C006CEE3B /* Debug */,
+				7B8B589A13F0AB4C006CEE3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 7B8B588B13F0AB4C006CEE3B /* Project object */;
+}

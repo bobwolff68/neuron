@@ -1,7 +1,6 @@
 #ifndef NLRTCAMSTREAM_H_
 #define NLRTCAMSTREAM_H_
 
-#include "V4L2Cap.h"
 #include "v4rtenc.h"
 #include "v4fifoout.h"
 #include "nlrtspserver.h"
@@ -23,18 +22,36 @@ enum RTCS_ReturnCode_t
 class nl_rtcamstream_t
 {
 private:
+#if (defined(__APPLE__) & defined(__MACH__))
+    TempVidCapBase* p_cap;
+#else
 	V4L2Cap* p_cap;
+#endif
 	v4_rtenc_t* p_rtenc;
     v4_fifoout_t* p_fifoout;
-	nl_rtspserver_t* p_serv;
+	//nl_rtspserver_t* p_serv;
 	virtual void IdleLoop(void);
-
+    
 public:
+#if (defined(__APPLE__) & defined(__MACH__))
+    static void main(TempVidCapBase* p_cap_objc,
+                     const int width,
+                     const int height,
+                     const char* colorspace);
+    
+	nl_rtcamstream_t(TempVidCapBase* _p_cap,
+                     const char* rtenc_cfg_file,
+                     const short rtsp_port,
+                     const int width,
+                     const int height,
+                     const char* colorspace);
+#else
 	nl_rtcamstream_t(const char* rtenc_cfg_file,
                      const short rtsp_port,
                      const char* width,
                      const char* height,
                      const char* colorspace);
+#endif
 	~nl_rtcamstream_t();
 	void RunCapture(void);
 };

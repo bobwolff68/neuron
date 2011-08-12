@@ -31,11 +31,16 @@ static void errno_exit(const char * s)
 
 class RTBufferInfoBase {
 public:
-	RTBufferInfoBase(void) { bFinalSample=false; pBuffer=NULL; };
+	RTBufferInfoBase(void) { bFinalSample=false; pBuffer=NULL; bIsVideo=true; timeStamp_uS=0; };
 	virtual ~RTBufferInfoBase(void) { };
 	void* pBuffer;      // Single pointer to a contiguous block of data regardless of planar or non-
                     // In the case of AudioSamples, this is the AudioSampleList structure equiv.
 	bool bFinalSample;
+    bool bIsVideo;
+    long long timeStamp_uS;
+    // Not to be used by the consumer side -- this is for the QTKitCap to be able to release properly the buffers.
+    void* pVideoFrame; // Used to be ... CVImageBufferRef pFrame;
+    void* pAudioSamples; // Used to be ... QTSampleBuffer pAudioSamples;
 };
 
 #if defined(__APPLE__) & defined(__MACH__)
@@ -59,17 +64,14 @@ public:
 	QTKitBufferInfo(void) { pY=NULL; pCb=NULL; pCr=NULL; bIsVideo=true; };
 	virtual ~QTKitBufferInfo(void) { };
     
-    bool bIsVideo;
-    long long timeStamp_uS;
+//    bool bIsVideo;
+//    long long timeStamp_uS;
     
     // TODO - consider making three distinct planar pointers in addition to a non-planar pointer
     void* pY;
     void* pCb;
     void* pCr;
 
-// Not to be used by the consumer side -- this is for the QTKitCap to be able to release properly the buffers.
-    void* pVideoFrame; // Used to be ... CVImageBufferRef pFrame;
-    void* pAudioSamples; // Used to be ... QTSampleBuffer pAudioSamples;
 
 };
 #endif

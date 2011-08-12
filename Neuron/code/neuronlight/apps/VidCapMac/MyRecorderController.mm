@@ -55,8 +55,7 @@
 @implementation MyRecorderController
 
 - (void)awakeFromNib
-{
-    
+{    
     curDrops = 0;
     bSendAudioSamples = true;
     
@@ -162,7 +161,8 @@
     pTVC = new TVidCap(pCap);
     //TODO Here's where we inform Manjesh's code that we have a VidCap for him.
     // setQTKitCap(pCap);
-        
+    
+    p_pipeline_runner = new RunPipeline(pTVC,640,360,"UYVY");
 }
     
 // Handle window closing notifications for your device input
@@ -188,6 +188,9 @@
 - (void)dealloc
 {
     assert(pTVC->bIsReleased);
+    
+    delete p_pipeline_runner;
+    p_pipeline_runner = NULL;
     
     delete pTVC;
     pTVC = NULL;
@@ -260,7 +263,7 @@
         storedWidth = frameWidth;
         storedHeight = frameHeight;
         
-        NSLog(@"Capture CHANGE: WxH=%dx%d pixType=%c%c%c%c",frameWidth, frameHeight, (pixType>>24)&0xff, (pixType>>16)&0xff, (pixType>>8)&0xff, pixType&0xff);
+        NSLog(@"Capture CHANGE: WxH=%dx%d pixType=%c%c%c%c",frameWidth, frameHeight, (char)(pixType>>24)&0xff, (char)(pixType>>16)&0xff, (char)(pixType>>8)&0xff, (char)pixType&0xff);
     }
     
     // Now down to the business at hand. Enqueue the new frame.
