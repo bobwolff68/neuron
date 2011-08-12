@@ -239,8 +239,9 @@
     pBI = new QTKitBufferInfo;
     assert(pBI);
     
-    // get size of the frame
-    CVPixelBufferLockBaseAddress(videoFrame, 0); //LOCK_FLAGS);
+    CVBufferRetain(videoFrame);
+    CVReturn cvret = CVPixelBufferLockBaseAddress(videoFrame, 0); //LOCK_FLAGS);
+    assert(cvret==0);
 
     pBuff = CVPixelBufferGetBaseAddress(videoFrame);
     pCb = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 1);
@@ -271,7 +272,6 @@
     
     // Now down to the business at hand. Enqueue the new frame.
     
-    CVBufferRetain(videoFrame);
     pBI->pVideoFrame =(void*) videoFrame;
     
     pBI->bIsVideo = true;
@@ -287,6 +287,11 @@
     
     assert([sampleBuffer numberOfSamples]==1);
 
+//    unsigned char* p=(unsigned char*)pBuff;
+//    NSLog(@"Prior to Enqueue: pBuffer=%p", pBuff);
+//    NSLog(@"Data at pBuffer is: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+//          *p++, *p++, *p++, *p++, *p++, *p++, *p++, *p++, *p++, *p++, *p++, *p++);
+    
     // Counting on FullBufferEnQ() to lock down the videoFrame for us.
     // Only did this for symmetry of responsibility between enque and dq
     if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))

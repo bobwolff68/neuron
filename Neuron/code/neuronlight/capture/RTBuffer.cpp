@@ -2,6 +2,8 @@
 #include "RTBuffer.h"
 #include <unistd.h>
 
+//#define USE_COPY_BUFFERS
+
 RTBuffer::RTBuffer(void) 
 { 
     int pid;
@@ -38,6 +40,9 @@ RTBuffer::~RTBuffer(void)
 			cerr << "." << flush;
 			usleep(100000);
 		}
+#ifdef USE_COPY_BUFFERS
+        //TODO - need to flush the copy buffer set if there is one.
+#endif
 	}
 	
 	pthread_mutex_destroy(&mutex);
@@ -88,7 +93,7 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase* pBI)
         mRefusedCount++;
         
         // Special case -- when enQ fails, who deletes the pointer? We do internally.
-        this->EmptyBufferRelease(pBI);
+        this->EmptyBufferRelease(pBI, NULL);
         
         return false;
     }
@@ -103,13 +108,24 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase* pBI)
         assert(false && "Lock Failed");
 
         // Special case -- when enQ fails, who deletes the pointer? We do internally.
-        this->EmptyBufferRelease(pBI);
+        this->EmptyBufferRelease(pBI, NULL);
         
         return false;
     }
     
     // Enqueue the item sent in.
     bufferQ.push_back(pBI);
+
+#ifdef USE_COPY_BUFFERS
+    void* pb=NULL;
+    posix_memalign(&pb, 16, 640*360*2);
+
+    assert(pb);
+    
+    memcpy(pb, pBI->pBuffer, 640*360*2);
+
+    pBuff_copied.push_back(pb);
+#endif
     
     sem_post(p_sem_numbuffers);	// Release the semaphore by incrementing by one.
     
@@ -142,7 +158,7 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase* pBI)
 //! 
 //! 
 
-bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI)
+bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI, void**ppb)
 {
     int rc=0;
     bool ret = true;
@@ -178,6 +194,14 @@ bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI)
         
         // DeQueue the item at the front.
         bufferQ.pop_front();
+     
+#ifdef USE_COPY_BUFFERS
+        *ppb = pBuff_copied.front();
+        pBuff_copied.pop_front();
+#else
+        *ppb = NULL;
+#endif
+        
         ret = true;    
     }
     

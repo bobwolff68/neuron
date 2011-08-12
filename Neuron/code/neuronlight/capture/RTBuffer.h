@@ -84,11 +84,11 @@ public:
 	RTBuffer(void);
 	virtual ~RTBuffer(void);
 	bool FullBufferEnQ(RTBufferInfoBase* pBI);
-	bool FullBufferDQ(RTBufferInfoBase** ppBI);
+	bool FullBufferDQ(RTBufferInfoBase** ppBI, void **ppb);
 	void Shutdown(void);
     
 	//! \brief To be implemented by the capture side in case buffers need to be released back to the driver.
-	virtual bool EmptyBufferRelease(RTBufferInfoBase* pBI) = 0;
+	virtual bool EmptyBufferRelease(RTBufferInfoBase* pBI, void*pb) = 0;
     
 	int Qsize(void) { return bufferQ.size(); };
     //TODO - Need to think about doing a pauseRunning() followed by a wait of some kind
@@ -107,6 +107,7 @@ public:
 
 protected:
 	deque<RTBufferInfoBase*> bufferQ;
+    deque<void*> pBuff_copied;
 	pthread_mutex_t         mutex;
 	sem_t* p_sem_numbuffers;
 	bool bReleased;
@@ -117,7 +118,7 @@ class QTKitCapBuffer : public RTBuffer {
 public:
 	QTKitCapBuffer() { };
 	~QTKitCapBuffer(void) { };
-	bool EmptyBufferRelease(RTBufferInfoBase* pBI);
+	bool EmptyBufferRelease(RTBufferInfoBase* pBI, void* pb);
 };
 
 class TempVidCapBase {

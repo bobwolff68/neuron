@@ -37,16 +37,18 @@ using namespace std;
 #if (!((defined(__APPLE__) & defined(__MACH__))))
 		p_cap = new V4L2Cap("/dev/video0",i_width,i_height,"YUYV");
 #endif
+        cout << "Before v4_rtenc_t()" << endl;
 		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer());
+        cout << "Before v4_fifoout_t()" << endl;
         p_fifoout = new v4_fifoout_t("stream.264",p_rtenc);
-		/*p_serv = nl_rtspserver_t::createNew(
+		p_serv = nl_rtspserver_t::createNew(
                         *BasicUsageEnvironment::createNew(
                             *BasicTaskScheduler::createNew()
                         ),
                         rtsp_port
                      );
-        p_serv->setup_sms("stream.264");*/
-        
+        p_serv->setup_sms("stream.264");
+        cout << "Before assignments" << endl;
 		map<string,string> nvpairs;
         char s_width[20];
         char s_height[20];
@@ -56,6 +58,7 @@ using namespace std;
 		nvpairs["Height"] = s_height;
 		nvpairs["Colorspace"] = colorspace;
 
+        cout << "Before SetEncSettings()" << endl;
 		p_rtenc->SetEncSettings(nvpairs);
 	}
 	catch(RTEnc_ReturnCode_t& rtenc_err_code)
@@ -68,12 +71,14 @@ using namespace std;
 		LOG_ERR("Fifoout init error");
 		throw RTCS_RETCODE_ERR_FIFOOUT_FAIL;
 	}
-
+    
+    cout << "Before rtenc->Open()" << endl;
 	if(p_rtenc->Open()!=RTENC_RETCODE_OK)
 	{
 		LOG_ERR("Real time encoder open error");
 		throw RTCS_RETCODE_ERR_RTENC_OPEN;
 	}
+    cout << "After rtenc->Open()" << endl;
 }
 
 nl_rtcamstream_t::~nl_rtcamstream_t()
@@ -109,18 +114,21 @@ void nl_rtcamstream_t::RunCapture(void)
 {
 	try
 	{
-	    //p_serv->startThread();
+	    p_serv->startThread();
 	    p_fifoout->startThread();
 	    p_rtenc->startThread();
 		//p_cap->start_capturing();
 
-		IdleLoop();
+		//IdleLoop();
+        while (1) {
+            usleep(1000000);
+        }
 	
 		//p_cap->stop_capturing();
 		p_rtenc->stopThread();
 		p_fifoout->stopThread();
-        //p_serv->stopThread();
-        //p_serv->request_server_exit();
+        p_serv->stopThread();
+        p_serv->request_server_exit();
 
 	}
 	catch(RTEnc_ReturnCode_t& rtenc_err_code)

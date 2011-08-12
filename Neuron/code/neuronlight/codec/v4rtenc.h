@@ -19,7 +19,7 @@
 #include <vp.h>
 #include <ThreadSingle.h>
 
-#define BUILD_DEBUG
+//#define BUILD_DEBUG
 
 #define LOG_ERR(msg)    cerr << __FILE__ << "|"\
                              << __LINE__ << "|"\

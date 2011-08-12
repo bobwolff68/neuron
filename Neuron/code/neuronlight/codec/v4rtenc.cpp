@@ -77,6 +77,9 @@ p_rtcap_buf(_p_rtcap_buf)
     }
 
     LOG_OUT("checkpoint: read config file");
+    char cwd[500];
+    getcwd(cwd, 499);
+    cout << "Current working directory: " << cwd << endl;
     
     //Overwrite some settings from config file
     if(v4e_read_config_file(&settings,(char*)cfg_file)!=VSSH_OK)
@@ -181,6 +184,8 @@ void v4_rtenc_t::SetEncSettings(map<string,string>& nvpairs)
 
 int v4_rtenc_t::workerBee(void)
 {
+    static int first_frame_received = 0;
+    
     while(1)
     {
 #if (defined (__APPLE__) & defined (__MACH__))
@@ -189,8 +194,9 @@ int v4_rtenc_t::workerBee(void)
 #else
         V4L2BufferInfo buf_info;
 #endif
+        void* pb;
         
-        if(p_rtcap_buf->FullBufferDQ(&p_bib)==false)
+        if(p_rtcap_buf->FullBufferDQ(&p_bib, &pb)==false)
         {
             cout << "OUCH - Bad Deque" << endl;
             LOG_ERR("capture buffer dequeue error");
@@ -199,7 +205,7 @@ int v4_rtenc_t::workerBee(void)
 
         if(p_bib->bFinalSample)
         {
-            if(p_rtcap_buf->EmptyBufferRelease(p_bib)==false)
+            if(p_rtcap_buf->EmptyBufferRelease(p_bib, pb)==false)
             {
                 LOG_ERR("empty capture buffer release error");
                 return -1;
@@ -214,20 +220,41 @@ int v4_rtenc_t::workerBee(void)
         p_bi = static_cast<QTKitBufferInfo*>(p_bib);
         if(p_bi->bIsVideo)
         {
-            int lastvalue;
-            lastvalue = ((unsigned char*)p_bi->pBuffer)[640*360*2 - 1];
-            SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer));
+            if (pb)
+                SetRawFrameBuffers((unsigned char*)pb);
+            else
+                SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer));
             
-            cout << "p_bi->pBuffer address: " << hex << p_bi->pBuffer << dec << endl;
-            assert(p_bi->pBuffer);
+//            cout << "p_bi->pBuffer address: " << hex << p_bi->pBuffer << dec << endl;
+//            assert(p_bi->pBuffer);
             
             frame.timestamp = p_bi->timeStamp_uS;
             //LOG_OUT("checkpoint: send raw frame to encoder");
             LockHandle();
+            if(!first_frame_received)
+            {
+                usleep(30000);
+                first_frame_received = 1;
+            }
+            else
+            {
+//                unsigned char* p=(unsigned char*)p_bi->pBuffer;
+//                printf("After to Deque: pBuffer=%p", p_bi->pBuffer);
+//                printf("Data at pBuffer is: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+//                       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11]);
+                
+                try {
             if(v4e_set_vp_frame(p_handle,&frame,1)!=VSSH_OK)
             {
                 LOG_ERR("v4e_set_vp_frame() error");
                 return -1;
+            }
+                }
+                catch(exception e)
+                {
+                    cout << "Exception" << e.what() << endl;
+                    assert(false);
+                }
             }
             UnlockHandle();
         }
@@ -247,13 +274,13 @@ int v4_rtenc_t::workerBee(void)
         UnlockHandle();
 #endif
         
-        cout << "Before releasing" << endl;
-        if(p_rtcap_buf->EmptyBufferRelease(p_bib)==false)
+        //cout << "Before releasing" << endl;
+        if(p_rtcap_buf->EmptyBufferRelease(p_bib, pb)==false)
         {
             LOG_ERR("empty capture buffer release error");
             return -1;
         }
-        cout << "After releasing" << endl;
+        //cout << "After releasing" << endl;
     }
 
     LOG_OUT("checkpoint: flush encoder");
@@ -265,7 +292,7 @@ int v4_rtenc_t::workerBee(void)
         return -1;
     }
     UnlockHandle();
-
+    
     //sleep for some time so that output thread can
     //process all flushed frames
     usleep(30000);

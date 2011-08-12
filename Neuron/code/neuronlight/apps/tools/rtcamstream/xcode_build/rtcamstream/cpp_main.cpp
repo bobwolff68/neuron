@@ -23,5 +23,6 @@ colorspace(_colorspace)
 int RunPipeline::workerBee(void)
 {
     nl_rtcamstream_t::main(p_cap_objc, width, height, colorspace.c_str());
+    return 0;
 }
 

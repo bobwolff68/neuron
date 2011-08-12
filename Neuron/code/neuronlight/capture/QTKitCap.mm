@@ -14,10 +14,11 @@
 #import "RTBuffer.h"
 
 #include <iomanip>
+//#import "CoreVideo/CVPixelBuffer.h"
 
 using namespace std;
 
-bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI)
+bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI, void*pb)
 {
     QTKitBufferInfo* pQTB;
 //    pQTB = (QTKitBufferInfo*)pBI;
@@ -26,7 +27,12 @@ bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI)
     
     // This BI has already been taken off the internal Queue with DQ call
     if (pQTB->bIsVideo)
+    {
+        if (pb)
+            free(pb);
+        
         CVBufferRelease((CVImageBufferRef)pQTB->pVideoFrame);
+    }
     else
     {
         QTSampleBuffer* pSamp;
@@ -189,8 +195,9 @@ int QTKitCap::workerBee(void)
 		if (IsStopRequested())
 			break;
 
-#if 1
-        bOK = pRTBuffer->FullBufferDQ(&pbibase);
+#if 0
+        void *pb;
+        bOK = pRTBuffer->FullBufferDQ(&pbibase, &pb);
         if (!bOK)
             cout << "Error in dequeue?" << endl;
         
@@ -198,7 +205,7 @@ int QTKitCap::workerBee(void)
         pbi = static_cast<QTKitBufferInfo*>(pbibase);
         assert(pbi);
         
-        pRTBuffer->EmptyBufferRelease(pbi);
+        pRTBuffer->EmptyBufferRelease(pbi, pb);
 #endif
         
 //		if (i % modulo == 0)

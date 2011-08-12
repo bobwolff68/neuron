@@ -163,6 +163,7 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
+				GCC_VERSION = "";
 				"HEADER_SEARCH_PATHS[arch=*]" = (
 					"../../../../neuroncommon/**",
 					"../../../../../../Common/live555/**",
@@ -176,6 +177,11 @@
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
+				GCC_VERSION = "";
+				"HEADER_SEARCH_PATHS[arch=*]" = (
+					"../../../../neuroncommon/**",
+					"../../../../../../Common/live555/**",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
