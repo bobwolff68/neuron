@@ -405,19 +405,11 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
-					"../../codec/xcode_build/**",
-					"../../../../../Common/vanguard/mac/**",
-					"../../../../../Common/live555/**",
-					"../../apps/tools/rtcamstream/xcode_build/**",
-					"../../network/xcode_build/**",
-					"\"$(SRCROOT)/../../../../../Common/live555/groupsock\"",
-					"\"$(SRCROOT)/../../../../../Common/live555/liveMedia\"",
-					"\"$(SRCROOT)/../../../../../Common/live555/BasicUsageEnvironment\"",
-					"\"$(SRCROOT)/../../../../../Common/live555/UsageEnvironment\"",
-					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"",
-					"\"$(SRCROOT)/../../codec/xcode_build/codec/DerivedData/codec/Build/Products/Debug\"",
-					"\"$(SRCROOT)/../../network/xcode_build/network/DerivedData/network/Build/Products/Debug\"",
-					"\"$(SRCROOT)/../tools/rtcamstream/xcode_build/rtcamstream/DerivedData/rtcamstream/Build/Products/Debug\"",
+					"\"$(SRCROOT)/../../../../../Common/live555/groupsock\"/**",
+					"\"$(SRCROOT)/../../../../../Common/live555/liveMedia\"/**",
+					"\"$(SRCROOT)/../../../../../Common/live555/BasicUsageEnvironment\"/**",
+					"\"$(SRCROOT)/../../../../../Common/live555/UsageEnvironment\"/**",
+					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"/**",
 				);
 				PRODUCT_NAME = MyRecorder;
 				RUN_CLANG_STATIC_ANALYZER = YES;
@@ -447,19 +439,11 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
-					"../../codec/xcode_build/**",
-					"../../../../../Common/vanguard/mac/**",
-					"../../../../../Common/live555/**",
-					"../../apps/tools/rtcamstream/xcode_build/**",
-					"../../network/xcode_build/**",
-					"\"$(SRCROOT)/../../../../../Common/live555/groupsock\"",
-					"\"$(SRCROOT)/../../../../../Common/live555/liveMedia\"",
-					"\"$(SRCROOT)/../../../../../Common/live555/BasicUsageEnvironment\"",
-					"\"$(SRCROOT)/../../../../../Common/live555/UsageEnvironment\"",
-					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"",
-					"\"$(SRCROOT)/../../codec/xcode_build/codec/DerivedData/codec/Build/Products/Debug\"",
-					"\"$(SRCROOT)/../../network/xcode_build/network/DerivedData/network/Build/Products/Debug\"",
-					"\"$(SRCROOT)/../tools/rtcamstream/xcode_build/rtcamstream/DerivedData/rtcamstream/Build/Products/Debug\"",
+					"\"$(SRCROOT)/../../../../../Common/live555/groupsock\"/**",
+					"\"$(SRCROOT)/../../../../../Common/live555/liveMedia\"/**",
+					"\"$(SRCROOT)/../../../../../Common/live555/BasicUsageEnvironment\"/**",
+					"\"$(SRCROOT)/../../../../../Common/live555/UsageEnvironment\"/**",
+					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"/**",
 				);
 				PRODUCT_NAME = MyRecorder;
 				SDKROOT = macosx;
