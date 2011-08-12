@@ -146,10 +146,10 @@
     [mCaptureDecompressedAudioOutput setDelegate:self];
     
     // Finally add the AUDIO output to the session.
-//    success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
-//    if (!success) {
-//        // Handle error
-//    }
+    success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
+    if (!success) {
+        // Handle error
+    }
 
     // Associate the capture view in the UI with the session
     
@@ -317,10 +317,26 @@
     
     qtt = [sampleBuffer presentationTime];
     
-    NSLog(@"Audio sample count pre-increment: %d", [sampleBuffer sampleUseCount]);
+//    NSLog(@"Audio sample count pre-increment: %d", [sampleBuffer sampleUseCount]);
+    
     // Add a hold on this sample
     [sampleBuffer incrementSampleUseCount];
-    NSLog(@"Audio sample count post-increment: %d", [sampleBuffer sampleUseCount]);
+    [sampleBuffer retain];
+    
+//    NSLog(@"Audio sample count post-increment: %d", [sampleBuffer sampleUseCount]);
+//    uint8_t* pData;
+//    pData =(uint8_t*) [sampleBuffer bytesForAllSamples];
+//    pBI->pY = pData;
+//    NSLog(@"Databytes @ 0x%p: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",pData,
+//          pData[0],pData[1],pData[2],pData[3],
+//          pData[4],pData[5],pData[6],pData[7],
+//          pData[8],pData[9],pData[10],pData[11]);
+
+//    pData = (uint8_t*)sampleBuffer;
+//    NSLog(@"sampleBuffer @ 0x%p: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",pData,
+//          pData[0],pData[1],pData[2],pData[3],
+//          pData[4],pData[5],pData[6],pData[7],
+//          pData[8],pData[9],pData[10],pData[11]);
     
     pBI->pVideoFrame=NULL;
     pBI->pAudioSamples = sampleBuffer;
@@ -331,9 +347,9 @@
     
     pBI->timeStamp_uS = QTT_US(qtt);
     
-    NSLog(@"Audio sampleBuffer ptr=0x%p", sampleBuffer);
-    NSLog(@"Audio: %d samples, %d bytes-total, timestamp: %lld, scale: %ld Ticks/sec, reported_uS:%lld", 
-          [sampleBuffer numberOfSamples], [sampleBuffer lengthForAllSamples], qtt.timeValue, qtt.timeScale, pBI->timeStamp_uS);
+//    NSLog(@"Audio sampleBuffer ptr=0x%p", sampleBuffer);
+//    NSLog(@"Audio: %d samples, %d bytes-total, timestamp: %lld, scale: %ld Ticks/sec, reported_uS:%lld", 
+//          [sampleBuffer numberOfSamples], [sampleBuffer lengthForAllSamples], qtt.timeValue, qtt.timeScale, pBI->timeStamp_uS);
     
     NSDictionary *pd;
     pd = [sampleBuffer sampleBufferAttributes];

@@ -35,6 +35,7 @@ bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI)
         count = [pSamp sampleUseCount];
         
         [pSamp decrementSampleUseCount];
+        [pSamp release];
     }
 	
 	return true;
@@ -188,7 +189,7 @@ int QTKitCap::workerBee(void)
 		if (IsStopRequested())
 			break;
 
-#if 1
+#if 0
         bOK = pRTBuffer->FullBufferDQ(&pbibase);
         if (!bOK)
             cout << "Error in dequeue?" << endl;
