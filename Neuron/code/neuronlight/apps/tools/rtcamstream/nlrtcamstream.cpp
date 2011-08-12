@@ -85,7 +85,7 @@ nl_rtcamstream_t::~nl_rtcamstream_t()
 {
 	try
 	{
-	    //nl_rtspserver_t::destroy(p_serv);
+	    nl_rtspserver_t::destroy(p_serv);
 		delete p_fifoout;
 		delete p_rtenc;
 #if( !(defined(__APPLE__) & defined(__MACH__)) )
@@ -121,7 +121,7 @@ void nl_rtcamstream_t::RunCapture(void)
 
 		//IdleLoop();
         while (1) {
-            usleep(1000000);
+            usleep(20000);
         }
 	
 		//p_cap->stop_capturing();

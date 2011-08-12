@@ -57,6 +57,11 @@ public:
     {
         return p_membuf;
     }
+    
+    int get_size(void)  const
+    {
+        return size;
+    }
 };
 
 class v4_fifoout_t : public ThreadSingle
@@ -64,7 +69,11 @@ class v4_fifoout_t : public ThreadSingle
 private:
     v4_rtenc_t* p_rtenc;
     v4_avcbsbuf_t* p_avcbs_buf;
+    v4_avcbsbuf_t* p_sps_buf;
+    v4_avcbsbuf_t* p_pps_buf;
     int fd_fifo_out;
+    bool b_sps_sent;
+    bool b_pps_sent;
     const char* fifo_out;
     media_sample_t* p_ms;
     virtual int workerBee(void);
