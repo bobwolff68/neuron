@@ -41,6 +41,7 @@ bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI, void*pb)
         count = [pSamp sampleUseCount];
         
         [pSamp decrementSampleUseCount];
+        [pSamp release];
     }
 	
 	return true;

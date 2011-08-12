@@ -144,11 +144,11 @@
     mCaptureDecompressedAudioOutput = [[QTCaptureDecompressedAudioOutput alloc] init];
     [mCaptureDecompressedAudioOutput setDelegate:self];
     
-    // Finally add the output to the session.
-    /*success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
+    // Finally add the AUDIO output to the session.
+    success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
     if (!success) {
         // Handle error
-    }*/
+    }
 
     // Associate the capture view in the UI with the session
     
@@ -216,7 +216,6 @@
     static int storedHeight=0;
     int frameWidth;
     int frameHeight;
-    int framebuffersize;
     OSType pixType;
     QTKitBufferInfo* pBI;
     void* pCb;
@@ -252,9 +251,7 @@
     frameWidth = CVPixelBufferGetWidth(videoFrame);
     frameHeight = CVPixelBufferGetHeight(videoFrame);
     pixType = CVPixelBufferGetPixelFormatType(videoFrame);
-    framebuffersize = [sampleBuffer lengthForAllSamples];
-    assert(framebuffersize > frameWidth * frameHeight * 2);
-    
+
     CVPixelBufferUnlockBaseAddress(videoFrame, 0); // LOCK_FLAGS);
 
     assert(pixType==kCVPixelFormatType_422YpCbCr8); // Make sure '2vuy' is active. Eventually we'll allow for conversions etc, but for now we need AGREEMENT.
@@ -328,10 +325,26 @@
     
     qtt = [sampleBuffer presentationTime];
     
-    NSLog(@"Audio sample count pre-increment: %d", [sampleBuffer sampleUseCount]);
+//    NSLog(@"Audio sample count pre-increment: %d", [sampleBuffer sampleUseCount]);
+    
     // Add a hold on this sample
     [sampleBuffer incrementSampleUseCount];
-    NSLog(@"Audio sample count post-increment: %d", [sampleBuffer sampleUseCount]);
+    [sampleBuffer retain];
+    
+//    NSLog(@"Audio sample count post-increment: %d", [sampleBuffer sampleUseCount]);
+//    uint8_t* pData;
+//    pData =(uint8_t*) [sampleBuffer bytesForAllSamples];
+//    pBI->pY = pData;
+//    NSLog(@"Databytes @ 0x%p: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",pData,
+//          pData[0],pData[1],pData[2],pData[3],
+//          pData[4],pData[5],pData[6],pData[7],
+//          pData[8],pData[9],pData[10],pData[11]);
+
+//    pData = (uint8_t*)sampleBuffer;
+//    NSLog(@"sampleBuffer @ 0x%p: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",pData,
+//          pData[0],pData[1],pData[2],pData[3],
+//          pData[4],pData[5],pData[6],pData[7],
+//          pData[8],pData[9],pData[10],pData[11]);
     
     pBI->pVideoFrame=NULL;
     pBI->pAudioSamples = sampleBuffer;
@@ -342,9 +355,9 @@
     
     pBI->timeStamp_uS = QTT_US(qtt);
     
-    NSLog(@"Audio sampleBuffer ptr=0x%p", sampleBuffer);
-    NSLog(@"Audio: %d samples, %d bytes-total, timestamp: %lld, scale: %ld Ticks/sec, reported_uS:%lld", 
-          [sampleBuffer numberOfSamples], [sampleBuffer lengthForAllSamples], qtt.timeValue, qtt.timeScale, pBI->timeStamp_uS);
+//    NSLog(@"Audio sampleBuffer ptr=0x%p", sampleBuffer);
+//    NSLog(@"Audio: %d samples, %d bytes-total, timestamp: %lld, scale: %ld Ticks/sec, reported_uS:%lld", 
+//          [sampleBuffer numberOfSamples], [sampleBuffer lengthForAllSamples], qtt.timeValue, qtt.timeScale, pBI->timeStamp_uS);
     
     NSDictionary *pd;
     pd = [sampleBuffer sampleBufferAttributes];
@@ -361,8 +374,6 @@
     
     pBI->pBuffer = (void*)pAbufflist;
 
-    NSLog(@"Enque about to occur: pBuffer=0x%p", pBI->pBuffer);
-    
     // Counting on FullBufferEnQ() to lock down the videoFrame for us.
     // Only did this for symmetry of responsibility between enque and dq
     if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))
