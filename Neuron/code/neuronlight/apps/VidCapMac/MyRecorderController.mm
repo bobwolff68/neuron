@@ -57,7 +57,7 @@
 - (void)awakeFromNib
 {    
     curDrops = 0;
-    bSendAudioSamples = true;
+    sendAudioType=1;
     
 // Create the capture session
     
@@ -145,6 +145,9 @@
     [mCaptureDecompressedAudioOutput setDelegate:self];
     
     // Finally add the AUDIO output to the session.
+    //TODO - Must figure out how to change sample-rate - may not want 44.1kHz as default.
+    
+    // Finally add the output to the session.
     success = [mCaptureSession addOutput:mCaptureDecompressedAudioOutput error:&error];
     if (!success) {
         // Handle error
@@ -154,14 +157,11 @@
     
     [mCaptureView setCaptureSession:mCaptureSession];
 
+    // Prepping to capture and send frames to pCap.
     pCap = new QTKitCap(mCaptureSession, mCaptureDecompressedVideoOutput);
-//Not defaulting to capture -- let use press it.    pCap->start_capturing();    
-//        [mCaptureSession startRunning];
-    
+
+    // Now instantiate the 'connection' mechanism to the lower pipeline and call them to get the pipeline started.
     pTVC = new TVidCap(pCap);
-    //TODO Here's where we inform Manjesh's code that we have a VidCap for him.
-    // setQTKitCap(pCap);
-    
     p_pipeline_runner = new RunPipeline(pTVC,640,360,"UYVY");
 }
     
@@ -218,6 +218,7 @@
     int frameHeight;
     OSType pixType;
     QTKitBufferInfo* pBI;
+    void* pY;
     void* pCb;
     void* pCr;
     void* pBuff;
@@ -240,17 +241,30 @@
     
     CVBufferRetain(videoFrame);
     CVReturn cvret = CVPixelBufferLockBaseAddress(videoFrame, 0); //LOCK_FLAGS);
+
     assert(cvret==0);
 
-    pBuff = CVPixelBufferGetBaseAddress(videoFrame);
-    pCb = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 1);
-    pCr = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 2);
+    pY = pCb = pCr = pBuff = NULL;
 
+    pixType = CVPixelBufferGetPixelFormatType(videoFrame);
+
+    if (pixType==kCVPixelFormatType_422YpCbCr8) // '2vuy' is active. Non-planar. Take base address and run.
+        pBuff = CVPixelBufferGetBaseAddress(videoFrame);
+    else if (pixType==kCVPixelFormatType_422YpCbCr8) 
+    {
+        pBuff = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 0);
+        pY  = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 0);
+        pCb = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 1);
+        pCr = CVPixelBufferGetBaseAddressOfPlane(videoFrame, 2);
+    }
+    else
+        NSLog(@"pixType Unknown. '%c%c%c%c'", (char)(pixType>>24)&0xff, (char)(pixType>>16)&0xff, 
+                                                (char)(pixType>>8)&0xff, (char)pixType&0xff);
+    
     //void* baseAddress = CVPixelBufferGetBaseAddress(videoFrame);
 //    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(videoFrame);
     frameWidth = CVPixelBufferGetWidth(videoFrame);
     frameHeight = CVPixelBufferGetHeight(videoFrame);
-    pixType = CVPixelBufferGetPixelFormatType(videoFrame);
 
     CVPixelBufferUnlockBaseAddress(videoFrame, 0); // LOCK_FLAGS);
 
@@ -307,12 +321,30 @@
     [mDrops setIntValue:curDrops];
 }
 
+///
+/// \brief Audio sample buffers are sent here via another threading calling into this function with a set of samples are ready for processing.
+///         When audio processing is enabled, the 'QTBufferSamples* sampleBuffer' is sent in the QTKitBufferInfo* as pAudioSamples. This is **NOT**
+///         to be used by the consumer. This is for tracking objects and freeing them appropriately on the Mac.
+///
+///         There are 3 dynamic audio modes. These are delimited in this function by the member 'sendAudioType' values 0, 1, and 2.
+///         0 - None - no processing is done on inbound samples. They are simply dropped.
+///         1 - Samples - This mode sends a pointer to the AudioBufferList* in 'pBuffer' as a void*. This pointer requires the recipient
+///                     to iterate through an array of structs to get pointers to each buffer, the config of each sample such as
+///                     # channels, sample rate, etc. This allows the user to send individual buffers into an encoder. Hopefully
+///                     this is unnecessary as there is a lot more iterative tracking to do. It is currently the case that audio
+///                     samples are being placed here in 512 buffer lists. Lots of buffers. As the other side of processing the queue
+///                     may not have access to Apple structures, there are mimick structures 'neuronAudioBufferList' and 'neuronAudioBuffer'.
+///                     \note To distinguish this mode to the recipient, rawLength and rawNumSamples are set to a value of '-1'.
+///         2 - Raw buffer - This method sends a single pointer to the raw audio chunk in memory via 'pBuffer'. The members of QTKitBufferInfo
+///                     additionally used are: rawLength - the actual number of valid bytes in the pBuffer. And rawNumSamples - tells the recipient
+///                     how many samples are contained in the pBuffer. This number should divide evenly and without remainder into the rawLength.
+///
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputAudioSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
 {
     QTKitBufferInfo* pBI;
     QTTime qtt;
     
-    if (!bSendAudioSamples)
+    if (sendAudioType==0)
     {
 //        NSLog(@"Skipping audio samples.");
         return;
@@ -373,6 +405,25 @@
     pAbufflist = [sampleBuffer audioBufferListWithOptions:0];
     
     pBI->pBuffer = (void*)pAbufflist;
+    if (sendAudioType==1)       // Send list of samplebuffers.
+    {
+        AudioBufferList* pAbufflist;
+        pAbufflist = [sampleBuffer audioBufferListWithOptions:0];
+        
+        pBI->pBuffer = (void*)pAbufflist;
+        
+        pBI->rawLength = -1;
+        pBI->rawNumSamples = -1;
+    }
+    else
+    {
+        assert(sendAudioType==2);   // Raw bucket of data plus # samples thrown in 'other'
+        pBI->pBuffer = [sampleBuffer bytesForAllSamples];
+        
+        pBI->rawLength = [sampleBuffer lengthForAllSamples];
+        pBI->rawNumSamples = [sampleBuffer numberOfSamples];
+        assert(pBI->rawLength % pBI->rawNumSamples == 0);
+    }
 
     // Counting on FullBufferEnQ() to lock down the videoFrame for us.
     // Only did this for symmetry of responsibility between enque and dq
@@ -436,8 +487,15 @@
     [NSApp terminate:self];
 }
 
-- (IBAction)sendAudioSamples:(id)sender {
-    bSendAudioSamples = [sender state]==NSOnState;
+- (IBAction)sendAudioOfType:(id)sender {
+    sendAudioType = [sender indexOfSelectedItem];
+    
+    //        case 0: // Send no audio.
+    //        case 1: // Send the array of structs (list of QTSampleBuffers
+    //        case 2: // Send the whole block of data raw (with #samples alongside)
+    
+    if (sendAudioType < 0 || sendAudioType > 2)
+        assert(false && "Invalid selection in button-menu.");
 }
 
 @end
