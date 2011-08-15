@@ -57,7 +57,7 @@
 - (void)awakeFromNib
 {    
     curDrops = 0;
-    sendAudioType=1;
+    sendAudioType=2; // Using RAW-Data buffer mode by default now.
     
 // Create the capture session
     
@@ -163,6 +163,9 @@
     // Now instantiate the 'connection' mechanism to the lower pipeline and call them to get the pipeline started.
     pTVC = new TVidCap(pCap);
     p_pipeline_runner = new RunPipeline(pTVC,640,360,"UYVY");
+    
+    // Always keep window on top of other windows.
+    [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
 }
     
 // Handle window closing notifications for your device input
@@ -341,9 +344,50 @@
 ///
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputAudioSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
 {
+    
+#if 1
+    /* Get the sample buffer's AudioStreamBasicDescription, which will be used to set the input format of the effect audio unit and the ExtAudioFile. */
+    QTFormatDescription *formatDescription = [sampleBuffer formatDescription];
+    NSValue *sampleBufferASBDValue = [formatDescription attributeForKey:QTFormatDescriptionAudioStreamBasicDescriptionAttribute ];
+    if (!sampleBufferASBDValue)
+        return;
+    
+    AudioStreamBasicDescription sampleBufferASBD = {0};
+    memset (&sampleBufferASBD, 0, sizeof (sampleBufferASBD));
+    
+    [sampleBufferASBDValue getValue:&sampleBufferASBD];
+    
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%d\n", sampleBufferASBD.mBytesPerFrame);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mSampleRate=%f\n", sampleBufferASBD.mSampleRate);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBitsPerChannel=%d\n", sampleBufferASBD.mBitsPerChannel);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFramesPerPacket=%d\n", sampleBufferASBD.mFramesPerPacket);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags=%x\n", sampleBufferASBD.mFormatFlags);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%x\n", sampleBufferASBD.mBytesPerFrame);
+    
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsFloat=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsFloat);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsBigEndian=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsBigEndian);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsNonMixable=%d \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsNonMixable);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsAlignedHigh=%d \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsAlignedHigh);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsPacked=%d\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsPacked);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagsSampleFractionShift= %d\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagsSampleFractionShift);	
+    
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsNonInterleaved=%d \n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsNonInterleaved);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsSignedInteger=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsSignedInteger);	
+    
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 8);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 16);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 24);	
+    
+    printf(" lengthForAllSamples=%d, numberOfSamples=%d\n",
+           [sampleBuffer lengthForAllSamples],
+           [sampleBuffer numberOfSamples]); 
+    fflush(stdout);	
+#endif
+    
     QTKitBufferInfo* pBI;
     QTTime qtt;
-    
+
     if (sendAudioType==0)
     {
 //        NSLog(@"Skipping audio samples.");
