@@ -72,7 +72,6 @@
     ?>
     
 <div class="mainwrapper">
-        <div class="mainwrapper">
 	    <div id="header">
                 <div id="header2">Neuron Light 2-Way Demo
                 </div>
