@@ -44,12 +44,7 @@
 		<meta http-equiv="cache-control" content="max-age=200" />
 		<link href="landing.css" media="handheld, screen" rel="stylesheet" type="text/css" />
 		<title>XVDTHLanding</title>
-		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
-		<style type="text/css">
-  			html { height: 100% }
-  			body { height: 100%; margin: 0px; padding: 0px }
-  			#map_canvas { height: 100% }
-		</style>	
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />	
     </head>
     
     <body>  
@@ -73,8 +68,8 @@
                             <p>Active Sessions</p>
                             <table>
                                 <tr>
-                                    <td><a href="join.html"><button>Active</button></a></td>
-                                    <td><a href="join.html">Tom</a></td>
+                                    <td><a href="readyjoin.php"><button>Active</button></a></td>
+                                    <td><a href="readyjoin.php">Tom</a></td>
                                 </tr>
                                 <tr>
                                     <td></td>
@@ -92,7 +87,7 @@
                             </p>
                             
                                 <hr/>
-                                <a href="startsession.html"><button>Start Session</button></a>
+                                <a href="readysession.php"><button>Start Session</button></a>
 		   	</div>
 		
 	    </div>
