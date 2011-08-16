@@ -23,7 +23,7 @@
         <!-- script src="jquery-1.6.2.min.js" type="text/javascript"></script -->
         
         <script type="text/javascript"> 
-            var member = new Array();
+            //var member = new Array();
             
             function registerVLCEvent(event, handler){
                 var vlc = getVLC("vlc1");
@@ -114,6 +114,7 @@
                     var xml = data.responseXML;
 //                    alert ('checkupdate finished');
                     var puser = xml.documentElement.getElementsByTagName("participant");
+                    var member = new Array();
                     //<![CDATA[
                         for (i = 0; i < puser.length ; i++) {
                             var prec = new Array(
@@ -140,7 +141,7 @@
                                 var urival = document.getElementById("uri");
                                 urival.value = member[0][1];
                                 var id22 = p1.playlist.add(urival.value, "stream one", null);                               
-                                p1.playlist.playItem(id22);
+                                //p1.playlist.playItem(id22);
                             }
                         break;
                         
@@ -155,11 +156,16 @@
                                 var urival = document.getElementById("uri");
                                 if(sesslogged == member[0][0]){
                                     urival.value = member[1][1];
+                                    var id22 = p1.playlist.add(urival.value, "stream two", null);                               
+                                    p1.playlist.playItem(id22);
+                                    p1.play();
                                 } else {
                                     urival.value = member[0][1];
+                                    var id22 = p1.playlist.add(urival.value, "stream two", null);                               
+                                    p1.playlist.playItem(id22);
                                 }
-                                var id22 = p1.playlist.add(urival.value, "stream two", null);                               
-                                p1.playlist.playItem(id22);
+                                // var id22 = p1.playlist.add(urival.value, "stream two", null);                               
+                                // p1.playlist.playItem(id22);
                             }
                         break;
                         
