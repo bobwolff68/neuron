@@ -1,0 +1,40 @@
+/* --- main layout --- */
+	
+	* { margin: 0; padding: 0; }
+	
+	body { font-family:Tahoma, Geneva, sans-serif; font-size:medium; color:#9b9b9b; background:#212121; padding:0; margin:0;}
+	
+	a img,:link img,:visited img,fieldset {border:none;}
+	img {vertical-align:top;}
+	
+	.clear {clear:both}
+	.nowrp {white-space:nowrap;}
+	.container {width:100%; overflow:hidden;}
+
+/* --- END main layout --- */
+
+/* --- header --- */
+
+	#header { background: black; text-align: center; color: white; vertical-align: middle; font-size: 2.0em;}
+        #header2 {padding: 20px 20px;}
+        
+/* --- END header --- */
+
+/* --- content --- */
+
+	#content {font-size:1.125em; background:#fff; line-height:1em;}
+	.content {padding: 5px 20px 300px 20px; min-width:200px;}
+        
+/* --- END content --- */
+
+/* --- footer --- */
+	
+	#footer {background: black; font-size:1.125em; padding:0 20px;}
+
+/* --- END footer --- */
+
+/* --- Other --- */
+	
+/* --- END Other --- */
+
+
