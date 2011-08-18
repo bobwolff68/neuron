@@ -61,11 +61,16 @@ typedef struct NeuronAudioBufferList NeuronAudioBufferList;
 
 class QTKitBufferInfo : public RTBufferInfoBase {
 public:
-	QTKitBufferInfo(void) { pY=NULL; pCb=NULL; pCr=NULL; bIsVideo=true; };
+	QTKitBufferInfo(void) { pY=NULL; pCb=NULL; pCr=NULL; bIsVideo=true; rawLength=0; rawNumSamples=0; };
 	virtual ~QTKitBufferInfo(void) { };
     
 //    bool bIsVideo;
 //    long long timeStamp_uS;
+    
+    // # bytes total when audio samples were sent RAW (contiguous block)
+    // and number of samples so destination knows how to cut the buffers apart if necessary.
+    uint32_t rawLength;
+    int32_t  rawNumSamples;
     
     // TODO - consider making three distinct planar pointers in addition to a non-planar pointer
     void* pY;

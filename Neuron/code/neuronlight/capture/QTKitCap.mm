@@ -36,9 +36,9 @@ bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI, void*pb)
     else
     {
         QTSampleBuffer* pSamp;
-        int count;
         pSamp = static_cast<QTSampleBuffer*>(pQTB->pAudioSamples);
-        count = [pSamp sampleUseCount];
+
+//        int count = [pSamp sampleUseCount];
         
         [pSamp decrementSampleUseCount];
         [pSamp release];
@@ -182,13 +182,9 @@ void QTKitCap::start_capturing(void)
 int QTKitCap::workerBee(void)
 {
 // Sleep 250ms. Then every second, print out current resolution, #frames, and #drops.
-    int modulo=4;
+//    int modulo=4;
     int sleep_ms=250;
     int i=0;
-    
-    RTBufferInfoBase* pbibase;
-    QTKitBufferInfo* pbi;
-    bool bOK;
     
     while(1) {
 
@@ -196,8 +192,15 @@ int QTKitCap::workerBee(void)
 		if (IsStopRequested())
 			break;
 
+        // Only use this code in so-called 'standalone' mode where there are no consumers of the RTBuffer data. This allows
+        // standalone to test the DQ and release processing of buffers without a proper encoder on the other side.
+        // Note that frames come off the DQ at the rate in 'sleep_ms' as its frequency. (ie SLOWLY)
 #if 0
         void *pb;
+        RTBufferInfoBase* pbibase;
+        QTKitBufferInfo* pbi;
+        bool bOK;
+        
         bOK = pRTBuffer->FullBufferDQ(&pbibase, &pb);
         if (!bOK)
             cout << "Error in dequeue?" << endl;

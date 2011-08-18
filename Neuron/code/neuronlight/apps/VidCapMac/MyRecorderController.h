@@ -70,13 +70,13 @@ Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.
     RunPipeline* p_pipeline_runner;
     QTKitCap* pCap;
     TVidCap* pTVC;
-    bool bSendAudioSamples;
+    NSInteger sendAudioType;
 }
 - (IBAction)startRecording:(id)sender;
 - (IBAction)stopRecording:(id)sender;
 - (IBAction)captureMode:(id)sender;
 - (IBAction)resetDrops:(id)sender;
 - (IBAction)quitApplication:(id)sender;
-- (IBAction)sendAudioSamples:(id)sender;
+- (IBAction)sendAudioOfType:(id)sender;
 
 @end
