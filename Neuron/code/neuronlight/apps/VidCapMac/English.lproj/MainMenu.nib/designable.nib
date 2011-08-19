@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <archive type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="8.00">
 	<data>
-		<int key="IBDocument.SystemTarget">1050</int>
+		<int key="IBDocument.SystemTarget">0</int>
 		<string key="IBDocument.SystemVersion">11A511</string>
 		<string key="IBDocument.InterfaceBuilderVersion">1617</string>
 		<string key="IBDocument.AppKitVersion">1138</string>
@@ -43,18 +43,18 @@
 				<string key="NSClassName">NSApplication</string>
 			</object>
 			<object class="NSWindowTemplate" id="565928366">
-				<int key="NSWindowStyleMask">270</int>
+				<int key="NSWindowStyleMask">264</int>
 				<bool key="NSWindowAllowNontitledResizable">YES</bool>
 				<int key="NSWindowBacking">2</int>
 				<string key="NSWindowRect">{{46, 1272}, {433, 286}}</string>
-				<int key="NSWTFlags">813170688</int>
+				<int key="NSWTFlags">813171712</int>
 				<string key="NSWindowTitle">NeuronVidCapMac</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<object class="NSMutableString" key="NSViewClass">
 					<characters key="NS.bytes">View</characters>
 				</object>
 				<nil key="NSUserInterfaceItemIdentifier"/>
-				<string key="NSWindowContentMinSize">{213, 107}</string>
+				<string key="NSWindowContentMinSize">{350, 107}</string>
 				<object class="NSView" key="NSWindowView" id="252641234">
 					<reference key="NSNextResponder"/>
 					<int key="NSvFlags">274</int>
@@ -112,7 +112,7 @@
 								<reference key="NSControlView" ref="328990526"/>
 								<int key="NSButtonFlags">109199615</int>
 								<int key="NSButtonFlags2">1</int>
-								<object class="NSFont" key="NSAlternateImage">
+								<object class="NSFont" key="NSAlternateImage" id="75936217">
 									<string key="NSName">LucidaGrande</string>
 									<double key="NSSize">13</double>
 									<int key="NSfFlags">16</int>
@@ -313,8 +313,9 @@
 							<object class="NSPopUpButtonCell" key="NSCell" id="1070517896">
 								<int key="NSCellFlags">-2076049856</int>
 								<int key="NSCellFlags2">2048</int>
-								<reference key="NSSupport" ref="562333384"/>
+								<reference key="NSSupport" ref="75936217"/>
 								<reference key="NSControlView" ref="254380049"/>
+								<int key="NSTag">8</int>
 								<int key="NSButtonFlags">109199615</int>
 								<int key="NSButtonFlags2">129</int>
 								<string key="NSAlternateContents"/>
@@ -323,7 +324,7 @@
 								<int key="NSPeriodicInterval">75</int>
 								<object class="NSMenuItem" key="NSMenuItem" id="677125334">
 									<reference key="NSMenu" ref="422432902"/>
-									<string key="NSTitle">Samples</string>
+									<string key="NSTitle">RAW-Data</string>
 									<string key="NSKeyEquiv"/>
 									<int key="NSKeyEquivModMask">1048576</int>
 									<int key="NSMnemonicLoc">2147483647</int>
@@ -337,7 +338,7 @@
 										<string key="NSResourceName">NSMenuMixedState</string>
 									</object>
 									<string key="NSAction">_popUpItemAction:</string>
-									<int key="NSTag">1</int>
+									<int key="NSTag">2</int>
 									<reference key="NSTarget" ref="1070517896"/>
 								</object>
 								<bool key="NSMenuItemRespectAlignment">YES</bool>
@@ -347,14 +348,16 @@
 										<reference ref="677125334"/>
 										<object class="NSMenuItem" id="409082511">
 											<reference key="NSMenu" ref="422432902"/>
-											<string key="NSTitle">RAW-Data</string>
+											<bool key="NSIsDisabled">YES</bool>
+											<bool key="NSIsHidden">YES</bool>
+											<string key="NSTitle">Samples</string>
 											<string key="NSKeyEquiv"/>
 											<int key="NSKeyEquivModMask">1048576</int>
 											<int key="NSMnemonicLoc">2147483647</int>
 											<reference key="NSOnImage" ref="730427878"/>
 											<reference key="NSMixedImage" ref="286353950"/>
 											<string key="NSAction">_popUpItemAction:</string>
-											<int key="NSTag">2</int>
+											<int key="NSTag">1</int>
 											<reference key="NSTarget" ref="1070517896"/>
 										</object>
 										<object class="NSMenuItem" id="604329158">
@@ -400,7 +403,7 @@
 					<reference key="NSNextKeyView" ref="963165226"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1920, 1178}}</string>
-				<string key="NSMinSize">{213, 107}</string>
+				<string key="NSMinSize">{350, 107}</string>
 				<string key="NSMaxSize">{10000000000000, 10000000000000}</string>
 				<bool key="NSWindowIsRestorable">YES</bool>
 			</object>
@@ -955,6 +958,22 @@
 					</object>
 					<int key="connectionID">500254</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">sendAudioRawData:</string>
+						<reference key="source" ref="134484106"/>
+						<reference key="destination" ref="677125334"/>
+					</object>
+					<int key="connectionID">500255</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">sendAudioNoData:</string>
+						<reference key="source" ref="134484106"/>
+						<reference key="destination" ref="604329158"/>
+					</object>
+					<int key="connectionID">500256</int>
+				</object>
 			</array>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<array key="orderedObjects">
@@ -995,7 +1014,6 @@
 						<int key="objectID">2</int>
 						<reference key="object" ref="252641234"/>
 						<array class="NSMutableArray" key="children">
-							<reference ref="72214172"/>
 							<reference ref="328990526"/>
 							<reference ref="633570244"/>
 							<reference ref="427328001"/>
@@ -1005,6 +1023,7 @@
 							<reference ref="254380049"/>
 							<reference ref="587763253"/>
 							<reference ref="963165226"/>
+							<reference ref="72214172"/>
 						</array>
 						<reference key="parent" ref="565928366"/>
 					</object>
@@ -1518,14 +1537,14 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">500254</int>
+			<int key="maxID">500256</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes"/>
 		<int key="IBDocument.localizationMode">0</int>
 		<string key="IBDocument.TargetRuntimeIdentifier">IBCocoaFramework</string>
 		<object class="NSMutableDictionary" key="IBDocument.PluginDeclaredDependencies">
 			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin.macosx</string>
-			<integer value="1050" key="NS.object.0"/>
+			<real value="0.0" key="NS.object.0"/>
 		</object>
 		<bool key="IBDocument.PluginDeclaredDependenciesTrackSystemTargetVersion">YES</bool>
 		<int key="IBDocument.defaultPropertyAccessControl">3</int>

@@ -49,6 +49,7 @@ Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.
 #import <Cocoa/Cocoa.h>
 #import <QTKit/QTkit.h>
 #import <Foundation/Foundation.h>
+#import <AudioToolbox/AudioToolbox.h>
 
 #import "QTKitCap.h"
 #import "cpp_main.h"
@@ -64,6 +65,7 @@ Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.
     QTCaptureSession            *mCaptureSession;
     QTCaptureDecompressedVideoOutput *mCaptureDecompressedVideoOutput;
     QTCaptureDecompressedAudioOutput *mCaptureDecompressedAudioOutput;
+    AudioConverterRef Converter;
     QTCaptureDeviceInput        *mCaptureVideoDeviceInput;
     QTCaptureDeviceInput        *mCaptureAudioDeviceInput;
     
@@ -77,6 +79,7 @@ Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.
 - (IBAction)captureMode:(id)sender;
 - (IBAction)resetDrops:(id)sender;
 - (IBAction)quitApplication:(id)sender;
-- (IBAction)sendAudioOfType:(id)sender;
+- (IBAction)sendAudioRawData:(id)sender;
+- (IBAction)sendAudioNoData:(id)sender;
 
 @end
