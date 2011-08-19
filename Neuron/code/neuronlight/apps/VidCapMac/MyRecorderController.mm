@@ -49,6 +49,19 @@
 #import "MyRecorderController.h"
 #import "CoreVideo/CVPixelBuffer.h"
 
+#import <CoreAudio/CoreAudioTypes.h>
+
+#define DESIRED_BITS_PER_SAMPLE 16
+
+#if 0
+// Want to interrogate device attributes to see if we can set it's output to signed 16bit rather than convert later.
+NSDictionary *pDict = [audioDevice deviceAttributes];
+NSString *key;
+for(key in pDict){
+    NSLog(@"Key: %@, Value %@", key, [pDict objectForKey: key]);
+}
+#endif
+
 // Helper function to convert QTTime value into raw micro-seconds.
 #define QTT_US(Q) ((1000000*Q.timeValue)/Q.timeScale)
 
@@ -56,6 +69,7 @@
 
 - (void)awakeFromNib
 {    
+    Converter = NULL;
     curDrops = 0;
     sendAudioType=2; // Using RAW-Data buffer mode by default now.
     
@@ -194,6 +208,9 @@
     
     delete p_pipeline_runner;
     p_pipeline_runner = NULL;
+    
+    if (Converter)
+        AudioConverterDispose(Converter);
     
     delete pTVC;
     pTVC = NULL;
@@ -345,6 +362,12 @@
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputAudioSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
 {
     
+    if (sendAudioType==0)
+    {
+        //        NSLog(@"Skipping audio samples.");
+        return;
+    }
+    
 #if 1
     /* Get the sample buffer's AudioStreamBasicDescription, which will be used to set the input format of the effect audio unit and the ExtAudioFile. */
     QTFormatDescription *formatDescription = [sampleBuffer formatDescription];
@@ -357,43 +380,86 @@
     
     [sampleBufferASBDValue getValue:&sampleBufferASBD];
     
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%d\n", sampleBufferASBD.mBytesPerFrame);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%lu\n", sampleBufferASBD.mBytesPerFrame);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerPacket=%lu\n", sampleBufferASBD.mBytesPerPacket);
     printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mSampleRate=%f\n", sampleBufferASBD.mSampleRate);
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBitsPerChannel=%d\n", sampleBufferASBD.mBitsPerChannel);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFramesPerPacket=%d\n", sampleBufferASBD.mFramesPerPacket);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags=%x\n", sampleBufferASBD.mFormatFlags);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%x\n", sampleBufferASBD.mBytesPerFrame);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBitsPerChannel=%lu\n", sampleBufferASBD.mBitsPerChannel);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mChannelsPerFrame=%lu\n", sampleBufferASBD.mChannelsPerFrame);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFramesPerPacket=%lu\n", sampleBufferASBD.mFramesPerPacket);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags=0x%lx\n", sampleBufferASBD.mFormatFlags);	
     
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsFloat=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsFloat);
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsBigEndian=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsBigEndian);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsNonMixable=%d \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsNonMixable);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsAlignedHigh=%d \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsAlignedHigh);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsPacked=%d\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsPacked);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagsSampleFractionShift= %d\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagsSampleFractionShift);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsFloat=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsFloat);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsBigEndian=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsBigEndian);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsNonMixable=%lu \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsNonMixable);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsAlignedHigh=%lu \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsAlignedHigh);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsPacked=%lu\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsPacked);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagsSampleFractionShift= %lu\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagsSampleFractionShift);	
     
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsNonInterleaved=%d \n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsNonInterleaved);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsSignedInteger=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsSignedInteger);	
-    
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 8);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 16);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 24);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsNonInterleaved=%lu \n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsNonInterleaved);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsSignedInteger=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsSignedInteger);	
     
     printf(" lengthForAllSamples=%d, numberOfSamples=%d\n",
            [sampleBuffer lengthForAllSamples],
            [sampleBuffer numberOfSamples]); 
     fflush(stdout);	
 #endif
+
+#if 0
+    // If the conversion unit is not running already, start it up now that we have an ASBD for the input.
+    if (!Converter)
+    {
+        AudioStreamBasicDescription outputBufferASBD = {0};
+        
+        // Output is similar to input so a starting point is nice.
+        outputBufferASBD = sampleBufferASBD;
+/*
+ kAudioFormatFlagIsFloat                     = (1 << 0),     // 0x1
+ kAudioFormatFlagIsBigEndian                 = (1 << 1),     // 0x2
+ kAudioFormatFlagIsSignedInteger             = (1 << 2),     // 0x4
+ kAudioFormatFlagIsPacked                    = (1 << 3),     // 0x8
+ kAudioFormatFlagIsAlignedHigh               = (1 << 4),     // 0x10
+ kAudioFormatFlagIsNonInterleaved            = (1 << 5),     // 0x20
+ kAudioFormatFlagIsNonMixable                = (1 << 6),     // 0x40
+ kAudioFormatFlagsAreAllClear                = (1 << 31),
+
+ */
+        // Now modify the output to become:
+        // 16-bit signed
+        // Convert to interleaved.
+        // Endian-ness uncertain.
+
+#if 0
+        FillOutASBDForLPCM(outputBufferASBD, 44100.00, 2, 16, 16, false, true);
+        
+#else
+        outputBufferASBD.mBitsPerChannel = DESIRED_BITS_PER_SAMPLE;
+        outputBufferASBD.mFramesPerPacket = 1;  // Always true for LPCM.
+
+        outputBufferASBD.mFormatFlags &= ~kAudioFormatFlagIsFloat;
+        outputBufferASBD.mFormatFlags |= kAudioFormatFlagIsSignedInteger;
+#if 1   // Interleaved
+        outputBufferASBD.mFormatFlags &= ~kAudioFormatFlagIsNonInterleaved;
+#endif
+        
+        outputBufferASBD.mBytesPerFrame = (outputBufferASBD.mBitsPerChannel / 8) * outputBufferASBD.mChannelsPerFrame;
+//#else
+//        outputBufferASBD.mBytesPerFrame = (outputBufferASBD.mBitsPerChannel / 8) * 1;
+//#endif
+        
+        outputBufferASBD.mBytesPerPacket = outputBufferASBD.mBytesPerFrame * outputBufferASBD.mFramesPerPacket;
+#endif
+        
+        // Open the audio converter
+        OSStatus stat = AudioConverterNew(&sampleBufferASBD, &outputBufferASBD, &Converter);
+        assert(stat==0);
+    }
+
+    assert(Converter);
+#endif
     
     QTKitBufferInfo* pBI;
     QTTime qtt;
 
-    if (sendAudioType==0)
-    {
-//        NSLog(@"Skipping audio samples.");
-        return;
-    }
-    
     pBI = new QTKitBufferInfo;
     assert(pBI);
     
@@ -447,7 +513,10 @@
 
     AudioBufferList* pAbufflist;
     pAbufflist = [sampleBuffer audioBufferListWithOptions:0];
-    
+
+    // Only allowing NONE or RAW-Data format now.
+    assert(sendAudioType==2 || sendAudioType==0);
+#if 0    
     pBI->pBuffer = (void*)pAbufflist;
     if (sendAudioType==1)       // Send list of samplebuffers.
     {
@@ -460,11 +529,67 @@
         pBI->rawNumSamples = -1;
     }
     else
+#endif
+    if (sendAudioType==2)
     {
         assert(sendAudioType==2);   // Raw bucket of data plus # samples thrown in 'other'
-        pBI->pBuffer = [sampleBuffer bytesForAllSamples];
+// Old method of sending float32 direct.        pBI->pBuffer = [sampleBuffer bytesForAllSamples];
+        // Time to convert.
+        UInt32 outSize = [sampleBuffer numberOfSamples] * (DESIRED_BITS_PER_SAMPLE / 8) * sampleBufferASBD.mChannelsPerFrame;
+//TODO - reset to PROPER amount. *4 is only for illegal access debug
+        void* pConvData = new char[outSize*4];
+        assert(pConvData);
         
-        pBI->rawLength = [sampleBuffer lengthForAllSamples];
+        // Must 'delete' this array in Release via pBuffer
+        pBI->pBuffer = pConvData;
+//        unsigned char* test = (unsigned char*)pBI->pBuffer;
+        
+//        for (int i=0;i<[sampleBuffer lengthForAllSamples];i++,test++)
+//            *test = *test;
+        Float32* inbuf = (Float32*)[sampleBuffer bytesForAllSamples];
+#if 0        
+        
+        // Convert
+        OSStatus stat = AudioConverterConvertBuffer(Converter, [sampleBuffer lengthForAllSamples], (const void*)[sampleBuffer bytesForAllSamples], &outSize, pBI->pBuffer);
+        assert(stat==0);
+#endif
+#if 1
+        SInt16* outbuf = (SInt16*)pConvData;
+        
+        int offset = [sampleBuffer numberOfSamples];
+        int max = INT16_MAX;
+        Float32 fl1, fl2;
+        
+//        NSLog(@"Sample  in-L(f)    in-R(f)       out-L     out-R");
+        
+        // Bob's po-man float32->sint16 converter and interleaver.
+        for (int sample=0; sample < [sampleBuffer numberOfSamples]; sample++)
+        {
+            // On input, must take sample left and sample right and compensate for offset of non-interleaved.
+            assert(inbuf[sample] <= 1.0 && inbuf[sample] >= -1.0);
+            assert(inbuf[sample+offset] <= 1.0 && inbuf[sample+offset] >= -1.0);
+            
+            fl1 = inbuf[sample] * (Float32)max;
+            outbuf[sample*2] = (SInt16)(fl1);
+            
+            fl2 = inbuf[sample + offset] * (Float32)max;
+            outbuf[sample*2 + 1] = (SInt16)(fl2);
+            
+//            NSLog(@"[%03d]:  % 1.4f    % 1.4f    %6hi      %6hi", sample, inbuf[sample], inbuf[sample+offset], outbuf[sample*2], outbuf[sample*2+1]);
+        }
+#endif
+        
+        // Now decrement the sample count on the original input buffer.
+        [sampleBuffer decrementSampleUseCount];
+        
+        // outSize was modified by the conversion routine -- so this is the actual amount used. We want to make sure it is always
+        // less than our calculated outSize initially however.
+        assert(outSize < [sampleBuffer lengthForAllSamples]);
+               
+        pBI->rawLength = outSize;
+        
+        // Are samples the same? How do we find out?
+        // Would be nice to assert this fact.
         pBI->rawNumSamples = [sampleBuffer numberOfSamples];
         assert(pBI->rawLength % pBI->rawNumSamples == 0);
     }
@@ -531,15 +656,12 @@
     [NSApp terminate:self];
 }
 
-- (IBAction)sendAudioOfType:(id)sender {
-    sendAudioType = [sender indexOfSelectedItem];
-    
-    //        case 0: // Send no audio.
-    //        case 1: // Send the array of structs (list of QTSampleBuffers
-    //        case 2: // Send the whole block of data raw (with #samples alongside)
-    
-    if (sendAudioType < 0 || sendAudioType > 2)
-        assert(false && "Invalid selection in button-menu.");
+- (IBAction)sendAudioRawData:(id)sender {
+    sendAudioType = 2;
+}
+
+- (IBAction)sendAudioNoData:(id)sender {
+    sendAudioType = 0;
 }
 
 @end

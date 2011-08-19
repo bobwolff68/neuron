@@ -348,6 +348,8 @@
 										<reference ref="677125334"/>
 										<object class="NSMenuItem" id="409082511">
 											<reference key="NSMenu" ref="422432902"/>
+											<bool key="NSIsDisabled">YES</bool>
+											<bool key="NSIsHidden">YES</bool>
 											<string key="NSTitle">Samples</string>
 											<string key="NSKeyEquiv"/>
 											<int key="NSKeyEquivModMask">1048576</int>
@@ -956,6 +958,22 @@
 					</object>
 					<int key="connectionID">500254</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">sendAudioRawData:</string>
+						<reference key="source" ref="134484106"/>
+						<reference key="destination" ref="677125334"/>
+					</object>
+					<int key="connectionID">500255</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBActionConnection" key="connection">
+						<string key="label">sendAudioNoData:</string>
+						<reference key="source" ref="134484106"/>
+						<reference key="destination" ref="604329158"/>
+					</object>
+					<int key="connectionID">500256</int>
+				</object>
 			</array>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<array key="orderedObjects">
@@ -1519,7 +1537,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">500254</int>
+			<int key="maxID">500256</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes"/>
 		<int key="IBDocument.localizationMode">0</int>
