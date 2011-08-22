@@ -1,0 +1,100 @@
+                          VSofts H.264 Codec 4.6
+              AVC/SVC/MVC Codec/Decoder SDK for Windows/Mac/Linux
+
+                         Build Instructions
+
+Visual Studio
+-------------
+SDK includes sample solution for Microsoft Visual C++ 8.0 (see "src/samples.sln").
+Codec library folder are located in "lib" folder. 
+
+There are following configurations:
+
+a) Release
+This configuration is intended for use with Production SDK.
+It uses static release library with prefix "w32i". Resulting executables 
+could be found under "/bin" folder.
+
+b) Debug
+This configuration is intended for use with Production SDK.
+It uses static debug library with prefix "w32i". Resulting executables 
+could be found under "/src/Debug/" folder.
+
+c) Release.Eval
+This configuration is intended for use with Evaluation SDK.
+It uses static evaluation library with prefix "w32ie". Resulting executables 
+could be found under "/bin" folder.
+
+d) Release.Extra
+This configuration is intended for use with Production SDK extra bit option.
+Extra bit option means support for 10-12-14-bit samples encoding and decoding.
+The configuration uses static release extra bit library with prefix "w32ix".
+Resulting executables could be found under "/bin" folder.
+
+e) Release.Extra.Eval
+This configuration is intended for use with Evaluation SDK extra bit option.
+Extra bit option means support for 10-12-14-bit samples encoding and decoding.
+The configuration uses static release extra bit library with prefix "w32ixe".
+Resulting executables could be found under "/bin" folder.
+
+Please note that there are no eval libraries in production version of SDK, so
+"Release.Eval" configuration could not be built.
+And vice versa: there are only eval libraries in evaluation version of SDK and
+only "Release.Eval" configuration could be built.
+Same way "Extra" configuration can be compiled only with 10-bit version of the SDK.
+
+
+GNU-based build
+---------------
+The build procedure is based on GNU tools such as make, nasm, gcc. In general
+it allows for a large variety of platforms and different behaviors support.
+
+Recommended usage is:
+	make
+
+This command produces binary samples in ../bin directory, note in that case
+is used simplified samples names like sample_enc, sample_dec etc.
+
+Optional arguments for make:
+	V4LIB	- specify explicit codec library file (by default is used first library
+		from ../lib/ directory), note if V4LIB is set then samples names
+		will contain library prefix (e.g. sample_enc-l32ie-all-mt);
+	V4CC	- override default compiler (cl.exe, gcc);
+	V4LINK  - override default linker (link.exe, gcc);
+	V4OPTS  - additional options for compiler;
+
+Examples:
+	# V4LIB is useful if ../lib directory contains several libraries
+	# or library is placed in other location then ../lib
+	make V4LIB=../lib/libv4codecsdk-w32i-all-mt.lib
+
+	# V4CC V4LINK V4OPTS permits to use non standard compiler, linker
+	# or specify extra options (e.g. Intel runtime)
+	make V4CC=icc V4LINK=xilink V4LIB=../lib/libv4decsdk-l64ie-all-mt.a V4OPTS=-L/opt/intel/Complier/lib
+
+Overview
+--------
+Make files are configured to generate output executable files
+using either Intel or GNU C compiler. SDK libraries are compiled using Intel C compiler.
+Intel runtime library could be pointed out by using "LIB" environment variable
+or by putting Intel runtime into "lib-icc32" or "lib-icc64" directories at the
+same level as codec sdk persists:
+lib-icc32/
+lib-icc64/
+v4sdk-4.5/
+
+Ask support for "lib-icc32.tar.gz" or "lib-icc64.tar.gz" redistributables.
+
+Mac OS specific
+---------------
+Please note that there are only dynamic runtime libraries under Mac OS.
+Also we currently use only GCC for Mac builds.
+Snow Leopard (10.6) OS is supported, previous versions could encounter
+backward compatibility problems.
+
+Decoder SDK
+-----------
+There are only decoder libraries and samples in this package.
+Use following make targets:
+	dec	- sample decoder;
+	ana	- sample analyzer;
