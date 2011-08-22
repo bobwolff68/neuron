@@ -31,8 +31,9 @@ static void errno_exit(const char * s)
 
 class RTBufferInfoBase {
 public:
-	RTBufferInfoBase(void) { bFinalSample=false; pBuffer=NULL; bIsVideo=true; timeStamp_uS=0; };
+	RTBufferInfoBase(void) { bFinalSample=false; pBuffer=NULL; pBufferLength=0; bIsVideo=true; timeStamp_uS=0; };
 	virtual ~RTBufferInfoBase(void) { };
+    int pBufferLength;  // Instructing the receiver how much of this data is stated to be valid.
 	void* pBuffer;      // Single pointer to a contiguous block of data regardless of planar or non-
                     // In the case of AudioSamples, this is the AudioSampleList structure equiv.
 	bool bFinalSample;
@@ -71,6 +72,8 @@ public:
     // and number of samples so destination knows how to cut the buffers apart if necessary.
     uint32_t rawLength;
     int32_t  rawNumSamples;
+    
+    int captureStride;  // Used for sending to encoder in non-planar colorspace.
     
     // TODO - consider making three distinct planar pointers in addition to a non-planar pointer
     void* pY;

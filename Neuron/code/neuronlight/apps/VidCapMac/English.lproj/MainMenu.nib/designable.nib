@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <archive type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="8.00">
 	<data>
-		<int key="IBDocument.SystemTarget">0</int>
+		<int key="IBDocument.SystemTarget">1070</int>
 		<string key="IBDocument.SystemVersion">11A511</string>
 		<string key="IBDocument.InterfaceBuilderVersion">1617</string>
 		<string key="IBDocument.AppKitVersion">1138</string>
@@ -46,7 +46,7 @@
 				<int key="NSWindowStyleMask">264</int>
 				<bool key="NSWindowAllowNontitledResizable">YES</bool>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{46, 1272}, {433, 286}}</string>
+				<string key="NSWindowRect">{{46, 400}, {435, 305}}</string>
 				<int key="NSWTFlags">813171712</int>
 				<string key="NSWindowTitle">NeuronVidCapMac</string>
 				<string key="NSWindowClass">NSWindow</string>
@@ -62,8 +62,9 @@
 						<object class="QTCaptureView" id="72214172">
 							<reference key="NSNextResponder" ref="252641234"/>
 							<int key="NSvFlags">4370</int>
-							<string key="NSFrame">{{20, 58}, {395, 202}}</string>
+							<string key="NSFrame">{{20, 58}, {395, 222}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="623691389"/>
 							<object class="NSColor" key="kQTCaptureViewCoderFillColor" id="409530000">
 								<int key="NSColorSpace">3</int>
@@ -76,6 +77,7 @@
 							<int key="NSvFlags">289</int>
 							<string key="NSFrame">{{312, 21}, {96, 32}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="894915894">
@@ -102,6 +104,7 @@
 							<int key="NSvFlags">289</int>
 							<string key="NSFrame">{{299, -3}, {122, 32}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="633570244"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="227334174">
@@ -128,6 +131,7 @@
 							<int key="NSvFlags">289</int>
 							<string key="NSFrame">{{248, 28}, {49, 22}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="587763253"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="974316382">
@@ -204,6 +208,7 @@
 							<int key="NSvFlags">289</int>
 							<string key="NSFrame">{{206, 31}, {42, 17}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="672796305"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="667215032">
@@ -234,6 +239,7 @@
 							<int key="NSvFlags">292</int>
 							<string key="NSFrame">{{18, 30}, {168, 18}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="900617261"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="678937421">
@@ -262,6 +268,7 @@
 							<int key="NSvFlags">289</int>
 							<string key="NSFrame">{{191, -3}, {117, 32}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="328990526"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="547499547">
@@ -281,8 +288,9 @@
 						<object class="NSButton" id="963165226">
 							<reference key="NSNextResponder" ref="252641234"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{5, 262}, {39, 19}}</string>
+							<string key="NSFrame">{{5, 281}, {39, 19}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="72214172"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="105186913">
@@ -308,6 +316,7 @@
 							<int key="NSvFlags">292</int>
 							<string key="NSFrame">{{92, 1}, {100, 26}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="427328001"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSPopUpButtonCell" key="NSCell" id="1070517896">
@@ -385,6 +394,7 @@
 							<int key="NSvFlags">292</int>
 							<string key="NSFrame">{{17, 8}, {80, 17}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
+							<reference key="NSWindow"/>
 							<reference key="NSNextKeyView" ref="254380049"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="898671161">
@@ -398,8 +408,9 @@
 							</object>
 						</object>
 					</array>
-					<string key="NSFrameSize">{433, 286}</string>
+					<string key="NSFrameSize">{435, 305}</string>
 					<reference key="NSSuperview"/>
+					<reference key="NSWindow"/>
 					<reference key="NSNextKeyView" ref="963165226"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1920, 1178}}</string>
@@ -952,14 +963,6 @@
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBActionConnection" key="connection">
-						<string key="label">sendAudioOfType:</string>
-						<reference key="source" ref="134484106"/>
-						<reference key="destination" ref="254380049"/>
-					</object>
-					<int key="connectionID">500254</int>
-				</object>
-				<object class="IBConnectionRecord">
-					<object class="IBActionConnection" key="connection">
 						<string key="label">sendAudioRawData:</string>
 						<reference key="source" ref="134484106"/>
 						<reference key="destination" ref="677125334"/>
@@ -1022,8 +1025,8 @@
 							<reference ref="623691389"/>
 							<reference ref="254380049"/>
 							<reference ref="587763253"/>
-							<reference ref="963165226"/>
 							<reference ref="72214172"/>
+							<reference ref="963165226"/>
 						</array>
 						<reference key="parent" ref="565928366"/>
 					</object>
@@ -1539,13 +1542,119 @@
 			<nil key="sourceID"/>
 			<int key="maxID">500256</int>
 		</object>
-		<object class="IBClassDescriber" key="IBDocument.Classes"/>
+		<object class="IBClassDescriber" key="IBDocument.Classes">
+			<array class="NSMutableArray" key="referencedPartialClassDescriptions">
+				<object class="IBPartialClassDescription">
+					<string key="className">MyRecorderController</string>
+					<string key="superclassName">NSObject</string>
+					<dictionary class="NSMutableDictionary" key="actions">
+						<string key="captureMode:">id</string>
+						<string key="quitApplication:">id</string>
+						<string key="resetDrops:">id</string>
+						<string key="sendAudioNoData:">id</string>
+						<string key="sendAudioRawData:">id</string>
+						<string key="startRecording:">id</string>
+						<string key="stopRecording:">id</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="captureMode:">
+							<string key="name">captureMode:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="quitApplication:">
+							<string key="name">quitApplication:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="resetDrops:">
+							<string key="name">resetDrops:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="sendAudioNoData:">
+							<string key="name">sendAudioNoData:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="sendAudioRawData:">
+							<string key="name">sendAudioRawData:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="startRecording:">
+							<string key="name">startRecording:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="stopRecording:">
+							<string key="name">stopRecording:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="outlets">
+						<string key="mCaptureView">QTCaptureView</string>
+						<string key="mDrops">NSTextField</string>
+						<string key="mMainWindow">NSView</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
+						<object class="IBToOneOutletInfo" key="mCaptureView">
+							<string key="name">mCaptureView</string>
+							<string key="candidateClassName">QTCaptureView</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="mDrops">
+							<string key="name">mDrops</string>
+							<string key="candidateClassName">NSTextField</string>
+						</object>
+						<object class="IBToOneOutletInfo" key="mMainWindow">
+							<string key="name">mMainWindow</string>
+							<string key="candidateClassName">NSView</string>
+						</object>
+					</dictionary>
+					<object class="IBClassDescriptionSource" key="sourceIdentifier">
+						<string key="majorKey">IBProjectSource</string>
+						<string key="minorKey">./Classes/MyRecorderController.h</string>
+					</object>
+				</object>
+				<object class="IBPartialClassDescription">
+					<string key="className">NSDocument</string>
+					<dictionary class="NSMutableDictionary" key="actions">
+						<string key="printDocument:">id</string>
+						<string key="revertDocumentToSaved:">id</string>
+						<string key="runPageLayout:">id</string>
+						<string key="saveDocument:">id</string>
+						<string key="saveDocumentAs:">id</string>
+						<string key="saveDocumentTo:">id</string>
+					</dictionary>
+					<dictionary class="NSMutableDictionary" key="actionInfosByName">
+						<object class="IBActionInfo" key="printDocument:">
+							<string key="name">printDocument:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="revertDocumentToSaved:">
+							<string key="name">revertDocumentToSaved:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="runPageLayout:">
+							<string key="name">runPageLayout:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="saveDocument:">
+							<string key="name">saveDocument:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="saveDocumentAs:">
+							<string key="name">saveDocumentAs:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+						<object class="IBActionInfo" key="saveDocumentTo:">
+							<string key="name">saveDocumentTo:</string>
+							<string key="candidateClassName">id</string>
+						</object>
+					</dictionary>
+					<object class="IBClassDescriptionSource" key="sourceIdentifier">
+						<string key="majorKey">IBProjectSource</string>
+						<string key="minorKey">./Classes/NSDocument.h</string>
+					</object>
+				</object>
+			</array>
+		</object>
 		<int key="IBDocument.localizationMode">0</int>
 		<string key="IBDocument.TargetRuntimeIdentifier">IBCocoaFramework</string>
-		<object class="NSMutableDictionary" key="IBDocument.PluginDeclaredDependencies">
-			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin.macosx</string>
-			<real value="0.0" key="NS.object.0"/>
-		</object>
 		<bool key="IBDocument.PluginDeclaredDependenciesTrackSystemTargetVersion">YES</bool>
 		<int key="IBDocument.defaultPropertyAccessControl">3</int>
 		<dictionary class="NSMutableDictionary" key="IBDocument.LastKnownImageSizes">

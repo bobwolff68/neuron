@@ -2,50 +2,6 @@
 //  MyRecorderController.m
 //  MyRecorder
 
-/*
- 
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by 
- Apple Inc. ("Apple") in consideration of your agreement to the
- following terms, and your use, installation, modification or
- redistribution of this Apple software constitutes acceptance of these
- terms.  If you do not agree with these terms, please do not use,
- install, modify or redistribute this Apple software.
- 
- In consideration of your agreement to abide by the following terms, and
- subject to these terms, Apple grants you a personal, non-exclusive
- license, under Apple's copyrights in this original Apple software (the
- "Apple Software"), to use, reproduce, modify and redistribute the Apple
- Software, with or without modifications, in source and/or binary forms;
- provided that if you redistribute the Apple Software in its entirety and
- without modifications, you must retain this notice and the following
- text and disclaimers in all such redistributions of the Apple Software. 
- Neither the name, trademarks, service marks or logos of Apple Inc. 
- may be used to endorse or promote products derived from the Apple
- Software without specific prior written permission from Apple.  Except
- as expressly stated in this notice, no other rights or licenses, express
- or implied, are granted by Apple herein, including but not limited to
- any patent rights that may be infringed by your derivative works or by
- other works in which the Apple Software may be incorporated.
- 
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
- 
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
- POSSIBILITY OF SUCH DAMAGE.
- 
- Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.  
- 
- */
-
 #import "MyRecorderController.h"
 #import "CoreVideo/CVPixelBuffer.h"
 
@@ -73,6 +29,12 @@ for(key in pDict){
     curDrops = 0;
     sendAudioType=2; // Using RAW-Data buffer mode by default now.
     
+    outputWidth = 640;
+    outputHeight = 360;
+    
+    captureWidth = 640;
+    captureHeight = 480;
+    
 // Create the capture session
     
 	mCaptureSession = [[QTCaptureSession alloc] init];
@@ -84,7 +46,7 @@ for(key in pDict){
 	
 // Find a video device  
     
-    QTCaptureDevice *videoDevice = [QTCaptureDevice defaultInputDeviceWithMediaType:QTMediaTypeVideo];
+    videoDevice = [QTCaptureDevice defaultInputDeviceWithMediaType:QTMediaTypeVideo];
     success = [videoDevice open:&error];
     
     
@@ -103,6 +65,7 @@ for(key in pDict){
     }
     
     if (videoDevice) {
+        
 //Add the video device to the session as a device input
 		
 		mCaptureVideoDeviceInput = [[QTCaptureDeviceInput alloc] initWithDevice:videoDevice];
@@ -134,7 +97,6 @@ for(key in pDict){
         }
         
         mCaptureDecompressedVideoOutput = [[QTCaptureDecompressedVideoOutput alloc] init];
-        
         [mCaptureDecompressedVideoOutput setDelegate:self];
         
 // Set output characteristics. Especially video pixel format data.
@@ -142,8 +104,8 @@ for(key in pDict){
         [mCaptureDecompressedVideoOutput setMinimumVideoFrameInterval:1/(float)30];
         [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
             [NSDictionary dictionaryWithObjectsAndKeys:
-             [NSNumber numberWithDouble:640], (id)kCVPixelBufferWidthKey,
-             [NSNumber numberWithDouble:360], (id)kCVPixelBufferHeightKey,
+             [NSNumber numberWithDouble:captureWidth], (id)kCVPixelBufferWidthKey,
+             [NSNumber numberWithDouble:captureHeight], (id)kCVPixelBufferHeightKey,
 //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
              nil]];
 
@@ -152,6 +114,7 @@ for(key in pDict){
         if (!success) {
             // Handle error
         }
+        
 	} 
 
     // Setup for raw audio capture interleaved in the output.
@@ -168,22 +131,23 @@ for(key in pDict){
     }
 
     // Associate the capture view in the UI with the session
-    
     [mCaptureView setCaptureSession:mCaptureSession];
+
+    // This allows me to crop the video preview image as needed for our desired aspect ratio.
+    [mCaptureView setDelegate:self];
 
     // Prepping to capture and send frames to pCap.
     pCap = new QTKitCap(mCaptureSession, mCaptureDecompressedVideoOutput);
 
     // Now instantiate the 'connection' mechanism to the lower pipeline and call them to get the pipeline started.
     pTVC = new TVidCap(pCap);
-    p_pipeline_runner = new RunPipeline(pTVC,640,360,"UYVY");
+    p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY");
     
     // Always keep window on top of other windows.
     [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
 }
-    
-// Handle window closing notifications for your device input
 
+// Handle window closing notifications for your device input
 - (void)windowWillClose:(NSNotification *)notification
 {
 	
@@ -228,14 +192,29 @@ for(key in pDict){
 	[super dealloc];
 }
 
+- (CIImage *)view:(QTCaptureView *)view willDisplayImage:(CIImage *)image {
+    //mirror image across x axis
+    //    return [image imageByApplyingTransform:CGAffineTransformMakeScale(-1, 1)];
+
+    // Crop image to 640x360
+//    return [image imageByCroppingToRect:CGRectMake(0, 60, 640, 360)];
+
+    // Crop and mirror at the same time.
+    return [[image imageByCroppingToRect:CGRectMake((captureWidth-outputWidth)/2, (captureHeight-outputHeight)/2, 
+                                                            outputWidth, outputHeight)] 
+            imageByApplyingTransform:CGAffineTransformMakeScale(-1, 1)];
+    
+//    return image;
+}
+
 #pragma mark-
 
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputVideoFrame:(CVImageBufferRef)videoFrame withSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
 {
     static int storedWidth=0;
     static int storedHeight=0;
-    int frameWidth;
-    int frameHeight;
+//    int frameWidth;
+//    int frameHeight;
     OSType pixType;
     QTKitBufferInfo* pBI;
     void* pY;
@@ -255,6 +234,105 @@ for(key in pDict){
 //        PlanarComponentInfo  componentInfoCr;
 //    };
 //    typedef struct PlanarPixmapInfoYUV420   PlanarPixmapInfoYUV420;
+
+#ifdef INTERROGATE_CAMERA
+    // Final entry is the one we'll be left with, so for now we'll wire this as 640x480 so we can play with sending
+    // the cropped-down version for 640x360
+    struct trial {
+        int width;
+        int height;
+    };
+    // Try 4:3 resolutions first. Then 16:9
+    // 4:3  -- 80x60, 160x120, 240x192, 320x240, 640x480, 800x600, 1024x768, 1280x1024, 1600x1200
+    // 16:9 -- 160x90, 240x136, 320x180, 640x360, 800x448, 1024x576, 1280x720, 1600x900, 1920x1080
+    static struct trial requested[] = {{80,60}, {160,120}, {240,192}, {320,240}, {640,480}, {800,600}, {1024,768}, {1280,1024}, {1600,1200},
+        {160,90}, {240,136}, {320,180}, {640,360}, {800,448}, {1024,576}, {1280,720}, {1600,900}, {1920,1080},
+        // Final one will be the one that 'sticks'. We'll do this a better way later.
+        {640,480}};
+    static int tstIter=0;
+    static bool bSetSize=true;   // Set
+
+    int max = sizeof(requested)/sizeof(struct trial);
+    static struct trial received[40];  // Proper way is to have this and requested[] be class members along with bSetSize etc.
+    
+    while (tstIter < max)
+    {
+
+        if (bSetSize)
+        {
+            [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
+             [NSDictionary dictionaryWithObjectsAndKeys:
+              [NSNumber numberWithDouble:requested[tstIter].width], (id)kCVPixelBufferWidthKey,
+              [NSNumber numberWithDouble:requested[tstIter].height], (id)kCVPixelBufferHeightKey,
+              //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
+              nil]];
+            
+            // Yes - sleep for 1 MICRO-SECOND -- just a minimal sleep to switch contexts and yield to the system.
+//            usleep(1);
+        }
+        else
+        {
+            NSArray* pArr = [videoDevice formatDescriptions];
+            if (pArr)
+            {
+                int count = [pArr count];
+                if (count)
+                {
+                    NSValue *psz;
+                    psz = [[[videoDevice formatDescriptions]  objectAtIndex:0] attributeForKey:@"videoEncodedPixelsSize"];
+                          
+                    int w = (int)[psz sizeValue].width;
+                    int h = (int)[psz sizeValue].height;
+                    
+                    received[tstIter].width = w;
+                    received[tstIter].height = h;
+                    NSLog(@"ON Iter#%d: Requested:%dx%d -- Received: %dx%d", tstIter, requested[tstIter].width, requested[tstIter].height, w, h);
+                }
+                
+// Full interrogation of formatDescriptionAttributes
+#if 0
+                for (int i=0; i<count; i++)
+                {
+                    NSDictionary* pDict;
+//                    pDict = [[pArr objectAtIndex:i] formatDescriptionAttributes];
+                    pDict = [[[videoDevice formatDescriptions] objectAtIndex:i] formatDescriptionAttributes];
+                    NSString *key;
+                    for(key in pDict){
+                        NSLog(@"Key: %@, Value %@", key, [pDict objectForKey: key]);
+                    }
+                }
+#endif
+            }
+            
+        }
+        
+        // Only iterate to the next resolution after the check has been made.
+        if (!bSetSize)
+            tstIter++;
+        
+        if (tstIter==max)
+        {
+            NSLog(@"Capture-Device Resolutions:");
+            for (int j=0;j<max;j++)
+                cout << "  " << received[j].width << "x" << received[j].height;
+            
+            cout << endl;
+        }
+        
+        // Toggle each frame - one go-thru sets a resolution and the next one tests it.
+        bSetSize = !bSetSize;
+        
+        return;
+    }
+//    static bool firstTime=true;
+//    if (firstTime)
+//    {
+//        firstTime = false;
+//        // Figure out what modes the camera captures in natively.
+//        // Then map our desired sizes to larger capture settings in prep for cropping games.
+//        [self validCaptureModes];
+//    }
+#endif
 
     pBI = new QTKitBufferInfo;
     assert(pBI);
@@ -283,8 +361,8 @@ for(key in pDict){
     
     //void* baseAddress = CVPixelBufferGetBaseAddress(videoFrame);
 //    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(videoFrame);
-    frameWidth = CVPixelBufferGetWidth(videoFrame);
-    frameHeight = CVPixelBufferGetHeight(videoFrame);
+//    frameWidth = CVPixelBufferGetWidth(videoFrame);
+//    frameHeight = CVPixelBufferGetHeight(videoFrame);
 
     CVPixelBufferUnlockBaseAddress(videoFrame, 0); // LOCK_FLAGS);
 
@@ -293,12 +371,12 @@ for(key in pDict){
     NSDictionary *pDict;
     pDict = [mCaptureDecompressedVideoOutput pixelBufferAttributes];
     
-    if (storedWidth != frameWidth || storedHeight != frameHeight)
+    if (storedWidth != outputWidth || storedHeight != outputHeight)
     {
-        storedWidth = frameWidth;
-        storedHeight = frameHeight;
+        storedWidth = outputWidth;
+        storedHeight = outputHeight;
         
-        NSLog(@"Capture CHANGE: WxH=%dx%d pixType=%c%c%c%c",frameWidth, frameHeight, (char)(pixType>>24)&0xff, (char)(pixType>>16)&0xff, (char)(pixType>>8)&0xff, (char)pixType&0xff);
+        NSLog(@"Capture CHANGE: WxH=%dx%d pixType=%c%c%c%c",outputWidth, outputHeight, (char)(pixType>>24)&0xff, (char)(pixType>>16)&0xff, (char)(pixType>>8)&0xff, (char)pixType&0xff);
     }
     
     // Now down to the business at hand. Enqueue the new frame.
@@ -309,11 +387,50 @@ for(key in pDict){
     
     pBI->pAudioSamples = NULL;
 
-    pBI->pBuffer = pBuff;
-    pBI->pY = pBI->pBuffer;
-    pBI->pCb = pCb;
-    pBI->pCr = pCr;
+    // Grab the current device capture resolution as this will determine cropping and strides to be given downline.
+    NSValue *psz;
+    psz = [[[videoDevice formatDescriptions]  objectAtIndex:0] attributeForKey:@"videoEncodedPixelsSize"];
     
+    captureWidth = (int)[psz sizeValue].width;
+    captureHeight = (int)[psz sizeValue].height;
+    int captureStride;
+    
+    if (pixType==kCVPixelFormatType_422YpCbCr8) // '2vuy' is active. Non-planar. Take base address and run.
+    {
+        int leftOffset, topOffset;
+        
+        assert(outputWidth <= captureWidth);
+        assert(outputHeight <= captureHeight);
+
+        captureStride = captureWidth * 2;   // 4:2:2 is always 2*width for stride and 2*w*h for buffer size.
+
+        // Always centering our cropping (if any) horizontally and vertically.
+        leftOffset = (captureWidth - outputWidth)/2; // Example: capture 640, only want 500, (640-500)/2=70 crop left side
+        topOffset  = (captureHeight - outputHeight)/2;
+        
+        // Effective starting buffer location with top-crop and left-crop taken into account. Stride will take care of the rest.
+        pBI->pBuffer = (void*) ( (unsigned char*)pBuff + (topOffset * captureStride) + (leftOffset * 2));
+        pBI->pBufferLength = outputHeight * captureStride;
+        pBI->captureStride = captureStride;
+        
+    }
+    else if (pixType==kCVPixelFormatType_422YpCbCr8) 
+    {
+        // Cope with Y, Cr, and Cb offsets and lengths separately.
+        
+        // Will have to have lengthY, lengthCr, and lengthCb
+        // Will also have to have strideY, strideCr, strideCb.
+        pBI->pY = pBI->pBuffer;
+        pBI->pCb = pCb;
+        pBI->pCr = pCr;
+        
+    }
+    else
+    {
+        NSLog(@"Unsupported pixType at this time.");
+        assert(false);
+    }
+
     pBI->timeStamp_uS = QTT_US([sampleBuffer presentationTime]);
     
     assert([sampleBuffer numberOfSamples]==1);
@@ -368,7 +485,6 @@ for(key in pDict){
         return;
     }
     
-#if 1
     /* Get the sample buffer's AudioStreamBasicDescription, which will be used to set the input format of the effect audio unit and the ExtAudioFile. */
     QTFormatDescription *formatDescription = [sampleBuffer formatDescription];
     NSValue *sampleBufferASBDValue = [formatDescription attributeForKey:QTFormatDescriptionAudioStreamBasicDescriptionAttribute ];
@@ -379,6 +495,7 @@ for(key in pDict){
     memset (&sampleBufferASBD, 0, sizeof (sampleBufferASBD));
     
     [sampleBufferASBDValue getValue:&sampleBufferASBD];
+#if 0
     
     printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%lu\n", sampleBufferASBD.mBytesPerFrame);
     printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerPacket=%lu\n", sampleBufferASBD.mBytesPerPacket);
@@ -537,11 +654,13 @@ for(key in pDict){
         // Time to convert.
         UInt32 outSize = [sampleBuffer numberOfSamples] * (DESIRED_BITS_PER_SAMPLE / 8) * sampleBufferASBD.mChannelsPerFrame;
 //TODO - reset to PROPER amount. *4 is only for illegal access debug
-        void* pConvData = new char[outSize*4];
+        void* pConvData = new char[outSize];
         assert(pConvData);
         
         // Must 'delete' this array in Release via pBuffer
         pBI->pBuffer = pConvData;
+        pBI->pBufferLength = outSize;
+        
 //        unsigned char* test = (unsigned char*)pBI->pBuffer;
         
 //        for (int i=0;i<[sampleBuffer lengthForAllSamples];i++,test++)
@@ -632,6 +751,9 @@ for(key in pDict){
           //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
           nil]];
         
+        outputWidth = 1280;
+        outputHeight = 720;
+        
         NSLog(@"Using HD mode 720p.");
     }
     else
@@ -639,10 +761,13 @@ for(key in pDict){
         [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
          [NSDictionary dictionaryWithObjectsAndKeys:
                        [NSNumber numberWithDouble:640], (id)kCVPixelBufferWidthKey,
-                       [NSNumber numberWithDouble:360], (id)kCVPixelBufferHeightKey,
+                       [NSNumber numberWithDouble:480], (id)kCVPixelBufferHeightKey,
           //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
           nil]];
 
+        outputWidth = 640;
+        outputHeight = 360;
+        
         NSLog(@"Using SD mode 360p.");
     }
 }

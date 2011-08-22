@@ -422,7 +422,7 @@
 				);
 				PRODUCT_NAME = MyRecorder;
 				RUN_CLANG_STATIC_ANALYZER = YES;
-				SDKROOT = macosx;
+				SDKROOT = "";
 				USER_HEADER_SEARCH_PATHS = "../../**";
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = YES;
@@ -456,7 +456,7 @@
 					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"",
 				);
 				PRODUCT_NAME = MyRecorder;
-				SDKROOT = macosx;
+				SDKROOT = "";
 				USER_HEADER_SEARCH_PATHS = "../../**";
 				WRAPPER_EXTENSION = app;
 			};

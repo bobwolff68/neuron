@@ -41,7 +41,7 @@ bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI, void*pb)
 //        int count = [pSamp sampleUseCount];
         
         // Delete converted data.
-        delete pQTB->pBuffer;
+        delete (SInt16*)pQTB->pBuffer;
 // No longer doing this. pBuffer is now an allocated buffer due to conversion.        [pSamp decrementSampleUseCount];
 
         // Remove hold on Apple's QT item.
