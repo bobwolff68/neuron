@@ -26,11 +26,21 @@ void v4_rtenc_t::InitRawFrameSettings(void)
     {
         frame.vp_frame.colorspace = VP_YUY2;
         frame.vp_frame.stride[0] = settings.input.width<<1;
+        for (int i=1; i<6; i++) 
+        {
+            frame.vp_frame.stride[i] = 0;
+            frame.vp_frame.data[i] = NULL;
+        }
     }
     else if(settings.input.colorspace==COLORSPACE_E_UYVY)
     {
         frame.vp_frame.colorspace = VP_UYVY;
         frame.vp_frame.stride[0] = settings.input.width<<1;
+        for (int i=1; i<6; i++) 
+        {
+            frame.vp_frame.stride[i] = 0;
+            frame.vp_frame.data[i] = NULL;
+        }
     }
 
     return;
@@ -49,13 +59,20 @@ void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf)
     }
     else if(settings.input.colorspace==COLORSPACE_E_YUY2 ||
             settings.input.colorspace==COLORSPACE_E_UYVY)
+    {
         frame.vp_frame.data[0] = p_frame_buf;
-    
+        for (int i=1; i<6; i++) 
+        {
+            frame.vp_frame.data[i] = NULL;
+            frame.vp_frame.stride[i] = 0;
+        }
+    }
     return;
 }
 
 #if (defined (__APPLE__) & defined (__MACH__))
-v4_rtenc_t::v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf):
+v4_rtenc_t::v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf)://,nl_aacrtbuf_t* _p_aac_rtbuf):
+//p_aac_rtbuf(_p_aac_rtbuf),
 #else
 v4_rtenc_t::v4_rtenc_t(const char* cfg_file,V4L2CapBuffer* _p_rtcap_buf):
 #endif
@@ -183,8 +200,12 @@ void v4_rtenc_t::SetEncSettings(map<string,string>& nvpairs)
 }
 
 int v4_rtenc_t::workerBee(void)
-{
-    static int first_frame_received = 0;
+{    
+/*********** AAC AUDIO STREAM **********
+    uint8_t* p_aacbuf = NULL;
+    const int aacbuf_size = FF_MIN_BUFFER_SIZE*10;
+    int aac_outbytes = 0;
+/***************************************/
     
     while(1)
     {
@@ -194,9 +215,13 @@ int v4_rtenc_t::workerBee(void)
 #else
         V4L2BufferInfo buf_info;
 #endif
-        void* pb;
         
+#ifdef COPY_QTKIT_CAP_BUFFERS
+        void* pb;
         if(p_rtcap_buf->FullBufferDQ(&p_bib, &pb)==false)
+#else
+        if(p_rtcap_buf->FullBufferDQ(&p_bib)==false)
+#endif
         {
             cout << "OUCH - Bad Deque" << endl;
             LOG_ERR("capture buffer dequeue error");
@@ -205,7 +230,11 @@ int v4_rtenc_t::workerBee(void)
 
         if(p_bib->bFinalSample)
         {
+#ifdef COPY_QTKIT_CAP_BUFFERS
             if(p_rtcap_buf->EmptyBufferRelease(p_bib, pb)==false)
+#else
+            if(p_rtcap_buf->EmptyBufferRelease(p_bib)==false)
+#endif
             {
                 LOG_ERR("empty capture buffer release error");
                 return -1;
@@ -214,50 +243,68 @@ int v4_rtenc_t::workerBee(void)
             break;
         }
 
-        //LOG_OUT("checkpoint: set raw frame buffer");
-        
 #if (defined (__APPLE__) & defined (__MACH__))
         p_bi = static_cast<QTKitBufferInfo*>(p_bib);
         if(p_bi->bIsVideo)
         {
+#ifdef COPY_QTKIT_CAP_BUFFERS
             if (pb)
                 SetRawFrameBuffers((unsigned char*)pb);
             else
-                SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer));
-            
-//            cout << "p_bi->pBuffer address: " << hex << p_bi->pBuffer << dec << endl;
-//            assert(p_bi->pBuffer);
+#endif
+            SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer));
             
             frame.timestamp = p_bi->timeStamp_uS;
-            //LOG_OUT("checkpoint: send raw frame to encoder");
             LockHandle();
-            if(!first_frame_received)
-            {
-                usleep(30000);
-                first_frame_received = 1;
-            }
-            else
-            {
-//                unsigned char* p=(unsigned char*)p_bi->pBuffer;
-//                printf("After to Deque: pBuffer=%p", p_bi->pBuffer);
-//                printf("Data at pBuffer is: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
-//                       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11]);
                 
-                try {
             if(v4e_set_vp_frame(p_handle,&frame,1)!=VSSH_OK)
             {
                 LOG_ERR("v4e_set_vp_frame() error");
                 return -1;
             }
-                }
-                catch(exception e)
-                {
-                    cout << "Exception" << e.what() << endl;
-                    assert(false);
-                }
-            }
+            
             UnlockHandle();
         }
+        /********************* AAC AUDIO STREAM *******************
+        else
+        {
+            assert(p_bi->rawLength!=-1);
+            
+            //assume raw data mode
+            int bytes_to_encode = p_bi->rawLength;
+            int bytes_per_sample = p_bi->rawLength / p_bi->rawNumSamples / p_acctx->channels;
+            int bytes_per_frame = p_acctx->frame_size * p_acctx->channels * bytes_per_sample;
+            int cur_sample_pos = 0;
+                
+            cout << "Frame size: " << p_acctx->frame_size << endl;
+            cout << "Channels: " << p_acctx->channels << endl;
+            
+            //encode the samples
+            while(bytes_to_encode > 0)
+            {
+                memcpy(p_temp_buf,p_bi->pBuffer,p_bi->rawLength);
+                aac_outbytes = avcodec_encode_audio(p_acctx,p_aacbuf,aacbuf_size,
+                                        (const short*)((uint8_t*)p_bi->pBuffer+cur_sample_pos));
+                if(aac_outbytes < 0)
+                {
+                    LOG_ERR("Unable to encode sample...");
+                }
+                else
+                {
+                    p_aacbuf = (uint8_t*) malloc(aacbuf_size*sizeof(uint8_t));
+                    assert(p_aacbuf!=NULL);
+                    nl_aacbufinfo_t* pBI = new nl_aacbufinfo_t();
+                    pBI->bytes = aac_outbytes;
+                    pBI->pBuffer = p_aacbuf;
+                    pBI->bFinalSample = false;
+                    p_aac_rtbuf->FullBufferEnQ(pBI);
+                    bytes_to_encode -= bytes_per_frame;
+                    cur_sample_pos += bytes_per_frame;
+                }
+            }   
+            
+        }
+        /*********************************************************************************/
 #else
         SetRawFrameBuffers((unsigned char*)(buf_info.pBuffer));
         frame.timestamp = buf_info.buf.timestamp.tv_sec*1000 + buf_info.buf.timestamp.tv_usec/1000;
@@ -275,7 +322,11 @@ int v4_rtenc_t::workerBee(void)
 #endif
         
         //cout << "Before releasing" << endl;
+#ifdef COPY_QTKIT_CAP_BUFFERS
         if(p_rtcap_buf->EmptyBufferRelease(p_bib, pb)==false)
+#else
+        if(p_rtcap_buf->EmptyBufferRelease(p_bib)==false)
+#endif
         {
             LOG_ERR("empty capture buffer release error");
             return -1;
@@ -321,3 +372,64 @@ RTEnc_ReturnCode_t v4_rtenc_t::UnlockHandle(void)
 
     return RTENC_RETCODE_OK;
 }
+
+/*#if (defined(__APPLE__) && defined(__MACH__))
+RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
+{
+    avcodec_register_all();
+    
+    p_acodec = avcodec_find_encoder(CODEC_ID_AAC);
+    if(p_acodec == NULL)
+    {
+        LOG_ERR("aac codec not found...");
+        throw RTENC_RETCODE_ERR_AOPEN;
+    }
+    
+    p_acctx = avcodec_alloc_context3(p_acodec);
+    
+    //encoder parameters
+    p_acctx->bit_rate = 128000;
+    p_acctx->sample_rate = 44100;
+    p_acctx->channels = 2;
+    p_acctx->sample_fmt = AV_SAMPLE_FMT_S16;
+    //p_acctx->profile = FF_PROFILE_AAC_MAIN;
+    p_acctx->time_base = (AVRational){1,p_acctx->sample_rate};
+    
+    //Test if sample format is supported
+    LOG_OUT("Test if flt sample format is supported...");
+    
+    int i;
+    for(i=0; p_acodec->sample_fmts[i]!=AV_SAMPLE_FMT_NONE; i++)
+    {
+        if (p_acctx->sample_fmt == p_acodec->sample_fmts[i]) 
+        {
+            LOG_OUT("Specified sample format is indeed supported...");
+            break;
+        }
+    }
+    
+    if (p_acodec->sample_fmts[i] == AV_SAMPLE_FMT_NONE) 
+    {
+        LOG_ERR("Specified sample format is not supported");
+        throw RTENC_RETCODE_ERR_AOPEN;
+    }
+    
+    //open encoder
+    //if(avcodec_open2(p_acctx, p_acodec, &p_opts_dict) < 0)
+    if(avcodec_open(p_acctx, p_acodec) < 0)
+    {
+        LOG_ERR("unable to open aac codec...");
+        return RTENC_RETCODE_ERR_AOPEN;
+    }
+    
+    return RTENC_RETCODE_OK;
+}
+    
+RTEnc_ReturnCode_t v4_rtenc_t::CloseAudio(void)
+{
+    avcodec_close(p_acctx);
+    av_free(p_acctx);
+    return RTENC_RETCODE_OK;
+}
+
+#endif*/

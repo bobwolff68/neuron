@@ -14,6 +14,8 @@
 		34AA4D0813EB77DB003F68AE /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34AA4D0713EB77DB003F68AE /* CoreVideo.framework */; };
 		34BF6A8213FC56090053B7A6 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34BF6A8113FC56090053B7A6 /* AudioToolbox.framework */; };
 		34DE7EE013ECA2CE007B30F0 /* QTKitCap.mm in Sources */ = {isa = PBXBuildFile; fileRef = 34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */; };
+		7B131B0514031838005A584D /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B131B0414031838005A584D /* libavcodec.a */; };
+		7B131B0714031857005A584D /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B131B0614031857005A584D /* libavutil.a */; };
 		7B5CFAED13F1C0D2007479E1 /* libgroupsock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAEC13F1C0D2007479E1 /* libgroupsock.a */; };
 		7B5CFAEF13F1C0F8007479E1 /* libliveMedia.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAEE13F1C0F8007479E1 /* libliveMedia.a */; };
 		7B5CFAF113F1C10C007479E1 /* libBasicUsageEnvironment.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */; };
@@ -93,6 +95,8 @@
 		34DE7EDD13EC9BA0007B30F0 /* ThreadSingle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ThreadSingle.h; path = ../../../neuroncommon/threading/NeuronBasics/ThreadSingle.h; sourceTree = "<group>"; };
 		34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = QTKitCap.mm; path = ../../capture/QTKitCap.mm; sourceTree = "<group>"; };
 		34DE7EDF13ECA2CE007B30F0 /* QTKitCap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QTKitCap.h; path = ../../capture/QTKitCap.h; sourceTree = "<group>"; };
+		7B131B0414031838005A584D /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../../../../../../../lgpl/ffmpeg/libavcodec/libavcodec.a; sourceTree = "<group>"; };
+		7B131B0614031857005A584D /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../../../../../../../lgpl/ffmpeg/libavutil/libavutil.a; sourceTree = "<group>"; };
 		7B5CFABD13F1B780007479E1 /* codec.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = codec.xcodeproj; path = ../../codec/xcode_build/codec/codec.xcodeproj; sourceTree = "<group>"; };
 		7B5CFAC413F1B79B007479E1 /* network.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = network.xcodeproj; path = ../../network/xcode_build/network/network.xcodeproj; sourceTree = "<group>"; };
 		7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = rtcamstream.xcodeproj; path = ../tools/rtcamstream/xcode_build/rtcamstream/rtcamstream.xcodeproj; sourceTree = "<group>"; };
@@ -113,6 +117,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7B131B0714031857005A584D /* libavutil.a in Frameworks */,
+				7B131B0514031838005A584D /* libavcodec.a in Frameworks */,
 				348E08FB13FDE6B000CB51D2 /* libv4codecsdk-m32g-all-md.a in Frameworks */,
 				34BF6A8213FC56090053B7A6 /* AudioToolbox.framework in Frameworks */,
 				7B5CFB3413F1DCC0007479E1 /* librtcamstream.a in Frameworks */,
@@ -160,6 +166,8 @@
 		29B97314FDCFA39411CA2CEA /* MyRecorder */ = {
 			isa = PBXGroup;
 			children = (
+				7B131B0614031857005A584D /* libavutil.a */,
+				7B131B0414031838005A584D /* libavcodec.a */,
 				348E08FA13FDE6B000CB51D2 /* libv4codecsdk-m32g-all-md.a */,
 				348E08F813FD7F2A00CB51D2 /* libv4codecsdk-m32gd-all.a */,
 				34BF6A8113FC56090053B7A6 /* AudioToolbox.framework */,
@@ -419,7 +427,10 @@
 					"\"$(SRCROOT)/../../../../../Common/live555/UsageEnvironment\"/**",
 					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"/**",
 					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"",
+					"\"$(SRCROOT)/../../../../../../../lgpl/ffmpeg/libavcodec\"",
+					"\"$(SRCROOT)/../../../../../../../lgpl/ffmpeg/libavutil\"",
 				);
+				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = MyRecorder;
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
@@ -454,7 +465,10 @@
 					"\"$(SRCROOT)/../../../../../Common/live555/UsageEnvironment\"/**",
 					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"/**",
 					"\"$(SRCROOT)/../../../../../Common/vanguard/mac/v4sdk-4.6/lib\"",
+					"\"$(SRCROOT)/../../../../../../../lgpl/ffmpeg/libavcodec\"",
+					"\"$(SRCROOT)/../../../../../../../lgpl/ffmpeg/libavutil\"",
 				);
+				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = MyRecorder;
 				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "../../**";

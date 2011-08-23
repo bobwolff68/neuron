@@ -86,14 +86,23 @@ public:
 //! \todo During ReleaseOutputSide or clear, we need to lock the mutex, clean up the semaphore, and re-enqueue all driver buffers.
 class RTBuffer {
 public:
+    static int n_instances;
 	RTBuffer(void);
 	virtual ~RTBuffer(void);
 	bool FullBufferEnQ(RTBufferInfoBase* pBI);
+#ifdef COPY_QTKIT_CAP_BUFFERS
 	bool FullBufferDQ(RTBufferInfoBase** ppBI, void **ppb);
-	void Shutdown(void);
+#else
+    bool FullBufferDQ(RTBufferInfoBase** ppBI);
+#endif
+    void Shutdown(void);
     
 	//! \brief To be implemented by the capture side in case buffers need to be released back to the driver.
+#ifdef COPY_QTKIT_CAP_BUFFERS
 	virtual bool EmptyBufferRelease(RTBufferInfoBase* pBI, void*pb) = 0;
+#else
+    virtual bool EmptyBufferRelease(RTBufferInfoBase* pBI) = 0;
+#endif
     
 	int Qsize(void) { return bufferQ.size(); };
     //TODO - Need to think about doing a pauseRunning() followed by a wait of some kind
@@ -123,7 +132,11 @@ class QTKitCapBuffer : public RTBuffer {
 public:
 	QTKitCapBuffer() { };
 	~QTKitCapBuffer(void) { };
+#ifdef COPY_QTKIT_CAP_BUFFERS
 	bool EmptyBufferRelease(RTBufferInfoBase* pBI, void* pb);
+#else
+    bool EmptyBufferRelease(RTBufferInfoBase* pBI);
+#endif
 };
 
 class TempVidCapBase {

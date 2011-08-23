@@ -4,12 +4,14 @@
 
 //#define USE_COPY_BUFFERS
 
+int RTBuffer::n_instances = 0;
+
 RTBuffer::RTBuffer(void) 
 { 
     int pid;
     pid = getpid();
     stringstream semname;
-    semname << "neuron_sem_" << pid;
+    semname << "neuron_sem_" << pid << RTBuffer::n_instances++;
     
     cout << "Semaphore name is: " << semname.str() << endl;
     
@@ -93,8 +95,11 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase* pBI)
         mRefusedCount++;
         
         // Special case -- when enQ fails, who deletes the pointer? We do internally.
+#ifdef COPY_QTKIT_CAP_BUFFERS
         this->EmptyBufferRelease(pBI, NULL);
-        
+#else
+        this->EmptyBufferRelease(pBI);
+#endif
         return false;
     }
     
@@ -108,7 +113,11 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase* pBI)
         assert(false && "Lock Failed");
 
         // Special case -- when enQ fails, who deletes the pointer? We do internally.
+#ifdef COPY_QTKIT_CAP_BUFFERS
         this->EmptyBufferRelease(pBI, NULL);
+#else
+        this->EmptyBufferRelease(pBI);
+#endif
         
         return false;
     }
@@ -116,7 +125,7 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase* pBI)
     // Enqueue the item sent in.
     bufferQ.push_back(pBI);
 
-#ifdef USE_COPY_BUFFERS
+#ifdef COPY_QTKIT_CAP_BUFFERS
     void* pb=NULL;
     posix_memalign(&pb, 16, 640*360*2);
 
@@ -158,7 +167,11 @@ bool RTBuffer::FullBufferEnQ(RTBufferInfoBase* pBI)
 //! 
 //! 
 
+#ifdef COPY_QTKIT_CAP_BUFFERS
 bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI, void**ppb)
+#else
+bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI)
+#endif
 {
     int rc=0;
     bool ret = true;
@@ -195,11 +208,9 @@ bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI, void**ppb)
         // DeQueue the item at the front.
         bufferQ.pop_front();
      
-#ifdef USE_COPY_BUFFERS
+#ifdef COPY_QTKIT_CAP_BUFFERS
         *ppb = pBuff_copied.front();
         pBuff_copied.pop_front();
-#else
-        *ppb = NULL;
 #endif
         
         ret = true;    

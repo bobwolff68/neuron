@@ -29,6 +29,7 @@ private:
 #endif
 	v4_rtenc_t* p_rtenc;
     v4_fifoout_t* p_fifoout;
+    //nl_aacrtbuf_t* p_aac_rtbuf;
 	nl_rtspserver_t* p_serv;
 	virtual void IdleLoop(void);
     

@@ -35,13 +35,28 @@ void nl_rtspserver_t::setup_sms(const char* stream_name)
 {
     ServerMediaSession* p_sms = ServerMediaSession::createNew(envir(),stream_name,stream_name,NULL);
     OutPacketBuffer::maxSize = 100000;
+    string video_stream_name = stream_name;
+    string audio_stream_name = stream_name;
+    
+    video_stream_name += ".264";
+    audio_stream_name += ".aac";
+    
     p_sms->addSubsession(
         H264VideoFileServerMediaSubsession::createNew(
             envir(),
-            stream_name,
+            video_stream_name.c_str(),
             True
         )
     );
+    
+    /*p_sms->addSubsession(
+        ADTSAudioFileServerMediaSubsession::createNew(
+            envir(),
+            audio_stream_name.c_str(),
+            True
+        )
+    );*/
+    
     addServerMediaSession(p_sms);
 }
 

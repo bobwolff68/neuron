@@ -2,65 +2,53 @@
 #define V4FIFOOUT_H_
 
 #include "v4rtenc.h"
+#include "nlfifostream.h"
+#include "nlaacrtbuf.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string>
+#include <errno.h>
 #include <v4e_api.h>
 #include <v4_nalu.h>
 #include <ThreadSingle.h>
 
+#define N_STREAMS               2
 #define MAX_WRITE_FIFO_ATTEMPTS 100
+
+typedef enum
+{
+    NL_AACBUFINFO_EXCEPTION_BAD_DEQUEUE = 0
+} nl_aacbufinfo_exception_t;
 
 typedef enum
 {
     V4FIFOOUT_RETCODE_OK = 0,
     V4FIFOOUT_RETCODE_ERR_MKFIFO,
     V4FIFOOUT_RETCODE_ERR_OPENFIFO,
-    V4FIFOOUT_RETCODE_ERR_CLOSEFIFO
+    V4FIFOOUT_RETCODE_ERR_CLOSEFIFO,
 } v4fifoout_retcode_t;
 
-class v4_avcbsbuf_t
+class nl_aacfifoout_t : public ThreadSingle
 {
 private:
-    unsigned char* p_membuf;
-    int size;
+    nl_aacrtbuf_t* p_aac_rtbuf;
+    nl_fifostream_t* p_afs[N_STREAMS];
+    virtual int workerBee(void);
     
 public:
-    v4_avcbsbuf_t()
+    nl_aacfifoout_t(nl_aacrtbuf_t* _p_aac_rtbuf,nl_fifostream_t* _p_afs[]):
+    p_aac_rtbuf(_p_aac_rtbuf)
     {
-        size = 4;
-        p_membuf = (unsigned char*) malloc(size);
-        p_membuf[0] = 0;
-        p_membuf[1] = 0;
-        p_membuf[2] = 0;
-        p_membuf[3] = 1;
-    }
-
-    ~v4_avcbsbuf_t()
-    {
-        free(p_membuf);
-    }
-
-    void copy_nalu(const void* p_nalu_buf,const int nalu_size)
-    {
-        if(size < (nalu_size+4))
+        for (int i=0; i<N_STREAMS; i++) 
         {
-            size = nalu_size + 4;
-            p_membuf = (unsigned char*) realloc(p_membuf,size);
+            p_afs[i] = _p_afs[i];
         }
-
-        memcpy(p_membuf+4,p_nalu_buf,nalu_size);
-    }
-
-    unsigned char* get_membuf_ptr(void) const
-    {
-        return p_membuf;
     }
     
-    int get_size(void)  const
+    virtual ~nl_aacfifoout_t()
     {
-        return size;
     }
 };
 
@@ -68,18 +56,14 @@ class v4_fifoout_t : public ThreadSingle
 {
 private:
     v4_rtenc_t* p_rtenc;
-    v4_avcbsbuf_t* p_avcbs_buf;
-    v4_avcbsbuf_t* p_sps_buf;
-    v4_avcbsbuf_t* p_pps_buf;
-    int fd_fifo_out;
-    bool b_sps_sent;
-    bool b_pps_sent;
-    const char* fifo_out;
+    nl_aacfifoout_t* p_aac_fifoout;
+    nl_fifostream_t* p_fs[N_STREAMS];
+    const std::string stream_name;
     media_sample_t* p_ms;
     virtual int workerBee(void);
 
 public:
-    v4_fifoout_t(const char* fifo_out, v4_rtenc_t* _p_rtenc);
+    v4_fifoout_t(const char* _stream_name,v4_rtenc_t* _p_rtenc);//,nl_aacrtbuf_t* _p_aac_rtbuf);
     virtual ~v4_fifoout_t();
 };
 
