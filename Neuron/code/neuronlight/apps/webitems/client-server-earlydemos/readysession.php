@@ -69,6 +69,11 @@
         <?
             require "check.php"; 
         ?>
+        
+        <script type="text/javascript"> 
+            // var doremove0 =  echo $_SESSION[udec]; ;
+            // alert('udec0 = ' + doremove0);
+        </script>
    
         <div class="mainwrapper">
 	    <div id="header">
@@ -85,39 +90,11 @@
 		    <input size ="60" type="submit" value="Submit"/>
                     <a href="landing.php"><input type="button" name="cancel" value="Cancel" /></a>
                 </form>
-            </div>
-		
-                    <div id="contacts" style="width: 150px; padding-top:22px; float: right">
-                            <hr/>
-                            <p style="margin:0px; text-align: center">
-                            <p>Active Sessions</p>
-                            <table>
-                                <tr>
-                                    <td><a href="readyjoin.php"><button>Active</button></a></td>
-                                    <td><a href="readyjoin.php">Tom</a></td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>Joe</td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>Sue</td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>Ann</td>
-                                </tr>
-                            </table>
-                            </p>
-                            
-                                <hr/>
-                                <a href="readysession.php"><button>Start Session</button></a>
-		   	</div>		
-	    </div>
+            </div>		
+	</div>
 
-	    <div id="footer">
-	    </div>	
+	<div id="footer">
+	</div>	
         </div>
     </body>
 </html>

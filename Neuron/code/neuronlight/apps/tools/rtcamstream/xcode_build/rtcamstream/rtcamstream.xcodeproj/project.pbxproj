@@ -173,8 +173,9 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_VERSION = "";
 				"HEADER_SEARCH_PATHS[arch=*]" = (
+					/usr/local/include,
 					../../../../../capture,
-					../../../../../codec,
+					"../../../../../codec/**",
 					../../../../../network,
 					../../../../../../neuroncommon/threading/NeuronBasics,
 					"../../../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",

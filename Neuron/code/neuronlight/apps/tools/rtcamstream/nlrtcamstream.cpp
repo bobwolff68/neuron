@@ -13,7 +13,6 @@ using namespace std;
     {
         nl_rtcamstream_t rtcs(p_cap_objc,"rtenc_avc_settings.cfg",8554,width,height,colorspace);
         rtcs.RunCapture();
-        //p_cap_objc->Release();
         return;
     }
                               
@@ -23,7 +22,7 @@ using namespace std;
                                        const int width,
                                        const int height,
                                        const char* colorspace):
-    p_cap(_p_cap)
+    p_cap(_p_cap),p_serv(NULL)
 #else
     nl_rtcamstream_t::nl_rtcamstream_t(const char* rtenc_cfg_file,
                                        const short rtsp_port,
@@ -32,23 +31,40 @@ using namespace std;
                                        const char* colorspace)
 #endif
 {
+    uint16_t backup_ports[6] = {0,554,50004,4100,5400,6001};
+    
 	try
 	{
 #if (!((defined(__APPLE__) & defined(__MACH__))))
 		p_cap = new V4L2Cap("/dev/video0",i_width,i_height,"YUYV");
 #endif
-        cout << "Before v4_rtenc_t()" << endl;
-		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer());
-        cout << "Before v4_fifoout_t()" << endl;
-        p_fifoout = new v4_fifoout_t("stream.264",p_rtenc);
-		p_serv = nl_rtspserver_t::createNew(
+        backup_ports[0] = rtsp_port;
+//        p_aac_rtbuf = new nl_aacrtbuf_t();
+		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer());//,p_aac_rtbuf);
+        p_fifoout = new v4_fifoout_t("stream",p_rtenc);//,p_aac_rtbuf);
+        
+        for(int i=0; i<5 && p_serv==NULL; i++)
+        {
+            cout << "Trying rtsp port: " << backup_ports[i] << endl;
+            p_serv = nl_rtspserver_t::createNew(
                         *BasicUsageEnvironment::createNew(
                             *BasicTaskScheduler::createNew()
                         ),
-                        rtsp_port
+                        backup_ports[i]
                      );
-        p_serv->setup_sms("stream.264");
-        cout << "Before assignments" << endl;
+        }
+        
+        if(p_serv == NULL)
+        {
+            LOG_ERR("All attempts to instantiate rtsp server failed... aborting");
+            throw RTCS_RETCODE_ERR_RTTRANS;
+        }
+        else
+            cout << "Successful" << endl;
+        
+        p_serv->setup_sms("stream0");
+        p_serv->setup_sms("stream1");
+
 		map<string,string> nvpairs;
         char s_width[20];
         char s_height[20];
@@ -57,8 +73,6 @@ using namespace std;
 		nvpairs["Width"] = s_width;
 		nvpairs["Height"] = s_height;
 		nvpairs["Colorspace"] = colorspace;
-
-        cout << "Before SetEncSettings()" << endl;
 		p_rtenc->SetEncSettings(nvpairs);
 	}
 	catch(RTEnc_ReturnCode_t& rtenc_err_code)
@@ -78,6 +92,12 @@ using namespace std;
 		LOG_ERR("Real time encoder open error");
 		throw RTCS_RETCODE_ERR_RTENC_OPEN;
 	}
+    
+    /*if(p_rtenc->OpenAudio()!=RTENC_RETCODE_OK)
+    {
+        LOG_ERR("rtenc->OpenAudio() error");
+        throw RTCS_RETCODE_ERR_RTENC_OPEN;
+    }*/
     cout << "After rtenc->Open()" << endl;
 }
 
@@ -85,12 +105,14 @@ nl_rtcamstream_t::~nl_rtcamstream_t()
 {
 	try
 	{
-	    //nl_rtspserver_t::destroy(p_serv);
+	    nl_rtspserver_t::destroy(p_serv);
 		delete p_fifoout;
+        //p_rtenc->CloseAudio();
 		delete p_rtenc;
 #if( !(defined(__APPLE__) & defined(__MACH__)) )
 		delete p_cap;
 #endif
+        //delete p_aac_rtbuf;
 	}
 	catch(RTEnc_ReturnCode_t& rtenc_err_code)
 	{
@@ -121,7 +143,7 @@ void nl_rtcamstream_t::RunCapture(void)
 
 		//IdleLoop();
         while (1) {
-            usleep(1000000);
+            usleep(20000);
         }
 	
 		//p_cap->stop_capturing();

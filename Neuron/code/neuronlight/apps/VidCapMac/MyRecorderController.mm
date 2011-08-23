@@ -497,7 +497,7 @@ for(key in pDict){
     [sampleBufferASBDValue getValue:&sampleBufferASBD];
 #if 0
     
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%lu\n", sampleBufferASBD.mBytesPerFrame);
+/*    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%lu\n", sampleBufferASBD.mBytesPerFrame);
     printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerPacket=%lu\n", sampleBufferASBD.mBytesPerPacket);
     printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mSampleRate=%f\n", sampleBufferASBD.mSampleRate);
     printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBitsPerChannel=%lu\n", sampleBufferASBD.mBitsPerChannel);	
@@ -518,7 +518,7 @@ for(key in pDict){
     printf(" lengthForAllSamples=%d, numberOfSamples=%d\n",
            [sampleBuffer lengthForAllSamples],
            [sampleBuffer numberOfSamples]); 
-    fflush(stdout);	
+    fflush(stdout);	*/
 #endif
 
 #if 0
