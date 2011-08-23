@@ -433,7 +433,7 @@
 				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = MyRecorder;
 				RUN_CLANG_STATIC_ANALYZER = YES;
-				SDKROOT = macosx;
+				SDKROOT = "";
 				USER_HEADER_SEARCH_PATHS = "../../**";
 				WRAPPER_EXTENSION = app;
 				ZERO_LINK = YES;
@@ -470,7 +470,7 @@
 				);
 				OTHER_LDFLAGS = "-lz";
 				PRODUCT_NAME = MyRecorder;
-				SDKROOT = macosx;
+				SDKROOT = "";
 				USER_HEADER_SEARCH_PATHS = "../../**";
 				WRAPPER_EXTENSION = app;
 			};

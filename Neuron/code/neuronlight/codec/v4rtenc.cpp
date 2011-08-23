@@ -46,7 +46,7 @@ void v4_rtenc_t::InitRawFrameSettings(void)
     return;
 }
 
-void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf)
+void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf, int stride)
 {
 
     if(settings.input.colorspace==COLORSPACE_E_YV12)
@@ -66,6 +66,7 @@ void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf)
             frame.vp_frame.data[i] = NULL;
             frame.vp_frame.stride[i] = 0;
         }
+    	frame.vp_frame.stride[0] = stride;
     }
     return;
 }
@@ -249,10 +250,10 @@ int v4_rtenc_t::workerBee(void)
         {
 #ifdef COPY_QTKIT_CAP_BUFFERS
             if (pb)
-                SetRawFrameBuffers((unsigned char*)pb);
+                SetRawFrameBuffers((unsigned char*)pb, p_bi->captureStride);
             else
 #endif
-            SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer));
+            SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer), p_bi->captureStride);
             
             frame.timestamp = p_bi->timeStamp_uS;
             LockHandle();
