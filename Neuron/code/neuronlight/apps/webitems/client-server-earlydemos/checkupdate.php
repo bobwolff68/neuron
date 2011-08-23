@@ -6,6 +6,8 @@
 //   $node = $dom->createElement("update");  
 //   $newnode = $parnode->appendChild($node);  
 //   $newnode->setAttribute("newurl", "http://www.mozilla.org");
+    session_start();
+    require "check.php";
    
     // Start XML file, create parent node
     $dom = new DOMDocument("1.0");

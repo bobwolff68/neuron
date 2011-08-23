@@ -1,7 +1,7 @@
 <?
     session_start();
     require "check.php";
-    $location = "Location: readysession.php";    
+    $location = "Location: readyjoin.php";    
 
     // Opens a connection to a MySQL server
     $mysqli= new mysqli ("127.0.0.1", "xvdth", "12345", "xvdth" );
@@ -11,6 +11,7 @@
         die('Not connected : ' . mysqli_error());
     } else {
         $sql = "insert into sessionrecord (username, ip, portv, porta) values ('$_SESSION[userid]', '".$_POST["cURL"]."', 4000, 4001)";
+
         $result = mysqli_query($mysqli, $sql);
         
         $sql = "select count from sessioncount";
@@ -24,8 +25,7 @@
             
             $sql = "update sessioncount set count=$count";
             $result = mysqli_query($mysqli, $sql);
-            $_SESSION['count'] = $count;
-            
+
             switch ($count){
                 case 0:
                 break;

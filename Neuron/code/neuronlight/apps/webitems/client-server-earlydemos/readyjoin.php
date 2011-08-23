@@ -79,42 +79,13 @@
 
 	<div id="content" class="content">
             <div id="join" style="width: 200px; padding-left: 400px; padding-top:100px; float: left">
-                <form name="input" action="startsession.php" method="POST">
+                <form name="input" action="startjoin.php" method="POST">
 		    Your stream URL: <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.100:8554/stream.sdp"/ -->
                                      <input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"/><br/>
 		    <input size ="60" type="submit" value="Submit"/>
                     <a href="landing.php"><input type="button" name="cancel" value="Cancel" /></a>
                 </form>
-            </div>
-		
-                    <div id="contacts" style="width: 150px; padding-top:22px; float: right">
-                            <hr/>
-                            <p style="margin:0px; text-align: center">
-                            <p>Active Sessions</p>
-                            <table>
-                                <tr>
-                                    <td><a href="readyjoin.php"><button>Active</button></a></td>
-                                    <td><a href="readyjoin.php">Tom</a></td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>Joe</td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>Sue</td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td>Ann</td>
-                                </tr>
-                            </table>
-                            </p>
-                            
-                                <hr/>
-                                <a href="readysession.php"><button>Start Session</button></a>
-		   	</div>
-		
+            </div>		
 	</div>
 
 	<div id="footer">            

@@ -23,12 +23,12 @@
 
 /* --- content --- */
 
-	#content {text-align: center; color: black; font-size:1.125em; min-height: 400px; background: #ffffff; line-height:1em;}        
+	#content {text-align: center; color: black; font-size:0.75em; min-height: 300px; background: #ffffff; line-height:1em;}        
         #b0 { width: 30%; margin-left: auto; margin-right: auto; display: table; height: 400px; overflow: hidden; }
         #b1 {display: table-cell; vertical-align: middle;}
         #b2 {}
-/*        #vlce1 { width: 30%; margin-left: auto; margin-right: auto; display: }
-        #vlce1 {width:750px; left:50%; margin-left:-375px;}*/
+        #tslider {min-height: 200px; text-align: center; color: black; font-size:0.75em; background: #ffffff; }
+
 /* --- END content --- */
 
 /* --- footer --- */
