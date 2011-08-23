@@ -10,7 +10,6 @@
 	<link href="conf1.css" media="handheld, screen" rel="stylesheet" type="text/css" />
         <!-- link rel="stylesheet" type="text/css" href="http://revolunet.github.com/VLCcontrols/src/styles.css" / -->
 
-                
 	<title>XVDTH Video</title>
         <style type="text/css">
   		html { height: 100% }
@@ -129,67 +128,97 @@
                     var a1 = document.getElementById("xfile");
                     var lastlocationurl = a1.value;
                     var changepage = 0;
+                    var curl = 'conference1.php';
                     switch (puser.length) {
+                        case 0:
+                            curl = 'landing.php';
+                            changepage = 1;
+                        break;
+                        
                         case 1: 
-                            if (a1.value != 'conference1.php'){
-                                a1.value = 'conference1.php';
+                            if (a1.value != 'zero'){
+                                a1.value = 'zero';
+                                var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
+                                
+                                var p0 = document.getElementById("vlc0");
+                                p0.playlist.items.clear();
+                                while(p0.playlist.items.count > 0){
+                                }
+                                
                                 var p1 = document.getElementById("vlc1");
                                 p1.playlist.items.clear();
                                 while(p1.playlist.items.count > 0){
                                 }
-                                var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
+                                
                                 var urival = document.getElementById("uri");
                                 urival.value = member[0][1];
-                                var id22 = p1.playlist.add(urival.value, "stream one", null);                               
-                                //p1.playlist.playItem(id22);
+                                var id22 = p1.playlist.add(urival.value, "stream one", options);
+                                p1.playlist.stop();
+                                
+                                var urival0 = document.getElementById("uri0");
+                                urival0.value = member[0][1];
+                                var id21 = p0.playlist.add(urival0.value, "stream zero", options);
+                                p0.playlist.play();
                             }
                         break;
                         
                         case 2: 
-                            if (a1.value != 'conference2.php'){
-                                a1.value = 'conference2.php';
+                            if (a1.value != 'one'){
+                                a1.value = 'one';
+                                var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
+
+                                var p0 = document.getElementById("vlc0");
+                                p0.playlist.items.clear();
+                                while(p0.playlist.items.count > 0){
+                                }
+                                
                                 var p1 = document.getElementById("vlc1");
                                 p1.playlist.items.clear();
                                 while(p1.playlist.items.count > 0){
                                 }
-                                var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
+                                
                                 var urival = document.getElementById("uri");
+                                var urival0 = document.getElementById("uri0");
+                                var uname = document.getElementById("uname1");
                                 if(sesslogged == member[0][0]){
+                                    uname.value = member[1][0];
+                                    urival0.value = member[0][1];
                                     urival.value = member[1][1];
-                                    var id22 = p1.playlist.add(urival.value, "stream two", null);                               
-                                    p1.playlist.playItem(id22);
-                                    p1.play();
                                 } else {
+                                    uname.value = member[0][0];
+                                    urival0.value = member[1][1];
                                     urival.value = member[0][1];
-                                    var id22 = p1.playlist.add(urival.value, "stream two", null);                               
-                                    p1.playlist.playItem(id22);
                                 }
-                                // var id22 = p1.playlist.add(urival.value, "stream two", null);                               
-                                // p1.playlist.playItem(id22);
+                                
+                                var id22 = p1.playlist.add(urival.value, "stream two", null);                               
+                                p1.playlist.playItem(id22);
+                                p1.playlist.play();
+                                
+                                var id21 = p0.playlist.add(urival0.value, "stream zero", null);                               
+                                p0.playlist.playItem(id21);
+                                p0.playlist.play();
                             }
                         break;
                         
-                        case 3:
-                            a1.value = '3.html';
-                        break;
-                        
-                        case 4:
-                            a1.value = '4.html';
-                        break;
-                        
                         default:
-                            a1.value = 'd.html';
+                            if (puser.length > 2){
+                                //  $_SESSION['udec'] = 0; 
+                                changepage = 1;
+                                curl = 'conference2.php';
+                            }
                         break;
                     }
-                    // <![CDATA[
-                    if ((a1.value != lastlocationurl) && (changepage > 0)){
-                        var locationObj = document.location;
-                        document.location = a1.value;
-                    }else{
-                        var t=setTimeout("check()",5000);
+
+                    if (changepage > 0){
+                        var uremove = document.getElementById("removeuser");
+                        uremove.value = '0';
+                        document.location = curl;
                     }
-                    // ]]>
+                    var t = setTimeout("check()", 15000);
                 });
+                
+                
+
             }
         
             function load(){
@@ -212,6 +241,22 @@
                 request.send(null);
             }
             
+            function downloadUrl2(url, callback) {
+                var request = window.ActiveXObject ?
+                new ActiveXObject('Microsoft.XMLHTTP') :
+                new XMLHttpRequest;
+
+                request.onreadystatechange = function() {
+                    if (request.readyState == 4) {
+                        request.onreadystatechange = doNothing;
+                        callback(request, request.status);
+                    }
+                };
+
+                request.open('GET', url, false);
+                request.send(null);
+            }
+            
             $(document.getElementsByTagName('div')[1]).ready(function() {
 //                addvlc();
  	    });
@@ -220,7 +265,30 @@
             }
             
             google.maps.event.addDomListener(window, 'load', load);
-
+            
+            function vplay(vlcid){
+                var p1 = document.getElementById(vlcid);
+                p1.playlist.play();
+            }
+            
+            function vpause(vlcid){
+                var p1 = document.getElementById(vlcid);
+                p1.playlist.togglePause();
+            }
+            
+            function vstop(vlcid){
+                var p1 = document.getElementById(vlcid);
+                p1.playlist.stop();
+            }
+            
+            function vmute(vlcid){
+                var p1 = document.getElementById(vlcid);
+                p1.audio.toggleMute();
+            }
+            
+            function doalert(){
+                alert('doalert');
+            }
             
         </script> 
         
@@ -230,46 +298,80 @@
         <?
             require "check.php";
             echo "<script type='text/javascript'>var sesslogged='$_SESSION[userid]';</script>";
+            $_SESSION['udec'] = 1;
         ?>
         
         <script type="text/javascript"> 
             $(document).ready(function(){
-                //alert("ready called");
             });
-            //alert(sesslogged);
+            
             check();
+            
+            window.onbeforeunload = function (e) {
+               // alert('onbeforeunload');
+                var uremove = document.getElementById("removeuser");                
+                if (uremove.value == '1'){
+                    alert('doing remove');                    
+                    downloadUrl2("removeuser.php", function(data){               
+                    });
+                    document.location = "landing.php";
+                } 
+            };
         </script>
         
         <div class="mainwrapper">
-            <div id="header">
-                <div id="header2">Neuron Light 2-Way Demo
-                </div>
-            </div> 
             
             <div id="content" >        
-        <div id='vlce1'>
-            <embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
-                width="320"
-                height="240"
-                id="vlc1"/>
-                <!-- 
-                autoplay="yes" loop="no"
-                target="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"            
-                / -->        
-   
-            <!-- input id='uri' value='http://www.revolunet.com/static/download/labo/VLCcontrols/bunny.mp4' size=70 type='text' -->
-            <!-- input id='uri' value='http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi' size=70 type='text' -->
-            <!--input id='uri' value='rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov' size=70 type='text'-->
-            <!--input id='uri' value='rtsp://192.168.46.81:8554/serenity.ts' size=70 type='text'-->
-            <!--input id='uri' value='rtsp://192.168.46.81:8554/stream1.sdp' size=70 type='text'-->                    <!--input id='uri' value='file:///Users/xvdthuser1xvdth/media/vlc-output.ts' size='70' type='text'/-->
-            <!--input id='uri' value="rpurl" size='70' type='text' name="vevo"/-->
-            <input id='uri' value='emptyuri' type='text' name="vevo2"/>        
-            <input id='xfile' value='emptyfile' type='text' name="vevo"/>
-        </div>
+                <div id='vlce1'>
+                    <ul>
+                        <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
+                        width="320"
+                        height="240"
+                        id="vlc1"/>
+                        <!-- 
+                        autoplay="yes" loop="no"
+                        target="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"            
+                        / -->
+                        </li>
+                        <!-- input id='uri' value='http://www.revolunet.com/static/download/labo/VLCcontrols/bunny.mp4' size=70 type='text' -->
+                        <!-- input id='uri' value='http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi' size=70 type='text' -->
+                        <!--input id='uri' value='rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov' size=70 type='text'-->
+                        <!--input id='uri' value='rtsp://192.168.46.81:8554/serenity.ts' size=70 type='text'-->
+                        <!--input id='uri' value='rtsp://192.168.46.81:8554/stream1.sdp' size=70 type='text'-->                    <!--input id='uri' value='file:///Users/xvdthuser1xvdth/media/vlc-output.ts' size='70' type='text'/-->
+                        <!--input id='uri' value="rpurl" size='70' type='text' name="vevo"/-->
+                        <li><a href="javascript:;" onclick='return vplay("vlc1")'>Play </a>
+                            <a href="javascript:;" onclick='return vpause("vlc1")'>Pause </a>
+                            <a href="javascript:;" onclick='return vstop("vlc1")'>Stop </a>
+                            <a href="javascript:;" onclick='return vmute("vlc1")'>Mute</a>
+                        </li>
+                        <li><b><input id='uname1' value='no joiners' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
+                        </li>
+                        <li><input id='uri' value='emptyuri' size='70' type='text' name="vevo2"/></li>        
+                        <li><input id='xfile' value='emptyfile' type='hidden' name="vevo"/></li>
+                    </ul>
+                </div>
             </div>
             
-            <div id="footer">
+            <div id="tslider">
+                <div id="vlce0" style="float: left">
+                    <ul>
+                        <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
+                            width="160"
+                            height="120"
+                            id="vlc0"/></li>
+                        <li>
+                            <a href="javascript:;" onclick='return vplay("vlc0")'>Play </a>
+                            <a href="javascript:;" onclick='return vpause("vlc0")'>Pause </a>
+                            <a href="javascript:;" onclick='return vstop("vlc0")'>Stop </a>
+                            <a href="javascript:;" onclick='return vmute("vlc0")'>Mute</a>
+                        </li>
+                        <li><b><? echo ($_SESSION[userid]); ?></b></li>
+                        <li><input id='uri0' value='emptyuri' size='30' type='text' name="vevo2"/></li>        
+                        <li><input id='xfile0' value='emptyfile' type='hidden' name="vevo"/></li>
+                    </ul>
+                </div>
             </div>
-        </div>         
+        </div>
+        <input id='removeuser' value='1' type='hidden' name="vevo"/>
     </body> 
 </html> 
