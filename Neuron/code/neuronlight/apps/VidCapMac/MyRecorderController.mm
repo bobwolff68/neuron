@@ -2,52 +2,21 @@
 //  MyRecorderController.m
 //  MyRecorder
 
-/*
- 
- Disclaimer: IMPORTANT:  This Apple software is supplied to you by 
- Apple Inc. ("Apple") in consideration of your agreement to the
- following terms, and your use, installation, modification or
- redistribution of this Apple software constitutes acceptance of these
- terms.  If you do not agree with these terms, please do not use,
- install, modify or redistribute this Apple software.
- 
- In consideration of your agreement to abide by the following terms, and
- subject to these terms, Apple grants you a personal, non-exclusive
- license, under Apple's copyrights in this original Apple software (the
- "Apple Software"), to use, reproduce, modify and redistribute the Apple
- Software, with or without modifications, in source and/or binary forms;
- provided that if you redistribute the Apple Software in its entirety and
- without modifications, you must retain this notice and the following
- text and disclaimers in all such redistributions of the Apple Software. 
- Neither the name, trademarks, service marks or logos of Apple Inc. 
- may be used to endorse or promote products derived from the Apple
- Software without specific prior written permission from Apple.  Except
- as expressly stated in this notice, no other rights or licenses, express
- or implied, are granted by Apple herein, including but not limited to
- any patent rights that may be infringed by your derivative works or by
- other works in which the Apple Software may be incorporated.
- 
- The Apple Software is provided by Apple on an "AS IS" basis.  APPLE
- MAKES NO WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION
- THE IMPLIED WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY AND FITNESS
- FOR A PARTICULAR PURPOSE, REGARDING THE APPLE SOFTWARE OR ITS USE AND
- OPERATION ALONE OR IN COMBINATION WITH YOUR PRODUCTS.
- 
- IN NO EVENT SHALL APPLE BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL
- OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- INTERRUPTION) ARISING IN ANY WAY OUT OF THE USE, REPRODUCTION,
- MODIFICATION AND/OR DISTRIBUTION OF THE APPLE SOFTWARE, HOWEVER CAUSED
- AND WHETHER UNDER THEORY OF CONTRACT, TORT (INCLUDING NEGLIGENCE),
- STRICT LIABILITY OR OTHERWISE, EVEN IF APPLE HAS BEEN ADVISED OF THE
- POSSIBILITY OF SUCH DAMAGE.
- 
- Copyright (C) 2007-2008 Apple Inc. All Rights Reserved.  
- 
- */
-
 #import "MyRecorderController.h"
 #import "CoreVideo/CVPixelBuffer.h"
+
+#import <CoreAudio/CoreAudioTypes.h>
+
+#define DESIRED_BITS_PER_SAMPLE 16
+
+#if 0
+// Want to interrogate device attributes to see if we can set it's output to signed 16bit rather than convert later.
+NSDictionary *pDict = [audioDevice deviceAttributes];
+NSString *key;
+for(key in pDict){
+    NSLog(@"Key: %@, Value %@", key, [pDict objectForKey: key]);
+}
+#endif
 
 // Helper function to convert QTTime value into raw micro-seconds.
 #define QTT_US(Q) ((1000000*Q.timeValue)/Q.timeScale)
@@ -56,8 +25,15 @@
 
 - (void)awakeFromNib
 {    
+    Converter = NULL;
     curDrops = 0;
     sendAudioType=2; // Using RAW-Data buffer mode by default now.
+    
+    outputWidth = 640;
+    outputHeight = 360;
+    
+    captureWidth = 640;
+    captureHeight = 480;
     
 // Create the capture session
     
@@ -70,7 +46,7 @@
 	
 // Find a video device  
     
-    QTCaptureDevice *videoDevice = [QTCaptureDevice defaultInputDeviceWithMediaType:QTMediaTypeVideo];
+    videoDevice = [QTCaptureDevice defaultInputDeviceWithMediaType:QTMediaTypeVideo];
     success = [videoDevice open:&error];
     
     
@@ -89,6 +65,7 @@
     }
     
     if (videoDevice) {
+        
 //Add the video device to the session as a device input
 		
 		mCaptureVideoDeviceInput = [[QTCaptureDeviceInput alloc] initWithDevice:videoDevice];
@@ -120,7 +97,6 @@
         }
         
         mCaptureDecompressedVideoOutput = [[QTCaptureDecompressedVideoOutput alloc] init];
-        
         [mCaptureDecompressedVideoOutput setDelegate:self];
         
 // Set output characteristics. Especially video pixel format data.
@@ -128,8 +104,8 @@
         [mCaptureDecompressedVideoOutput setMinimumVideoFrameInterval:1/(float)30];
         [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
             [NSDictionary dictionaryWithObjectsAndKeys:
-             [NSNumber numberWithDouble:640], (id)kCVPixelBufferWidthKey,
-             [NSNumber numberWithDouble:360], (id)kCVPixelBufferHeightKey,
+             [NSNumber numberWithDouble:captureWidth], (id)kCVPixelBufferWidthKey,
+             [NSNumber numberWithDouble:captureHeight], (id)kCVPixelBufferHeightKey,
 //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
              nil]];
 
@@ -138,6 +114,7 @@
         if (!success) {
             // Handle error
         }
+        
 	} 
 
     // Setup for raw audio capture interleaved in the output.
@@ -154,22 +131,23 @@
     }
 
     // Associate the capture view in the UI with the session
-    
     [mCaptureView setCaptureSession:mCaptureSession];
+
+    // This allows me to crop the video preview image as needed for our desired aspect ratio.
+    [mCaptureView setDelegate:self];
 
     // Prepping to capture and send frames to pCap.
     pCap = new QTKitCap(mCaptureSession, mCaptureDecompressedVideoOutput);
 
     // Now instantiate the 'connection' mechanism to the lower pipeline and call them to get the pipeline started.
     pTVC = new TVidCap(pCap);
-    p_pipeline_runner = new RunPipeline(pTVC,640,360,"UYVY");
+    p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY");
     
     // Always keep window on top of other windows.
     [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
 }
-    
-// Handle window closing notifications for your device input
 
+// Handle window closing notifications for your device input
 - (void)windowWillClose:(NSNotification *)notification
 {
 	
@@ -195,6 +173,9 @@
     delete p_pipeline_runner;
     p_pipeline_runner = NULL;
     
+    if (Converter)
+        AudioConverterDispose(Converter);
+    
     delete pTVC;
     pTVC = NULL;
     
@@ -211,14 +192,29 @@
 	[super dealloc];
 }
 
+- (CIImage *)view:(QTCaptureView *)view willDisplayImage:(CIImage *)image {
+    //mirror image across x axis
+    //    return [image imageByApplyingTransform:CGAffineTransformMakeScale(-1, 1)];
+
+    // Crop image to 640x360
+//    return [image imageByCroppingToRect:CGRectMake(0, 60, 640, 360)];
+
+    // Crop and mirror at the same time.
+    return [[image imageByCroppingToRect:CGRectMake((captureWidth-outputWidth)/2, (captureHeight-outputHeight)/2, 
+                                                            outputWidth, outputHeight)] 
+            imageByApplyingTransform:CGAffineTransformMakeScale(-1, 1)];
+    
+//    return image;
+}
+
 #pragma mark-
 
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputVideoFrame:(CVImageBufferRef)videoFrame withSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
 {
     static int storedWidth=0;
     static int storedHeight=0;
-    int frameWidth;
-    int frameHeight;
+//    int frameWidth;
+//    int frameHeight;
     OSType pixType;
     QTKitBufferInfo* pBI;
     void* pY;
@@ -238,6 +234,105 @@
 //        PlanarComponentInfo  componentInfoCr;
 //    };
 //    typedef struct PlanarPixmapInfoYUV420   PlanarPixmapInfoYUV420;
+
+#ifdef INTERROGATE_CAMERA
+    // Final entry is the one we'll be left with, so for now we'll wire this as 640x480 so we can play with sending
+    // the cropped-down version for 640x360
+    struct trial {
+        int width;
+        int height;
+    };
+    // Try 4:3 resolutions first. Then 16:9
+    // 4:3  -- 80x60, 160x120, 240x192, 320x240, 640x480, 800x600, 1024x768, 1280x1024, 1600x1200
+    // 16:9 -- 160x90, 240x136, 320x180, 640x360, 800x448, 1024x576, 1280x720, 1600x900, 1920x1080
+    static struct trial requested[] = {{80,60}, {160,120}, {240,192}, {320,240}, {640,480}, {800,600}, {1024,768}, {1280,1024}, {1600,1200},
+        {160,90}, {240,136}, {320,180}, {640,360}, {800,448}, {1024,576}, {1280,720}, {1600,900}, {1920,1080},
+        // Final one will be the one that 'sticks'. We'll do this a better way later.
+        {640,480}};
+    static int tstIter=0;
+    static bool bSetSize=true;   // Set
+
+    int max = sizeof(requested)/sizeof(struct trial);
+    static struct trial received[40];  // Proper way is to have this and requested[] be class members along with bSetSize etc.
+    
+    while (tstIter < max)
+    {
+
+        if (bSetSize)
+        {
+            [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
+             [NSDictionary dictionaryWithObjectsAndKeys:
+              [NSNumber numberWithDouble:requested[tstIter].width], (id)kCVPixelBufferWidthKey,
+              [NSNumber numberWithDouble:requested[tstIter].height], (id)kCVPixelBufferHeightKey,
+              //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
+              nil]];
+            
+            // Yes - sleep for 1 MICRO-SECOND -- just a minimal sleep to switch contexts and yield to the system.
+//            usleep(1);
+        }
+        else
+        {
+            NSArray* pArr = [videoDevice formatDescriptions];
+            if (pArr)
+            {
+                int count = [pArr count];
+                if (count)
+                {
+                    NSValue *psz;
+                    psz = [[[videoDevice formatDescriptions]  objectAtIndex:0] attributeForKey:@"videoEncodedPixelsSize"];
+                          
+                    int w = (int)[psz sizeValue].width;
+                    int h = (int)[psz sizeValue].height;
+                    
+                    received[tstIter].width = w;
+                    received[tstIter].height = h;
+                    NSLog(@"ON Iter#%d: Requested:%dx%d -- Received: %dx%d", tstIter, requested[tstIter].width, requested[tstIter].height, w, h);
+                }
+                
+// Full interrogation of formatDescriptionAttributes
+#if 0
+                for (int i=0; i<count; i++)
+                {
+                    NSDictionary* pDict;
+//                    pDict = [[pArr objectAtIndex:i] formatDescriptionAttributes];
+                    pDict = [[[videoDevice formatDescriptions] objectAtIndex:i] formatDescriptionAttributes];
+                    NSString *key;
+                    for(key in pDict){
+                        NSLog(@"Key: %@, Value %@", key, [pDict objectForKey: key]);
+                    }
+                }
+#endif
+            }
+            
+        }
+        
+        // Only iterate to the next resolution after the check has been made.
+        if (!bSetSize)
+            tstIter++;
+        
+        if (tstIter==max)
+        {
+            NSLog(@"Capture-Device Resolutions:");
+            for (int j=0;j<max;j++)
+                cout << "  " << received[j].width << "x" << received[j].height;
+            
+            cout << endl;
+        }
+        
+        // Toggle each frame - one go-thru sets a resolution and the next one tests it.
+        bSetSize = !bSetSize;
+        
+        return;
+    }
+//    static bool firstTime=true;
+//    if (firstTime)
+//    {
+//        firstTime = false;
+//        // Figure out what modes the camera captures in natively.
+//        // Then map our desired sizes to larger capture settings in prep for cropping games.
+//        [self validCaptureModes];
+//    }
+#endif
 
     pBI = new QTKitBufferInfo;
     assert(pBI);
@@ -266,8 +361,8 @@
     
     //void* baseAddress = CVPixelBufferGetBaseAddress(videoFrame);
 //    size_t bytesPerRow = CVPixelBufferGetBytesPerRow(videoFrame);
-    frameWidth = CVPixelBufferGetWidth(videoFrame);
-    frameHeight = CVPixelBufferGetHeight(videoFrame);
+//    frameWidth = CVPixelBufferGetWidth(videoFrame);
+//    frameHeight = CVPixelBufferGetHeight(videoFrame);
 
     CVPixelBufferUnlockBaseAddress(videoFrame, 0); // LOCK_FLAGS);
 
@@ -276,12 +371,12 @@
     NSDictionary *pDict;
     pDict = [mCaptureDecompressedVideoOutput pixelBufferAttributes];
     
-    if (storedWidth != frameWidth || storedHeight != frameHeight)
+    if (storedWidth != outputWidth || storedHeight != outputHeight)
     {
-        storedWidth = frameWidth;
-        storedHeight = frameHeight;
+        storedWidth = outputWidth;
+        storedHeight = outputHeight;
         
-        NSLog(@"Capture CHANGE: WxH=%dx%d pixType=%c%c%c%c",frameWidth, frameHeight, (char)(pixType>>24)&0xff, (char)(pixType>>16)&0xff, (char)(pixType>>8)&0xff, (char)pixType&0xff);
+        NSLog(@"Capture CHANGE: WxH=%dx%d pixType=%c%c%c%c",outputWidth, outputHeight, (char)(pixType>>24)&0xff, (char)(pixType>>16)&0xff, (char)(pixType>>8)&0xff, (char)pixType&0xff);
     }
     
     // Now down to the business at hand. Enqueue the new frame.
@@ -292,11 +387,50 @@
     
     pBI->pAudioSamples = NULL;
 
-    pBI->pBuffer = pBuff;
-    pBI->pY = pBI->pBuffer;
-    pBI->pCb = pCb;
-    pBI->pCr = pCr;
+    // Grab the current device capture resolution as this will determine cropping and strides to be given downline.
+    NSValue *psz;
+    psz = [[[videoDevice formatDescriptions]  objectAtIndex:0] attributeForKey:@"videoEncodedPixelsSize"];
     
+    captureWidth = (int)[psz sizeValue].width;
+    captureHeight = (int)[psz sizeValue].height;
+    int captureStride;
+    
+    if (pixType==kCVPixelFormatType_422YpCbCr8) // '2vuy' is active. Non-planar. Take base address and run.
+    {
+        int leftOffset, topOffset;
+        
+        assert(outputWidth <= captureWidth);
+        assert(outputHeight <= captureHeight);
+
+        captureStride = captureWidth * 2;   // 4:2:2 is always 2*width for stride and 2*w*h for buffer size.
+
+        // Always centering our cropping (if any) horizontally and vertically.
+        leftOffset = (captureWidth - outputWidth)/2; // Example: capture 640, only want 500, (640-500)/2=70 crop left side
+        topOffset  = (captureHeight - outputHeight)/2;
+        
+        // Effective starting buffer location with top-crop and left-crop taken into account. Stride will take care of the rest.
+        pBI->pBuffer = (void*) ( (unsigned char*)pBuff + (topOffset * captureStride) + (leftOffset * 2));
+        pBI->pBufferLength = outputHeight * captureStride;
+        pBI->captureStride = captureStride;
+        
+    }
+    else if (pixType==kCVPixelFormatType_422YpCbCr8) 
+    {
+        // Cope with Y, Cr, and Cb offsets and lengths separately.
+        
+        // Will have to have lengthY, lengthCr, and lengthCb
+        // Will also have to have strideY, strideCr, strideCb.
+        pBI->pY = pBI->pBuffer;
+        pBI->pCb = pCb;
+        pBI->pCr = pCr;
+        
+    }
+    else
+    {
+        NSLog(@"Unsupported pixType at this time.");
+        assert(false);
+    }
+
     pBI->timeStamp_uS = QTT_US([sampleBuffer presentationTime]);
     
     assert([sampleBuffer numberOfSamples]==1);
@@ -345,7 +479,12 @@
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputAudioSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
 {
     
-#if 1
+    if (sendAudioType==0)
+    {
+        //        NSLog(@"Skipping audio samples.");
+        return;
+    }
+    
     /* Get the sample buffer's AudioStreamBasicDescription, which will be used to set the input format of the effect audio unit and the ExtAudioFile. */
     QTFormatDescription *formatDescription = [sampleBuffer formatDescription];
     NSValue *sampleBufferASBDValue = [formatDescription attributeForKey:QTFormatDescriptionAudioStreamBasicDescriptionAttribute ];
@@ -356,44 +495,88 @@
     memset (&sampleBufferASBD, 0, sizeof (sampleBufferASBD));
     
     [sampleBufferASBDValue getValue:&sampleBufferASBD];
+#if 0
     
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%d\n", sampleBufferASBD.mBytesPerFrame);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%lu\n", sampleBufferASBD.mBytesPerFrame);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerPacket=%lu\n", sampleBufferASBD.mBytesPerPacket);
     printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mSampleRate=%f\n", sampleBufferASBD.mSampleRate);
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBitsPerChannel=%d\n", sampleBufferASBD.mBitsPerChannel);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFramesPerPacket=%d\n", sampleBufferASBD.mFramesPerPacket);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags=%x\n", sampleBufferASBD.mFormatFlags);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%x\n", sampleBufferASBD.mBytesPerFrame);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBitsPerChannel=%lu\n", sampleBufferASBD.mBitsPerChannel);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mChannelsPerFrame=%lu\n", sampleBufferASBD.mChannelsPerFrame);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFramesPerPacket=%lu\n", sampleBufferASBD.mFramesPerPacket);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags=0x%lx\n", sampleBufferASBD.mFormatFlags);	
     
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsFloat=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsFloat);
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsBigEndian=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsBigEndian);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsNonMixable=%d \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsNonMixable);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsAlignedHigh=%d \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsAlignedHigh);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsPacked=%d\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsPacked);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagsSampleFractionShift= %d\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagsSampleFractionShift);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsFloat=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsFloat);
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsBigEndian=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsBigEndian);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsNonMixable=%lu \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsNonMixable);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsAlignedHigh=%lu \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsAlignedHigh);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsPacked=%lu\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsPacked);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagsSampleFractionShift= %lu\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagsSampleFractionShift);	
     
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsNonInterleaved=%d \n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsNonInterleaved);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsSignedInteger=%d\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsSignedInteger);	
-    
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 8);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 16);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatID=%c\n", sampleBufferASBD.mFormatID >> 24);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsNonInterleaved=%lu \n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsNonInterleaved);	
+    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsSignedInteger=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsSignedInteger);	
     
     printf(" lengthForAllSamples=%d, numberOfSamples=%d\n",
            [sampleBuffer lengthForAllSamples],
            [sampleBuffer numberOfSamples]); 
     fflush(stdout);	
 #endif
+
+#if 0
+    // If the conversion unit is not running already, start it up now that we have an ASBD for the input.
+    if (!Converter)
+    {
+        AudioStreamBasicDescription outputBufferASBD = {0};
+        
+        // Output is similar to input so a starting point is nice.
+        outputBufferASBD = sampleBufferASBD;
+/*
+ kAudioFormatFlagIsFloat                     = (1 << 0),     // 0x1
+ kAudioFormatFlagIsBigEndian                 = (1 << 1),     // 0x2
+ kAudioFormatFlagIsSignedInteger             = (1 << 2),     // 0x4
+ kAudioFormatFlagIsPacked                    = (1 << 3),     // 0x8
+ kAudioFormatFlagIsAlignedHigh               = (1 << 4),     // 0x10
+ kAudioFormatFlagIsNonInterleaved            = (1 << 5),     // 0x20
+ kAudioFormatFlagIsNonMixable                = (1 << 6),     // 0x40
+ kAudioFormatFlagsAreAllClear                = (1 << 31),
+
+ */
+        // Now modify the output to become:
+        // 16-bit signed
+        // Convert to interleaved.
+        // Endian-ness uncertain.
+
+#if 0
+        FillOutASBDForLPCM(outputBufferASBD, 44100.00, 2, 16, 16, false, true);
+        
+#else
+        outputBufferASBD.mBitsPerChannel = DESIRED_BITS_PER_SAMPLE;
+        outputBufferASBD.mFramesPerPacket = 1;  // Always true for LPCM.
+
+        outputBufferASBD.mFormatFlags &= ~kAudioFormatFlagIsFloat;
+        outputBufferASBD.mFormatFlags |= kAudioFormatFlagIsSignedInteger;
+#if 1   // Interleaved
+        outputBufferASBD.mFormatFlags &= ~kAudioFormatFlagIsNonInterleaved;
+#endif
+        
+        outputBufferASBD.mBytesPerFrame = (outputBufferASBD.mBitsPerChannel / 8) * outputBufferASBD.mChannelsPerFrame;
+//#else
+//        outputBufferASBD.mBytesPerFrame = (outputBufferASBD.mBitsPerChannel / 8) * 1;
+//#endif
+        
+        outputBufferASBD.mBytesPerPacket = outputBufferASBD.mBytesPerFrame * outputBufferASBD.mFramesPerPacket;
+#endif
+        
+        // Open the audio converter
+        OSStatus stat = AudioConverterNew(&sampleBufferASBD, &outputBufferASBD, &Converter);
+        assert(stat==0);
+    }
+
+    assert(Converter);
+#endif
     
     QTKitBufferInfo* pBI;
     QTTime qtt;
 
-    if (sendAudioType==0)
-    {
-//        NSLog(@"Skipping audio samples.");
-        return;
-    }
-    
     pBI = new QTKitBufferInfo;
     assert(pBI);
     
@@ -447,7 +630,10 @@
 
     AudioBufferList* pAbufflist;
     pAbufflist = [sampleBuffer audioBufferListWithOptions:0];
-    
+
+    // Only allowing NONE or RAW-Data format now.
+    assert(sendAudioType==2 || sendAudioType==0);
+#if 0    
     pBI->pBuffer = (void*)pAbufflist;
     if (sendAudioType==1)       // Send list of samplebuffers.
     {
@@ -460,11 +646,69 @@
         pBI->rawNumSamples = -1;
     }
     else
+#endif
+    if (sendAudioType==2)
     {
         assert(sendAudioType==2);   // Raw bucket of data plus # samples thrown in 'other'
-        pBI->pBuffer = [sampleBuffer bytesForAllSamples];
+// Old method of sending float32 direct.        pBI->pBuffer = [sampleBuffer bytesForAllSamples];
+        // Time to convert.
+        UInt32 outSize = [sampleBuffer numberOfSamples] * (DESIRED_BITS_PER_SAMPLE / 8) * sampleBufferASBD.mChannelsPerFrame;
+//TODO - reset to PROPER amount. *4 is only for illegal access debug
+        void* pConvData = new char[outSize];
+        assert(pConvData);
         
-        pBI->rawLength = [sampleBuffer lengthForAllSamples];
+        // Must 'delete' this array in Release via pBuffer
+        pBI->pBuffer = pConvData;
+        pBI->pBufferLength = outSize;
+        
+//        unsigned char* test = (unsigned char*)pBI->pBuffer;
+        
+//        for (int i=0;i<[sampleBuffer lengthForAllSamples];i++,test++)
+//            *test = *test;
+        Float32* inbuf = (Float32*)[sampleBuffer bytesForAllSamples];
+#if 0        
+        
+        // Convert
+        OSStatus stat = AudioConverterConvertBuffer(Converter, [sampleBuffer lengthForAllSamples], (const void*)[sampleBuffer bytesForAllSamples], &outSize, pBI->pBuffer);
+        assert(stat==0);
+#endif
+#if 1
+        SInt16* outbuf = (SInt16*)pConvData;
+        
+        int offset = [sampleBuffer numberOfSamples];
+        int max = INT16_MAX;
+        Float32 fl1, fl2;
+        
+//        NSLog(@"Sample  in-L(f)    in-R(f)       out-L     out-R");
+        
+        // Bob's po-man float32->sint16 converter and interleaver.
+        for (int sample=0; sample < [sampleBuffer numberOfSamples]; sample++)
+        {
+            // On input, must take sample left and sample right and compensate for offset of non-interleaved.
+            assert(inbuf[sample] <= 1.0 && inbuf[sample] >= -1.0);
+            assert(inbuf[sample+offset] <= 1.0 && inbuf[sample+offset] >= -1.0);
+            
+            fl1 = inbuf[sample] * (Float32)max;
+            outbuf[sample*2] = (SInt16)(fl1);
+            
+            fl2 = inbuf[sample + offset] * (Float32)max;
+            outbuf[sample*2 + 1] = (SInt16)(fl2);
+            
+//            NSLog(@"[%03d]:  % 1.4f    % 1.4f    %6hi      %6hi", sample, inbuf[sample], inbuf[sample+offset], outbuf[sample*2], outbuf[sample*2+1]);
+        }
+#endif
+        
+        // Now decrement the sample count on the original input buffer.
+        [sampleBuffer decrementSampleUseCount];
+        
+        // outSize was modified by the conversion routine -- so this is the actual amount used. We want to make sure it is always
+        // less than our calculated outSize initially however.
+        assert(outSize < [sampleBuffer lengthForAllSamples]);
+               
+        pBI->rawLength = outSize;
+        
+        // Are samples the same? How do we find out?
+        // Would be nice to assert this fact.
         pBI->rawNumSamples = [sampleBuffer numberOfSamples];
         assert(pBI->rawLength % pBI->rawNumSamples == 0);
     }
@@ -507,6 +751,9 @@
           //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
           nil]];
         
+        outputWidth = 1280;
+        outputHeight = 720;
+        
         NSLog(@"Using HD mode 720p.");
     }
     else
@@ -514,10 +761,13 @@
         [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
          [NSDictionary dictionaryWithObjectsAndKeys:
                        [NSNumber numberWithDouble:640], (id)kCVPixelBufferWidthKey,
-                       [NSNumber numberWithDouble:360], (id)kCVPixelBufferHeightKey,
+                       [NSNumber numberWithDouble:480], (id)kCVPixelBufferHeightKey,
           //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
           nil]];
 
+        outputWidth = 640;
+        outputHeight = 360;
+        
         NSLog(@"Using SD mode 360p.");
     }
 }
@@ -531,15 +781,12 @@
     [NSApp terminate:self];
 }
 
-- (IBAction)sendAudioOfType:(id)sender {
-    sendAudioType = [sender indexOfSelectedItem];
-    
-    //        case 0: // Send no audio.
-    //        case 1: // Send the array of structs (list of QTSampleBuffers
-    //        case 2: // Send the whole block of data raw (with #samples alongside)
-    
-    if (sendAudioType < 0 || sendAudioType > 2)
-        assert(false && "Invalid selection in button-menu.");
+- (IBAction)sendAudioRawData:(id)sender {
+    sendAudioType = 2;
+}
+
+- (IBAction)sendAudioNoData:(id)sender {
+    sendAudioType = 0;
 }
 
 @end

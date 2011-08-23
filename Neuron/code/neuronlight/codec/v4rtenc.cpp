@@ -36,7 +36,7 @@ void v4_rtenc_t::InitRawFrameSettings(void)
     return;
 }
 
-void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf)
+void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf, int stride)
 {
 
     if(settings.input.colorspace==COLORSPACE_E_YV12)
@@ -49,7 +49,16 @@ void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf)
     }
     else if(settings.input.colorspace==COLORSPACE_E_YUY2 ||
             settings.input.colorspace==COLORSPACE_E_UYVY)
+    {
         frame.vp_frame.data[0] = p_frame_buf;
+        frame.vp_frame.data[1] = NULL;
+        frame.vp_frame.data[2] = NULL;
+        frame.vp_frame.data[3] = NULL;
+        frame.vp_frame.data[4] = NULL;
+        frame.vp_frame.data[5] = NULL;
+        
+        frame.vp_frame.stride[0] = stride;
+    }
     
     return;
 }
@@ -221,9 +230,9 @@ int v4_rtenc_t::workerBee(void)
         if(p_bi->bIsVideo)
         {
             if (pb)
-                SetRawFrameBuffers((unsigned char*)pb);
+                SetRawFrameBuffers((unsigned char*)pb, p_bi->captureStride);
             else
-                SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer));
+                SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer), p_bi->captureStride);
             
 //            cout << "p_bi->pBuffer address: " << hex << p_bi->pBuffer << dec << endl;
 //            assert(p_bi->pBuffer);

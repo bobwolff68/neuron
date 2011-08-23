@@ -105,7 +105,7 @@ class v4_rtenc_t: public ThreadSingle
         //! \param[in] p_frame_buf - Pointer to the capture buffer
         //! \return void
         //!
-        void SetRawFrameBuffers(unsigned char* p_frame_buf);
+        void SetRawFrameBuffers(unsigned char* p_frame_buf, int stride);
 
     public:
 

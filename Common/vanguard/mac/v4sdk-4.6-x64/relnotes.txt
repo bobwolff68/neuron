@@ -1,0 +1,171 @@
+                          VSS H.264 Codec 4.6
+              AVC/SVC/MVC Codec/Decoder SDK for Windows/Mac/Linux
+
+1. What's new:
+build label 4.6.1.4 (Patch)
+[22 June 2011]
+encoder:
+	- Correct slice.mode = 2 problem: number of bytes exeeds setting;
+	- Parallel stream layers check settings added: resolutions must increase sequentially;
+decoder:
+	- Fix for decoder output on certain broken stream;
+	- Decoder stability on SVC stream fix;
+	- Sample Decoder for MacOS log fix;
+
+build label 4.6.1.3 (Patch)
+[04 April 2011]
+encoder:
+	- Correct fixed GOP size filler count;
+	- gop.sps_period parameter added to insert SPS/PPS more often than every I-frame in case 
+	of cyclic intra refresh with just 1st I-frame;
+decoder:
+	- 10-bit decoder bug fix - negative QP handle;
+
+build label 4.6.1.2 (Final Release)
+[24 March 2011]
+encoder: 
+	- Fixed GOP size feature added with corresponding encoder parameters:
+	     rc.flags (new values);
+	     rc.gop_bytes;
+	- Fix for bugs caused by "max_intra_frame_bytes" setting;
+	- Misc VBR fixes;
+	- B-frames in ParallelStream v.2 problems fix;
+	- Misc bug fixes.
+
+decoder:
+	- Stability fixes;
+	- EC in SVC bug fixes;
+
+build label 4.6.1.1
+[16 March 2011]
+encoder: 
+	- Following new parameters added to rate control settings:
+	     rc.flags;
+	     rc.max_intra_frame_bytes;
+	     rc.min_intra_frame_bytes;
+	- Added telecine picture structure support in SEI message;
+	- VBR problems after complex scenes fix;
+	- Fix for flush/start problem;
+	- Fix for old functions (raw_frame_t and attach_sei) usage;
+	- v4e_check_settings() public function added;
+	- Misc bug fixes.
+
+decoder:
+	- Stability fixes;
+
+transcoder:
+	- Start frame parameter added;
+	- Transcoding with slice.mode = 2 problems fixes.
+
+build label 4.6.1.0
+[01 March 2011]
+encoder:
+	- Set QP-modulation default 1 behaivor to aprox. v.45 scale;
+
+decoder:
+	- Stability fixes;
+	- v4d_set_output_delay() function added.
+
+build label 4.6.0.9
+[24 February 2011]
+encoder:
+	- CUDA update: q-pels, quality, other bug fixes;
+	- QP-modulation can take values 0,1,2,3 (default 1);
+	- Bug fixes in Transcoder and ParallelStream v.2;
+	- Misc bug fixes.
+
+decoder:
+	- Stability fixes;
+	- EC bugs fix;
+	- Misc bug fixes.
+
+build label 4.6.0.8 (Beta)
+[14 February 2011]
+encoder:
+	- AVC Intra encoding fixes.
+
+build label 4.6.0.7
+[10 February 2011]
+encoder:
+	- New avc_intra_flags parameter added to force Panasonic compatibility;
+	- AVC Intra encoding fixes;
+	- B-frames support in Transcoder and ParallelStream v.2
+
+decoder:
+	- EC bug fix.
+
+build:
+	- SDK build system update;
+	- Public build interface is Makefile;
+	- Eliminate sample.mak and v4_platfrom.mak files.
+
+build label 4.6.0.6
+[02 February 2011]
+encoder:
+	- Fixes in AVC Intra;
+	- Encoding speedup for AVC Intra and slice mode 2;
+	- CUDA improvements;
+	- Frame packing bug fixes;
+	- Misc bug fixes.
+
+decoder:
+	- EC for SVC streams fixes;
+	- Frame unpacking bugs fix;
+	- Stability fixes;
+	- 10-bit decoder 8-bit streams decoding improvements.
+
+build label 4.6.0.5
+[17 January 2011]
+encoder:
+	- AVC Intra bug fixes;
+	- QP modulation feature added to AVC Intra encoding;
+	- Restore slice.mode 2 with MGS slices;
+	- Proper HRD-buffer params for rc.type = 3 (CBR+filler);
+	- CUDA problems fixes;
+	- Misc bug fixes.
+
+build label 4.6.0.4
+[28 December 2010]
+encoder:
+	- Stability and milti-thread improvements for AVC-Intra encoding;
+	- Frame-packing feature update;
+	- Transcoder and ParallelStream v.2 bug fixes;
+	- Misc bug fixes.
+
+build label 4.6.0.2
+[20 December 2010]
+encoder:
+	- More checks for GPU-enabled encoding;
+	- More checks for AVC-Intra encoding;
+	- More checks for fast transcoding;
+	- AVC-Intra MT problems fix;
+	- AVC-Intra MBAFF problems fix;
+	- Misc bug fixes.
+
+build label 4.6.0.1
+[14 December 2010]
+encoder:
+	- CUDA (NVIDIA hardware acceleration) support v.1 (Win32);
+	- AVC/SVC-Intra (precise per-frame rate control, Panasonic compatibility);
+	- ParallelStream v.2 (much speedup, comparing to 4.5);
+	- ParallelStream H.264 to H.264 transcoder;
+	- Internal support for different modes of 3D via AVC encoding;
+	- Fixed GOP-size encoding;
+	- Encoding quality enhancements:
+	- More input raw frames formats;
+	- Optimization, speedup;
+	- Better Multithreading for multicore CPU (16 and more).
+
+decoder:
+	- Optimization, speedup;
+	- Internal data access API for transcoding applications;
+	- More Error Concealment (EC) for SVC streams.
+
+build label 4.6.0.0 (Alpha)
+[4 November 2010]
+encoder:
+	- NVIDIA hardware acceleration support - first implementation;
+	- Weighted prediction fixes;
+
+decoder:
+	- Optimization, speedup.
