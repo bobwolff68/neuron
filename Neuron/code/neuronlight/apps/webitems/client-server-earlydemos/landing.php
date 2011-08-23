@@ -51,6 +51,8 @@
         <?
             $_SESSION['userid'] = $MYSESSION1;
             $_SESSION['name'] = $MYSESSION2;
+            $_SESSION['count'] = 0;
+            $_SESSION['udec'] = 1;
             require "check.php"; 
         ?>
         
