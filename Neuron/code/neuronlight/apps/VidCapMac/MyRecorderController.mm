@@ -7,6 +7,8 @@
 
 #import <CoreAudio/CoreAudioTypes.h>
 
+#import "CameraInterrogation.h"
+
 #define DESIRED_BITS_PER_SAMPLE 16
 
 #if 0
@@ -778,6 +780,17 @@ for(key in pDict){
 }
 
 - (IBAction)quitApplication:(id)sender {
+    //
+    // First we will interrogate the camera.
+    //
+    CameraInterrogation *pInt;
+    pInt = [[CameraInterrogation alloc] init];
+    
+    [pInt FullInternalInterrogation];
+    int wt, ht;
+    [pInt getBestCaptureResolutionForWidth:800 forHeight:500 forOutWidth:&wt forOutHeight:&ht];
+    [pInt release];
+    
     [NSApp terminate:self];
 }
 

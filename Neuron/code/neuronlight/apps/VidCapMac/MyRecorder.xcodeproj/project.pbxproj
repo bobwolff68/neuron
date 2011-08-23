@@ -10,6 +10,7 @@
 		2B531E1B0BBB3FBD00F42B98 /* Icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2B531E1A0BBB3FBD00F42B98 /* Icon.icns */; };
 		2BAB8A530BBB551900143BEF /* MyRecorder Help in Resources */ = {isa = PBXBuildFile; fileRef = 2BAB8A510BBB551900143BEF /* MyRecorder Help */; };
 		3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */; };
+		3481C1A514030DAE001B1FA5 /* CameraInterrogation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3481C1A414030DAE001B1FA5 /* CameraInterrogation.m */; };
 		348E08FB13FDE6B000CB51D2 /* libv4codecsdk-m32g-all-md.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 348E08FA13FDE6B000CB51D2 /* libv4codecsdk-m32g-all-md.a */; };
 		34AA4D0813EB77DB003F68AE /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34AA4D0713EB77DB003F68AE /* CoreVideo.framework */; };
 		34BF6A8213FC56090053B7A6 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34BF6A8113FC56090053B7A6 /* AudioToolbox.framework */; };
@@ -88,6 +89,8 @@
 		32CA4F630368D1EE00C91783 /* MyRecorder_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyRecorder_Prefix.pch; sourceTree = "<group>"; };
 		3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RTBuffer.cpp; path = ../../capture/RTBuffer.cpp; sourceTree = "<group>"; };
 		3426E93713F0BAFB00897BA7 /* RTBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RTBuffer.h; path = ../../capture/RTBuffer.h; sourceTree = "<group>"; };
+		3481C1A314030DAE001B1FA5 /* CameraInterrogation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CameraInterrogation.h; path = MyRecorder.xcodeproj/../CameraInterrogation.h; sourceTree = "<group>"; };
+		3481C1A414030DAE001B1FA5 /* CameraInterrogation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CameraInterrogation.m; path = MyRecorder.xcodeproj/../CameraInterrogation.m; sourceTree = "<group>"; };
 		348E08F813FD7F2A00CB51D2 /* libv4codecsdk-m32gd-all.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libv4codecsdk-m32gd-all.a"; path = "../../../../../Common/vanguard/mac/v4sdk-4.6/lib/libv4codecsdk-m32gd-all.a"; sourceTree = "<group>"; };
 		348E08FA13FDE6B000CB51D2 /* libv4codecsdk-m32g-all-md.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libv4codecsdk-m32g-all-md.a"; path = "../../../../../Common/vanguard/mac/v4sdk-4.6/lib/libv4codecsdk-m32g-all-md.a"; sourceTree = "<group>"; };
 		34AA4D0713EB77DB003F68AE /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = SDKs/MacOSX10.7.sdk/System/Library/Frameworks/CoreVideo.framework; sourceTree = DEVELOPER_DIR; };
@@ -187,6 +190,8 @@
 				34AA4D0713EB77DB003F68AE /* CoreVideo.framework */,
 				32CA4F630368D1EE00C91783 /* MyRecorder_Prefix.pch */,
 				29B97316FDCFA39411CA2CEA /* main.mm */,
+				3481C1A314030DAE001B1FA5 /* CameraInterrogation.h */,
+				3481C1A414030DAE001B1FA5 /* CameraInterrogation.m */,
 				C5E698F10BA8735700382716 /* MyRecorderController.h */,
 				C5E698F20BA8735700382716 /* MyRecorderController.mm */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -350,6 +355,7 @@
 				C5E698F30BA8735700382716 /* MyRecorderController.mm in Sources */,
 				34DE7EE013ECA2CE007B30F0 /* QTKitCap.mm in Sources */,
 				3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */,
+				3481C1A514030DAE001B1FA5 /* CameraInterrogation.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
