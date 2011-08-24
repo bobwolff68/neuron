@@ -2,7 +2,7 @@
     session_start();
 ?>
 <!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">
-    <html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
         <meta http-equiv="cache-control" content="max-age=200" />
@@ -214,7 +214,7 @@
                         uremove.value = '0';
                         document.location = curl;
                     }
-                    var t = setTimeout("check()", 15000);
+                    var t = setTimeout("check()", 5000);
                 });
                 
                 
@@ -311,7 +311,7 @@
                // alert('onbeforeunload');
                 var uremove = document.getElementById("removeuser");                
                 if (uremove.value == '1'){
-                    alert('doing remove');                    
+   //                 alert('doing remove');                    
                     downloadUrl2("removeuser.php", function(data){               
                     });
                     document.location = "landing.php";
@@ -372,6 +372,13 @@
                 </div>
             </div>
         </div>
+        
+        <div  id="footer" style="float: right">
+            <a href="http://localhost:8080"><button><b>Session Test</b></button></a>
+            <a href="restartall.php"><button><b>Restart All</b></button></a>
+            <a href="landing.php"><button><b>Exit</b></button></a>
+        </div>
+        
         <input id='removeuser' value='1' type='hidden' name="vevo"/>
     </body> 
 </html> 
