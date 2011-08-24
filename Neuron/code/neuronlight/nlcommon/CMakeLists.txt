@@ -13,6 +13,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
     "Single output for all libraries")
 
 set(NEURON_CODE_DIR ../..)
+set(NEURON_COMMON_DIR ${NEURON_CODE_DIR}/neuroncommon)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 #    set(VSOFTS_SDK_DIR ${COMMON_DIR}/vanguard/linux/v4sdk-4.6)
@@ -22,12 +23,13 @@ else()
     endif()
 endif()
 
+include_directories(${NEURON_COMMON_DIR}/threading/NeuronBasics)
 #include_directories(../capture)
 #include_directories(../codec)
 
 set(SOURCES littlehttpd.cpp)
-#list(APPEND SOURCES
-#     nlrtspserver.cpp)
+list(APPEND SOURCES
+     tester.cpp)
 
 #add_definitions(-DBUILD_DEBUG)
 

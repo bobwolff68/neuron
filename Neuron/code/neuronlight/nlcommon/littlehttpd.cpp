@@ -182,7 +182,7 @@ void LittleHttpd::Init(void)
 	else
 	{
 		bIsServerUp = true;
-		cout << endl << "Success: http daemon server is up and ready to accept connections." << endl;
+		cout << endl << "Success: server is ready on port " << port << endl;
 	}
 }
 
@@ -190,16 +190,9 @@ bool LittleHttpd::HConnection(int csock)
 {
 	struct sockaddr_storage addr;
 	socklen_t addrLen;
-	char clientIpAddress[INET6_ADDRSTRLEN];
 	int bytesRead;
-	char request[100];
+	static char request[200];
 	int temp_acp_gid, temp_scp_gid;
-
-	stringstream header;
-	string headerString;
-
-	stringstream body;
-	string bodyString;
 
     reqParameters.clear();
 
@@ -224,7 +217,7 @@ bool LittleHttpd::HConnection(int csock)
 	else if (bytesRead == 0)
 	{
 		// This is an EOF condition.
-		cout << "End of File/Connection." << endl;;
+		cout << "Connection ended." << endl;;
 		return false;
 	}
 
@@ -232,97 +225,21 @@ bool LittleHttpd::HConnection(int csock)
 
 	if (!ParseRequest(request))
 	{
-		headerString = BAD_REQUEST;
-		send(csock, headerString.c_str(), headerString.size(), 0);
+        SendBadRequestResponse(csock);
 		return false;
 	}
 
-	int sf_id=0;
-
-	// Prep the body after grabbing final needed items.
-	if (bIsEndpoint && theBrain->GetUniqueSFidAndMarkSFAsCreated(sf_id))
+    // Now that the request is parsed, it should be held in the derived class' data structure.
+    // Execute on it.
+    
+    if (!ExecuteAction())
 	{
-		stringstream sfid_sstr;
-
-		sfid_sstr << sf_id;
-		if (!sfid_sstr)
-		{
-			headerString = BAD_REQUEST;
-			send(csock, headerString.c_str(), headerString.size(), 0);
-			return false;
-		}
-
-		respvalues["ep_sf_id"] = sfid_sstr.str();
+        SendBadRequestResponse(csock);
+		return false;
 	}
-	else if (!bIsEndpoint)
-	{
-	    assert(reqParameters["sfid"]!="");
-	    respvalues["sfid"] = reqParameters["sfid"];
-	}
-
-	respvalues["client_pub_ip"]=clientIpAddress;
-    respvalues["ep_friendly_name"] = reqParameters["ep_friendly_name"];
-
-	// Prep the 'static' and recently determined items.
-    if (respvalues["use_lan_only"]=="true")
-        AddToStream(body, "use_lan_only");
     else
-    {
-        temp_scp_gid = theBrain->GetNewGlobalWANID();
-        respvalues["client_scp_id"] = ToString<int>(temp_scp_gid);
-        temp_acp_gid = theBrain->GetNewGlobalWANID();
-        respvalues["client_acp_id"] = ToString<int>(temp_acp_gid);
-
-        AddToStream(body, "stun_ip");
-        AddToStream(body, "ubrain_scp_desc");
-        AddToStream(body, "ubrain_acp_desc");
-        AddToStream(body, "client_scp_id");
-        AddToStream(body, "client_acp_id");
-    }
-
-	AddToStream(body, "client_pub_ip");
-    if (bIsEndpoint)
-        AddToStream(body, "ep_sf_id");
-
-	bodyString = body.str();
-
-	//
-	// Prior to sending back all the info to finalize the 'new' of SessionFactory, we need
-	// to make sure our local database already has the SF initialized for state updates
-	// to be received potentially VERY soon.
-	//
-	if (bIsEndpoint)
-	    theBrain->AddSFInternally(sf_id, respvalues["client_pub_ip"].c_str(), temp_acp_gid, temp_scp_gid, respvalues["ep_friendly_name"].c_str(), bIsEndpoint);
-
-	cout << "INFO: LittleHttpd: Full body sending back to client:" << endl << bodyString << endl;
-
-	// Now form the header. This is intertwined for a reason.
-	// The "Content-Length: **" item must know the size of the body.
-	// So it needs formed first and sent last.
-
-	header << "HTTP/1.0 200 OK\r\n";
-	header << "Server: Neuron Server\r\n";
-	header << "Content-Type: text/html; charset=UTF-8\r\n";
-	header << "Content-Length: " << bodyString.size() << "\r\n";
-	header << "\r\n";
-
-	headerString = header.str();
-
-//	cout << "LittleHttpd: Ready to send Header:" << headerString << endl;
-//	cout << "LittleHttpd: Ready to send Body:" << bodyString << endl;
-
-	// Send header.
-	send(csock, headerString.c_str(), headerString.size(), 0);
-	// Send body.
-	send(csock, bodyString.c_str(), bodyString.size(), 0);
-
-	// Now it's complete....let the uBrainManager:: know this fact.
-	// GlobalID-1 is used since it was post-incremented above for safety.
-	// And the actual 'globalID' is not used for safety in case it has been changed already.
-	// TODO
-
-	theBrain->RegistrationComplete(respvalues, bIsEndpoint);
-
+        SendOKResponse(csock, bodyString);
+    
 	return true;
 }
 
@@ -332,122 +249,38 @@ void LittleHttpd::AddToStream(stringstream& outstream, const char* respname)
 		outstream << respname << "=" << respvalues[respname] << endl;
 }
 
-///
-/// \brief ParseRequest must parse (in rudamentary non-defensive form) an incoming
-///        HTTP GET request URI. In essence we're looking for "neuron-" to start
-///        and then we'll split -sf or -ep and the inbound name/value pairs.
-///
-///        Note that the request will have appended to it " HTTP/1.x" so lop this off first.
-///
-///        This URI is something on the order of...
-///             ^*neuron-{sf|ep}?[sp*]name[=value] [ [sp*]&[sp*]name[=value] .... ]
-///        The simplified version for our purposes is...
-///             ^*neuron-sf
-///             ^*neuron-ep?name=["]value["]
-///             Guarantee that '?' exists and 'name' is non-quoted and '=' exists
-///
-bool LittleHttpd::ParseRequest(const char* req)
+void LittleHttpd::SendBadRequestResponse(int csock)
 {
-	stringstream reqstream;
-	string chopped_req(req);
-	int pos;
+    string headerString;
+    
+    headerString = BAD_REQUEST;
+    send(csock, headerString.c_str(), headerString.size(), 0);
+}
 
-	// Strip off the front until we are at "neuron-" plus one character.
-	pos = chopped_req.find("neuron-");
-	if (pos==string::npos)
-	{
-//		cout << "Error: URI Input fail. No 'neuron-' - instead='" << req << "'" << endl;
-		return false;
-	}
+void LittleHttpd::SendOKResponse(int csock, string &body)
+{
+    stringstream header;
+    string headerString;
+    
+	// Now form the header. This is intertwined for a reason.
+	// The "Content-Length: **" item must know the size of the body.
+	// So it needs formed first and sent last.
+    
+	header << "HTTP/1.0 200 OK\r\n";
+	header << "Server: NeuronLight Server\r\n";
+	header << "Content-Type: text/html; charset=UTF-8\r\n";
+	header << "Content-Length: " << body.size() << "\r\n";
+	header << "\r\n";
+    
+	headerString = header.str();
+    
+    //	cout << "LittleHttpd: Ready to send Header:" << headerString << endl;
+    //	cout << "LittleHttpd: Ready to send Body:" << bodyString << endl;
+    
+	// Send header.
+	send(csock, headerString.c_str(), headerString.size(), 0);
+	// Send body.
+	send(csock, body.c_str(), body.size(), 0);
 
-	// Advance pointer beyond neuron-
-	chopped_req = chopped_req.substr(pos+strlen("neuron-"), string::npos);
-
-//	cout << "LittleHttpd:: Pre-lop-of-HTTP/ we have:" << chopped_req << endl;
-
-	// Now lop off the ending from "HTTP/"
-	pos = chopped_req.find("HTTP/");
-	if (pos!=string::npos)
-	{
-		// Take front end of string until HTTP/
-		chopped_req = chopped_req.substr(0, pos);
-	}
-
-//	cout << "LittleHttpd:: After lopping-of-HTTP/ we have:" << chopped_req << endl;
-
-    if (chopped_req.substr(0,2)!="sf" && chopped_req.substr(0,2)!="ep")
-    {
-        cout << "Error: URI Input fail. No '-ep' or '-sf' - instead='" << req << "'" << endl;
-        return false;
-    }
-
-    // Now we have guaranteed with have -sf or -ep.
-	if (chopped_req.substr(0,2)=="sf")
-		bIsEndpoint = false;
-	else
-        bIsEndpoint = true;
-
-	// Must be -sf? or -ep?
-    assert(chopped_req[2]=='?');
-
-    chopped_req = chopped_req.substr(3, string::npos);
-
-    // Now we are at the name/value pair.
-    reqstream.str(chopped_req);
-
-    while (reqstream.good())
-    {
-        string name;
-        string value;
-        char buff[100];
-
-        reqstream.getline(buff, 99, '=');
-
-        // If we have a failure here, it may just mean we're in a non-sense attrib list or at the end of a list.
-        // Dont fail...just break so that the length of the name/value pair list will determine success.
-        if (reqstream.eof())
-            break;
-
-        // Eat all trailing ' ' spaces.
-        while (strlen(buff) && buff[strlen(buff)-1]==' ')
-            buff[strlen(buff)-1]=0;
-
-        name = buff;	// Copies buff string into name.
-
-        // Moving on to the next part (the value - either quoted or not)
-        // Eat pre-run-whitespace
-        while (reqstream.peek()==' ')
-            reqstream.get();
-
-        // If next char is '"', we must eat all '"' if more than one and then read until '"'
-        // else just read till next space.
-        if (reqstream.peek()=='\"')
-        {
-            reqstream.get();
-
-            // Now first '"' is read...now read till '"'
-            reqstream.getline(buff, 99, '\"');
-
-            // Eat all trailing ' ' spaces.
-            while (buff[strlen(buff)-1]==' ')
-                buff[strlen(buff)-1]=0;
-
-            value = buff;
-        }
-        else
-            reqstream >> value;
-
-        coutdbg << "Incoming PAIR: " << name << "=" << value << endl;
-
-        // Now what to do with the pair...
-        reqParameters[name] = value;
-
-        // And prepare to go around again by eating until '&' and then eating whitespace.
-        while (reqstream.good() && reqstream.peek()!='&')
-            reqstream.get();
-        while (reqstream.good() && reqstream.peek()==' ')
-            reqstream.get();
-    }
-
-	return true;
+    return;    
 }

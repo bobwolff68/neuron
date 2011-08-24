@@ -10,6 +10,10 @@
 
 #include "ThreadSingle.h"
 
+#include <map>
+#include <iostream>
+#include <sstream>
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -25,10 +29,13 @@ public:
 	virtual ~LittleHttpd();
 	int workerBee(void);
 private:
-//	bool bIsServerUp;
+	bool bIsServerUp;
 	int serverError;
 	int serversock;
 	int port;
+
+    string bodyString;
+    char clientIpAddress[INET6_ADDRSTRLEN];
 	map<string, string> respvalues;
 	map<string, string> reqParameters;
 
@@ -36,11 +43,11 @@ private:
 	void ShutdownServer(void);
 	bool HConnection(int csock);
     
-	bool ParseRequest(const char* req) = 0;
-    bool ExecuteAction(void) = 0;
+	virtual bool ParseRequest(const char* req) = 0;
+    virtual bool ExecuteAction(void) = 0;
     
-    void SendBadRequestResponse(void);
-    void SendOKResponse(const char* pBody);
+    void SendBadRequestResponse(int csock);
+    void SendOKResponse(int csock, string &body);
     
 	void AddToStream(stringstream& outstream, const char* respname);
 	//  Now we have a sigint handler simply for the blocking accept() to avoid non-blocking I/O for now.
