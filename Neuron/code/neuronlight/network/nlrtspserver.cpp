@@ -49,13 +49,16 @@ void nl_rtspserver_t::setup_sms(const char* stream_name)
         )
     );
     
-    /*p_sms->addSubsession(
-        ADTSAudioFileServerMediaSubsession::createNew(
+    p_sms->addSubsession(
+        //ADTSAudioFileServerMediaSubsession::createNew(
+        MP3AudioFileServerMediaSubsession::createNew(
             envir(),
             audio_stream_name.c_str(),
-            True
+            True,
+            False,
+            NULL
         )
-    );*/
+    );
     
     addServerMediaSession(p_sms);
 }

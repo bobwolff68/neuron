@@ -39,9 +39,9 @@ using namespace std;
 		p_cap = new V4L2Cap("/dev/video0",i_width,i_height,"YUYV");
 #endif
         backup_ports[0] = rtsp_port;
-//        p_aac_rtbuf = new nl_aacrtbuf_t();
-		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer());//,p_aac_rtbuf);
-        p_fifoout = new v4_fifoout_t("stream",p_rtenc);//,p_aac_rtbuf);
+        p_aac_rtbuf = new nl_aacrtbuf_t();
+		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer(),p_aac_rtbuf);
+        p_fifoout = new v4_fifoout_t("stream",p_rtenc,p_aac_rtbuf);
         
         for(int i=0; i<5 && p_serv==NULL; i++)
         {
@@ -93,11 +93,11 @@ using namespace std;
 		throw RTCS_RETCODE_ERR_RTENC_OPEN;
 	}
     
-    /*if(p_rtenc->OpenAudio()!=RTENC_RETCODE_OK)
+    if(p_rtenc->OpenAudio()!=RTENC_RETCODE_OK)
     {
         LOG_ERR("rtenc->OpenAudio() error");
         throw RTCS_RETCODE_ERR_RTENC_OPEN;
-    }*/
+    }
     cout << "After rtenc->Open()" << endl;
 }
 
@@ -107,12 +107,12 @@ nl_rtcamstream_t::~nl_rtcamstream_t()
 	{
 	    nl_rtspserver_t::destroy(p_serv);
 		delete p_fifoout;
-        //p_rtenc->CloseAudio();
+        p_rtenc->CloseAudio();
 		delete p_rtenc;
 #if( !(defined(__APPLE__) & defined(__MACH__)) )
 		delete p_cap;
 #endif
-        //delete p_aac_rtbuf;
+        delete p_aac_rtbuf;
 	}
 	catch(RTEnc_ReturnCode_t& rtenc_err_code)
 	{
@@ -137,6 +137,8 @@ void nl_rtcamstream_t::RunCapture(void)
 	try
 	{
 	    p_serv->startThread();
+        p_aac_rtbuf->startRunning();
+        p_fifoout->start_aac_fifoout();
 	    p_fifoout->startThread();
 	    p_rtenc->startThread();
 		//p_cap->start_capturing();
@@ -149,6 +151,7 @@ void nl_rtcamstream_t::RunCapture(void)
 		//p_cap->stop_capturing();
 		p_rtenc->stopThread();
 		p_fifoout->stopThread();
+        p_aac_rtbuf->pauseRunning();
         p_serv->stopThread();
         p_serv->request_server_exit();
 

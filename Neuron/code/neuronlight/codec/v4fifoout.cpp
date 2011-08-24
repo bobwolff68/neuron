@@ -2,7 +2,7 @@
 
 using namespace std;
 
-v4_fifoout_t::v4_fifoout_t(const char* _stream_name,v4_rtenc_t* _p_rtenc)://,nl_aacrtbuf_t* _p_aac_rtbuf):
+v4_fifoout_t::v4_fifoout_t(const char* _stream_name,v4_rtenc_t* _p_rtenc,nl_aacrtbuf_t* _p_aac_rtbuf):
 stream_name(_stream_name),
 p_rtenc(_p_rtenc)
 {
@@ -13,9 +13,8 @@ p_rtenc(_p_rtenc)
         p_fs[i] = new nl_fifostream_t((stream_name+snum).c_str());
     }
     
-    //p_aac_fifoout = new nl_aacfifoout_t(_p_aac_rtbuf, p_fs);
+    p_aac_fifoout = new nl_aacfifoout_t(_p_aac_rtbuf, p_fs);
 }
-
 
 v4_fifoout_t::~v4_fifoout_t()
 {
@@ -27,11 +26,15 @@ v4_fifoout_t::~v4_fifoout_t()
     }
 }
 
+void v4_fifoout_t::start_aac_fifoout(void)
+{
+    p_aac_fifoout->startThread();
+}
+
 int v4_fifoout_t::workerBee(void)
 {
     int retcode;
     
-    //p_aac_fifoout->startThread();
     while(1)
     {
         p_rtenc->LockHandle();
@@ -79,13 +82,13 @@ int nl_aacfifoout_t::workerBee(void)
     
     while(1)
     {
-        cout << "Before aac dequeue" << endl;
+        //cout << "Before aac dequeue" << endl;
         if(p_aac_rtbuf->FullBufferDQ(&p_bib)==false)
         {
             LOG_ERR("Bad dequeue(aac)");
             throw NL_AACBUFINFO_EXCEPTION_BAD_DEQUEUE;
         }
-        cout << "After aac dequeue" << endl;
+        //cout << "After aac dequeue" << endl;
         
         assert(p_bib != NULL);
         p_bi = static_cast<nl_aacbufinfo_t*>(p_bib);
