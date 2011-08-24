@@ -62,8 +62,8 @@ using namespace std;
         else
             cout << "Successful" << endl;
         
-        p_serv->setup_sms("stream0");
-        p_serv->setup_sms("stream1");
+        p_serv->setup_sms("stream0",true,false);
+        p_serv->setup_sms("stream1",true,false);
 
 		map<string,string> nvpairs;
         char s_width[20];

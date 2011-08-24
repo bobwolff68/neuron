@@ -82,7 +82,6 @@ class v4_rtenc_t: public ThreadSingle
         AVCodecContext* p_acctx;
         AVDictionary* p_opts_dict;
         nl_aacrtbuf_t* p_aac_rtbuf;
-        //int64_t timestamp_base;
 #else
         V4L2CapBuffer* p_rtcap_buf;
 #endif

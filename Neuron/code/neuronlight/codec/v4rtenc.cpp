@@ -81,8 +81,6 @@ p_rtcap_buf(_p_rtcap_buf)
 {
     int err;
     p_handle = NULL;
-    //timestamp_base = 0;
-    //handle_mutex = PTHREAD_MUTEX_INITIALIZER;
     err = pthread_mutex_init(&handle_mutex, NULL);
     assert(err==0);
     settings.size = sizeof(v4e_settings_t);
@@ -208,8 +206,6 @@ int v4_rtenc_t::workerBee(void)
     const int aacbuf_size = FF_MIN_BUFFER_SIZE*10;
     int aac_outbytes = 0;
     
-//    float t = 0;
-//    float t_incr = 2*M_PI*440.0/p_acctx->sample_rate;
     const int exp_samples = p_acctx->frame_size;
     int in_samples = 0;
     short* p_samples = (short*) malloc((exp_samples<<1)*p_acctx->channels);
@@ -248,6 +244,13 @@ int v4_rtenc_t::workerBee(void)
                 return -1;
             }
             LOG_OUT("checkpoint: final sample");
+            
+            if(p_aacbuf != NULL)
+                free(p_aacbuf);
+            
+            if(p_samples != NULL)
+                free(p_samples);
+            
             break;
         }
 
@@ -261,12 +264,7 @@ int v4_rtenc_t::workerBee(void)
             else
 #endif
             SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer), p_bi->captureStride);
-            
-            /*if (timestamp_base == 0) 
-            {
-                timestamp_base = p_bi->timeStamp_uS;
-            }
-            frame.timestamp = p_bi->timeStamp_uS - timestamp_base;*/
+            frame.timestamp = p_bi->timeStamp_uS;
             
             LockHandle();
                 

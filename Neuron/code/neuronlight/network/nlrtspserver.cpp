@@ -31,7 +31,7 @@ nl_rtspserver_t::~nl_rtspserver_t()
 {
 }
 
-void nl_rtspserver_t::setup_sms(const char* stream_name)
+void nl_rtspserver_t::setup_sms(const char* stream_name,bool b_video_on,bool b_audio_on)
 {
     ServerMediaSession* p_sms = ServerMediaSession::createNew(envir(),stream_name,stream_name,NULL);
     OutPacketBuffer::maxSize = 100000;
@@ -41,24 +41,30 @@ void nl_rtspserver_t::setup_sms(const char* stream_name)
     video_stream_name += ".264";
     audio_stream_name += ".aac";
     
-    p_sms->addSubsession(
-        H264VideoFileServerMediaSubsession::createNew(
-            envir(),
-            video_stream_name.c_str(),
-            True
-        )
-    );
+    if (b_video_on) 
+    {
+        p_sms->addSubsession(
+                    H264VideoFileServerMediaSubsession::createNew(
+                                        envir(),
+                                        video_stream_name.c_str(),
+                                        True
+                    )
+        );
+    }
     
-    p_sms->addSubsession(
-        //ADTSAudioFileServerMediaSubsession::createNew(
-        MP3AudioFileServerMediaSubsession::createNew(
-            envir(),
-            audio_stream_name.c_str(),
-            True,
-            False,
-            NULL
-        )
-    );
+    if (b_audio_on) 
+    {
+        p_sms->addSubsession(
+                //ADTSAudioFileServerMediaSubsession::createNew(
+                MP3AudioFileServerMediaSubsession::createNew(
+                                    envir(),
+                                    audio_stream_name.c_str(),
+                                    True,
+                                    False,
+                                    NULL
+                )
+        );
+    }
     
     addServerMediaSession(p_sms);
 }

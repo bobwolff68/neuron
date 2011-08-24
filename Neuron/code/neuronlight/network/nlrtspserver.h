@@ -39,7 +39,7 @@ public:
         delete p_serv_instance;
     }
     
-    void setup_sms(const char* stream_name);
+    void setup_sms(const char* stream_name,bool b_video_on=true,bool b_audio_on=true);
     
     void request_server_exit(void)
     {
