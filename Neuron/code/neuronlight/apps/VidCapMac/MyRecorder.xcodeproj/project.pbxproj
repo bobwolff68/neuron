@@ -420,6 +420,7 @@
 				GCC_PREFIX_HEADER = MyRecorder_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
+					"/Developer/SDKs/MacOSX10.7.sdk/Developer/Headers/FlatCarbon/**",
 					"../../../../../Common/live555/**",
 					"../../../../../Common/vanguard/mac/**",
 					"../../**",
@@ -458,6 +459,7 @@
 				GCC_PREFIX_HEADER = MyRecorder_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
+					"/Developer/SDKs/MacOSX10.7.sdk/Developer/Headers/FlatCarbon/**",
 					"../../../../../Common/live555/**",
 					"../../../../../Common/vanguard/mac/**",
 					"../../**",

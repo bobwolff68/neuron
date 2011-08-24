@@ -72,8 +72,8 @@ void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf, int stride)
 }
 
 #if (defined (__APPLE__) & defined (__MACH__))
-v4_rtenc_t::v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf)://,nl_aacrtbuf_t* _p_aac_rtbuf):
-//p_aac_rtbuf(_p_aac_rtbuf),
+v4_rtenc_t::v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf,nl_aacrtbuf_t* _p_aac_rtbuf):
+p_aac_rtbuf(_p_aac_rtbuf),
 #else
 v4_rtenc_t::v4_rtenc_t(const char* cfg_file,V4L2CapBuffer* _p_rtcap_buf):
 #endif
@@ -81,6 +81,7 @@ p_rtcap_buf(_p_rtcap_buf)
 {
     int err;
     p_handle = NULL;
+    //timestamp_base = 0;
     //handle_mutex = PTHREAD_MUTEX_INITIALIZER;
     err = pthread_mutex_init(&handle_mutex, NULL);
     assert(err==0);
@@ -202,10 +203,16 @@ void v4_rtenc_t::SetEncSettings(map<string,string>& nvpairs)
 
 int v4_rtenc_t::workerBee(void)
 {    
-/*********** AAC AUDIO STREAM **********
+/*********** AAC AUDIO STREAM **********/
     uint8_t* p_aacbuf = NULL;
     const int aacbuf_size = FF_MIN_BUFFER_SIZE*10;
     int aac_outbytes = 0;
+    
+//    float t = 0;
+//    float t_incr = 2*M_PI*440.0/p_acctx->sample_rate;
+    const int exp_samples = p_acctx->frame_size;
+    int in_samples = 0;
+    short* p_samples = (short*) malloc((exp_samples<<1)*p_acctx->channels);
 /***************************************/
     
     while(1)
@@ -255,7 +262,12 @@ int v4_rtenc_t::workerBee(void)
 #endif
             SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer), p_bi->captureStride);
             
-            frame.timestamp = p_bi->timeStamp_uS;
+            /*if (timestamp_base == 0) 
+            {
+                timestamp_base = p_bi->timeStamp_uS;
+            }
+            frame.timestamp = p_bi->timeStamp_uS - timestamp_base;*/
+            
             LockHandle();
                 
             if(v4e_set_vp_frame(p_handle,&frame,1)!=VSSH_OK)
@@ -266,44 +278,64 @@ int v4_rtenc_t::workerBee(void)
             
             UnlockHandle();
         }
-        /********************* AAC AUDIO STREAM *******************
+        /********************* AAC AUDIO STREAM *******************/
         else
         {
             assert(p_bi->rawLength!=-1);
             
-            //assume raw data mode
-            int bytes_to_encode = p_bi->rawLength;
-            int bytes_per_sample = p_bi->rawLength / p_bi->rawNumSamples / p_acctx->channels;
-            int bytes_per_frame = p_acctx->frame_size * p_acctx->channels * bytes_per_sample;
-            int cur_sample_pos = 0;
-                
-            cout << "Frame size: " << p_acctx->frame_size << endl;
-            cout << "Channels: " << p_acctx->channels << endl;
-            
-            //encode the samples
-            while(bytes_to_encode > 0)
+            if((exp_samples-in_samples) >= p_bi->rawNumSamples)
             {
-                memcpy(p_temp_buf,p_bi->pBuffer,p_bi->rawLength);
-                aac_outbytes = avcodec_encode_audio(p_acctx,p_aacbuf,aacbuf_size,
-                                        (const short*)((uint8_t*)p_bi->pBuffer+cur_sample_pos));
-                if(aac_outbytes < 0)
-                {
-                    LOG_ERR("Unable to encode sample...");
-                }
-                else
-                {
-                    p_aacbuf = (uint8_t*) malloc(aacbuf_size*sizeof(uint8_t));
-                    assert(p_aacbuf!=NULL);
-                    nl_aacbufinfo_t* pBI = new nl_aacbufinfo_t();
-                    pBI->bytes = aac_outbytes;
-                    pBI->pBuffer = p_aacbuf;
-                    pBI->bFinalSample = false;
-                    p_aac_rtbuf->FullBufferEnQ(pBI);
-                    bytes_to_encode -= bytes_per_frame;
-                    cur_sample_pos += bytes_per_frame;
-                }
-            }   
+                cout << "Expected samples remaining: " << (exp_samples-in_samples) << endl;
+                memcpy(p_samples+in_samples*p_acctx->channels, p_bi->pBuffer, p_bi->rawLength);
+                in_samples += p_bi->rawNumSamples;
+            }
+            else
+            {
+                cout << "Expected samples remaining: " << (exp_samples-in_samples) << endl;
+                memcpy(p_samples+in_samples*p_acctx->channels, p_bi->pBuffer, ((exp_samples-in_samples)<<1)*p_acctx->channels);
+                //in_samples = exp_samples;
+
+            cout << "Got " << exp_samples << " samples, encoding..." << endl;
+            p_aacbuf = (uint8_t*) malloc(aacbuf_size*sizeof(uint8_t));
+            assert(p_aacbuf!=NULL);
             
+/*            for (int i=0; i<p_acctx->frame_size; i++) 
+            {
+                p_samples[(i<<1)] = (int)(sin(t)*10000);
+                p_samples[(i<<1)+1] = p_samples[(i<<1)];
+                t += t_incr;
+            }
+*/            
+            //assume raw data mode
+            aac_outbytes = avcodec_encode_audio(
+                                p_acctx,
+                                p_aacbuf,
+                                aacbuf_size,
+                                //(const short*)(p_bi->pBuffer)
+                                p_samples
+                           );
+            
+            if(aac_outbytes < 0)
+            {
+                LOG_ERR("Unable to encode sample...");
+            }
+            else if(aac_outbytes > 0)
+            {
+                /*cout << "************************************" << endl;
+                cout << "Frame size: " << p_acctx->frame_size << endl;
+                cout << "Channels: " << p_acctx->channels << endl;
+                cout << "Out bytes: " << aac_outbytes << endl;*/
+                
+                nl_aacbufinfo_t* pBI = new nl_aacbufinfo_t();
+                pBI->bytes = aac_outbytes;
+                pBI->pBuffer = p_aacbuf;
+                pBI->bFinalSample = false;
+                p_aac_rtbuf->FullBufferEnQ(pBI);
+            }
+                
+                in_samples = p_bi->rawNumSamples - (exp_samples-in_samples);
+                memcpy(p_samples, p_bi->pBuffer, ((exp_samples-in_samples)<<1)*p_acctx->channels);
+            }
         }
         /*********************************************************************************/
 #else
@@ -374,12 +406,12 @@ RTEnc_ReturnCode_t v4_rtenc_t::UnlockHandle(void)
     return RTENC_RETCODE_OK;
 }
 
-/*#if (defined(__APPLE__) && defined(__MACH__))
+#if (defined(__APPLE__) && defined(__MACH__))
 RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
 {
     avcodec_register_all();
-    
-    p_acodec = avcodec_find_encoder(CODEC_ID_AAC);
+
+    p_acodec = avcodec_find_encoder(CODEC_ID_MP2);
     if(p_acodec == NULL)
     {
         LOG_ERR("aac codec not found...");
@@ -393,7 +425,7 @@ RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
     p_acctx->sample_rate = 44100;
     p_acctx->channels = 2;
     p_acctx->sample_fmt = AV_SAMPLE_FMT_S16;
-    //p_acctx->profile = FF_PROFILE_AAC_MAIN;
+    p_acctx->profile = FF_PROFILE_AAC_LOW;
     p_acctx->time_base = (AVRational){1,p_acctx->sample_rate};
     
     //Test if sample format is supported
@@ -433,4 +465,4 @@ RTEnc_ReturnCode_t v4_rtenc_t::CloseAudio(void)
     return RTENC_RETCODE_OK;
 }
 
-#endif*/
+#endif

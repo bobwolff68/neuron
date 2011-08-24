@@ -9,7 +9,7 @@
         printf("failed");
         die('Not connected : ' . mysqli_error());
     } else {
-        $sql = "delete from sessionrecord where username='$_SESSION[userid]'";
+        $sql = "delete from sessionrecord where portv=4000";
         $result = mysqli_query($mysqli, $sql);
         
         $sql = "select count from sessioncount";
@@ -20,13 +20,12 @@
             $row = @mysqli_fetch_assoc($result);
             $count = $row['count'];
 //            if ($_SESSION['count'] > $count){
-            if ($count > 0){
-                $count--;
+            $count = 0;
             
-                $sql = "update sessioncount set count=$count";
-                $result = mysqli_query($mysqli, $sql);
-            }
+            $sql = "update sessioncount set count=$count";
+            $result = mysqli_query($mysqli, $sql);
         }
         mysqli_close($mysqli);
      }
+     header( "Location: landing.php" );
 ?>

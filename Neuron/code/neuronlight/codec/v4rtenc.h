@@ -13,11 +13,11 @@
     #include <RTBuffer.h>
     
 /********** AAC AUDIO STREAM **********/
-/*    extern "C" 
+    extern "C" 
     {
         #include <libavcodec/avcodec.h>
     }
-    #include "nlaacrtbuf.h"*/
+    #include "nlaacrtbuf.h"
 /**************************************/
     #include <sys/types.h>
     #include <sys/stat.h>
@@ -78,10 +78,11 @@ class v4_rtenc_t: public ThreadSingle
 #if (defined (__APPLE__) & defined (__MACH__))
         QTKitCapBuffer* p_rtcap_buf;
         // audio codec
-/*        AVCodec* p_acodec;
+        AVCodec* p_acodec;
         AVCodecContext* p_acctx;
         AVDictionary* p_opts_dict;
-        nl_aacrtbuf_t* p_aac_rtbuf;*/
+        nl_aacrtbuf_t* p_aac_rtbuf;
+        //int64_t timestamp_base;
 #else
         V4L2CapBuffer* p_rtcap_buf;
 #endif
@@ -133,7 +134,7 @@ class v4_rtenc_t: public ThreadSingle
         //! \param[in] _p_rtcap_buf - Pointer to the real-time capture buffer
         //!
 #if (defined (__APPLE__) & defined (__MACH__))
-        v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf);//,nl_aacrtbuf_t* _p_aac_rtbuf);
+        v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf,nl_aacrtbuf_t* _p_aac_rtbuf);
         RTEnc_ReturnCode_t OpenAudio(void);
         RTEnc_ReturnCode_t CloseAudio(void);
 #else

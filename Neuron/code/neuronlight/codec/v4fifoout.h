@@ -63,7 +63,8 @@ private:
     virtual int workerBee(void);
 
 public:
-    v4_fifoout_t(const char* _stream_name,v4_rtenc_t* _p_rtenc);//,nl_aacrtbuf_t* _p_aac_rtbuf);
+    v4_fifoout_t(const char* _stream_name,v4_rtenc_t* _p_rtenc,nl_aacrtbuf_t* _p_aac_rtbuf);
+    void start_aac_fifoout(void);
     virtual ~v4_fifoout_t();
 };
 

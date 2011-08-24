@@ -6,6 +6,7 @@
 #import "CoreVideo/CVPixelBuffer.h"
 
 #import <CoreAudio/CoreAudioTypes.h>
+#include <Endian.h>
 
 #import "CameraInterrogation.h"
 
@@ -687,14 +688,23 @@ for(key in pDict){
         for (int sample=0; sample < [sampleBuffer numberOfSamples]; sample++)
         {
             // On input, must take sample left and sample right and compensate for offset of non-interleaved.
-            assert(inbuf[sample] <= 1.0 && inbuf[sample] >= -1.0);
-            assert(inbuf[sample+offset] <= 1.0 && inbuf[sample+offset] >= -1.0);
+            //assert(inbuf[sample] <= 1.0 && inbuf[sample] >= -1.0);
+            //assert(inbuf[sample+offset] <= 1.0 && inbuf[sample+offset] >= -1.0);
             
             fl1 = inbuf[sample] * (Float32)max;
             outbuf[sample*2] = (SInt16)(fl1);
+            //outbuf[sample*2] = EndianS16_NtoB(outbuf[sample*2]);
+                                //Lower Byte shifted up         //Upper byte shifted low
+            //outbuf[sample*2] = ((outbuf[sample*2]&0xff)<<8) | ((outbuf[sample*2]&0xff00)>>8);
+            //EndianS16_NtoB(outbuf[sample*2]);
             
             fl2 = inbuf[sample + offset] * (Float32)max;
             outbuf[sample*2 + 1] = (SInt16)(fl2);
+            //outbuf[sample*2 + 1] = EndianS16_NtoB(outbuf[sample*2]+1);
+
+
+            
+            //outbuf[sample*2+1] = ((outbuf[sample*2+1]&0xff)<<8) | ((outbuf[sample*2+1]&0xff00)>>8);
             
 //            NSLog(@"[%03d]:  % 1.4f    % 1.4f    %6hi      %6hi", sample, inbuf[sample], inbuf[sample+offset], outbuf[sample*2], outbuf[sample*2+1]);
         }

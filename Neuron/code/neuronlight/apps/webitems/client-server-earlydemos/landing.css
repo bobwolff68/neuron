@@ -25,6 +25,8 @@
 	#content {font-size:1.125em; background:#fff; line-height:1em;}
 	.content {padding: 5px 20px 300px 20px; min-width:200px;}
         
+        li {list-style:none; margin-bottom:5px; clear:both; color:#000000; background:url(images/marker4.gif) no-repeat 0 4px; padding-left:12px; text-transform:uppercase;}
+        
 /* --- END content --- */
 
 /* --- footer --- */

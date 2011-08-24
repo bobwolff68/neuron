@@ -284,11 +284,6 @@
                 var p1 = document.getElementById(vlcid);
                 p1.audio.toggleMute();
             }
-
-            function doname(aname){
-                var uname = document.getElementById(aname);
-                document.write(uname.value);
-            }
             
         </script> 
         
@@ -309,7 +304,7 @@
             window.onbeforeunload = function (e) {
                 var uremove = document.getElementById("removeuser");                
                 if (uremove.value == '1'){
-                    alert('doing remove');                    
+//                    alert('doing remove');                    
                     downloadUrl2("removeuser.php", function(data){               
                     });
                 } 
@@ -354,9 +349,6 @@
                             <a href="javascript:;" onclick='return vmute("vlc1")'>Mute</a>
                         </li>
                         <li><b><input id='uname1' value='no joiner' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
-                            <!-- b><script type="text/javascript">
-                                doname('uname1');       
-                            </script></b -->
                         </li>
                         <li><input id='uri' value='emptyuri' size='70' type='text' name="vevo2"/></li>        
                         <li><input id='xfile' value='emptyfile' type='hidden' name="vevo"/></li>
@@ -397,15 +389,18 @@
                             <a href="javascript:;" onclick='return vmute("vlc2")'>Mute</a>
                         </li>
                         <li><b><input id='uname2' value='no joiner' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
-                            <!-- b><script type="text/javascript">
-                                doname('uname2');       
-                            </script></b -->
                         </li>
                         <li><input id='uri2' value='emptyuri' size='30' type='text' name="vevo2"/></li>        
                         <li><input id='xfile2' value='emptyfile' type='hidden' name="vevo"/></li>
                     </ul>
                 </div>
             </div>
+        </div>
+
+        <div  id="footer" style="float: right">
+            <a href="restartall.php"><button><b>Restart All</b></button></a>
+            <a href="landing.php"><button><b>Exit</b></button></a>
+
         </div>
         <input id='removeuser' value='1' type='hidden' name="vevo"/>
     </body> 
