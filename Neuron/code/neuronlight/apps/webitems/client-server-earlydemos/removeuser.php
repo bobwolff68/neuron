@@ -20,11 +20,12 @@
             $row = @mysqli_fetch_assoc($result);
             $count = $row['count'];
 //            if ($_SESSION['count'] > $count){
+            if ($count > 0){
                 $count--;
             
                 $sql = "update sessioncount set count=$count";
                 $result = mysqli_query($mysqli, $sql);
-//            }
+            }
         }
         mysqli_close($mysqli);
      }
