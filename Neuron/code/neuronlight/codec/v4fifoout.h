@@ -14,7 +14,7 @@
 #include <v4_nalu.h>
 #include <ThreadSingle.h>
 
-#define N_STREAMS               2
+#define N_STREAMS               9
 #define MAX_WRITE_FIFO_ATTEMPTS 100
 
 typedef enum

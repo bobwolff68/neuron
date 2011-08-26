@@ -19,6 +19,8 @@ private:
     TempVidCapBase* p_cap_objc;
     const int width;
     const int height;
+    const bool b_video_on;
+    const bool b_audio_on;
     const string colorspace;
     virtual int workerBee(void);
     
@@ -26,7 +28,9 @@ public:
     RunPipeline(TempVidCapBase* _p_cap_objc,
                 const int _width,
                 const int _height,
-                const char* _colorspace);
+                const char* _colorspace,
+                const bool b_video_on,
+                const bool b_audio_on);
     
     ~RunPipeline()
     {

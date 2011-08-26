@@ -82,13 +82,11 @@ int nl_aacfifoout_t::workerBee(void)
     
     while(1)
     {
-        //cout << "Before aac dequeue" << endl;
         if(p_aac_rtbuf->FullBufferDQ(&p_bib)==false)
         {
             LOG_ERR("Bad dequeue(aac)");
             throw NL_AACBUFINFO_EXCEPTION_BAD_DEQUEUE;
         }
-        //cout << "After aac dequeue" << endl;
         
         assert(p_bib != NULL);
         p_bi = static_cast<nl_aacbufinfo_t*>(p_bib);

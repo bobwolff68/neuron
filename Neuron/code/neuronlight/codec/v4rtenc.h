@@ -16,6 +16,7 @@
     extern "C" 
     {
         #include <libavcodec/avcodec.h>
+        #include <libavformat/avformat.h>
     }
     #include "nlaacrtbuf.h"
 /**************************************/
@@ -71,6 +72,8 @@ class v4_rtenc_t: public ThreadSingle
 {
     private:
 
+        const bool b_video_on;
+        const bool b_audio_on;
         //!
         //! \var p_rtcap_buf
         //! \brief Pointer to frame capture buffer
@@ -133,7 +136,11 @@ class v4_rtenc_t: public ThreadSingle
         //! \param[in] _p_rtcap_buf - Pointer to the real-time capture buffer
         //!
 #if (defined (__APPLE__) & defined (__MACH__))
-        v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf,nl_aacrtbuf_t* _p_aac_rtbuf);
+        v4_rtenc_t(const char* cfg_file,
+                   QTKitCapBuffer* _p_rtcap_buf,
+                   nl_aacrtbuf_t* _p_aac_rtbuf,
+                   const bool _b_video_on,
+                   const bool _b_audio_on);
         RTEnc_ReturnCode_t OpenAudio(void);
         RTEnc_ReturnCode_t CloseAudio(void);
 #else

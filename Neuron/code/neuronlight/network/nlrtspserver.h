@@ -7,9 +7,9 @@
 #include <liveMedia.hh>
 #include <ThreadSingle.h>
 #include <BasicUsageEnvironment.hh>
-//#ifndef _RTSP_SERVER_SUPPORTING_HTTP_STREAMING_HH
-//    #include "RTSPServerSupportingHTTPStreaming.hh"
-//#endif
+
+#define VIDEO_FIFO_EXT  ".264"
+#define AUDIO_FIFO_EXT  ".mp3"
 
 class nl_rtspserver_t : public RTSPServerSupportingHTTPStreaming, public ThreadSingle 
 {

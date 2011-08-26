@@ -38,8 +38,8 @@ void nl_rtspserver_t::setup_sms(const char* stream_name,bool b_video_on,bool b_a
     string video_stream_name = stream_name;
     string audio_stream_name = stream_name;
     
-    video_stream_name += ".264";
-    audio_stream_name += ".aac";
+    video_stream_name += VIDEO_FIFO_EXT;
+    audio_stream_name += AUDIO_FIFO_EXT;
     
     if (b_video_on) 
     {

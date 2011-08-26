@@ -11,7 +11,11 @@
 RunPipeline::RunPipeline(TempVidCapBase* _p_cap_objc,
                          const int _width,
                          const int _height,
-                         const char* _colorspace):
+                         const char* _colorspace,
+                         const bool _b_video_on,
+                         const bool _b_audio_on):
+b_video_on(_b_video_on),
+b_audio_on(_b_audio_on),
 p_cap_objc(_p_cap_objc),
 width(_width),
 height(_height),
@@ -22,7 +26,7 @@ colorspace(_colorspace)
 
 int RunPipeline::workerBee(void)
 {
-    nl_rtcamstream_t::main(p_cap_objc, width, height, colorspace.c_str());
+    nl_rtcamstream_t::main(p_cap_objc, width, height, colorspace.c_str(),b_video_on,b_audio_on);
     return 0;
 }
 

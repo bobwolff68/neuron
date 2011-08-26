@@ -172,8 +172,8 @@
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
 				GCC_VERSION = "";
-				"HEADER_SEARCH_PATHS[arch=*]" = (
-					/usr/local/include,
+				HEADER_SEARCH_PATHS = (
+					../../../../../../../../Common/ffmpeg,
 					../../../../../capture,
 					"../../../../../codec/**",
 					../../../../../network,
@@ -182,7 +182,7 @@
 					"../../../../../../../../Common/live555/**",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "../../../../../network ../../../../../codec ../../../../../capture ../../../../../../neuroncommon/**";
+				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Debug;
 		};
@@ -193,15 +193,16 @@
 				EXECUTABLE_PREFIX = lib;
 				GCC_VERSION = "";
 				HEADER_SEARCH_PATHS = (
+					../../../../../../../../Common/ffmpeg,
 					../../../../../capture,
-					../../../../../codec,
+					"../../../../../codec/**",
 					../../../../../network,
 					../../../../../../neuroncommon/threading/NeuronBasics,
 					"../../../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
 					"../../../../../../../../Common/live555/**",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "../../../../../network ../../../../../codec ../../../../../capture ../../../../../../neuroncommon/threading/NeuronBasics";
+				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Release;
 		};

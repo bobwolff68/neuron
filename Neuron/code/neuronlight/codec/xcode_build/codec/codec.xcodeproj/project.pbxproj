@@ -193,12 +193,13 @@
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
 				GCC_VERSION = "";
-				"HEADER_SEARCH_PATHS[arch=*]" = (
-					/usr/local/include,
+				HEADER_SEARCH_PATHS = (
+					../../../../../../Common/ffmpeg,
 					../../../../neuroncommon/threading/NeuronBasics,
 					../../../capture,
 					"../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
 				);
+				"HEADER_SEARCH_PATHS[arch=x86_64]" = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = macosx;
@@ -212,7 +213,8 @@
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
 				GCC_VERSION = "";
-				"HEADER_SEARCH_PATHS[arch=*]" = (
+				HEADER_SEARCH_PATHS = (
+					../../../../../../Common/ffmpeg,
 					../../../../neuroncommon/threading/NeuronBasics,
 					../../../capture,
 					"../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
