@@ -6,7 +6,6 @@
 #import "CoreVideo/CVPixelBuffer.h"
 
 #import <CoreAudio/CoreAudioTypes.h>
-#include <Endian.h>
 
 #define DESIRED_BITS_PER_SAMPLE 16
 
@@ -142,7 +141,7 @@ for(key in pDict){
 
     // Now instantiate the 'connection' mechanism to the lower pipeline and call them to get the pipeline started.
     pTVC = new TVidCap(pCap);
-    p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY");
+    p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY",true,false);
     
     // Always keep window on top of other windows.
     [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];

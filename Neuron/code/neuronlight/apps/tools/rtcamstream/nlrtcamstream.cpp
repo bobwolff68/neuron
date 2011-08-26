@@ -9,9 +9,11 @@ using namespace std;
     void nl_rtcamstream_t::main(TempVidCapBase* p_cap_objc,
                                 const int width,
                                 const int height,
-                                const char* colorspace)
+                                const char* colorspace,
+                                const bool b_video_on,
+                                const bool b_audio_on)
     {
-        nl_rtcamstream_t rtcs(p_cap_objc,"rtenc_avc_settings.cfg",8554,width,height,colorspace);
+        nl_rtcamstream_t rtcs(p_cap_objc,"rtenc_avc_settings.cfg",8554,width,height,colorspace,b_video_on,b_audio_on);
         rtcs.RunCapture();
         return;
     }
@@ -21,7 +23,9 @@ using namespace std;
                                        const short rtsp_port,
                                        const int width,
                                        const int height,
-                                       const char* colorspace):
+                                       const char* colorspace,
+                                       const bool b_video_on,
+                                       const bool b_audio_on):
     p_cap(_p_cap),p_serv(NULL)
 #else
     nl_rtcamstream_t::nl_rtcamstream_t(const char* rtenc_cfg_file,
@@ -40,7 +44,7 @@ using namespace std;
 #endif
         backup_ports[0] = rtsp_port;
         p_aac_rtbuf = new nl_aacrtbuf_t();
-		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer(),p_aac_rtbuf);
+		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer(),p_aac_rtbuf,b_video_on,b_audio_on);
         p_fifoout = new v4_fifoout_t("stream",p_rtenc,p_aac_rtbuf);
         
         for(int i=0; i<5 && p_serv==NULL; i++)
@@ -62,8 +66,14 @@ using namespace std;
         else
             cout << "Successful" << endl;
         
-        p_serv->setup_sms("stream0",true,false);
-        p_serv->setup_sms("stream1",true,false);
+        for (int i=0; i<N_STREAMS; i++) 
+        {
+            
+            char stream_name[10];
+            sprintf(stream_name, "stream%d", i);
+            cout << "Creating stream: " << stream_name << endl;
+            p_serv->setup_sms(stream_name,b_video_on,b_audio_on);
+        }
 
 		map<string,string> nvpairs;
         char s_width[20];

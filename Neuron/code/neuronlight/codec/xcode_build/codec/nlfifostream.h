@@ -18,6 +18,9 @@
 #include <v4_nalu.h>
 #include "avcbsbuf.h"
 
+#define VIDEO_FIFO_EXT  ".264"
+#define AUDIO_FIFO_EXT  ".mp3"
+
 typedef enum
 {
     NLFS_RETCODE_OK = 0,

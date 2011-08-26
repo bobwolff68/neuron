@@ -164,7 +164,7 @@
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
 				GCC_VERSION = "";
-				"HEADER_SEARCH_PATHS[arch=*]" = (
+				HEADER_SEARCH_PATHS = (
 					"../../../../neuroncommon/**",
 					"../../../../../../Common/live555/**",
 				);
@@ -178,7 +178,7 @@
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXECUTABLE_PREFIX = lib;
 				GCC_VERSION = "";
-				"HEADER_SEARCH_PATHS[arch=*]" = (
+				HEADER_SEARCH_PATHS = (
 					"../../../../neuroncommon/**",
 					"../../../../../../Common/live555/**",
 				);

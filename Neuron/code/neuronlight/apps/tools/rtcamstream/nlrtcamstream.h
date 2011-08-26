@@ -5,6 +5,8 @@
 #include "v4fifoout.h"
 #include "nlrtspserver.h"
 
+#define N_STREAMS   9
+
 enum RTCS_ReturnCode_t
 {
 	RTCS_RETCODE_ERR_FIFOOUT_FAIL = -9,
@@ -38,14 +40,18 @@ public:
     static void main(TempVidCapBase* p_cap_objc,
                      const int width,
                      const int height,
-                     const char* colorspace);
+                     const char* colorspace,
+                     const bool b_video_on,
+                     const bool b_audio_on);
     
 	nl_rtcamstream_t(TempVidCapBase* _p_cap,
                      const char* rtenc_cfg_file,
                      const short rtsp_port,
                      const int width,
                      const int height,
-                     const char* colorspace);
+                     const char* colorspace,
+                     const bool b_video_on,
+                     const bool b_audio_on);
 #else
 	nl_rtcamstream_t(const char* rtenc_cfg_file,
                      const short rtsp_port,

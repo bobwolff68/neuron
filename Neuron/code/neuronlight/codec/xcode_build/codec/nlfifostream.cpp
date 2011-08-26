@@ -28,7 +28,7 @@ stream_name(_stream_name)
     
     sfd[0] = sfd[1] = -1;
     substream_names[0] = stream_name + ".264";
-    substream_names[1] = stream_name + ".aac";
+    substream_names[1] = stream_name + AUDIO_FIFO_EXT;
 
     p_avcbs_buf = new v4_avcbsbuf_t();
     p_sps_buf = new v4_avcbsbuf_t();
@@ -124,17 +124,8 @@ nlfs_retcode_t nl_fifostream_t::write_to_substream(
         int nalu_type = NALU_TYPE(p_outbuf[0]);
         int nalu_ridc = NALU_RIDC(p_outbuf[0]);
 
-        /*cout << __func__ << "> nalu_type="
-                << nalu_type
-                << ", nalu_ridc="
-                << nalu_ridc
-                << ", size="
-                << outbuf_bytes
-                << " (bytes)" << endl;*/
-
-        
         if (sfd[0] == -1) 
-            sfd[0] = open((stream_name+".264").c_str(),O_WRONLY|O_NONBLOCK);
+            sfd[0] = open((stream_name+VIDEO_FIFO_EXT).c_str(),O_WRONLY|O_NONBLOCK);
         
         if (nalu_type == NALU_TYPE_SPS) 
         {
@@ -187,7 +178,7 @@ nlfs_retcode_t nl_fifostream_t::write_to_substream(
     {
 
         if (sfd[1] == -1) 
-            sfd[1] = open((stream_name+".aac").c_str(),O_WRONLY|O_NONBLOCK);
+            sfd[1] = open((stream_name+AUDIO_FIFO_EXT).c_str(),O_WRONLY|O_NONBLOCK);
 
         if(sfd[1] != -1)
         {

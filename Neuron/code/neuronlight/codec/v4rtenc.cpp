@@ -1,7 +1,18 @@
 #include <iostream>
+#include <sys/time.h>
 #include "v4rtenc.h"
 
 using namespace std;
+
+int64_t nl_gettimeofday(void);
+int64_t nl_gettimeofday(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    
+    return ((int64_t)tv.tv_sec)*1000000 + (int64_t)(tv.tv_usec);
+}
+
 
 void v4_rtenc_t::InitRawFrameSettings(void)
 {
@@ -72,7 +83,13 @@ void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf, int stride)
 }
 
 #if (defined (__APPLE__) & defined (__MACH__))
-v4_rtenc_t::v4_rtenc_t(const char* cfg_file,QTKitCapBuffer* _p_rtcap_buf,nl_aacrtbuf_t* _p_aac_rtbuf):
+v4_rtenc_t::v4_rtenc_t(const char* cfg_file,
+                       QTKitCapBuffer* _p_rtcap_buf,
+                       nl_aacrtbuf_t* _p_aac_rtbuf,
+                       bool _b_video_on,
+                       bool _b_audio_on):
+b_video_on(_b_video_on),
+b_audio_on(_b_audio_on),
 p_aac_rtbuf(_p_aac_rtbuf),
 #else
 v4_rtenc_t::v4_rtenc_t(const char* cfg_file,V4L2CapBuffer* _p_rtcap_buf):
@@ -256,7 +273,7 @@ int v4_rtenc_t::workerBee(void)
 
 #if (defined (__APPLE__) & defined (__MACH__))
         p_bi = static_cast<QTKitBufferInfo*>(p_bib);
-        if(p_bi->bIsVideo)
+        if(p_bi->bIsVideo && b_video_on)
         {
 #ifdef COPY_QTKIT_CAP_BUFFERS
             if (pb)
@@ -264,7 +281,9 @@ int v4_rtenc_t::workerBee(void)
             else
 #endif
             SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer), p_bi->captureStride);
-            frame.timestamp = p_bi->timeStamp_uS;
+            p_bi->timeStamp_uS = nl_gettimeofday();
+            frame.timestamp = /*num_video_frames++;*/p_bi->timeStamp_uS * 90000 / 1000000;
+            //cout << "Video Frame timestamp: " << frame.timestamp << endl;
             
             LockHandle();
                 
@@ -277,59 +296,51 @@ int v4_rtenc_t::workerBee(void)
             UnlockHandle();
         }
         /********************* AAC AUDIO STREAM *******************/
-        else
+        else if(!p_bi->bIsVideo && b_audio_on)
         {
             assert(p_bi->rawLength!=-1);
             
             if((exp_samples-in_samples) >= p_bi->rawNumSamples)
             {
-                cout << "Expected samples remaining: " << (exp_samples-in_samples) << endl;
+                //cout << "Expected samples remaining: " << (exp_samples-in_samples) << endl;
                 memcpy(p_samples+in_samples*p_acctx->channels, p_bi->pBuffer, p_bi->rawLength);
                 in_samples += p_bi->rawNumSamples;
             }
             else
             {
-                cout << "Expected samples remaining: " << (exp_samples-in_samples) << endl;
+                //cout << "Expected samples remaining: " << (exp_samples-in_samples) << endl;
                 memcpy(p_samples+in_samples*p_acctx->channels, p_bi->pBuffer, ((exp_samples-in_samples)<<1)*p_acctx->channels);
-                //in_samples = exp_samples;
 
-            cout << "Got " << exp_samples << " samples, encoding..." << endl;
-            p_aacbuf = (uint8_t*) malloc(aacbuf_size*sizeof(uint8_t));
-            assert(p_aacbuf!=NULL);
+                p_aacbuf = (uint8_t*) malloc(aacbuf_size*sizeof(uint8_t));
+                assert(p_aacbuf!=NULL);
             
-/*            for (int i=0; i<p_acctx->frame_size; i++) 
-            {
-                p_samples[(i<<1)] = (int)(sin(t)*10000);
-                p_samples[(i<<1)+1] = p_samples[(i<<1)];
-                t += t_incr;
-            }
-*/            
-            //assume raw data mode
-            aac_outbytes = avcodec_encode_audio(
-                                p_acctx,
-                                p_aacbuf,
-                                aacbuf_size,
-                                //(const short*)(p_bi->pBuffer)
-                                p_samples
+                //assume raw data mode
+                p_bi->timeStamp_uS = nl_gettimeofday();
+                p_acctx->coded_frame->pts = p_bi->timeStamp_uS * 44100 / 1000000;
+                aac_outbytes = avcodec_encode_audio(
+                                    p_acctx,
+                                    p_aacbuf,
+                                    aacbuf_size,
+                                    p_samples
                            );
             
-            if(aac_outbytes < 0)
-            {
-                LOG_ERR("Unable to encode sample...");
-            }
-            else if(aac_outbytes > 0)
-            {
-                /*cout << "************************************" << endl;
-                cout << "Frame size: " << p_acctx->frame_size << endl;
-                cout << "Channels: " << p_acctx->channels << endl;
-                cout << "Out bytes: " << aac_outbytes << endl;*/
+                /*if(p_acctx->coded_frame->pts != AV_NOPTS_VALUE)
+                {
+                    cout << "Audio Frame Timestamp: " << p_acctx->coded_frame->pts << endl;
+                }*/
                 
-                nl_aacbufinfo_t* pBI = new nl_aacbufinfo_t();
-                pBI->bytes = aac_outbytes;
-                pBI->pBuffer = p_aacbuf;
-                pBI->bFinalSample = false;
-                p_aac_rtbuf->FullBufferEnQ(pBI);
-            }
+                if(aac_outbytes < 0)
+                {
+                    LOG_ERR("Unable to encode sample...");
+                }
+                else if(aac_outbytes > 0)
+                {
+                    nl_aacbufinfo_t* pBI = new nl_aacbufinfo_t();
+                    pBI->bytes = aac_outbytes;
+                    pBI->pBuffer = p_aacbuf;
+                    pBI->bFinalSample = false;
+                    p_aac_rtbuf->FullBufferEnQ(pBI);
+                }
                 
                 in_samples = p_bi->rawNumSamples - (exp_samples-in_samples);
                 memcpy(p_samples, p_bi->pBuffer, ((exp_samples-in_samples)<<1)*p_acctx->channels);
@@ -419,11 +430,10 @@ RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
     p_acctx = avcodec_alloc_context3(p_acodec);
     
     //encoder parameters
-    p_acctx->bit_rate = 128000;
+    p_acctx->bit_rate = 64000;
     p_acctx->sample_rate = 44100;
     p_acctx->channels = 2;
     p_acctx->sample_fmt = AV_SAMPLE_FMT_S16;
-    p_acctx->profile = FF_PROFILE_AAC_LOW;
     p_acctx->time_base = (AVRational){1,p_acctx->sample_rate};
     
     //Test if sample format is supported
@@ -446,12 +456,29 @@ RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
     }
     
     //open encoder
-    //if(avcodec_open2(p_acctx, p_acodec, &p_opts_dict) < 0)
-    if(avcodec_open(p_acctx, p_acodec) < 0)
+    if(avcodec_open2(p_acctx, p_acodec, NULL) < 0)
     {
         LOG_ERR("unable to open aac codec...");
         return RTENC_RETCODE_ERR_AOPEN;
     }
+    
+    /*************** <TEST AREA> ****************
+    AVOutputFormat* p_ofmt;
+    AVFormatContext* p_fctx;
+    
+    av_register_all();
+    
+    avformat_alloc_output_context2(&p_fctx, NULL, "mpeg", NULL);
+    if (p_fctx == NULL) 
+    {
+        cerr << "Could not deduce output fmt mpeg" << endl;
+        exit(0);
+    }
+    else
+        cout << "Output format found..." << endl;
+    
+    /*************** </TEST AREA> ****************/
+    
     
     return RTENC_RETCODE_OK;
 }
