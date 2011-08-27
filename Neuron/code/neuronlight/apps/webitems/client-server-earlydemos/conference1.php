@@ -151,7 +151,7 @@
                                 }
                                 
                                 var urival = document.getElementById("uri");
-                                urival.value = member[0][1];
+                                urival.value = ''; // member[0][1];
                                 var id22 = p1.playlist.add(urival.value, "stream one", options);
                                 p1.playlist.stop();
                                 
@@ -184,10 +184,12 @@
                                     uname.value = member[1][0];
                                     urival0.value = member[0][1];
                                     urival.value = member[1][1];
+                                    urival.value = urival.value.replace(/stream0/i, "stream1");
                                 } else {
                                     uname.value = member[0][0];
                                     urival0.value = member[1][1];
                                     urival.value = member[0][1];
+                                    urival.value = urival.value.replace(/stream0/i, "stream1");
                                 }
                                 
                                 var id22 = p1.playlist.add(urival.value, "stream two", null);                               

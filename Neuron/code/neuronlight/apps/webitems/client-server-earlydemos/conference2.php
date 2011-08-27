@@ -162,8 +162,12 @@
                                     uname.value = member[1][0];
                                     
                                     urival0.value = member[2][1];
+                                    
                                     urival.value = member[0][1];
+                                    urival.value = urival.value.replace(/stream0/i, "stream2");
+                                    
                                     urival2.value = member[1][1];
+                                    urival2.value = urival2.value.replace(/stream0/i, "stream2");
                                 } else {
                                     if(sesslogged == member[0][0]){
                                         var uname = document.getElementById("uname1");
@@ -172,8 +176,12 @@
                                         uname.value = member[2][0];
                                         
                                         urival0.value = member[0][1];
+                                        
                                         urival.value = member[1][1];
+                                        urival.value = urival.value.replace(/stream0/i, "stream1");
+                                        
                                         urival2.value = member[2][1];
+                                        urival2.value = urival2.value.replace(/stream0/i, "stream1");
                                     } else{
                                         var uname = document.getElementById("uname1");
                                         uname.value = member[0][0];
@@ -181,8 +189,12 @@
                                         uname.value = member[2][0];
                                     
                                         urival0.value = member[1][1];
+                                        
                                         urival.value = member[0][1];
+                                        urival.value = urival.value.replace(/stream0/i, "stream1");
+                                        
                                         urival2.value = member[2][1];
+                                        urival2.value = urival2.value.replace(/stream0/i, "stream2");
                                     }
                                 }
                                 
