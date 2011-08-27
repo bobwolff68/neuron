@@ -94,7 +94,7 @@
                             found = 0;                            
                             for (i = 0; i < puser.length; i++) {
                                 if (mycel1.innerText == member[i][0]) {
-                                    found = 1;
+                                    found = 1;                                    
                                     if (myelem.getAttribute("href") == null){
                                         myelem.setAttribute("href", "readyjoin.php");
                                     } else {
@@ -103,10 +103,10 @@
                                         }
                                     }
                                     if (myelemimg.getAttribute("src") == null){
-                                        myelemimg.setAttribute("src", "insession.gif");
+                                        myelemimg.setAttribute("src", "mysession.gif");
                                     }else {
-                                        if (myelemimg.getAttribute("src") != "insession.gif"){
-                                            myelemimg.setAttribute("src", "insession.gif");
+                                        if (myelemimg.getAttribute("src") != "mysession.gif"){
+                                            myelemimg.setAttribute("src", "mysession.gif");
                                         }
                                     }
                                     break;
@@ -118,8 +118,8 @@
                                     myelem.removeAttribute("href");
                                 }
                                 if (myelemimg.getAttribute("src") != null){
-                                    if (myelemimg.getAttribute("src") != "outsession.gif"){
-                                        myelemimg.setAttribute("src", "outsession.gif");
+                                    if (myelemimg.getAttribute("src") != "myonline2.gif"){
+                                        myelemimg.setAttribute("src", "myonline2.gif");
                                     }
                                 }
                             }
@@ -198,19 +198,19 @@
                             <table>
                                 <tbody>
                                     <tr>
-                                        <td><a><img alt=""></img></a></td>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
                                         <td>Tim</td>
                                     </tr>
                                     <tr>
-                                        <td><a><img alt=""></img></a></td>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
                                         <td>Joe</td>
                                     </tr>
                                     <tr>
-                                        <td><a><img alt=""></img></a></td>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
                                         <td>Sue</td>
                                     </tr>
                                     <tr>
-                                        <td><a><img alt=""></img></a></td>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
                                         <td>Eve</td>
                                     </tr>
                                 </tbody>
