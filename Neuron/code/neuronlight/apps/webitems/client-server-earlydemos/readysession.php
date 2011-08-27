@@ -85,7 +85,8 @@
             <div id="join" style="width: 200px; padding-left: 400px; padding-top:100px; float: left">
                 <form name="input" action="startsession.php" method="POST">
 		    Your stream URL: <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.100:8554/stream.sdp"/ -->
-                    <input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"/>
+                    <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"/ -->
+                    <input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.81:8554/stream0"/>
                     <br/>
 		    <input size ="60" type="submit" value="Submit"/>
                     <a href="landing.php"><input type="button" name="cancel" value="Cancel" /></a>
