@@ -146,7 +146,7 @@ for(key in pDict){
     p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY",true,false);
     
     // Always keep window on top of other windows.
-    [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
+//    [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
 }
 
 // Handle window closing notifications for your device input
@@ -849,17 +849,6 @@ for(key in pDict){
 }
 
 - (IBAction)quitApplication:(id)sender {
-    //
-    // First we will interrogate the camera.
-    //
-    CameraInterrogation *pInt;
-    pInt = [[CameraInterrogation alloc] init];
-    
-    [pInt FullInternalInterrogation];
-    int wt, ht;
-    [pInt getBestCaptureResolutionForWidth:800 forHeight:500 forOutWidth:&wt forOutHeight:&ht];
-    [pInt release];
-    
     [NSApp terminate:self];
 }
 
