@@ -169,16 +169,10 @@
 		29B97314FDCFA39411CA2CEA /* MyRecorder */ = {
 			isa = PBXGroup;
 			children = (
-				34E3725D140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a */,
-				3415AD161405C1AC000C2C51 /* libavutil.a */,
-				3415AD141405C19B000C2C51 /* libavcodec.a */,
-				7B5CFAF213F1C12B007479E1 /* libUsageEnvironment.a */,
-				7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */,
-				7B5CFAEE13F1C0F8007479E1 /* libliveMedia.a */,
-				7B5CFAEC13F1C0D2007479E1 /* libgroupsock.a */,
-				7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */,
-				7B5CFAC413F1B79B007479E1 /* network.xcodeproj */,
 				7B5CFABD13F1B780007479E1 /* codec.xcodeproj */,
+				7B5CFAC413F1B79B007479E1 /* network.xcodeproj */,
+				7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */,
+				34B779A1140C27EE00AAE19B /* LinkLibs */,
 				3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */,
 				3426E93713F0BAFB00897BA7 /* RTBuffer.h */,
 				34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */,
@@ -216,6 +210,20 @@
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		34B779A1140C27EE00AAE19B /* LinkLibs */ = {
+			isa = PBXGroup;
+			children = (
+				34E3725D140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a */,
+				3415AD161405C1AC000C2C51 /* libavutil.a */,
+				3415AD141405C19B000C2C51 /* libavcodec.a */,
+				7B5CFAF213F1C12B007479E1 /* libUsageEnvironment.a */,
+				7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */,
+				7B5CFAEE13F1C0F8007479E1 /* libliveMedia.a */,
+				7B5CFAEC13F1C0D2007479E1 /* libgroupsock.a */,
+			);
+			name = LinkLibs;
 			sourceTree = "<group>";
 		};
 		7B5CFABE13F1B780007479E1 /* Products */ = {

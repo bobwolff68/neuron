@@ -169,6 +169,7 @@
 					"../../../../../../Common/live555/**",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 			};
 			name = Debug;
 		};
@@ -183,6 +184,7 @@
 					"../../../../../../Common/live555/**",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
