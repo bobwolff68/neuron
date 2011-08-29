@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		2B531E1B0BBB3FBD00F42B98 /* Icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2B531E1A0BBB3FBD00F42B98 /* Icon.icns */; };
 		2BAB8A530BBB551900143BEF /* MyRecorder Help in Resources */ = {isa = PBXBuildFile; fileRef = 2BAB8A510BBB551900143BEF /* MyRecorder Help */; };
+		3415AD151405C19B000C2C51 /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3415AD141405C19B000C2C51 /* libavcodec.a */; };
+		3415AD171405C1AC000C2C51 /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3415AD161405C1AC000C2C51 /* libavutil.a */; };
 		3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */; };
 		34AA4D0813EB77DB003F68AE /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34AA4D0713EB77DB003F68AE /* CoreVideo.framework */; };
 		34BF6A8213FC56090053B7A6 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34BF6A8113FC56090053B7A6 /* AudioToolbox.framework */; };
@@ -87,6 +89,8 @@
 		2B531E1A0BBB3FBD00F42B98 /* Icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Icon.icns; sourceTree = "<group>"; };
 		2BAB8A520BBB551900143BEF /* English */ = {isa = PBXFileReference; lastKnownFileType = folder; name = English; path = "English.lproj/MyRecorder Help"; sourceTree = "<group>"; };
 		32CA4F630368D1EE00C91783 /* MyRecorder_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyRecorder_Prefix.pch; sourceTree = "<group>"; };
+		3415AD141405C19B000C2C51 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../../../../../Common/ffmpeg/libavcodec/libavcodec.a; sourceTree = "<group>"; };
+		3415AD161405C1AC000C2C51 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../../../../../Common/ffmpeg/libavutil/libavutil.a; sourceTree = "<group>"; };
 		3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RTBuffer.cpp; path = ../../capture/RTBuffer.cpp; sourceTree = "<group>"; };
 		3426E93713F0BAFB00897BA7 /* RTBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RTBuffer.h; path = ../../capture/RTBuffer.h; sourceTree = "<group>"; };
 		34AA4D0713EB77DB003F68AE /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = SDKs/MacOSX10.7.sdk/System/Library/Frameworks/CoreVideo.framework; sourceTree = DEVELOPER_DIR; };
@@ -121,6 +125,9 @@
 				7B83DAF61405EB6600450C36 /* libavutil.a in Frameworks */,
 				7B83DAF41405EB4C00450C36 /* libavcodec.a in Frameworks */,
 				7B83DAF21405EB2F00450C36 /* libv4codecsdk-m32g-all-md.a in Frameworks */,
+				3415AD171405C1AC000C2C51 /* libavutil.a in Frameworks */,
+				3415AD151405C19B000C2C51 /* libavcodec.a in Frameworks */,
+				348E08FB13FDE6B000CB51D2 /* libv4codecsdk-m32g-all-md.a in Frameworks */,
 				34BF6A8213FC56090053B7A6 /* AudioToolbox.framework in Frameworks */,
 				7B5CFB3413F1DCC0007479E1 /* librtcamstream.a in Frameworks */,
 				7B5CFB3313F1DCBA007479E1 /* libnetwork.a in Frameworks */,
@@ -171,6 +178,10 @@
 				7B83DAF51405EB6600450C36 /* libavutil.a */,
 				7B83DAF31405EB4C00450C36 /* libavcodec.a */,
 				7B83DAF11405EB2F00450C36 /* libv4codecsdk-m32g-all-md.a */,
+				3415AD161405C1AC000C2C51 /* libavutil.a */,
+				3415AD141405C19B000C2C51 /* libavcodec.a */,
+				348E08FA13FDE6B000CB51D2 /* libv4codecsdk-m32g-all-md.a */,
+				348E08F813FD7F2A00CB51D2 /* libv4codecsdk-m32gd-all.a */,
 				34BF6A8113FC56090053B7A6 /* AudioToolbox.framework */,
 				7B5CFAF213F1C12B007479E1 /* libUsageEnvironment.a */,
 				7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */,
@@ -414,6 +425,7 @@
 				GCC_PREFIX_HEADER = MyRecorder_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
+					../../../../../Common/ffmpeg,
 					"../../../../../Common/live555/**",
 					"../../../../../Common/vanguard/mac/**",
 					"../../**",
@@ -458,6 +470,7 @@
 				GCC_PREFIX_HEADER = MyRecorder_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
+					../../../../../Common/ffmpeg,
 					"../../../../../Common/live555/**",
 					"../../../../../Common/vanguard/mac/**",
 					"../../**",
