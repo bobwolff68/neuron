@@ -65,37 +65,77 @@
     
     </head> 
     
-    <body onload="load();">
+    <body onload="load();" style="font-family: Tahoma, Geneva, sans-serif;">
         <?
-            require "check.php"; 
+            require "check.php";
+            
+            // Opens a connection to a MySQL server
+            $mysqli = new mysqli("127.0.0.1", "xvdth", "12345", "xvdth");
+            if (!$mysqli) {  
+                die('Not connected : ' . mysqli_error($mysqli));
+                header("Location: index.html");
+                exit;
+            } else {
+                // Set the active MySQL database 
+                // Select all the rows from table
+                $query = "SELECT ip FROM user where username = '$_SESSION[userid]'";
+                $result = mysqli_query($mysqli, $query);
+                if (!$result) {  
+                    die('Invalid query: ' . mysqli_error($mysqli));
+                    header("Location: index.html");
+                    exit;
+                } else {
+                    if (mysqli_num_rows($result) == 0){
+                        $result->close();
+                        header("Location: index.html");
+                        exit;
+                    } else{
+                        $row = @mysqli_fetch_assoc($result);
+                        $myurl1 = $row['ip'];
+                        echo "<script type='text/javascript'>var myurl2='$myurl1';</script>";
+                        $result->close();
+                        mysqli_close($mysqli);
+                    }
+                }
+            }
+      
         ?>
         
         <script type="text/javascript"> 
-            // var doremove0 =  echo $_SESSION[udec]; ;
-            // alert('udec0 = ' + doremove0);
+            
+            $(document).ready(function(){
+                 var urival = document.getElementById("surl");
+                 urival.value = myurl2;
+            });
         </script>
    
         <div class="mainwrapper">
+            
 	    <div id="header">
                 <div id="header2">Neuron Light 2-Way Demo
                 </div>
             </div>   
 
-	<div id="content" class="content">
-            <div id="join" style="width: 200px; padding-left: 400px; padding-top:100px; float: left">
-                <form name="input" action="startsession.php" method="POST">
-		    Your stream URL: <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.100:8554/stream.sdp"/ -->
-                    <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"/ -->
-                    <input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.81:8554/stream0"/>
-                    <br/>
-		    <input size ="60" type="submit" value="Submit"/>
-                    <a href="landing.php"><input type="button" name="cancel" value="Cancel" /></a>
-                </form>
-            </div>		
-	</div>
+            <div id="content" class="content">
+                <div id="b0">
+                    <div id="b1">
+                        <div id="b2" >                    
+                            <form name="input" action="startsession.php" method="POST">
+                                Your stream URL: <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.100:8554/stream.sdp"/ -->
+                                <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"/ -->
+                                <input id='surl' type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.81:8554/stream0"/>
+                                <br/>
+		                <input size ="60" type="submit" value="Submit"/>
+                                <a href="landing.php"><input type="button" name="cancel" value="Cancel" /></a>
+                            </form>
+                        </div>
+                    </div>                    
+                </div>		
+	    </div>
 
-	<div id="footer">
-	</div>	
+	    <div id="footer">
+	    </div>	
+            
         </div>
     </body>
 </html>
