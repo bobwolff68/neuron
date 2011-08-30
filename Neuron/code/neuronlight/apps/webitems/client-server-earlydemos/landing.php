@@ -81,7 +81,7 @@
             function check(){
 //            alert('check called');
             
-                downloadUrl("checkcontacts.php", function(data){
+                downloadUrl("checkupdate.php", function(data){
                     var xml = data.responseXML;
                     var puser = xml.documentElement.getElementsByTagName("participant");
                     var member = new Array();
