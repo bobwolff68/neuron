@@ -29,8 +29,17 @@
             } else{
                 $row = @mysqli_fetch_assoc($result);
                 $MYSESSION1 = $row['username']; // Starting a session. 
-                $MYSESSION2 = $row['first'];    // Storing name in another session variable.  
+                $MYSESSION2 = $row['first'];    // Storing name in another session variable.
+
                 $result->close();
+                
+                $myurl = 'rtsp://';
+                $myurl = $myurl . $_SERVER['REMOTE_ADDR'];
+                $myurl = $myurl . ':8554/stream0';
+                
+                $sql = "update user set ip='$myurl', online=1, insession=0 where username='$MYSESSION1'";
+                $result = mysqli_query($mysqli, $sql);
+                mysqli_close($mysqli);
             }
         }
     }
@@ -57,10 +66,22 @@
         
         <script type="text/javascript"> 
             
+            // This part gets the IP
+//            var ip = '#echo var="REMOTE_ADDR"';
+            // This part is for an alert box
+//            alert("Your IP address is "+ip);
+            // alert('myurl = ' + myjurl);
+            // This part is for the status bar
+//            window.defaultStatus = "Your IP address is "+ip;
+            // This part is for the title bar
+//            document.write("<title>Your IP address is "+ip+"</title>");
+         
+
+            
             function check(){
 //            alert('check called');
             
-                downloadUrl("checkupdate.php", function(data){
+                downloadUrl("checkcontacts.php", function(data){
                     var xml = data.responseXML;
                     var puser = xml.documentElement.getElementsByTagName("participant");
                     var member = new Array();
@@ -69,8 +90,8 @@
                             var prec = new Array(
 	                        puser[i].getAttribute("username"),
                                 puser[i].getAttribute("ip"),
-                                puser[i].getAttribute("portv"),
-                                puser[i].getAttribute("porta")
+                                puser[i].getAttribute("online"),
+                                puser[i].getAttribute("insession")
                             );
                             member.push(prec);
                         }
@@ -82,7 +103,6 @@
                         var mycel;
                         var myelem;
                         var myelemimg;
-                        var found;                        
                          
                         //alert('row.length ='+mytbody.rows.length)
                         for (j = 0; j < mytbody.rows.length; j++){
@@ -91,37 +111,54 @@
                             mycel = myrow.getElementsByTagName("td")[0];                                
                             myelem = mycel.childNodes[0]; 
                             myelemimg = myelem.childNodes[0];                           
-                            found = 0;                            
                             for (i = 0; i < puser.length; i++) {
                                 if (mycel1.innerText == member[i][0]) {
-                                    found = 1;                                    
-                                    if (myelem.getAttribute("href") == null){
-                                        myelem.setAttribute("href", "readyjoin.php");
-                                    } else {
-                                        if (myelem.getAttribute("href") != "readyjoin.php"){
+                                    found = 1;
+                                    if (member[i][2] == 0){
+                                        if (myelem.getAttribute("href") != null){
+                                            myelem.removeAttribute("href");
+                                        } 
+                                        if (myelemimg.getAttribute("src") == null){
+                                            myelemimg.setAttribute("src", "myoffline2.gif");
+                                        }else {
+                                            if (myelemimg.getAttribute("src") != "myoffline2.gif"){
+                                                myelemimg.setAttribute("src", "myoffline2.gif");
+                                            }
+                                        }
+                                    }
+                                    
+                                    if ((member[i][2] == 1) && (member[i][3] == 0)){
+                                        if (myelem.getAttribute("href") != null){
+                                            myelem.removeAttribute("href");
+                                        } 
+                                        if (myelemimg.getAttribute("src") == null){
+                                            myelemimg.setAttribute("src", "myonline2.gif");
+                                        }else {
+                                            if (myelemimg.getAttribute("src") != "myonline2.gif"){
+                                                myelemimg.setAttribute("src", "myonline2.gif");
+                                            }
+                                        }
+                                    }
+                                    
+                                    if ((member[i][2] == 1) && (member[i][3] == 1)){
+                                        if (myelem.getAttribute("href") == null){
                                             myelem.setAttribute("href", "readyjoin.php");
+                                        } else {
+                                            if (myelem.getAttribute("href") != "readyjoin.php"){
+                                                myelem.setAttribute("href", "readyjoin.php");
+                                            }
                                         }
-                                    }
-                                    if (myelemimg.getAttribute("src") == null){
-                                        myelemimg.setAttribute("src", "mysession.gif");
-                                    }else {
-                                        if (myelemimg.getAttribute("src") != "mysession.gif"){
+                                        if (myelemimg.getAttribute("src") == null){
                                             myelemimg.setAttribute("src", "mysession.gif");
+                                        }else {
+                                            if (myelemimg.getAttribute("src") != "mysession.gif"){
+                                                myelemimg.setAttribute("src", "mysession.gif");
+                                            }
                                         }
-                                    }
+                                    }                                                           
+                                    
                                     break;
                                 } 
-                            }
-                            
-                            if (found == 0){
-                                if (myelem.getAttribute("href") != null){
-                                    myelem.removeAttribute("href");
-                                }
-                                if (myelemimg.getAttribute("src") != null){
-                                    if (myelemimg.getAttribute("src") != "myonline2.gif"){
-                                        myelemimg.setAttribute("src", "myonline2.gif");
-                                    }
-                                }
                             }
                         }
                     //]]>
@@ -162,13 +199,19 @@
         </script>
     </head>
     
-    <body onload="check();">  
+    <body onload="check();" style="font-family: Tahoma, Geneva, sans-serif;">  
         <?
             $_SESSION['userid'] = $MYSESSION1;
             $_SESSION['name'] = $MYSESSION2;
             $_SESSION['count'] = 0;
             $_SESSION['udec'] = 1;
             require "check.php"; 
+            // echo "<script type='text/javascript'>var myjurl='$_SESSION[remote_addr]';</script>";
+            
+//            $myurl3 = "rtsp://";
+//            $myurl3 = $myurl3 . $_SERVER["REMOTE_ADDR"];
+//            $myurl3 = $myurl3 . ':8554/stream0';
+//            echo ("myurl3 = " . "$myurl3");
         ?>
         
         <script type="text/javascript"> 
@@ -184,6 +227,7 @@
         </script>
         
         <div class="mainwrapper">
+            
 	    <div id="header">
                 <div id="header2">Neuron Light 2-Way Demo
                 </div>
@@ -191,7 +235,7 @@
 
 	    <div id="content" class="content">
 		
-                    <div id="contacts" style="width: 150px; padding-top:22px; float: right">
+                    <div id="contacts" style="width: 150px; padding-top: 22px; float: right">
                             <hr/>
                             <p style="margin: 0px; text-align: center">
                             <p>Active Sessions</p>
@@ -199,19 +243,19 @@
                                 <tbody>
                                     <tr>
                                         <td><a><img style="padding-top:4px" alt=""></img></a></td>
-                                        <td>Tim</td>
-                                    </tr>
-                                    <tr>
-                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
-                                        <td>Joe</td>
-                                    </tr>
-                                    <tr>
-                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
                                         <td>Sue</td>
                                     </tr>
                                     <tr>
                                         <td><a><img style="padding-top:4px" alt=""></img></a></td>
                                         <td>Eve</td>
+                                    </tr>
+                                    <tr>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
+                                        <td>Tim</td>
+                                    </tr>
+                                    <tr>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
+                                        <td>Joe</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -225,7 +269,7 @@
         <div  id="footer" style="float: right">
             <a href="http://localhost:8080"><button><b>Session Test</b></button></a>
             <a href="restartall.php"><button><b>Restart All</b></button></a>
-            <a href="index.php"><button><b>Exit</b></button></a>
+            <a href="index.html"><button><b>Exit</b></button></a>
         </div>	
         </div>
     </body>
