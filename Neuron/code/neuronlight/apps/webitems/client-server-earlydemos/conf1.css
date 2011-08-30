@@ -2,7 +2,7 @@
 	
 	* { margin: 0; padding: 0; }
 	
-	body { font-family:Tahoma, Geneva, sans-serif; font-size: medium; color:#9b9b9b; background:#212121; padding:0; margin:0;}
+	body { font-family: Tahoma, Geneva, sans-serif; font-size: medium; color:#9b9b9b; background:#212121; padding:0; margin:0;}
 	
 	a img,:link img,:visited img,fieldset {border:none;}
 	img {vertical-align: top;}
@@ -17,13 +17,17 @@
 
 	#header { background: black; text-align: center; color: white; vertical-align: middle; font-size: 2.0em;}
         #header2 {padding: 20px 20px;}
-/*        header3 {}
-*/
+
 /* --- END header --- */
 
 /* --- content --- */
 
-	#content {text-align: center; color: black; font-size:0.75em; min-height: 300px; background: #ffffff; line-height:1em;}        
+	#content {text-align: center; color: black; font-size:1.125em; min-height: 300px; background: #ffffff; line-height:1em;} 
+        .content {padding: 5px 20px 0px 20px; min-width:200px;}
+        #content ul{ list-style-type: none; padding: 0; margin-left: 0;}
+                
+        #contacts {text-align: center; color: black; font-size: 1.0em; min-height: 300px; background: #ffffff; line-height:1em;}
+        
         #b0 { width: 30%; margin-left: auto; margin-right: auto; display: table; height: 400px; overflow: hidden; }
         #b1 {display: table-cell; vertical-align: middle;}
         #b2 {}
@@ -33,7 +37,7 @@
 
 /* --- footer --- */
 	
-	#footer {background: black; font-size:2.125em; padding:0 20px;}
+	#footer {background: black; font-size:1.125em; padding:0 20px;}
 
 /* --- END footer --- */
 
