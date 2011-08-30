@@ -13,6 +13,9 @@
         $sql = "insert into sessionrecord (username, ip, portv, porta) values ('$_SESSION[userid]', '".$_POST["cURL"]."', 4000, 4001)";
         $result = mysqli_query($mysqli, $sql);
         
+        $sql = "update user set insession=1 where username='$_SESSION[userid]'";
+        $result = mysqli_query($mysqli, $sql);        
+        
         $sql = "select count from sessioncount";
         $result = mysqli_query($mysqli, $sql);
         if (!$result) {  
