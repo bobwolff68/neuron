@@ -119,8 +119,8 @@
                             var prec = new Array(
 	                        puser[i].getAttribute("username"),
                                 puser[i].getAttribute("ip"),
-                                puser[i].getAttribute("portv"),
-                                puser[i].getAttribute("porta")
+                                puser[i].getAttribute("online"),
+                                puser[i].getAttribute("insession")
                             );
                             member.push(prec);
                         }
@@ -198,13 +198,12 @@
                     var lastlocationurl = a1.value;
                     var changepage = 0;
                     var curl = 'conference2.php';
+                    var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
                     switch (numinsession) {
                         case 3:
                             if (a1.value != 'two'){
                                 a1.value = 'two';
-                                
-                                var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
-                                
+
                                 var p0 = document.getElementById("vlc0");
                                 p0.playlist.items.clear();
                                 while(p0.playlist.items.count > 0){
