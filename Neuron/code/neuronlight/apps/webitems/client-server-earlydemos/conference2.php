@@ -124,12 +124,81 @@
                             );
                             member.push(prec);
                         }
+                        
+                        var mybody  = document.getElementsByTagName("body")[0];
+                        var mytable = mybody.getElementsByTagName("table")[0];
+                        var mytbody = mytable.getElementsByTagName("tbody")[0];
+                        var myrow;
+                        var mycel;
+                        var myelem;
+                        var myelemimg;
+                        var numinsession = 0;
+                         
+                        //alert('row.length ='+mytbody.rows.length)
+                        for (j = 0; j < mytbody.rows.length; j++){
+                            myrow = mytbody.getElementsByTagName("tr")[j];
+                            mycel1 = myrow.getElementsByTagName("td")[1];                           
+                            mycel = myrow.getElementsByTagName("td")[0];                                
+                            myelem = mycel.childNodes[0]; 
+                            myelemimg = myelem.childNodes[0];                           
+                            for (i = 0; i < puser.length; i++) {
+                                if (mycel1.innerText == member[i][0]) {
+                                    found = 1;
+                                    if (member[i][2] == 0){
+                                        if (myelem.getAttribute("href") != null){
+                                            myelem.removeAttribute("href");
+                                        } 
+                                        if (myelemimg.getAttribute("src") == null){
+                                            myelemimg.setAttribute("src", "myoffline2.gif");
+                                        }else {
+                                            if (myelemimg.getAttribute("src") != "myoffline2.gif"){
+                                                myelemimg.setAttribute("src", "myoffline2.gif");
+                                            }
+                                        }
+                                    }
+                                    
+                                    if ((member[i][2] == 1) && (member[i][3] == 0)){
+                                        if (myelem.getAttribute("href") != null){
+                                            myelem.removeAttribute("href");
+                                        } 
+                                        if (myelemimg.getAttribute("src") == null){
+                                            myelemimg.setAttribute("src", "myonline2.gif");
+                                        }else {
+                                            if (myelemimg.getAttribute("src") != "myonline2.gif"){
+                                                myelemimg.setAttribute("src", "myonline2.gif");
+                                            }
+                                        }
+                                    }
+                                    
+                                    if ((member[i][2] == 1) && (member[i][3] == 1)){
+                                        numinsession++;
+                                        if (myelem.getAttribute("href") == null){
+                                            myelem.setAttribute("href", "readyjoin.php");
+                                        } else {
+                                            if (myelem.getAttribute("href") != "readyjoin.php"){
+                                                myelem.setAttribute("href", "readyjoin.php");
+                                            }
+                                        }
+                                        if (myelemimg.getAttribute("src") == null){
+                                            myelemimg.setAttribute("src", "mysession.gif");
+                                        }else {
+                                            if (myelemimg.getAttribute("src") != "mysession.gif"){
+                                                myelemimg.setAttribute("src", "mysession.gif");
+                                            }
+                                        }
+                                    }                                                           
+                                    
+                                    break;
+                                } 
+                            }
+                        }
                     //]]>
+                    
                     var a1 = document.getElementById("xfile");
                     var lastlocationurl = a1.value;
                     var changepage = 0;
                     var curl = 'conference2.php';
-                    switch (puser.length) {
+                    switch (numinsession) {
                         case 3:
                             if (a1.value != 'two'){
                                 a1.value = 'two';
@@ -213,7 +282,7 @@
                         break;
                         
                         default:
-                            if (puser.length > 3){
+                            if (numinsession > 3){
                                 curl = 'conference3.php';
                             } else {
                                 curl = 'conference1.php';
@@ -301,7 +370,7 @@
         
     </head> 
     
-    <body onload="load();">
+    <body onload="load();" style="font-family: Tahoma, Geneva, sans-serif;">
         <?
             require "check.php";
             echo "<script type='text/javascript'>var sesslogged='$_SESSION[userid]';</script>";
@@ -335,7 +404,38 @@
         
         <div class="mainwrapper">
             
-            <div id="content" >        
+            <div id="content" class="content">
+                
+                <div id="contacts" style="width: 150px; padding-top:22px; float: right">
+                            <hr/>
+                            <p style="margin: 0px; text-align: center">
+                            <p>Active Sessions</p>
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
+                                        <td>Sue</td>
+                                    </tr>
+                                    <tr>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
+                                        <td>Eve</td>
+                                    </tr>
+                                    <tr>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
+                                        <td>Tim</td>
+                                    </tr>
+                                    <tr>
+                                        <td><a><img style="padding-top:4px" alt=""></img></a></td>
+                                        <td>Joe</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            </p>
+                            
+                                <hr/>
+                                <a href="readysession.php"><button>Start Session</button></a>
+		</div>                      
+                
                 <div id='vlce1'>
                     <ul>
                         <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
@@ -412,7 +512,6 @@
         <div  id="footer" style="float: right">
             <a href="restartall.php"><button><b>Restart All</b></button></a>
             <a href="landing.php"><button><b>Exit</b></button></a>
-
         </div>
         <input id='removeuser' value='1' type='hidden' name="vevo"/>
     </body> 
