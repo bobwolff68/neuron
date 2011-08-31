@@ -3,12 +3,12 @@ project(nlcommon)
 cmake_minimum_required(VERSION 2.4)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
-    lib
+    ../../lib
     CACHE PATH
     "Single output for all libraries")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-    lib
+    ../../lib
     CACHE PATH
     "Single output for all libraries")
 
@@ -28,10 +28,10 @@ include_directories(${NEURON_COMMON_DIR}/threading/NeuronBasics)
 #include_directories(../codec)
 
 set(SOURCES littlehttpd.cpp)
-list(APPEND SOURCES
-     tester.cpp)
+#list(APPEND SOURCES
+#     tester.cpp)
 
-#add_definitions(-DBUILD_DEBUG)
+add_definitions(-g3 -DBUILD_DEBUG -m32)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     set(COMPILE_FLAGS "-m32 -arch i386")
@@ -46,4 +46,8 @@ else()
     endif()
 endif()
 
-add_library(network ${SOURCES})
+add_library(nlcommon ${SOURCES})
+
+find_library(C_LIB c)
+add_executable(tester tester.cpp)
+target_link_libraries(tester ${C_LIB} nlcommon)
