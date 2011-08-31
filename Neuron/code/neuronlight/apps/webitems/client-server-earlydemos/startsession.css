@@ -2,10 +2,10 @@
 	
 	* { margin: 0; padding: 0; }
 	
-	body { font-family:Tahoma, Geneva, sans-serif; font-size: medium; color:#9b9b9b; background:#212121; padding:0; margin:0;}
+	body { font-family: Tahoma, Geneva, sans-serif; font-size: medium; color:#9b9b9b; background:#212121; padding:0; margin:0;}
 	
 	a img,:link img,:visited img,fieldset {border:none;}
-	img {vertical-align:top;}
+	img {vertical-align: top;}
 	
 	.clear {clear:both}
 	.nowrp {white-space:nowrap;}
@@ -22,8 +22,11 @@
 
 /* --- content --- */
 
-	#content {font-size:1.125em; background:#fff; line-height:1em;}
-	.content {padding: 5px 20px 300px 20px; min-width:200px;}
+	#content {color: black; font-size: 1.125em; min-height: 400px; background: #ffffff; line-height:1em;}
+	.content {padding: 5px 20px 0px 20px; min-width:200px;}
+        #b0 { width: 30%; margin-left: auto; margin-right: auto; display: table; height: 400px; overflow: hidden; }
+        #b1 {display: table-cell; vertical-align: middle;}
+        #b2 {}
         
 /* --- END content --- */
 
