@@ -1,5 +1,7 @@
 #!/bin/sh
 
+mkdir -p ../lib
+
 #build capture
 cd capture/build
 make clean
