@@ -26,11 +26,19 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "RTPSink.hh"
 #endif
 
+/**************** MANJESH *****************/
+#include "Manjesh_TimestampLog.hh"
+/******************************************/
+
 class MultiFramedRTPSink: public RTPSink {
 public:
   void setPacketSizes(unsigned preferredPacketSize, unsigned maxPacketSize);
 
 protected:
+
+  /************** MANJESH *****************/
+  TimestampsLog* p_tslog;
+  /****************************************/
   MultiFramedRTPSink(UsageEnvironment& env,
 		     Groupsock* rtpgs, unsigned char rtpPayloadType,
 		     unsigned rtpTimestampFrequency,

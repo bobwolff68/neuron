@@ -26,6 +26,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "FramedFilter.hh"
 #endif
 
+/********** MANJESH *****************/
+#include "Manjesh_TimestampLog.hh"
+/************************************/
+
 class TimeCode {
 public:
   TimeCode();
@@ -79,6 +83,9 @@ private:
   double fPictureTimeBase;
   unsigned fTcSecsBase;
   Boolean fHaveSeenFirstTimeCode;
+  /************ MANJESH ***************/
+  TimestampsLog* p_tslog;
+  /************************************/
 };
 
 #endif

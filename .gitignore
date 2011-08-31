@@ -5,17 +5,14 @@
 
 # Compiled Dynamic libraries
 *.so
-
 # Compiled Static libraries
 *.lai
 *.la
 *.a
-
 # CMake
 CMakeCache.txt
 cmake_install.cmake
 CMakeFiles/
-
 # rtiddsgen
 Neuron/code/control/idl/*.cxx
 Neuron/code/control/idl/*.h
@@ -32,7 +29,6 @@ Neuron/code/media/idl/*.h
 Neuron/code/media/entity_info_idl/*.cxx
 Neuron/code/media/entity_info_idl/*.h
 Neuron/code/tools/ubrain/*.cxx
-
 # General
 bin/
 lib/
@@ -42,31 +38,25 @@ Release/
 Debug/
 a.out
 core
-
 # System related
 *.swp
 *.tmp
 .project
-
 # Specific Neuron oddities
 Neuron/code/html_doxygen/
 Neuron/code/include/oolua/
-
 Neuron/code/neuroncommon/netlib/curl/include/curl/curlbuild.h
-
 Neuron/code/control/Makefile
 Neuron/code/neuroncommon/Makefile
 Neuron/code/sf/Makefile
 Neuron/code/tools/DemoEndpoint/Makefile
 Neuron/code/tools/ubrain/Makefile
-
 Neuron/code/neuroncommon/netlib/curl/Makefile
 Neuron/code/neuroncommon/netlib/curl/src/Makefile
 Neuron/code/neuroncommon/netlib/curl/src/Makefile.inc.cmake
 Neuron/code/neuroncommon/netlib/curl/tests/Makefile
 Neuron/code/neuroncommon/netlib/curl/tests/libtest/Makefile
 Neuron/code/neuroncommon/netlib/curl/tests/server/Makefile
-
 Neuron/code/neuroncommon/oolua/Makefile
 Neuron/code/neuroncommon/oolua/oolua.make
 Neuron/code/neuroncommon/oolua/file_generator/Makefile
@@ -74,4 +64,4 @@ Neuron/code/neuroncommon/oolua/profile/Makefile
 Neuron/code/neuroncommon/oolua/unit_tests/*.make
 Neuron/code/neuroncommon/oolua/unit_tests/string_is_integral/Makefile
 Neuron/code/neuroncommon/oolua/unit_tests/tests_may_fail/Makefile
-
+/0001-Commit-for-integration-with-Sean.patch

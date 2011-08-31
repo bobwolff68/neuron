@@ -14,11 +14,13 @@ p_rtenc(_p_rtenc)
     }
     
     p_aac_fifoout = new nl_aacfifoout_t(_p_aac_rtbuf, p_fs);
+    p_tslog = new TimestampsLog("ts_postenc.log");
 }
 
 v4_fifoout_t::~v4_fifoout_t()
 {
     delete p_aac_fifoout;
+    delete p_tslog;
     
     for (int i=0; i<N_STREAMS; i++) 
     {
@@ -34,6 +36,7 @@ void v4_fifoout_t::start_aac_fifoout(void)
 int v4_fifoout_t::workerBee(void)
 {
     int retcode;
+    int frm_num = 0;
     
     while(1)
     {
@@ -45,6 +48,14 @@ int v4_fifoout_t::workerBee(void)
         {
             case VSSH_OK:
             {
+                //Log timestamps
+                if(NALU_TYPE(((char*)(p_ms->data))[0]) == NALU_TYPE_SLICE)
+                {
+                    struct timeval tod;
+                    gettimeofday(&tod, NULL);
+                    p_tslog->WriteEntry(&tod, frm_num++, 0, 0);
+                }
+                
                 for (int i=0; i<N_STREAMS; i++) 
                 {
                     if (p_fs[i]->write_to_substream((uint8_t*)p_ms->data,

@@ -28,6 +28,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "H264VideoStreamFramer.hh"
 #endif
 
+/************** MANJESH ***************/
+#include "Manjesh_TimestampLog.hh"
+/**************************************/
+
 class H264VideoStreamDiscreteFramer: public H264VideoStreamFramer {
 public:
   static H264VideoStreamDiscreteFramer*
@@ -52,6 +56,10 @@ protected:
                           unsigned numTruncatedBytes,
                           struct timeval presentationTime,
                           unsigned durationInMicroseconds);
+
+  /*************** MANJESH ******************/
+  TimestampsLog* p_tslog;
+  /******************************************/
 };
 
 #endif

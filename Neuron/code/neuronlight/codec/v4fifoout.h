@@ -55,6 +55,7 @@ public:
 class v4_fifoout_t : public ThreadSingle
 {
 private:
+    TimestampsLog* p_tslog;
     v4_rtenc_t* p_rtenc;
     nl_aacfifoout_t* p_aac_fifoout;
     nl_fifostream_t* p_fs[N_STREAMS];
