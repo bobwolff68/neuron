@@ -205,6 +205,17 @@
             $_SESSION['name'] = $MYSESSION2;
             $_SESSION['count'] = 0;
             $_SESSION['udec'] = 1;
+            $_SESSION['cwidth'] = 320;
+            $_SESSION['cheight'] = 180;
+            $_SESSION['aratio0'] = 0.5625;
+            $_SESSION['dwidth0'] = 320;
+            $_SESSION['dheight0'] = 180;
+            $_SESSION['aratio1'] = 0.5625;
+            $_SESSION['dwidth1'] = 320;
+            $_SESSION['dheight1'] = 180; 
+            $_SESSION['aratio2'] = 0.5625;
+            $_SESSION['dwidth2'] = 320;
+            $_SESSION['dheight2'] = 180;            
             require "check.php"; 
             // echo "<script type='text/javascript'>var myjurl='$_SESSION[remote_addr]';</script>";
             

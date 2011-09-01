@@ -284,7 +284,7 @@
                             if (numinsession > 3){
                                 curl = 'conference3.php';
                             } else {
-                                curl = 'conference1.php';
+                                curl = 'conference1a.php';
                             }
                             changepage = 1;
                         break;
@@ -374,10 +374,90 @@
             require "check.php";
             echo "<script type='text/javascript'>var sesslogged='$_SESSION[userid]';</script>";
             $_SESSION['udec'] = 1;
+            // Opens a connection to a MySQL server
+            $mysqli= new mysqli ("127.0.0.1", "xvdth", "12345", "xvdth" );    
+            if (!$mysqli) {  
+                printf("failed");
+                die('Not connected : ' . mysqli_error());
+            } else {
+        
+                $sql = "select * from user where insession=1";
+                $result = mysqli_query($mysqli, $sql);
+                
+                if (!$result) {  
+                    die('Invalid query: ' . mysqli_error());
+                } else {
+                    $count = 0;
+                    while ($row = @mysqli_fetch_assoc($result)){
+                            switch ($count){
+                                case 0:
+                                    if ($row['username'] == $_SESSION[userid]){  
+                                        $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
+                                        $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]); 
+                                        $count--;
+                                    } else {
+                                        $_SESSION[aratio1] = $row['height'] / $row['width'];
+                                        // $_SESSION[dwidth1] = $row['width'];
+                                        $_SESSION[dheight1] = round($_SESSION[dwidth1] * $_SESSION[aratio1]); 
+                                    }
+                                break;
+                            
+                                case 1:
+                                    if ($row['username'] == $_SESSION[userid]){  
+                                        $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
+                                        $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]); 
+                                        $count--;
+                                    } else {
+                                        $_SESSION[aratio2] = $row['height'] / $row['width'];
+                                        // $_SESSION[dwidth2] = $row['width'];
+                                        $_SESSION[dheight2] = round($_SESSION[dwidth2] * $_SESSION[aratio2]);
+                                    }
+                                break;
+                            
+                                case 2:
+                                    if ($row['username'] == $_SESSION[userid]){  
+                                        $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
+                                        $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]); 
+                                        $count--;
+                                    } else { 
+                                        $_SESSION[aratio2] = $row['height'] / $row['width'];
+                                       // $_SESSION[dwidth1] = $row['width'];
+                                       $_SESSION[dheight2] = round($_SESSION[dwidth2] * $_SESSION[aratio2]); 
+                                    }
+                                break;                            
+                            
+                                default:
+                                break;
+                            }
+                        $count++;                        
+                    }
+                    $result->close();
+                }
+            }            
         ?>
         
         <script type="text/javascript"> 
             $(document).ready(function(){
+                var p0 = document.getElementById("vlc0");
+                var ewidth = p0.width;
+                var eheight = p0.height;
+                var esize = ewidth + 'x' + eheight;
+                var dsize = document.getElementById("size0");
+                dsize.value = esize;
+                
+                p0 = document.getElementById("vlc1");
+                ewidth = p0.width;
+                eheight = p0.height;
+                esize = ewidth + 'x' + eheight;
+                dsize = document.getElementById("size1");
+                dsize.value = esize;   
+
+                p0 = document.getElementById("vlc2");
+                ewidth = p0.width;
+                eheight = p0.height;
+                esize = ewidth + 'x' + eheight;
+                dsize = document.getElementById("size2");
+                dsize.value = esize;  
             });
             check();
             
@@ -437,9 +517,11 @@
                 
                 <div id='vlce1'>
                     <ul>
+                        <li><b><input id='uname1' value='no joiner' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
+                        </li>                        
                         <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
-                        width="320"
-                        height="240"
+                        width= "<? echo $_SESSION[dwidth1] ?>"
+                        height="<? echo $_SESSION[dheight1] ?>"
                         id="vlc1"/>
                         <!-- 
                         autoplay="yes" loop="no"
@@ -452,15 +534,13 @@
                         <!--input id='uri' value='rtsp://192.168.46.81:8554/serenity.ts' size=70 type='text'-->
                         <!--input id='uri' value='rtsp://192.168.46.81:8554/stream1.sdp' size=70 type='text'-->                    <!--input id='uri' value='file:///Users/xvdthuser1xvdth/media/vlc-output.ts' size='70' type='text'/-->
                         <!--input id='uri' value="rpurl" size='70' type='text' name="vevo"/-->
-                        <li>
-                            
+                        <li>                           
                             <a href="javascript:;" onclick='return vplay("vlc1")'>Play </a>
                             <a href="javascript:;" onclick='return vpause("vlc1")'>Pause </a>
                             <a href="javascript:;" onclick='return vstop("vlc1")'>Stop </a>
                             <a href="javascript:;" onclick='return vmute("vlc1")'>Mute</a>
                         </li>
-                        <li><b><input id='uname1' value='no joiner' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
-                        </li>
+                        <li>size: <input id='size1' value='empty size' size='11' type='text' name="vevo2"/></li>
                         <li><input id='uri' value='emptyuri' size='70' type='text' name="vevo2"/></li>        
                         <li><input id='xfile' value='emptyfile' type='hidden' name="vevo"/></li>
                     </ul>
@@ -471,27 +551,30 @@
                 
                 <div id="vlce0" style="float: left">
                     <ul>
+                        <li><b><? echo ($_SESSION[userid]); ?></b></li>
                         <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
-                            width="160"
-                            height="120"
+                        width= "<? echo $_SESSION[dwidth0] ?>"
+                        height="<? echo $_SESSION[dheight0] ?>"
                             id="vlc0"/></li>
                         <li>
                             <a href="javascript:;" onclick='return vplay("vlc0")'>Play </a>
                             <a href="javascript:;" onclick='return vpause("vlc0")'>Pause </a>
                             <a href="javascript:;" onclick='return vstop("vlc0")'>Stop </a>
                             <a href="javascript:;" onclick='return vmute("vlc0")'>Mute</a>
-                        </li>
-                        <li><b><? echo ($_SESSION[userid]); ?></b></li>
-                        <li><input id='uri0' value='emptyuri' size='30' type='text' name="vevo2"/></li>        
+                        </li>                        
+                        <li>size: <input id='size0' value='empty size' size='11' type='text' name="vevo2"/></li>
+                        <li><input id='uri0' value='emptyuri' size='50' type='text' name="vevo2"/></li>        
                         <li><input id='xfile0' value='emptyfile' type='hidden' name="vevo"/></li>
                     </ul>
                 </div>
                 
                 <div id="vlce2" style="float: left">
                     <ul>
+                        <li><b><input id='uname2' value='no joiner' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
+                        </li>                        
                         <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
-                            width="160"
-                            height="120"
+                        width= "<? echo $_SESSION[dwidth2] ?>"
+                        height="<? echo $_SESSION[dheight2] ?>"
                             id="vlc2"/>
                         </li>
                         <li><a href="javascript:;" onclick='return vplay("vlc2")'>Play </a>
@@ -499,9 +582,8 @@
                             <a href="javascript:;" onclick='return vstop("vlc2")'>Stop </a>
                             <a href="javascript:;" onclick='return vmute("vlc2")'>Mute</a>
                         </li>
-                        <li><b><input id='uname2' value='no joiner' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
-                        </li>
-                        <li><input id='uri2' value='emptyuri' size='30' type='text' name="vevo2"/></li>        
+                        <li>size: <input id='size2' value='empty size' size='11' type='text' name="vevo2"/></li>
+                        <li><input id='uri2' value='emptyuri' size='50' type='text' name="vevo2"/></li>        
                         <li><input id='xfile2' value='emptyfile' type='hidden' name="vevo"/></li>
                     </ul>
                 </div>
