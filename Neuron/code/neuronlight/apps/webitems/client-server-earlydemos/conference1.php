@@ -201,7 +201,7 @@
                     var changepage = 0;
                     var curl = 'conference1.php';
                     // alert('aratio'+aspectratio);
-                    var options = new Array(aspectratio, "--rtsp-tcp");
+                    // var options = new Array(aspectratio, "--rtsp-tcp");
                     switch (numinsession) {
                         case 0:
                             curl = 'landing.php';
@@ -224,7 +224,9 @@
                                 
                                 var urival = document.getElementById("uri");
                                 urival.value = ''; // 'rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov'; // ''; // member[0][1];
-                                var id22 = p1.playlist.add(urival.value, "stream one", options);
+                                //var options = new Array(aspectratio, "--rtsp-tcp");
+                                //var id22 = p1.playlist.add(urival.value, "stream one", options);
+                                var id22 = p1.playlist.add(urival.value, "stream one", null);
                                  // p1.playlist.play();
                                 p1.playlist.stop();
                                 
@@ -238,7 +240,8 @@
    //                             var dwidth = 160;
    //                             var dheight = dwidth / aratio;
 //                                aspectratio = aspectratio + member[0][4];
-                                var id21 = p0.playlist.add(urival0.value, "stream zero", options);
+                                // var id21 = p0.playlist.add(urival0.value, "stream zero", options);
+                                var id21 = p0.playlist.add(urival0.value, "stream zero", null);
                                 p0.playlist.play();
                             }
                         break;
@@ -370,12 +373,20 @@
                                 case 0:
                                     if ($row['username'] == $_SESSION[userid]){  
                                         $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
-                                        $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]); 
+                                        $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]);                                        
+                                        if ($_SESSION[dheight0] > $_SESSION[d0constheight]){
+                                            $_SESSION[dheight0] = $_SESSION[d0constheight];
+                                            $_SESSION[dwidth0] = round($_SESSION[dheight0] * (1 / $_SESSION[aratio0]));
+                                        }
                                         $count--;
                                     } else {
                                         $_SESSION[aratio1] = $row['height'] / $row['width'];
                                         //$_SESSION[dwidth1] = $row['width'];
-                                        $_SESSION[dheight1] = round($_SESSION[dwidth1] * $_SESSION[aratio1]); 
+                                        $_SESSION[dheight1] = round($_SESSION[dwidth1] * $_SESSION[aratio1]);
+                                        if ($_SESSION[dheight1] > $_SESSION[d1constheight]){
+                                            $_SESSION[dheight1] = $_SESSION[d1constheight];
+                                            $_SESSION[dwidth1] = round($_SESSION[dheight1] * (1 / $_SESSION[aratio1]));
+                                        }
                                     }
                                 break;
                             
@@ -383,11 +394,19 @@
                                     if ($row['username'] == $_SESSION[userid]){  
                                         $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
                                         $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]); 
+                                        if ($_SESSION[dheight0] > $_SESSION[d0constheight]){
+                                            $_SESSION[dheight0] = $_SESSION[d0constheight];
+                                            $_SESSION[dwidth0] = round($_SESSION[dheight0] * (1 / $_SESSION[aratio0]));
+                                        }                                        
                                         $count--;
                                     } else {
                                         $_SESSION[aratio2] = $row['height'] / $row['width'];
                                         // $_SESSION[dwidth2] = $row['width'];
                                         $_SESSION[dheight2] = round($_SESSION[dwidth2] * $_SESSION[aratio2]);
+                                        if ($_SESSION[dheight2] > $_SESSION[d1constheight]){
+                                            $_SESSION[dheight2] = $_SESSION[d1constheight];
+                                            $_SESSION[dwidth2] = round($_SESSION[dheight2] * (1 / $_SESSION[aratio2]));
+                                        }                                        
                                     }
                                 break;
                             
