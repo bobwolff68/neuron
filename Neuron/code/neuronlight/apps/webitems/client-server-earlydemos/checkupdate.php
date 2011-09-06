@@ -26,7 +26,7 @@
     } else{
         // Set the active MySQL database 
         // Select all the rows from table
-        $query = "SELECT * FROM user";
+        $query = "SELECT * FROM user where insession=1";
         $result = mysqli_query($mysqli, $query);
         if (!$result) {  
             die('Invalid query: ' . mysqli_error());
