@@ -81,7 +81,7 @@
             function check(){
 //            alert('check called');
             
-                downloadUrl("checkupdate.php", function(data){
+                downloadUrl("landingupdate.php", function(data){
                     var xml = data.responseXML;
                     var puser = xml.documentElement.getElementsByTagName("participant");
                     var member = new Array();
@@ -252,7 +252,7 @@
         <div class="mainwrapper">
             
 	    <div id="header">
-                <div id="header2">Neuron Light 2-Way Demo
+                <div id="header2">Neuron Lite Browser Demo
                 </div>
             </div>   
 
