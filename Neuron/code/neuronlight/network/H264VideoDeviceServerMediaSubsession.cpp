@@ -1,6 +1,9 @@
 // A 'ServerMediaSubsession' object that creates new, unicast, "RTPSink"s
 // on demand, from a H264 video buffer provided via RTBuffer.
 
+#include "H264VideoDeviceServerMediaSubsession.h"
+#include "H264VideoRTBufferDeviceSource.h"
+
 #include "H264VideoRTPSink.hh"
 #include "H264VideoStreamDiscreteFramer.hh"
 //#include "H264VideoStreamFramer.hh"
@@ -14,7 +17,7 @@ H264VideoDeviceServerMediaSubsession::createNew(UsageEnvironment& env,
 
 H264VideoDeviceServerMediaSubsession::H264VideoDeviceServerMediaSubsession(UsageEnvironment& env,
 								       char const* fileName, Boolean reuseFirstSource)
-  : FileServerMediaSubsession(env, fileName, reuseFirstSource),
+  : OnDemandServerMediaSubsession(env, reuseFirstSource),
     fAuxSDPLine(NULL), fDoneFlag(0), fDummyRTPSink(NULL) {
 }
 
@@ -22,6 +25,7 @@ H264VideoDeviceServerMediaSubsession::~H264VideoDeviceServerMediaSubsession() {
   delete[] fAuxSDPLine;
 }
 
+//TODO - Not sure what we should be doing after playing and afterPlayingDummy1 for that matter.
 static void afterPlayingDummy(void* clientData) {
   H264VideoDeviceServerMediaSubsession* subsess = (H264VideoDeviceServerMediaSubsession*)clientData;
   subsess->afterPlayingDummy1();
@@ -82,7 +86,8 @@ FramedSource* H264VideoDeviceServerMediaSubsession::createNewStreamSource(unsign
   estBitrate = 500; // kbps, estimate
 
   // Create the video source:
-  ByteStreamFileSource* fileSource = ByteStreamFileSource::createNew(envir(), fFileName);
+  H264VideoRTBufferDeviceSource
+    * fileSource = ByteStreamFileSource::createNew(envir(), fFileName);
   if (fileSource == NULL) return NULL;
   fFileSize = fileSource->fileSize();
 

@@ -1,20 +1,20 @@
 // A template for a MediaSource encapsulating an audio/video input device
 //
 
-#include "H264VideoRTBufferDeviceSource.h"
+#include "H264VideoQueueDeviceSource.h"
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 
-H264VideoRTBufferDeviceSource*
-H264VideoRTBufferDeviceSource::createNew(UsageEnvironment& env,
+H264VideoQueueDeviceSource*
+H264VideoQueueDeviceSource::createNew(UsageEnvironment& env,
 			DeviceParameters params) {
-  return new H264VideoRTBufferDeviceSource(env, params);
+  return new H264VideoQueueDeviceSource(env, params);
 }
 
-EventTriggerId H264VideoRTBufferDeviceSource::eventTriggerId = 0;
+EventTriggerId H264VideoQueueDeviceSource::eventTriggerId = 0;
 
-unsigned H264VideoRTBufferDeviceSource::referenceCount = 0;
+unsigned H264VideoQueueDeviceSource::referenceCount = 0;
 
-H264VideoRTBufferDeviceSource::H264VideoRTBufferDeviceSource(UsageEnvironment& env,
+H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,
 			   DeviceParameters params)
   : FramedSource(env), fParams(params) {
   if (referenceCount == 0) {
@@ -42,7 +42,7 @@ H264VideoRTBufferDeviceSource::H264VideoRTBufferDeviceSource(UsageEnvironment& e
   }
 }
 
-H264VideoRTBufferDeviceSource::~H264VideoRTBufferDeviceSource() {
+H264VideoQueueDeviceSource::~H264VideoQueueDeviceSource() {
   // Any instance-specific 'destruction' (i.e., resetting) of the device would be done here:
   //%%% TO BE WRITTEN %%%
 
@@ -57,7 +57,7 @@ H264VideoRTBufferDeviceSource::~H264VideoRTBufferDeviceSource() {
   }
 }
 
-void H264VideoRTBufferDeviceSource::doGetNextFrame() {
+void H264VideoQueueDeviceSource::doGetNextFrame() {
   // This function is called (by our 'downstream' object) when it asks for new data.
 
   // Note: If, for some reason, the source device stops being readable (e.g., it gets closed), then you do the following:
@@ -75,11 +75,11 @@ void H264VideoRTBufferDeviceSource::doGetNextFrame() {
   // Instead, our event trigger must be called (e.g., from a separate thread) when new data becomes available.
 }
 
-void H264VideoRTBufferDeviceSource::deliverFrame0(void* clientData) {
-  ((H264VideoRTBufferDeviceSource*)clientData)->deliverFrame();
+void H264VideoQueueDeviceSource::deliverFrame0(void* clientData) {
+  ((H264VideoQueueDeviceSource*)clientData)->deliverFrame();
 }
 
-void H264VideoRTBufferDeviceSource::deliverFrame() {
+void H264VideoQueueDeviceSource::deliverFrame() {
   // This function is called when new frame data is available from the device.
   // We deliver this data by copying it to the 'downstream' object, using the following parameters (class members):
   // 'in' parameters (these should *not* be modified by this function):
@@ -127,9 +127,9 @@ void H264VideoRTBufferDeviceSource::deliverFrame() {
 // This (unlike other "LIVE555 Streaming Media" library code) may be called from a separate thread.
 void signalNewFrameData() {
   TaskScheduler* ourScheduler = NULL; //%%% TO BE WRITTEN %%%
-  H264VideoRTBufferDeviceSource* ourDevice  = NULL; //%%% TO BE WRITTEN %%%
+  H264VideoQueueDeviceSource* ourDevice  = NULL; //%%% TO BE WRITTEN %%%
 
   if (ourScheduler != NULL) { // sanity check
-    ourScheduler->triggerEvent(H264VideoRTBufferDeviceSource::eventTriggerId, ourDevice);
+    ourScheduler->triggerEvent(H264VideoQueueDeviceSource::eventTriggerId, ourDevice);
   }
 }
