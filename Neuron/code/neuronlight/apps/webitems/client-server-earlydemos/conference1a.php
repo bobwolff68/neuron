@@ -2,7 +2,7 @@
     session_start();
 ?>
 <!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">
-    <html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
         <meta http-equiv="cache-control" content="max-age=200" />
@@ -120,7 +120,9 @@
 	                        puser[i].getAttribute("username"),
                                 puser[i].getAttribute("ip"),
                                 puser[i].getAttribute("online"),
-                                puser[i].getAttribute("insession")
+                                puser[i].getAttribute("insession"),
+                                puser[i].getAttribute("width"),
+                                puser[i].getAttribute("height")
                             );
                             member.push(prec);
                         }
@@ -197,13 +199,24 @@
                     var a1 = document.getElementById("xfile");
                     var lastlocationurl = a1.value;
                     var changepage = 0;
-                    var curl = 'conference2.php';
-                    var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
+                    var curl = 'conference1.php';
+                    // alert('aratio'+aspectratio);
+                    var options = new Array(aspectratio, "--rtsp-tcp");
                     switch (numinsession) {
-                        case 3:
-                            if (a1.value != 'two'){
-                                a1.value = 'two';
-
+                        case 0:
+                            curl = 'landing.php';
+                            changepage = 1;
+                        break;
+                        
+                        case 1: 
+                            curl = 'conference1.php';
+                            changepage = 1;
+                        break;
+                        
+                        case 2: 
+                            if (a1.value != 'one'){
+                                a1.value = 'one';
+                                
                                 var p0 = document.getElementById("vlc0");
                                 p0.playlist.items.clear();
                                 while(p0.playlist.items.count > 0){
@@ -214,82 +227,39 @@
                                 while(p1.playlist.items.count > 0){
                                 }
                                 
-                                var p2 = document.getElementById("vlc2");
-                                p2.playlist.items.clear();
-                                while(p2.playlist.items.count > 0){
-                                }                                
-                                
-                                var urival0 = document.getElementById("uri0");
                                 var urival = document.getElementById("uri");
-                                var urival2 = document.getElementById("uri2");
-                                
-                                if(sesslogged == member[2][0]){
-                                    var uname = document.getElementById("uname1");
-                                    uname.value = member[0][0];
-                                    uname = document.getElementById("uname2");
+                                var urival0 = document.getElementById("uri0");
+                                var uname = document.getElementById("uname1");
+                                if(sesslogged == member[0][0]){
                                     uname.value = member[1][0];
-                                    
-                                    urival0.value = member[2][1];
-                                    
-                                    urival.value = member[0][1];
-                                    urival.value = urival.value.replace(/stream0/i, "stream2");
-                                    
-                                    urival2.value = member[1][1];
-                                    urival2.value = urival2.value.replace(/stream0/i, "stream2");
+                                    urival0.value = member[0][1];
+                                    urival.value = member[1][1];
+                                    urival.value = urival.value.replace(/stream0/i, "stream1");
                                 } else {
-                                    if(sesslogged == member[0][0]){
-                                        var uname = document.getElementById("uname1");
-                                        uname.value = member[1][0];
-                                        uname = document.getElementById("uname2");
-                                        uname.value = member[2][0];
-                                        
-                                        urival0.value = member[0][1];
-                                        
-                                        urival.value = member[1][1];
-                                        urival.value = urival.value.replace(/stream0/i, "stream1");
-                                        
-                                        urival2.value = member[2][1];
-                                        urival2.value = urival2.value.replace(/stream0/i, "stream1");
-                                    } else{
-                                        var uname = document.getElementById("uname1");
-                                        uname.value = member[0][0];
-                                        uname = document.getElementById("uname2");
-                                        uname.value = member[2][0];
-                                    
-                                        urival0.value = member[1][1];
-                                        
-                                        urival.value = member[0][1];
-                                        urival.value = urival.value.replace(/stream0/i, "stream1");
-                                        
-                                        urival2.value = member[2][1];
-                                        urival2.value = urival2.value.replace(/stream0/i, "stream2");
-                                    }
+                                    uname.value = member[0][0];
+                                    urival0.value = member[1][1];
+                                    urival.value = member[0][1];
+                                    urival.value = urival.value.replace(/stream0/i, "stream1");
                                 }
-                                
-                                // var id21 = p0.playlist.add(urival0.value, "stream one", options); 
-                                var id21 = p0.playlist.add(urival0.value, "stream one", null);
-                                p0.playlist.playItem(id21);
-                                p0.playlist.play();
                                 
                                 // var id22 = p1.playlist.add(urival.value, "stream two", options); 
                                 var id22 = p1.playlist.add(urival.value, "stream two", null);
                                 p1.playlist.playItem(id22);
                                 p1.playlist.play();
                                 
-                                //var id23 = p2.playlist.add(urival2.value, "stream three", options); 
-                                var id23 = p2.playlist.add(urival2.value, "stream three", null);
-                                p2.playlist.playItem(id23);
-                                p2.playlist.play();
+                                // var id21 = p0.playlist.add(urival0.value, "stream zero", options); 
+                                var id21 = p0.playlist.add(urival0.value, "stream zero", null);
+                                p0.playlist.playItem(id21);
+                                p0.playlist.play();
                             }
                         break;
                         
                         default:
-                            if (numinsession > 3){
-                                curl = 'conference3.php';
-                            } else {
-                                curl = 'conference1a.php';
+                            if (numinsession > 2){
+                                //  $_SESSION['udec'] = 0; 
+                                changepage = 1;
+                                curl = 'conference2.php';
                             }
-                            changepage = 1;
                         break;
                     }
 
@@ -297,10 +267,15 @@
                         var uremove = document.getElementById("removeuser");
                         uremove.value = '0';
                         document.location = curl;
-                    }else{
-                        var t=setTimeout("check()", 5000);
                     }
+//                var p0 = document.getElementById("vlc0");
+//                var swidth = p0.aspectRatio;
+//                alert ('swidth ='+ swidth);
+                    var t = setTimeout("check()", 5000);
                 });
+                
+                
+
             }
         
             function load(){
@@ -337,7 +312,7 @@
 
                 request.open('GET', url, false);
                 request.send(null);
-            }            
+            }
             
             $(document.getElementsByTagName('div')[1]).ready(function() {
 //                addvlc();
@@ -368,6 +343,10 @@
                 p1.audio.toggleMute();
             }
             
+            function doalert(){
+                alert('doalert');
+            }
+            
         </script> 
         
     </head> 
@@ -377,6 +356,7 @@
             require "check.php";
             echo "<script type='text/javascript'>var sesslogged='$_SESSION[userid]';</script>";
             $_SESSION['udec'] = 1;
+            
             // Opens a connection to a MySQL server
             $mysqli= new mysqli ("127.0.0.1", "xvdth", "12345", "xvdth" );    
             if (!$mysqli) {  
@@ -391,23 +371,23 @@
                     die('Invalid query: ' . mysqli_error());
                 } else {
                     $count = 0;
-                    while ($row = @mysqli_fetch_assoc($result)){
+                    while ($row = @mysqli_fetch_assoc($result)){ 
                             switch ($count){
                                 case 0:
                                     if ($row['username'] == $_SESSION[userid]){  
                                         $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
-                                        $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]);
-                                        if ($_SESSION[dheight0] > $_SESSION[dconstheight0]){
-                                            $_SESSION[dheight0] = $_SESSION[dconstheight0];
+                                        $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]); 
+                                        if ($_SESSION[dheight0] > $_SESSION[d0constheight]){
+                                            $_SESSION[dheight0] = $_SESSION[d0constheight];
                                             $_SESSION[dwidth0] = round($_SESSION[dheight0] * (1 / $_SESSION[aratio0]));
-                                        }                                           
+                                        }                                        
                                         $count--;
                                     } else {
                                         $_SESSION[aratio1] = $row['height'] / $row['width'];
-                                        // $_SESSION[dwidth1] = $row['width'];
+                                        //$_SESSION[dwidth1] = $row['width'];
                                         $_SESSION[dheight1] = round($_SESSION[dwidth1] * $_SESSION[aratio1]);
-                                        if ($_SESSION[dheight1] > $_SESSION[dconstheight1]){
-                                            $_SESSION[dheight1] = $_SESSION[dconstheight1];
+                                        if ($_SESSION[dheight1] > $_SESSION[d1constheight]){
+                                            $_SESSION[dheight1] = $_SESSION[d1constheight];
                                             $_SESSION[dwidth1] = round($_SESSION[dheight1] * (1 / $_SESSION[aratio1]));
                                         }                                        
                                     }
@@ -417,41 +397,21 @@
                                     if ($row['username'] == $_SESSION[userid]){  
                                         $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
                                         $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]);
-                                        if ($_SESSION[dheight0] > $_SESSION[dconstheight0]){
-                                            $_SESSION[dheight0] = $_SESSION[dconstheight0];
+                                        if ($_SESSION[dheight0] > $_SESSION[d0constheight]){
+                                            $_SESSION[dheight0] = $_SESSION[d0constheight];
                                             $_SESSION[dwidth0] = round($_SESSION[dheight0] * (1 / $_SESSION[aratio0]));
-                                        }                                           
+                                        }                                        
                                         $count--;
                                     } else {
                                         $_SESSION[aratio2] = $row['height'] / $row['width'];
                                         // $_SESSION[dwidth2] = $row['width'];
                                         $_SESSION[dheight2] = round($_SESSION[dwidth2] * $_SESSION[aratio2]);
-                                        if ($_SESSION[dheight2] > $_SESSION[dconstheight1]){
-                                            $_SESSION[dheight2] = $_SESSION[dconstheight1];
+                                        if ($_SESSION[dheight2] > $_SESSION[d1constheight]){
+                                            $_SESSION[dheight2] = $_SESSION[d1constheight];
                                             $_SESSION[dwidth2] = round($_SESSION[dheight2] * (1 / $_SESSION[aratio2]));
                                         }
                                     }
                                 break;
-                            
-                                case 2:
-                                    if ($row['username'] == $_SESSION[userid]){  
-                                        $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
-                                        $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]);
-                                        if ($_SESSION[dheight0] > $_SESSION[dconstheight0]){
-                                            $_SESSION[dheight0] = $_SESSION[dconstheight0];
-                                            $_SESSION[dwidth0] = round($_SESSION[dheight0] * (1 / $_SESSION[aratio0]));
-                                        }                                           
-                                        $count--;
-                                    } else { 
-                                        $_SESSION[aratio2] = $row['height'] / $row['width'];
-                                        // $_SESSION[dwidth1] = $row['width'];
-                                        $_SESSION[dheight2] = round($_SESSION[dwidth2] * $_SESSION[aratio2]);
-                                        if ($_SESSION[dheight2] > $_SESSION[dconstheight1]){
-                                            $_SESSION[dheight2] = $_SESSION[dconstheight1];
-                                            $_SESSION[dwidth2] = round($_SESSION[dheight2] * (1 / $_SESSION[aratio2]));
-                                        }                                       
-                                    }
-                                break;                            
                             
                                 default:
                                 break;
@@ -464,7 +424,20 @@
         ?>
         
         <script type="text/javascript"> 
+            var aspectratio = ":aspect-ratio=";
+            var aratio = "4:3";
+            aspectratio = aspectratio + aratio;
+            
+            var mywidth = "160";
+            
+            function dowidth(){
+                return "160";
+            }
+            
             $(document).ready(function(){
+                //p0.aspectRatio = "1:1";
+                //var swidth = p0.aspectRatio;
+                //alert ('swith ='+ swidth);
                 var p0 = document.getElementById("vlc0");
                 var ewidth = p0.width;
                 var eheight = p0.height;
@@ -477,40 +450,26 @@
                 eheight = p0.height;
                 esize = ewidth + 'x' + eheight;
                 dsize = document.getElementById("size1");
-                dsize.value = esize;   
-
-                p0 = document.getElementById("vlc2");
-                ewidth = p0.width;
-                eheight = p0.height;
-                esize = ewidth + 'x' + eheight;
-                dsize = document.getElementById("size2");
-                dsize.value = esize;  
+                dsize.value = esize;                
             });
+            
             check();
             
             window.onbeforeunload = function (e) {
+               // alert('onbeforeunload');
                 var uremove = document.getElementById("removeuser");                
                 if (uremove.value == '1'){
-//                    alert('doing remove');                    
+   //                 alert('doing remove');                    
                     downloadUrl2("removeuser.php", function(data){               
                     });
+                    document.location = "landing.php";
                 } 
-                
-//                var message = "Your confirmation message goes here.",
-//                e = e || window.event;
-//                // For IE and Firefox
-//                if (e) {
-//                    e.returnValue = message;
-//                }
-
-//                // For Safari
-//                return message;
-            };            
+            };
         </script>
         
         <div class="mainwrapper">
             
-            <div id="content" class="content">
+            <div id="content" class="content"> 
                 
                 <div id="contacts" style="width: 150px; padding-top:22px; float: right">
                             <hr/>
@@ -540,12 +499,12 @@
                             
                                 <hr/>
                                 <a href="readysession.php"><button>Start Session</button></a>
-		</div>                      
+		</div>                
                 
                 <div id='vlce1'>
                     <ul>
-                        <li><b><input id='uname1' value='no joiner' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
-                        </li>                        
+                        <li><b><input id='uname1' value='no joiners' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
+                        </li>
                         <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
                         width= "<? echo $_SESSION[dwidth1] ?>"
                         height="<? echo $_SESSION[dheight1] ?>"
@@ -561,8 +520,7 @@
                         <!--input id='uri' value='rtsp://192.168.46.81:8554/serenity.ts' size=70 type='text'-->
                         <!--input id='uri' value='rtsp://192.168.46.81:8554/stream1.sdp' size=70 type='text'-->                    <!--input id='uri' value='file:///Users/xvdthuser1xvdth/media/vlc-output.ts' size='70' type='text'/-->
                         <!--input id='uri' value="rpurl" size='70' type='text' name="vevo"/-->
-                        <li>                           
-                            <a href="javascript:;" onclick='return vplay("vlc1")'>Play </a>
+                        <li><a href="javascript:;" onclick='return vplay("vlc1")'>Play </a>
                             <a href="javascript:;" onclick='return vpause("vlc1")'>Pause </a>
                             <a href="javascript:;" onclick='return vstop("vlc1")'>Stop </a>
                             <a href="javascript:;" onclick='return vmute("vlc1")'>Mute</a>
@@ -575,52 +533,34 @@
             </div>
             
             <div id="tslider">
-                
                 <div id="vlce0" style="float: left">
                     <ul>
                         <li><b><? echo ($_SESSION[userid]); ?></b></li>
                         <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
-                        width= "<? echo $_SESSION[dwidth0] ?>"
-                        height="<? echo $_SESSION[dheight0] ?>"
-                            id="vlc0"/></li>
+                            width= "<? echo $_SESSION[dwidth0] ?>"
+                            height="<? echo $_SESSION[dheight0] ?>"
+                            id="vlc0"/>
+                        </li>                        
                         <li>
                             <a href="javascript:;" onclick='return vplay("vlc0")'>Play </a>
                             <a href="javascript:;" onclick='return vpause("vlc0")'>Pause </a>
                             <a href="javascript:;" onclick='return vstop("vlc0")'>Stop </a>
                             <a href="javascript:;" onclick='return vmute("vlc0")'>Mute</a>
-                        </li>                        
+                        </li>                       
                         <li>size: <input id='size0' value='empty size' size='11' type='text' name="vevo2"/></li>
-                        <li><input id='uri0' value='emptyuri' size='50' type='text' name="vevo2"/></li>        
+                        <li><input id='uri0' value='emptyuri' size='50' type='text' name="vevo2"/></li>                          
                         <li><input id='xfile0' value='emptyfile' type='hidden' name="vevo"/></li>
-                    </ul>
-                </div>
-                
-                <div id="vlce2" style="float: left">
-                    <ul>
-                        <li><b><input id='uname2' value='no joiner' size='25' type='text' name="vevo2" style="border: none; font-weight:bold"/></b>
-                        </li>                        
-                        <li><embed type="application/x-vlc-plugin" pluginspage="http://www.videolan.org" version="VideoLAN.VLCPlugin.2"
-                        width= "<? echo $_SESSION[dwidth2] ?>"
-                        height="<? echo $_SESSION[dheight2] ?>"
-                            id="vlc2"/>
-                        </li>
-                        <li><a href="javascript:;" onclick='return vplay("vlc2")'>Play </a>
-                            <a href="javascript:;" onclick='return vpause("vlc2")'>Pause </a>
-                            <a href="javascript:;" onclick='return vstop("vlc2")'>Stop </a>
-                            <a href="javascript:;" onclick='return vmute("vlc2")'>Mute</a>
-                        </li>
-                        <li>size: <input id='size2' value='empty size' size='11' type='text' name="vevo2"/></li>
-                        <li><input id='uri2' value='emptyuri' size='50' type='text' name="vevo2"/></li>        
-                        <li><input id='xfile2' value='emptyfile' type='hidden' name="vevo"/></li>
                     </ul>
                 </div>
             </div>
         </div>
-
+        
         <div  id="footer" style="float: right">
+            <a href="http://localhost:8080"><button><b>Session Test</b></button></a>
             <a href="restartall.php"><button><b>Restart All</b></button></a>
             <a href="landing.php"><button><b>Exit</b></button></a>
         </div>
+        
         <input id='removeuser' value='1' type='hidden' name="vevo"/>
     </body> 
 </html> 

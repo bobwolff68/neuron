@@ -81,7 +81,7 @@
             function check(){
 //            alert('check called');
             
-                downloadUrl("checkupdate.php", function(data){
+                downloadUrl("landingupdate.php", function(data){
                     var xml = data.responseXML;
                     var puser = xml.documentElement.getElementsByTagName("participant");
                     var member = new Array();
@@ -203,8 +203,31 @@
         <?
             $_SESSION['userid'] = $MYSESSION1;
             $_SESSION['name'] = $MYSESSION2;
+            
             $_SESSION['count'] = 0;
             $_SESSION['udec'] = 1;
+            
+            $_SESSION['cwidth'] = 640;
+            $_SESSION['cheight'] = 360;
+
+            $_SESSION['d0constwidth'] = 320;
+            $_SESSION['d0constheight'] = 180;
+
+            $_SESSION['d1constwidth'] = 640;
+            $_SESSION['d1constheight'] = 360;            
+            
+            $_SESSION['aratio0'] = 0.5625;
+            $_SESSION['dwidth0'] = 320;
+            $_SESSION['dheight0'] = 180;
+            
+            $_SESSION['aratio1'] = 0.5625;
+            $_SESSION['dwidth1'] = 640;
+            $_SESSION['dheight1'] = 360; 
+            
+            $_SESSION['aratio2'] = 0.5625;
+            $_SESSION['dwidth2'] = 320;
+            $_SESSION['dheight2'] = 180;  
+            
             require "check.php"; 
             // echo "<script type='text/javascript'>var myjurl='$_SESSION[remote_addr]';</script>";
             
@@ -229,7 +252,7 @@
         <div class="mainwrapper">
             
 	    <div id="header">
-                <div id="header2">Neuron Light 2-Way Demo
+                <div id="header2">Neuron Lite Browser Demo
                 </div>
             </div>   
 
