@@ -2,21 +2,25 @@
 // on demand, from a H264 video buffer provided via RTBuffer.
 
 #include "H264VideoDeviceServerMediaSubsession.h"
-#include "H264VideoRTBufferDeviceSource.h"
 
 #include "H264VideoRTPSink.hh"
 #include "H264VideoStreamDiscreteFramer.hh"
 //#include "H264VideoStreamFramer.hh"
 
+#include <iostream>
+
+using namespace std;
+
+H264VideoDeviceServerMediaSubsession *gpReuseSrc = NULL;
+
 H264VideoDeviceServerMediaSubsession*
 H264VideoDeviceServerMediaSubsession::createNew(UsageEnvironment& env,
-					       char const* fileName,
-					       Boolean reuseFirstSource) {
-  return new H264VideoDeviceServerMediaSubsession(env, fileName, reuseFirstSource);
+					       			       Boolean reuseFirstSource) {
+  return new H264VideoDeviceServerMediaSubsession(env, reuseFirstSource);
 }
 
 H264VideoDeviceServerMediaSubsession::H264VideoDeviceServerMediaSubsession(UsageEnvironment& env,
-								       char const* fileName, Boolean reuseFirstSource)
+								       Boolean reuseFirstSource)
   : OnDemandServerMediaSubsession(env, reuseFirstSource),
     fAuxSDPLine(NULL), fDoneFlag(0), fDummyRTPSink(NULL) {
 }
@@ -83,16 +87,34 @@ char const* H264VideoDeviceServerMediaSubsession::getAuxSDPLine(RTPSink* rtpSink
 }
 
 FramedSource* H264VideoDeviceServerMediaSubsession::createNewStreamSource(unsigned /*clientSessionId*/, unsigned& estBitrate) {
-  estBitrate = 500; // kbps, estimate
+  estBitrate = 800; // kbps, estimate
 
   // Create the video source:
-  H264VideoRTBufferDeviceSource
-    * fileSource = ByteStreamFileSource::createNew(envir(), fFileName);
-  if (fileSource == NULL) return NULL;
-  fFileSize = fileSource->fileSize();
-
-  // Create a framer for the Video Elementary Stream:
-  return H264VideoStreamFramer::createNew(envir(), fileSource);
+  DeviceParameters devparm;
+    
+    cerr << "H264VideoDeviceServerMediaSubsession::createNewStreamSource() entered." << endl;
+    
+    H264VideoQueueDeviceSource* pSrc;   // Used for initializing the framer regardless of a re-used source or not.
+    
+/*  if (reuseFirstSource)
+  {
+      if (!gpReuseSrc)
+      {
+          gpReuseSrc = H264VideoQueueDeviceSource::createNew(envir(), devparm);
+          if (pReuseSrc == NULL) return NULL;
+      }
+      
+      pSrc = gpReuseSrc;
+  }
+  else */
+  {
+      // Not re-using, so create a new device source each time.
+      pSrc = H264VideoQueueDeviceSource::createNew(envir(), devparm);
+      if (pSrc == NULL) return NULL;
+  }
+  
+    // Create a framer for the Video Elementary Stream:
+    return H264VideoStreamDiscreteFramer::createNew(envir(), pSrc);
 }
 
 RTPSink* H264VideoDeviceServerMediaSubsession

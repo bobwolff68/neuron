@@ -8,18 +8,19 @@
 #include "OnDemandServerMediaSubsession.hh"
 #endif
 
+#include "H264VideoQueueDeviceSource.h"
+
 class H264VideoDeviceServerMediaSubsession: public OnDemandServerMediaSubsession{
 public:
   static H264VideoDeviceServerMediaSubsession*
-  createNew(UsageEnvironment& env, char const* fileName, Boolean reuseFirstSource);
+                createNew(UsageEnvironment& env, Boolean reuseFirstSource);
 
   // Used to implement "getAuxSDPLine()":
   void checkForAuxSDPLine1();
   void afterPlayingDummy1();
 
 private:
-  H264VideoDeviceServerMediaSubsession(UsageEnvironment& env,
-				      char const* fileName, Boolean reuseFirstSource);
+  H264VideoDeviceServerMediaSubsession(UsageEnvironment& env, Boolean reuseFirstSource);
       // called only by createNew();
   virtual ~H264VideoDeviceServerMediaSubsession();
 
@@ -32,7 +33,7 @@ private: // redefined virtual functions
 					      unsigned& estBitrate);
   virtual RTPSink* createNewRTPSink(Groupsock* rtpGroupsock,
                                     unsigned char rtpPayloadTypeIfDynamic,
-				    FramedSource* inputSource);
+                                    FramedSource* inputSource);
 
 private:
   char* fAuxSDPLine;
