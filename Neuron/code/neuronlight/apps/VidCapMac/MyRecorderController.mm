@@ -7,6 +7,8 @@
 
 #import <CoreAudio/CoreAudioTypes.h>
 
+#import "CameraInterrogation.h"
+
 #define DESIRED_BITS_PER_SAMPLE 16
 
 #if 0
@@ -144,7 +146,7 @@ for(key in pDict){
     p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY",true,false);
     
     // Always keep window on top of other windows.
-    [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
+//    [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
 }
 
 // Handle window closing notifications for your device input
@@ -705,7 +707,67 @@ for(key in pDict){
             
 //            NSLog(@"[%03d]:  % 1.4f    % 1.4f    %6hi      %6hi", sample, inbuf[sample], inbuf[sample+offset], outbuf[sample*2], outbuf[sample*2+1]);
         }
-#endif
+        
+#ifdef DUMP_RAW_LPCM
+        static FILE* fpFloat=NULL;
+        static FILE* fpSint=NULL;
+        static FILE* fpSintBigEndian=NULL;
+        static int chunksWritten=0;
+        
+        if (!fpFloat)
+        {
+            fpFloat = fopen("FloatRaw.lpcm", "wb");
+            assert(fpFloat);
+        }
+        if (!fpSint)
+        {
+            fpSint = fopen("SInt16RawNative.lpcm", "wb");
+            assert(fpSint);
+        }
+        if (!fpSintBigEndian)
+        {
+            fpSintBigEndian = fopen("SInt16RawBigEndian.lpcm", "wb");
+            assert(fpSintBigEndian);
+        }
+
+        //Write out the data. First we write outbuf as this is Sint16 interleaved and prepared.
+        int out;
+        out = fwrite(outbuf, sizeof(SInt16), [sampleBuffer numberOfSamples]*2, fpSint);
+        assert(out == [sampleBuffer numberOfSamples]*2);
+        
+        // Now convert in-place to Big endian.
+        for (int sample=0; sample < [sampleBuffer numberOfSamples]; sample++)
+        {
+            outbuf[sample*2] = EndianS16_NtoB(outbuf[sample*2]);
+            outbuf[sample*2 + 1] = EndianS16_NtoB(outbuf[sample*2 + 1]);
+        }
+        out = fwrite(outbuf, sizeof(SInt16), [sampleBuffer numberOfSamples]*2, fpSintBigEndian);
+        assert(out == [sampleBuffer numberOfSamples]*2);
+        
+       // Now take the original float32 values and simply interleave them into outbuf[] and write it out.
+        Float32* pFOut = new Float32[[sampleBuffer numberOfSamples] * 2];
+        out = sizeof(pFOut);        // should be 4096, right?
+        for (int sample=0; sample < [sampleBuffer numberOfSamples]; sample++)
+        {
+            pFOut[sample*2] = inbuf[sample];
+            pFOut[sample*2 + 1] = inbuf[sample + offset];
+       }
+        out = fwrite(pFOut, sizeof(Float32), [sampleBuffer numberOfSamples]*2, fpFloat);
+        assert(out == [sampleBuffer numberOfSamples]*2);
+        
+        delete pFOut;
+        
+        // Artificial way to limit the number of samples and ensure the files get closed properly.
+        if (chunksWritten++ > 200)
+        {
+            fclose(fpSint);
+            fclose(fpSintBigEndian);
+            fclose(fpFloat);
+            assert(false);
+        }
+#endif  // DUMP_RAW_LPCM
+
+#endif  // 1/0 in/out
         
         // Now decrement the sample count on the original input buffer.
         [sampleBuffer decrementSampleUseCount];

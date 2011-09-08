@@ -66,10 +66,49 @@
     
     </head> 
     
-<body onload="load();">
-    <?
-        require "check.php"; 
-    ?>
+    <body onload="load();">
+        <?
+            require "check.php";
+            
+            // Opens a connection to a MySQL server
+            $mysqli = new mysqli("127.0.0.1", "xvdth", "12345", "xvdth");
+            if (!$mysqli) {  
+                die('Not connected : ' . mysqli_error($mysqli));
+                header("Location: index.html");
+                exit;
+            } else {
+                // Set the active MySQL database 
+                // Select all the rows from table
+                $query = "SELECT ip FROM user where username = '$_SESSION[userid]'";
+                $result = mysqli_query($mysqli, $query);
+                if (!$result) {  
+                    die('Invalid query: ' . mysqli_error($mysqli));
+                    header("Location: index.html");
+                    exit;
+                } else {
+                    if (mysqli_num_rows($result) == 0){
+                        $result->close();
+                        header("Location: index.html");
+                        exit;
+                    } else{
+                        $row = @mysqli_fetch_assoc($result);
+                        $myurl1 = $row['ip'];
+                        echo "<script type='text/javascript'>var myurl2='$myurl1';</script>";
+                        $result->close();
+                        mysqli_close($mysqli);
+                    }
+                }
+            }
+      
+        ?>
+        
+        <script type="text/javascript"> 
+            
+            $(document).ready(function(){
+                 var urival = document.getElementById("surl");
+                 urival.value = myurl2;
+            });
+        </script>
     
 <div class="mainwrapper">
 	    <div id="header">
@@ -81,7 +120,8 @@
             <div id="join" style="width: 200px; padding-left: 400px; padding-top:100px; float: left">
                 <form name="input" action="startjoin.php" method="POST">
 		    Your stream URL: <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.100:8554/stream.sdp"/ -->
-                                     <input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"/><br/>
+                                     <!-- input type="text" maxlength="90" size ="60" name="cURL" value="rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"/><br/ -->
+                                     <input id="surl" type="text" maxlength="90" size ="60" name="cURL" value="rtsp://192.168.46.81:8554/stream0"/><br/>
 		    <input size ="60" type="submit" value="Submit"/>
                     <a href="landing.php"><input type="button" name="cancel" value="Cancel" /></a>
                 </form>

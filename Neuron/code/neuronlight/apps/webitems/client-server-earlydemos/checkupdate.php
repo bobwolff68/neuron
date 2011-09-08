@@ -23,34 +23,28 @@
     //$mysqli = new mysqli("localhost", "xvdth", "12345", "xvdth");
     if (!$mysqli) {  
         die('Not connected : ' . mysqli_error());
-        $node = $dom->createElement("participant");  
-        $newnode = $parnode->appendChild($node);  
-        $newnode->setAttribute("username", "Tom");
-        $newnode->setAttribute("ip", "192.168.46.100");  
-        $newnode->setAttribute("portv", "7000");
-        $newnode->setAttribute("porta", "7001");
     } else{
-    
-    // Set the active MySQL database 
-    // Select all the rows from table
-    $query = "SELECT * FROM sessionrecord";
-    $result = mysqli_query($mysqli, $query);
-    if (!$result) {  
-        die('Invalid query: ' . mysqli_error());
-    } 
+        // Set the active MySQL database 
+        // Select all the rows from table
+        $query = "SELECT * FROM user where insession=1";
+        $result = mysqli_query($mysqli, $query);
+        if (!$result) {  
+            die('Invalid query: ' . mysqli_error());
+        } 
 
-
-    // Iterate through the rows, adding XML nodes for each
-    while ($row = @mysqli_fetch_assoc($result)){  
-        // ADD TO XML DOCUMENT NODE  
-        $node = $dom->createElement("participant");  
-        $newnode = $parnode->appendChild($node);  
-        $newnode->setAttribute("username", $row['username']);
-        $newnode->setAttribute("ip", $row['ip']);  
-        $newnode->setAttribute("portv", $row['portv']);
-        $newnode->setAttribute("porta", $row['porta']);
-    } 
-    $result->close();
+        // Iterate through the rows, adding XML nodes for each
+        while ($row = @mysqli_fetch_assoc($result)){  
+            // ADD TO XML DOCUMENT NODE  
+            $node = $dom->createElement("participant");  
+            $newnode = $parnode->appendChild($node);  
+            $newnode->setAttribute("username", $row['username']);
+            $newnode->setAttribute("ip", $row['ip']);  
+            $newnode->setAttribute("online", $row['online']);
+            $newnode->setAttribute("insession", $row['insession']);
+            $newnode->setAttribute("width", $row['width']);
+            $newnode->setAttribute("height", $row['height']);            
+        } 
+        $result->close();
     }
         //$node = $dom->createElement("participant");  
         //$newnode = $parnode->appendChild($node);  

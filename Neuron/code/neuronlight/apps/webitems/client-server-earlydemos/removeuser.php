@@ -12,6 +12,9 @@
         $sql = "delete from sessionrecord where username='$_SESSION[userid]'";
         $result = mysqli_query($mysqli, $sql);
         
+        $sql = "update user set online=0,insession=0 where username='$_SESSION[userid]'";
+        $result = mysqli_query($mysqli, $sql); 
+        
         $sql = "select count from sessioncount";
         $result = mysqli_query($mysqli, $sql);
         if (!$result) {  

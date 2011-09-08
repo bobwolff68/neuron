@@ -9,10 +9,14 @@
 /* Begin PBXBuildFile section */
 		2B531E1B0BBB3FBD00F42B98 /* Icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2B531E1A0BBB3FBD00F42B98 /* Icon.icns */; };
 		2BAB8A530BBB551900143BEF /* MyRecorder Help in Resources */ = {isa = PBXBuildFile; fileRef = 2BAB8A510BBB551900143BEF /* MyRecorder Help */; };
+		3415AD151405C19B000C2C51 /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3415AD141405C19B000C2C51 /* libavcodec.a */; };
+		3415AD171405C1AC000C2C51 /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3415AD161405C1AC000C2C51 /* libavutil.a */; };
 		3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */; };
-		34AA4D0813EB77DB003F68AE /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34AA4D0713EB77DB003F68AE /* CoreVideo.framework */; };
-		34BF6A8213FC56090053B7A6 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34BF6A8113FC56090053B7A6 /* AudioToolbox.framework */; };
+		3442192B140C0674007E833C /* CameraInterrogation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3442192A140C0674007E833C /* CameraInterrogation.m */; };
 		34DE7EE013ECA2CE007B30F0 /* QTKitCap.mm in Sources */ = {isa = PBXBuildFile; fileRef = 34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */; };
+		34E3725A140C1B6C001524C7 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34E37259140C1B6C001524C7 /* CoreVideo.framework */; };
+		34E3725C140C1BB1001524C7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34E3725B140C1BB0001524C7 /* AudioToolbox.framework */; };
+		34E3725E140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 34E3725D140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a */; };
 		7B5CFAED13F1C0D2007479E1 /* libgroupsock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAEC13F1C0D2007479E1 /* libgroupsock.a */; };
 		7B5CFAEF13F1C0F8007479E1 /* libliveMedia.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAEE13F1C0F8007479E1 /* libliveMedia.a */; };
 		7B5CFAF113F1C10C007479E1 /* libBasicUsageEnvironment.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */; };
@@ -20,10 +24,6 @@
 		7B5CFB3213F1DCB5007479E1 /* libcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAC213F1B780007479E1 /* libcodec.a */; };
 		7B5CFB3313F1DCBA007479E1 /* libnetwork.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFACC13F1B79B007479E1 /* libnetwork.a */; };
 		7B5CFB3413F1DCC0007479E1 /* librtcamstream.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAD213F1B7FE007479E1 /* librtcamstream.a */; };
-		7B83DAF21405EB2F00450C36 /* libv4codecsdk-m32g-all-md.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B83DAF11405EB2F00450C36 /* libv4codecsdk-m32g-all-md.a */; };
-		7B83DAF41405EB4C00450C36 /* libavcodec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B83DAF31405EB4C00450C36 /* libavcodec.a */; };
-		7B83DAF61405EB6600450C36 /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B83DAF51405EB6600450C36 /* libavutil.a */; };
-		7B83DAF81406D21A00450C36 /* libavformat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B83DAF71406D21A00450C36 /* libavformat.a */; };
 		8D11072A0486CEB800E47090 /* MainMenu.nib in Resources */ = {isa = PBXBuildFile; fileRef = 29B97318FDCFA39411CA2CEA /* MainMenu.nib */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
 		8D11072D0486CEB800E47090 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.mm */; settings = {ATTRIBUTES = (); }; };
@@ -87,13 +87,18 @@
 		2B531E1A0BBB3FBD00F42B98 /* Icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Icon.icns; sourceTree = "<group>"; };
 		2BAB8A520BBB551900143BEF /* English */ = {isa = PBXFileReference; lastKnownFileType = folder; name = English; path = "English.lproj/MyRecorder Help"; sourceTree = "<group>"; };
 		32CA4F630368D1EE00C91783 /* MyRecorder_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyRecorder_Prefix.pch; sourceTree = "<group>"; };
+		3415AD141405C19B000C2C51 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../../../../../Common/ffmpeg/libavcodec/libavcodec.a; sourceTree = "<group>"; };
+		3415AD161405C1AC000C2C51 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../../../../../Common/ffmpeg/libavutil/libavutil.a; sourceTree = "<group>"; };
 		3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RTBuffer.cpp; path = ../../capture/RTBuffer.cpp; sourceTree = "<group>"; };
 		3426E93713F0BAFB00897BA7 /* RTBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RTBuffer.h; path = ../../capture/RTBuffer.h; sourceTree = "<group>"; };
-		34AA4D0713EB77DB003F68AE /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = SDKs/MacOSX10.7.sdk/System/Library/Frameworks/CoreVideo.framework; sourceTree = DEVELOPER_DIR; };
-		34BF6A8113FC56090053B7A6 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = SDKs/MacOSX10.7.sdk/System/Library/Frameworks/AudioToolbox.framework; sourceTree = DEVELOPER_DIR; };
+		34421929140C0674007E833C /* CameraInterrogation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CameraInterrogation.h; path = MyRecorder.xcodeproj/../CameraInterrogation.h; sourceTree = "<group>"; };
+		3442192A140C0674007E833C /* CameraInterrogation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CameraInterrogation.m; path = MyRecorder.xcodeproj/../CameraInterrogation.m; sourceTree = "<group>"; };
 		34DE7EDD13EC9BA0007B30F0 /* ThreadSingle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ThreadSingle.h; path = ../../../neuroncommon/threading/NeuronBasics/ThreadSingle.h; sourceTree = "<group>"; };
 		34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = QTKitCap.mm; path = ../../capture/QTKitCap.mm; sourceTree = "<group>"; };
 		34DE7EDF13ECA2CE007B30F0 /* QTKitCap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QTKitCap.h; path = ../../capture/QTKitCap.h; sourceTree = "<group>"; };
+		34E37259140C1B6C001524C7 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
+		34E3725B140C1BB0001524C7 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = /System/Library/Frameworks/AudioToolbox.framework; sourceTree = "<absolute>"; };
+		34E3725D140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libv4codecsdk-m32g-all-md.a"; path = "../../../../../Common/vanguard/mac/v4sdk-4.6/lib/libv4codecsdk-m32g-all-md.a"; sourceTree = "<group>"; };
 		7B5CFABD13F1B780007479E1 /* codec.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = codec.xcodeproj; path = ../../codec/xcode_build/codec/codec.xcodeproj; sourceTree = "<group>"; };
 		7B5CFAC413F1B79B007479E1 /* network.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = network.xcodeproj; path = ../../network/xcode_build/network/network.xcodeproj; sourceTree = "<group>"; };
 		7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = rtcamstream.xcodeproj; path = ../tools/rtcamstream/xcode_build/rtcamstream/rtcamstream.xcodeproj; sourceTree = "<group>"; };
@@ -101,10 +106,6 @@
 		7B5CFAEE13F1C0F8007479E1 /* libliveMedia.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libliveMedia.a; path = ../../../../../Common/live555/liveMedia/libliveMedia.a; sourceTree = "<group>"; };
 		7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBasicUsageEnvironment.a; path = ../../../../../Common/live555/BasicUsageEnvironment/libBasicUsageEnvironment.a; sourceTree = "<group>"; };
 		7B5CFAF213F1C12B007479E1 /* libUsageEnvironment.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libUsageEnvironment.a; path = ../../../../../Common/live555/UsageEnvironment/libUsageEnvironment.a; sourceTree = "<group>"; };
-		7B83DAF11405EB2F00450C36 /* libv4codecsdk-m32g-all-md.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libv4codecsdk-m32g-all-md.a"; path = "../../../../../Common/vanguard/mac/v4sdk-4.6/lib/libv4codecsdk-m32g-all-md.a"; sourceTree = "<group>"; };
-		7B83DAF31405EB4C00450C36 /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = ../../../../../Common/ffmpeg/libavcodec/libavcodec.a; sourceTree = "<group>"; };
-		7B83DAF51405EB6600450C36 /* libavutil.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavutil.a; path = ../../../../../Common/ffmpeg/libavutil/libavutil.a; sourceTree = "<group>"; };
-		7B83DAF71406D21A00450C36 /* libavformat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavformat.a; path = ../../../../../Common/ffmpeg/libavformat/libavformat.a; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* MyRecorder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyRecorder.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C5E698ED0BA872BA00382716 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = /System/Library/Frameworks/QTKit.framework; sourceTree = "<absolute>"; };
@@ -117,11 +118,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7B83DAF81406D21A00450C36 /* libavformat.a in Frameworks */,
-				7B83DAF61405EB6600450C36 /* libavutil.a in Frameworks */,
-				7B83DAF41405EB4C00450C36 /* libavcodec.a in Frameworks */,
-				7B83DAF21405EB2F00450C36 /* libv4codecsdk-m32g-all-md.a in Frameworks */,
-				34BF6A8213FC56090053B7A6 /* AudioToolbox.framework in Frameworks */,
+				34E3725E140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a in Frameworks */,
+				34E3725C140C1BB1001524C7 /* AudioToolbox.framework in Frameworks */,
+				34E3725A140C1B6C001524C7 /* CoreVideo.framework in Frameworks */,
+				3415AD171405C1AC000C2C51 /* libavutil.a in Frameworks */,
+				3415AD151405C19B000C2C51 /* libavcodec.a in Frameworks */,
 				7B5CFB3413F1DCC0007479E1 /* librtcamstream.a in Frameworks */,
 				7B5CFB3313F1DCBA007479E1 /* libnetwork.a in Frameworks */,
 				7B5CFB3213F1DCB5007479E1 /* libcodec.a in Frameworks */,
@@ -129,7 +130,6 @@
 				7B5CFAF113F1C10C007479E1 /* libBasicUsageEnvironment.a in Frameworks */,
 				7B5CFAEF13F1C0F8007479E1 /* libliveMedia.a in Frameworks */,
 				7B5CFAED13F1C0D2007479E1 /* libgroupsock.a in Frameworks */,
-				34AA4D0813EB77DB003F68AE /* CoreVideo.framework in Frameworks */,
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
 				C5E698EE0BA872BA00382716 /* QTKit.framework in Frameworks */,
 			);
@@ -150,6 +150,8 @@
 		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				34E3725B140C1BB0001524C7 /* AudioToolbox.framework */,
+				34E37259140C1B6C001524C7 /* CoreVideo.framework */,
 				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
 				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
 			);
@@ -167,28 +169,21 @@
 		29B97314FDCFA39411CA2CEA /* MyRecorder */ = {
 			isa = PBXGroup;
 			children = (
-				7B83DAF71406D21A00450C36 /* libavformat.a */,
-				7B83DAF51405EB6600450C36 /* libavutil.a */,
-				7B83DAF31405EB4C00450C36 /* libavcodec.a */,
-				7B83DAF11405EB2F00450C36 /* libv4codecsdk-m32g-all-md.a */,
-				34BF6A8113FC56090053B7A6 /* AudioToolbox.framework */,
-				7B5CFAF213F1C12B007479E1 /* libUsageEnvironment.a */,
-				7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */,
-				7B5CFAEE13F1C0F8007479E1 /* libliveMedia.a */,
-				7B5CFAEC13F1C0D2007479E1 /* libgroupsock.a */,
-				7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */,
-				7B5CFAC413F1B79B007479E1 /* network.xcodeproj */,
 				7B5CFABD13F1B780007479E1 /* codec.xcodeproj */,
+				7B5CFAC413F1B79B007479E1 /* network.xcodeproj */,
+				7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */,
 				3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */,
 				3426E93713F0BAFB00897BA7 /* RTBuffer.h */,
 				34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */,
 				34DE7EDF13ECA2CE007B30F0 /* QTKitCap.h */,
 				34DE7EDD13EC9BA0007B30F0 /* ThreadSingle.h */,
-				34AA4D0713EB77DB003F68AE /* CoreVideo.framework */,
 				32CA4F630368D1EE00C91783 /* MyRecorder_Prefix.pch */,
 				29B97316FDCFA39411CA2CEA /* main.mm */,
+				34421929140C0674007E833C /* CameraInterrogation.h */,
+				3442192A140C0674007E833C /* CameraInterrogation.m */,
 				C5E698F10BA8735700382716 /* MyRecorderController.h */,
 				C5E698F20BA8735700382716 /* MyRecorderController.mm */,
+				34B779A1140C27EE00AAE19B /* LinkLibs */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
@@ -215,6 +210,20 @@
 				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		34B779A1140C27EE00AAE19B /* LinkLibs */ = {
+			isa = PBXGroup;
+			children = (
+				34E3725D140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a */,
+				3415AD161405C1AC000C2C51 /* libavutil.a */,
+				3415AD141405C19B000C2C51 /* libavcodec.a */,
+				7B5CFAF213F1C12B007479E1 /* libUsageEnvironment.a */,
+				7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */,
+				7B5CFAEE13F1C0F8007479E1 /* libliveMedia.a */,
+				7B5CFAEC13F1C0D2007479E1 /* libgroupsock.a */,
+			);
+			name = LinkLibs;
 			sourceTree = "<group>";
 		};
 		7B5CFABE13F1B780007479E1 /* Products */ = {
@@ -350,6 +359,7 @@
 				C5E698F30BA8735700382716 /* MyRecorderController.mm in Sources */,
 				34DE7EE013ECA2CE007B30F0 /* QTKitCap.mm in Sources */,
 				3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */,
+				3442192B140C0674007E833C /* CameraInterrogation.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -414,6 +424,7 @@
 				GCC_PREFIX_HEADER = MyRecorder_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
+					../../../../../Common/ffmpeg,
 					"../../../../../Common/live555/**",
 					"../../../../../Common/vanguard/mac/**",
 					"../../**",
@@ -458,6 +469,7 @@
 				GCC_PREFIX_HEADER = MyRecorder_Prefix.pch;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
+					../../../../../Common/ffmpeg,
 					"../../../../../Common/live555/**",
 					"../../../../../Common/vanguard/mac/**",
 					"../../**",

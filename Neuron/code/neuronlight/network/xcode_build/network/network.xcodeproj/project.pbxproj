@@ -7,11 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		34B9D9DB1417F10600442FBE /* H264VideoDeviceServerMediaSubsession.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34B9D9D71417F10600442FBE /* H264VideoDeviceServerMediaSubsession.cpp */; };
+		34B9D9DC1417F10600442FBE /* H264VideoDeviceServerMediaSubsession.h in Headers */ = {isa = PBXBuildFile; fileRef = 34B9D9D81417F10600442FBE /* H264VideoDeviceServerMediaSubsession.h */; };
+		34B9D9DD1417F10600442FBE /* H264VideoQueueDeviceSource.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34B9D9D91417F10600442FBE /* H264VideoQueueDeviceSource.cpp */; };
+		34B9D9DE1417F10600442FBE /* H264VideoQueueDeviceSource.h in Headers */ = {isa = PBXBuildFile; fileRef = 34B9D9DA1417F10600442FBE /* H264VideoQueueDeviceSource.h */; };
 		7B8B588713F0A9F1006CEE3B /* nlrtspserver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B8B588513F0A9F1006CEE3B /* nlrtspserver.cpp */; };
 		7B8B588813F0A9F1006CEE3B /* nlrtspserver.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B8B588613F0A9F1006CEE3B /* nlrtspserver.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		34B9D9D71417F10600442FBE /* H264VideoDeviceServerMediaSubsession.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = H264VideoDeviceServerMediaSubsession.cpp; path = ../../H264VideoDeviceServerMediaSubsession.cpp; sourceTree = "<group>"; };
+		34B9D9D81417F10600442FBE /* H264VideoDeviceServerMediaSubsession.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = H264VideoDeviceServerMediaSubsession.h; path = ../../H264VideoDeviceServerMediaSubsession.h; sourceTree = "<group>"; };
+		34B9D9D91417F10600442FBE /* H264VideoQueueDeviceSource.cpp */ = {isa = PBXFileReference; fileEncoding = 4; name = H264VideoQueueDeviceSource.cpp; path = ../../H264VideoQueueDeviceSource.cpp; sourceTree = "<group>"; };
+		34B9D9DA1417F10600442FBE /* H264VideoQueueDeviceSource.h */ = {isa = PBXFileReference; fileEncoding = 4; name = H264VideoQueueDeviceSource.h; path = ../../H264VideoQueueDeviceSource.h; sourceTree = "<group>"; };
 		7B8B587E13F0A9BD006CEE3B /* libnetwork.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libnetwork.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B8B588513F0A9F1006CEE3B /* nlrtspserver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = nlrtspserver.cpp; path = ../../nlrtspserver.cpp; sourceTree = "<group>"; };
 		7B8B588613F0A9F1006CEE3B /* nlrtspserver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = nlrtspserver.h; path = ../../nlrtspserver.h; sourceTree = "<group>"; };
@@ -31,6 +39,10 @@
 		7B8B587313F0A9BD006CEE3B = {
 			isa = PBXGroup;
 			children = (
+				34B9D9D71417F10600442FBE /* H264VideoDeviceServerMediaSubsession.cpp */,
+				34B9D9D81417F10600442FBE /* H264VideoDeviceServerMediaSubsession.h */,
+				34B9D9D91417F10600442FBE /* H264VideoQueueDeviceSource.cpp */,
+				34B9D9DA1417F10600442FBE /* H264VideoQueueDeviceSource.h */,
 				7B8B588513F0A9F1006CEE3B /* nlrtspserver.cpp */,
 				7B8B588613F0A9F1006CEE3B /* nlrtspserver.h */,
 				7B8B587F13F0A9BD006CEE3B /* Products */,
@@ -53,6 +65,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B8B588813F0A9F1006CEE3B /* nlrtspserver.h in Headers */,
+				34B9D9DC1417F10600442FBE /* H264VideoDeviceServerMediaSubsession.h in Headers */,
+				34B9D9DE1417F10600442FBE /* H264VideoQueueDeviceSource.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +121,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B8B588713F0A9F1006CEE3B /* nlrtspserver.cpp in Sources */,
+				34B9D9DB1417F10600442FBE /* H264VideoDeviceServerMediaSubsession.cpp in Sources */,
+				34B9D9DD1417F10600442FBE /* H264VideoQueueDeviceSource.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -169,6 +185,7 @@
 					"../../../../../../Common/live555/**",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 			};
 			name = Debug;
 		};
@@ -183,6 +200,7 @@
 					"../../../../../../Common/live555/**",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
