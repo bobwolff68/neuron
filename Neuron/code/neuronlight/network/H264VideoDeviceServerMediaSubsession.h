@@ -9,18 +9,19 @@
 #endif
 
 #include "H264VideoQueueDeviceSource.h"
+#include "SafeBufferDeque.h"
 
 class H264VideoDeviceServerMediaSubsession: public OnDemandServerMediaSubsession{
 public:
   static H264VideoDeviceServerMediaSubsession*
-                createNew(UsageEnvironment& env, Boolean reuseFirstSource);
+                createNew(UsageEnvironment& env, Boolean reuseFirstSource, SafeBufferDeque* _pbsdq);
 
   // Used to implement "getAuxSDPLine()":
   void checkForAuxSDPLine1();
   void afterPlayingDummy1();
 
 private:
-  H264VideoDeviceServerMediaSubsession(UsageEnvironment& env, Boolean reuseFirstSource);
+  H264VideoDeviceServerMediaSubsession(UsageEnvironment& env, Boolean reuseFirstSource, SafeBufferDeque* _pbsdq);
       // called only by createNew();
   virtual ~H264VideoDeviceServerMediaSubsession();
 
@@ -39,6 +40,7 @@ private:
   char* fAuxSDPLine;
   char fDoneFlag; // used when setting up "fAuxSDPLine"
   RTPSink* fDummyRTPSink; // ditto
+    SafeBufferDeque* p_bsdq;
 };
 
 #endif

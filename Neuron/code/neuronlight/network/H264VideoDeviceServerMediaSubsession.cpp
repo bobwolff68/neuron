@@ -15,14 +15,14 @@ H264VideoDeviceServerMediaSubsession *gpReuseSrc = NULL;
 
 H264VideoDeviceServerMediaSubsession*
 H264VideoDeviceServerMediaSubsession::createNew(UsageEnvironment& env,
-					       			       Boolean reuseFirstSource) {
-  return new H264VideoDeviceServerMediaSubsession(env, reuseFirstSource);
+					       			       Boolean reuseFirstSource, SafeBufferDeque* _p_bsdq) {
+  return new H264VideoDeviceServerMediaSubsession(env, reuseFirstSource, _p_bsdq);
 }
 
 H264VideoDeviceServerMediaSubsession::H264VideoDeviceServerMediaSubsession(UsageEnvironment& env,
-								       Boolean reuseFirstSource)
+								       Boolean reuseFirstSource, SafeBufferDeque* _p_bsdq)
   : OnDemandServerMediaSubsession(env, reuseFirstSource),
-    fAuxSDPLine(NULL), fDoneFlag(0), fDummyRTPSink(NULL) {
+    fAuxSDPLine(NULL), fDoneFlag(0), fDummyRTPSink(NULL) ,p_bsdq(_p_bsdq){
 }
 
 H264VideoDeviceServerMediaSubsession::~H264VideoDeviceServerMediaSubsession() {
@@ -90,7 +90,7 @@ FramedSource* H264VideoDeviceServerMediaSubsession::createNewStreamSource(unsign
   estBitrate = 800; // kbps, estimate
 
   // Create the video source:
-  DeviceParameters devparm;
+  //DeviceParameters devparm;
     
     cerr << "H264VideoDeviceServerMediaSubsession::createNewStreamSource() entered." << endl;
     
@@ -109,12 +109,12 @@ FramedSource* H264VideoDeviceServerMediaSubsession::createNewStreamSource(unsign
   else */
   {
       // Not re-using, so create a new device source each time.
-      pSrc = H264VideoQueueDeviceSource::createNew(envir(), devparm);
+      pSrc = H264VideoQueueDeviceSource::createNew(envir(), p_bsdq);
       if (pSrc == NULL) return NULL;
   }
   
     // Create a framer for the Video Elementary Stream:
-    return H264VideoStreamDiscreteFramer::createNew(envir(), pSrc);
+    return H264VideoStreamFramer::createNew(envir(), pSrc);
 }
 
 RTPSink* H264VideoDeviceServerMediaSubsession
@@ -123,4 +123,3 @@ RTPSink* H264VideoDeviceServerMediaSubsession
 		   FramedSource* /*inputSource*/) {
   return H264VideoRTPSink::createNew(envir(), rtpGroupsock, rtpPayloadTypeIfDynamic);
 }
-
