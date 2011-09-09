@@ -187,6 +187,88 @@
                 request.send(null);
             }    
             
+            function land(ref, target)
+            {   lowtarget = target.toLowerCase();
+                if (lowtarget == "_self") {
+                    window.location=loc;
+                } else {
+                    if (lowtarget == "_top") {
+                        top.location = loc;
+                    } else {
+                        if (lowtarget == "_blank") {
+                            window.open(loc);
+                        }else {
+                            if (lowtarget == "_parent") {
+                                parent.location = loc;
+                            }else {
+                                parent.frames[target].location = loc;
+                            };
+                        }
+                    }
+                }
+            }
+            
+            function jump(menu)
+            {   ref = menu.choice.options[menu.choice.selectedIndex].value;
+                splitc = ref.lastIndexOf("*");
+                target = "";
+                if (splitc != -1)
+                {   loc = ref.substring(0,splitc);
+                    target = ref.substring(splitc+1,1000);
+                }
+                else {
+                    loc = ref; 
+                    target="_self";
+                };
+
+                if (ref != "") {
+                    land(loc,target);
+                }
+            }
+            
+/*            function jump1(menu)
+            {   ref = menu.choice.options[menu.choice.selectedIndex].value;
+                //alert ('ref = ' + ref);
+                splitc = ref.lastIndexOf("*");
+                //alert ('splitc = ' + splitc);
+                target = "";
+                if (splitc != -1)
+                {   loc = ref.substring(0,splitc);
+                    if 
+                     ? $_SESSION['plugin'] = 'qt'; ?>
+                    target = ref.substring(splitc+1,1000);}
+                else {
+                    loc = ref; 
+                    switch (ref){
+                        case 'qt':
+                             ? $_SESSION['plugin'] = 'qt'; ?>
+                        break;
+
+                        default:
+                            ? $_SESSION['plugin'] = 'qt'; ?>
+                        break;
+                    }
+                    if (ref == 'qt'){
+                        ? $_SESSION['plugin'] = 'qt'; ?>
+                    }
+                    target="_self";
+                };
+
+                if (ref != "") {
+                    land(loc,target);
+                }
+            }
+*/
+               
+            function checkplugin(){
+                if ("<? echo $_SESSION[plugin] ?>" == "qt"){
+                    alert('Select a plugin = qt');
+                    document.location = "readysession_qt.php";
+                } else{
+                    alert('Select a plugin = other');
+                }
+            }
+            
             $(document.getElementsByTagName('div')[1]).ready(function() {
 //                addvlc();
  	    });
@@ -203,6 +285,7 @@
         <?
             $_SESSION['userid'] = $MYSESSION1;
             $_SESSION['name'] = $MYSESSION2;
+            $_SESSION['plugin'] = 'qt';
             
             $_SESSION['count'] = 0;
             $_SESSION['udec'] = 1;
@@ -285,7 +368,22 @@
                             </p>
                             
                                 <hr/>
-                                <a href="readysession.php"><button>Start Session</button></a>
+                                <form action="dummy" method="post">
+                                    <div align="center">
+                                        <p align="center">
+                                            <select name="choice" size="1">
+                                                 <option value="readysession_qt.php">qt</option>
+                                                 <option value="readysession.php">vlc</option>
+                                             </select><br/>
+                                             <input TYPE="button" VALUE="Start Session" onClick="jump(this.form)"></input>
+                                        </p>
+
+                                    </div>
+                                    
+                                </form>
+                                
+                                <!-- a href="readysession.php"><button>Start Session</button></a -->
+                                <!-- INPUT TYPE="BUTTON" OnClick="checkplugin();" VALUE="Start Session"></INPUT -->
 		   	</div>
 	    </div>
 
