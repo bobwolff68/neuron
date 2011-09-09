@@ -1,0 +1,15 @@
+<html>
+    <head>
+        <Title>calltest.html (Page That Executes JavaScript test() Function Indirectly)</Title>
+
+        <script type="text/javascript">
+            function CallParentTest()
+            {
+                parent.test();
+            }
+         </script>
+    </head>
+    
+    <body onload="CallParentTest()">
+    </body>
+</html>
