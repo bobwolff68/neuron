@@ -46,10 +46,18 @@ MultiFramedRTPSink::MultiFramedRTPSink(UsageEnvironment& env,
   setPacketSizes(1000, 1448);
       // Default max packet size (1500, minus allowance for IP, UDP, UMTP headers)
       // (Also, make it a multiple of 4 bytes, just in case that matters.)
+
+  /************* MANJESH ****************/
+  p_tslog = new TimestampsLog("ts_postrtppack.log");
+  /**************************************/
 }
 
 MultiFramedRTPSink::~MultiFramedRTPSink() {
   delete fOutBuf;
+
+  /*********** MANJESH ***************/
+  delete p_tslog;
+  /***********************************/
 }
 
 void MultiFramedRTPSink
@@ -350,6 +358,13 @@ Boolean MultiFramedRTPSink::isTooBigForAPacket(unsigned numBytes) const {
 
 void MultiFramedRTPSink::sendPacketIfNecessary() {
   if (fNumFramesUsedSoFar > 0) {
+
+    /************** MANJESH ****************/
+    struct timeval tod;
+    gettimeofday(&tod,NULL);
+    p_tslog->WriteEntry(&tod,fSeqNo,0,fCurrentTimestamp);
+    /***************************************/
+
     // Send the packet:
 #ifdef TEST_LOSS
     if ((our_random()%10) != 0) // simulate 10% packet loss #####

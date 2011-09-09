@@ -22,6 +22,10 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "MPEGVideoStreamParser.hh"
 #include "BitVector.hh"
 
+/********* MANJESH *********/
+#include <iostream>
+/***************************/
+
 ////////// H264VideoStreamParser definition //////////
 
 class H264VideoStreamParser: public MPEGVideoStreamParser {
@@ -79,11 +83,19 @@ H264VideoStreamFramer
     : NULL;
   fNextPresentationTime = fPresentationTimeBase;
   fFrameRate = 25.0; // We assume a frame rate of 25 fps, unless we learn otherwise (from parsing a Sequence Parameter Set NAL unit)
+
+  /************** MANJESH **************/
+  p_tslog = new TimestampsLog("ts_prertppack.log");
+  /*************************************/
 }
 
 H264VideoStreamFramer::~H264VideoStreamFramer() {
   delete[] fLastSeenSPS;
   delete[] fLastSeenPPS;
+
+  /************* MANJESH **************/
+  delete p_tslog;
+  /************************************/
 }
 
 void H264VideoStreamFramer::saveCopyOfSPS(u_int8_t* from, unsigned size) {
@@ -741,6 +753,14 @@ unsigned H264VideoStreamParser::parse() {
 	unsigned nextSecsIncrement = (long)nextFraction;
 	nextPT.tv_sec += (long)nextSecsIncrement;
 	nextPT.tv_usec = (long)((nextFraction - nextSecsIncrement)*1000000);
+
+	/********* MANJESH **********/
+	struct timeval tod;
+	int frm_num = usingSource()->fPictureCount - 1;
+	int64_t pts = usingSource()->fPresentationTime.tv_sec*1000000 + usingSource()->fPresentationTime.tv_usec;
+	gettimeofday(&tod,NULL);
+	usingSource()->LogTimestampEntry(&tod,frm_num,pts,0);
+	/****************************/
       }
     }
     setParseState();

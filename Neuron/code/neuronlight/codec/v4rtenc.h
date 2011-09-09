@@ -42,8 +42,45 @@
     #define LOG_OUT(msg)    cout << __func__ << "> "\
                                  << msg << endl
 #else
-    #define LOG_OUT(msg)    ((void*)0)
+    #define LOG_OUT(msg)    ((void)(msg))
 #endif
+
+#ifndef MANJESH_TIMESTAMPLOG_H_
+#define LOG_TIMESTAMPS
+#ifdef LOG_TIMESTAMPS
+#include <sys/time.h>
+class TimestampsLog
+{
+private:
+    int log_fd;
+public:
+    TimestampsLog(const char* log_file_name);
+    ~TimestampsLog();
+    void WriteEntry(struct timeval* p_tod,const int frm_num,const int64_t apple_ts,const int64_t rtp_ts);
+};
+#else
+class TimestampsLog
+{
+public:
+    TimestampsLog(const char* log_file_name)
+    {
+        (void)log_file_name;
+    }
+    ~TimestampsLog()
+    {
+        
+    }
+    void WriteEntry(struct timeval* p_tod,const int frm_num,const int64_t apple_ts,const int64_t rtp_ts)
+    {
+        (void)p_tod;
+        (void)frm_num;
+        (void)apple_ts;
+        (void)rtp_ts;
+    }
+};
+#endif
+#endif
+
 
 //!
 //! \enum RTEnc_ReturnCode_t
@@ -74,6 +111,8 @@ class v4_rtenc_t: public ThreadSingle
 
         const bool b_video_on;
         const bool b_audio_on;
+        TimestampsLog* p_tslog;
+    
         //!
         //! \var p_rtcap_buf
         //! \brief Pointer to frame capture buffer

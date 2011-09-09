@@ -32,9 +32,15 @@ H264VideoStreamDiscreteFramer::createNew(UsageEnvironment& env, FramedSource* in
 H264VideoStreamDiscreteFramer
 ::H264VideoStreamDiscreteFramer(UsageEnvironment& env, FramedSource* inputSource)
   : H264VideoStreamFramer(env, inputSource, False/*don't create a parser*/, False) {
+  /************ MANJESH ****************************/
+  p_tslog = new TimestampsLog("ts_prertppack.log");
+  /*************************************************/
 }
 
 H264VideoStreamDiscreteFramer::~H264VideoStreamDiscreteFramer() {
+  /*********** MANJESH ***********/
+  delete p_tslog;
+  /*******************************/
 }
 
 void H264VideoStreamDiscreteFramer::doGetNextFrame() {
@@ -59,6 +65,9 @@ void H264VideoStreamDiscreteFramer
 ::afterGettingFrame1(unsigned frameSize, unsigned numTruncatedBytes,
                      struct timeval presentationTime,
                      unsigned durationInMicroseconds) {
+  /************* MANJESH *************/
+  static int frm_num = -1;
+  /***********************************/
   // Get the "nal_unit_type", to see if this NAL unit is one that we want to save a copy of:
   u_int8_t nal_unit_type = frameSize == 0 ? 0xFF : fTo[0]&0x1F;
 
@@ -77,11 +86,20 @@ void H264VideoStreamDiscreteFramer
   // by assuming that if this NAL unit is a VCL NAL unit, then it ends the current 'access unit'.
   Boolean const isVCL = nal_unit_type <= 5 && nal_unit_type > 0; // Would need to include type 20 for SVC and MVC #####
   if (isVCL) fPictureEndMarker = True;
+  /************ MANJESH *************/
+  if (isVCL) frm_num++;
+  /**********************************/
 
   // Finally, complete delivery to the client:
   fFrameSize = frameSize;
   fNumTruncatedBytes = numTruncatedBytes;
   fPresentationTime = presentationTime;
   fDurationInMicroseconds = durationInMicroseconds;
+
+  /****************** MANJESH *********************/
+  struct timeval tod;
+  gettimeofday(&tod,NULL);
+  p_tslog->WriteEntry(&tod,frm_num,fPresentationTime.tv_sec*1000000 + fPresentationTime.tv_usec,0);
+  /************************************************/
   afterGetting(this);
 }

@@ -1,17 +1,79 @@
 #include <iostream>
-#include <sys/time.h>
 #include "v4rtenc.h"
 
 using namespace std;
 
-int64_t nl_gettimeofday(void);
+/*int64_t nl_gettimeofday(void);
 int64_t nl_gettimeofday(void)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     
     return ((int64_t)tv.tv_sec)*1000000 + (int64_t)(tv.tv_usec);
+}*/
+
+#ifdef LOG_TIMESTAMPS
+TimestampsLog::TimestampsLog(const char* log_file_name)
+{
+    log_fd = open(log_file_name, O_WRONLY|O_CREAT);
+    if(log_fd == -1)
+    {
+        LOG_ERR("Unable to open log file " << log_file_name);
+        throw -1;
+    }
 }
+
+TimestampsLog::~TimestampsLog()
+{
+    close(log_fd);
+}
+
+void TimestampsLog::WriteEntry(struct timeval *p_tod, const int frm_num, const int64_t apple_ts, const int64_t rtp_ts)
+{
+    char entry[4][100];
+    
+    if(p_tod != NULL)
+    {
+        sprintf(entry[0], "%ld.%06d,",p_tod->tv_sec,p_tod->tv_usec);
+    }
+    else
+    {
+        sprintf(entry[0], " ,");
+    }
+    
+    if (frm_num >= 0) 
+    {
+        sprintf(entry[1], "%d,", frm_num);
+    }
+    else
+    {
+        sprintf(entry[1], " ,");        
+    }
+    
+    if (apple_ts > 0) 
+    {
+        sprintf(entry[2], "%lld,", apple_ts);
+    }
+    else
+    {
+        sprintf(entry[2], " ,");        
+    }
+    
+    if (rtp_ts > 0) 
+    {
+        sprintf(entry[3], "%lld\n", rtp_ts);
+    }
+    else
+    {
+        sprintf(entry[3], " \n");        
+    }
+    
+    for (int i=0; i<4; i++) 
+    {
+        write(log_fd, entry[i], strlen(entry[i]));
+    }
+}
+#endif
 
 
 void v4_rtenc_t::InitRawFrameSettings(void)
@@ -121,10 +183,13 @@ p_rtcap_buf(_p_rtcap_buf)
         LOG_ERR("v4e_read_config_file() error");
         throw RTENC_RETCODE_ERR_READ_CFG_FILE;
     }
+    
+    p_tslog = new TimestampsLog("ts_preenc.log");
 }
 
 v4_rtenc_t::~v4_rtenc_t()
 {
+    delete p_tslog;
     pthread_mutex_destroy(&handle_mutex);
 }
 
@@ -195,8 +260,8 @@ void v4_rtenc_t::SetEncSettings(map<string,string>& nvpairs)
         char msg[100];
         sprintf(msg,"checkpoint: set encoder setting '%s=%s'",
                 it->first.c_str(),it->second.c_str());
-#endif
         LOG_OUT(msg);
+#endif
 
         if(it->first=="Width")
             sscanf(it->second.c_str(),"%d",&(settings.input.width));
@@ -219,6 +284,8 @@ void v4_rtenc_t::SetEncSettings(map<string,string>& nvpairs)
 int v4_rtenc_t::workerBee(void)
 {    
 /*********** AAC AUDIO STREAM **********/
+    int frm_num = 0;
+    struct timeval tod;
     uint8_t* p_aacbuf = NULL;
     const int aacbuf_size = FF_MIN_BUFFER_SIZE*10;
     int aac_outbytes = 0;
@@ -281,9 +348,12 @@ int v4_rtenc_t::workerBee(void)
             else
 #endif
             SetRawFrameBuffers((unsigned char*)(p_bi->pBuffer), p_bi->captureStride);
-            p_bi->timeStamp_uS = nl_gettimeofday();
-            frame.timestamp = /*num_video_frames++;*/p_bi->timeStamp_uS * 90000 / 1000000;
-            //cout << "Video Frame timestamp: " << frame.timestamp << endl;
+            frame.timestamp = p_bi->timeStamp_uS;
+            
+            //Log timestamp info
+            gettimeofday(&tod, NULL);
+            p_tslog->WriteEntry(&tod, frm_num++, p_bi->timeStamp_uS, 0);
+            
             
             LockHandle();
                 
@@ -315,7 +385,7 @@ int v4_rtenc_t::workerBee(void)
                 assert(p_aacbuf!=NULL);
             
                 //assume raw data mode
-                p_bi->timeStamp_uS = nl_gettimeofday();
+                //p_bi->timeStamp_uS = nl_gettimeofday();
                 p_acctx->coded_frame->pts = p_bi->timeStamp_uS * 44100 / 1000000;
                 aac_outbytes = avcodec_encode_audio(
                                     p_acctx,
