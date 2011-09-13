@@ -14,16 +14,16 @@
 class ADTSAudioQueueDeviceSource: public FramedSource {
 public:
     // TODO - Eventually, we will want to pass in the codec configuration params here.
-  static ADTSAudioQueueDeviceSource* createNew(UsageEnvironment& env,
-//				 DeviceParameters params);
-                                              SafeBufferDeque* _p_bsdq);
+  static ADTSAudioQueueDeviceSource* createNew(UsageEnvironment& env,SafeBufferDeque* _p_bsdq);
 
 public:
   static EventTriggerId eventTriggerId;
+    unsigned samplingFrequency() const { return fSamplingFrequency; }
+    unsigned numChannels() const { return fNumChannels; }
+    char const* configStr() const { return fConfigStr; }
 
 private:
-    ADTSAudioQueueDeviceSource(UsageEnvironment& env, /*DeviceParameters params); */
-                            SafeBufferDeque* _p_bsdq,
+    ADTSAudioQueueDeviceSource(UsageEnvironment& env,SafeBufferDeque* _p_bsdq,
                                u_int8_t profile,
                                u_int8_t samplingFrequencyIndex, u_int8_t channelConfiguration);
   // called only by createNew(), or by subclass constructors

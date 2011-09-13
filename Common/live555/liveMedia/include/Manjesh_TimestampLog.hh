@@ -2,7 +2,7 @@
 #define MANJESH_TIMESTAMPLOG_H_
 
 #ifndef V4RTENC_H_
-#define LOG_TIMESTAMPS
+//#define LOG_TIMESTAMPS
 #ifdef LOG_TIMESTAMPS
 #include <iostream>
 #include <sys/types.h>

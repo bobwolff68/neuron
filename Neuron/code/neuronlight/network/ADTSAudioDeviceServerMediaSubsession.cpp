@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-static ADTSAudioDeviceServerMediaSubsession *gpReuseSrc = NULL;
+//static ADTSAudioDeviceServerMediaSubsession *gpReuseSrc = NULL;
 
 ADTSAudioDeviceServerMediaSubsession*
 ADTSAudioDeviceServerMediaSubsession::createNew(UsageEnvironment& env,

@@ -114,7 +114,10 @@ FramedSource* H264VideoDeviceServerMediaSubsession::createNewStreamSource(unsign
   }
   
     // Create a framer for the Video Elementary Stream:
-    return H264VideoStreamFramer::createNew(envir(), pSrc);
+    return H264VideoStreamDiscreteFramer::createNew(envir(), pSrc);
+    
+    /*if(fDoneFlag)
+        p_bsdq->clearAll();*/
 }
 
 RTPSink* H264VideoDeviceServerMediaSubsession

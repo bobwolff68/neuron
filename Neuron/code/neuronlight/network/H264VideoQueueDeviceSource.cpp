@@ -18,12 +18,7 @@ unsigned H264VideoQueueDeviceSource::referenceCount = 0;
 H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,
 			   /*DeviceParameters params*/SafeBufferDeque* _p_bsdq)
   : FramedSource(env), p_bsdq(_p_bsdq) {
-  /*if (referenceCount == 0) {
-      assert(params.getRTBuffer());
-      pRT = params.getRTBuffer();
     // Any global initialization of the device would be done here:
-    //%%% TO BE WRITTEN %%%
-  }*/
   ++referenceCount;
 
   // Any instance-specific initialization of the device would be done here:
@@ -60,8 +55,11 @@ H264VideoQueueDeviceSource::~H264VideoQueueDeviceSource() {
 
 void H264VideoQueueDeviceSource::nextTime(void *d)
 {
-    H264VideoQueueDeviceSource* p_ds = (H264VideoQueueDeviceSource*) d;
-    p_ds->doGetNextFrame();
+    if(H264VideoQueueDeviceSource::referenceCount > 0)
+    {
+        H264VideoQueueDeviceSource* p_ds = (H264VideoQueueDeviceSource*) d;
+        p_ds->doGetNextFrame();
+    }
 }
 
 void H264VideoQueueDeviceSource::doGetNextFrame() {
@@ -114,8 +112,8 @@ void H264VideoQueueDeviceSource::deliverFrame() {
   //         to set this variable, because - in this case - data will never arrive 'early'.
   // Note the code below.
 
-  void* newFrameDataStart = NULL; //%%% TO BE WRITTEN %%%
-  int newFrameSize = 0; //%%% TO BE WRITTEN %%%
+  void* newFrameDataStart = NULL;
+  int newFrameSize = 0;
     
     if (!isCurrentlyAwaitingData())
     {
@@ -124,8 +122,6 @@ void H264VideoQueueDeviceSource::deliverFrame() {
     }
 
     p_bsdq->RemoveItem(&newFrameDataStart, &newFrameSize);
-
-    //printf("fMaxSize = %d, newFrameSize = %d\n",fMaxSize,newFrameSize);
     
   // Deliver the data here:
   if (newFrameSize > fMaxSize) {
@@ -138,7 +134,8 @@ void H264VideoQueueDeviceSource::deliverFrame() {
   gettimeofday(&fPresentationTime, NULL); // If you have a more accurate time - e.g., from an encoder - then use that instead.
   // If the device is *not* a 'live source' (e.g., it comes instead from a file or buffer), then set "fDurationInMicroseconds" here.
   memmove(fTo, newFrameDataStart, fFrameSize);
-
+  delete (unsigned char*)newFrameDataStart;
+    
   // After delivering the data, inform the reader that it is now available:
   FramedSource::afterGetting(this);
 }

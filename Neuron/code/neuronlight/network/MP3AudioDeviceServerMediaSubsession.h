@@ -32,8 +32,6 @@ private:
   virtual ~MP3AudioDeviceServerMediaSubsession();
 
 private: // redefined virtual functions
-    virtual char const* getAuxSDPLine(RTPSink* rtpSink,
-                                      FramedSource* inputSource);
     virtual FramedSource* createNewStreamSource(unsigned clientSessionId,
                                                 unsigned& estBitrate);
     virtual RTPSink* createNewRTPSink(Groupsock* rtpGroupsock,

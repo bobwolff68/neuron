@@ -18,10 +18,11 @@
         #include <libavcodec/avcodec.h>
         #include <libavformat/avformat.h>
     }
-    #include "nlaacrtbuf.h"
+    #include <SafeBufferDeque.h>
 /**************************************/
     #include <sys/types.h>
     #include <sys/stat.h>
+    #include <sys/time.h>
     #include <fcntl.h>
 #else
     #include <V4L2Cap.h>
@@ -46,7 +47,7 @@
 #endif
 
 #ifndef MANJESH_TIMESTAMPLOG_H_
-#define LOG_TIMESTAMPS
+//#define LOG_TIMESTAMPS
 #ifdef LOG_TIMESTAMPS
 #include <sys/time.h>
 class TimestampsLog
@@ -123,7 +124,9 @@ class v4_rtenc_t: public ThreadSingle
         AVCodec* p_acodec;
         AVCodecContext* p_acctx;
         AVDictionary* p_opts_dict;
-        nl_aacrtbuf_t* p_aac_rtbuf;
+        SafeBufferDeque* p_abs_dq;
+        //nl_aacrtbuf_t* p_aac_rtbuf;
+        
 #else
         V4L2CapBuffer* p_rtcap_buf;
 #endif
@@ -177,7 +180,7 @@ class v4_rtenc_t: public ThreadSingle
 #if (defined (__APPLE__) & defined (__MACH__))
         v4_rtenc_t(const char* cfg_file,
                    QTKitCapBuffer* _p_rtcap_buf,
-                   nl_aacrtbuf_t* _p_aac_rtbuf,
+                   SafeBufferDeque* _p_abs_dq,
                    const bool _b_video_on,
                    const bool _b_audio_on);
         RTEnc_ReturnCode_t OpenAudio(void);

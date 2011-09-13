@@ -23,66 +23,9 @@ ADTSAudioQueueDeviceSource::createNew(UsageEnvironment& env,
     return new ADTSAudioQueueDeviceSource(env, _p_bsdq, 1, //profile,
                                           4, //sampling_frequency_index, 
                                           2); //channel_configuration);
-/*    do {
-        fid = OpenInputFile(env, fileName);
-        if (fid == NULL) break;
-        
-        // Now, having opened the input file, read the fixed header of the first frame,
-        // to get the audio stream's parameters:
-        unsigned char fixedHeader[4]; // it's actually 3.5 bytes long
-        if (fread(fixedHeader, 1, sizeof fixedHeader, fid) < sizeof fixedHeader) break;
-        
-        // Check the 'syncword':
-        if (!(fixedHeader[0] == 0xFF && (fixedHeader[1]&0xF0) == 0xF0)) {
-            env.setResultMsg("Bad 'syncword' at start of ADTS file");
-            break;
-        }
-        
-        // Get and check the 'profile':
-        u_int8_t profile = (fixedHeader[2]&0xC0)>>6; // 2 bits
-        if (profile == 3) {
-            env.setResultMsg("Bad (reserved) 'profile': 3 in first frame of ADTS file");
-            break;
-        }
-        
-        // Get and check the 'sampling_frequency_index':
-        u_int8_t sampling_frequency_index = (fixedHeader[2]&0x3C)>>2; // 4 bits
-        if (samplingFrequencyTable[sampling_frequency_index] == 0) {
-            env.setResultMsg("Bad 'sampling_frequency_index' in first frame of ADTS file");
-            break;
-        }
-        
-        // Get and check the 'channel_configuration':
-        u_int8_t channel_configuration
-        = ((fixedHeader[2]&0x01)<<2)|((fixedHeader[3]&0xC0)>>6); // 3 bits
-        
-        // If we get here, the frame header was OK.
-        // Reset the fid to the beginning of the file:
-#ifndef _WIN32_WCE
-        rewind(fid);
-#else
-        SeekFile64(fid, SEEK_SET,0);
-#endif
-#ifdef DEBUG
-        fprintf(stderr, "Read first frame: profile %d, "
-                "sampling_frequency_index %d => samplingFrequency %d, "
-                "channel_configuration %d\n",
-                profile,
-                sampling_frequency_index, samplingFrequencyTable[sampling_frequency_index],
-                channel_configuration);
-#endif
-        return new ADTSAudioFileSource(env, fid, profile,
-                                       sampling_frequency_index, channel_configuration);
-    } while (0);
-    
-    // An error occurred:
-    CloseInputFile(fid);
-    return NULL;
-*/
 }
 
 EventTriggerId ADTSAudioQueueDeviceSource::eventTriggerId = 0;
-
 unsigned ADTSAudioQueueDeviceSource::referenceCount = 0;
 
 ADTSAudioQueueDeviceSource::ADTSAudioQueueDeviceSource(UsageEnvironment& env,
@@ -90,12 +33,8 @@ ADTSAudioQueueDeviceSource::ADTSAudioQueueDeviceSource(UsageEnvironment& env,
                                                        u_int8_t profile,
                                                        u_int8_t samplingFrequencyIndex, u_int8_t channelConfiguration)
 : FramedSource(env), p_bsdq(_p_bsdq) {
-    /*if (referenceCount == 0) {
-     assert(params.getRTBuffer());
-     pRT = params.getRTBuffer();
      // Any global initialization of the device would be done here:
      //%%% TO BE WRITTEN %%%
-     }*/
     ++referenceCount;
     
     // Any instance-specific initialization of the device would be done here:
@@ -141,7 +80,6 @@ ADTSAudioQueueDeviceSource::~ADTSAudioQueueDeviceSource() {
         eventTriggerId = 0;
     }
     
-    delete fStreamState;
 }
 
 void ADTSAudioQueueDeviceSource::nextTime(void *d)
@@ -154,7 +92,7 @@ void ADTSAudioQueueDeviceSource::nextTime(void *d)
 
 void ADTSAudioQueueDeviceSource::doGetNextFrame() {
     
-    assert(false); // Need to resolve usage of doGetNextFrame**1**() for MP3.
+    //assert(false); // Need to resolve usage of doGetNextFrame**1**() for MP3.
     
     
     // This function is called (by our 'downstream' object) when it asks for new data.
@@ -224,7 +162,7 @@ void ADTSAudioQueueDeviceSource::deliverFrame() {
     memcpy(headers, newFrameDataStart, sizeof(headers));
     
     // Extract important fields from the headers:
-    Boolean protection_absent = headers[1]&0x01;
+    //Boolean protection_absent = headers[1]&0x01;
     u_int16_t frame_length
     = ((headers[3]&0x03)<<11) | (headers[4]<<3) | ((headers[5]&0xE0)>>5);
 
@@ -245,6 +183,7 @@ void ADTSAudioQueueDeviceSource::deliverFrame() {
     }
     
     memmove(fTo, newFrameDataStart, fFrameSize);
+    delete (unsigned char*)newFrameDataStart;
     
 #if 1
     gettimeofday(&fPresentationTime, NULL); // If you have a more accurate time - e.g., from an encoder - then use that instead.

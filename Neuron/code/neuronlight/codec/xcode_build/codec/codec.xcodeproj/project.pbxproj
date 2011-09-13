@@ -7,10 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		7B131AEA13FDD872005A584D /* nlfifostream.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B131AE913FDD872005A584D /* nlfifostream.h */; };
-		7B131AEC13FDDA57005A584D /* avcbsbuf.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B131AEB13FDDA57005A584D /* avcbsbuf.h */; };
-		7B131AEE13FDDE9B005A584D /* nlfifostream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7B131AED13FDDE9B005A584D /* nlfifostream.cpp */; };
-		7B131B021402DA06005A584D /* nlaacrtbuf.h in Headers */ = {isa = PBXBuildFile; fileRef = 7B131B011402DA06005A584D /* nlaacrtbuf.h */; };
 		7BA0B45013F081FC00E2844A /* v4fifoout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7BA0B44C13F081FC00E2844A /* v4fifoout.cpp */; };
 		7BA0B45113F081FC00E2844A /* v4fifoout.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BA0B44D13F081FC00E2844A /* v4fifoout.h */; };
 		7BA0B45213F081FC00E2844A /* v4rtenc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7BA0B44E13F081FC00E2844A /* v4rtenc.cpp */; };
@@ -18,10 +14,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		7B131AE913FDD872005A584D /* nlfifostream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nlfifostream.h; sourceTree = "<group>"; };
-		7B131AEB13FDDA57005A584D /* avcbsbuf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = avcbsbuf.h; sourceTree = "<group>"; };
-		7B131AED13FDDE9B005A584D /* nlfifostream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nlfifostream.cpp; sourceTree = "<group>"; };
-		7B131B011402DA06005A584D /* nlaacrtbuf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nlaacrtbuf.h; sourceTree = "<group>"; };
 		7BA0B44513F081CE00E2844A /* libcodec.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libcodec.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		7BA0B44C13F081FC00E2844A /* v4fifoout.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = v4fifoout.cpp; path = ../../v4fifoout.cpp; sourceTree = "<group>"; };
 		7BA0B44D13F081FC00E2844A /* v4fifoout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = v4fifoout.h; path = ../../v4fifoout.h; sourceTree = "<group>"; };
@@ -43,10 +35,6 @@
 		7BA0B43A13F081CE00E2844A = {
 			isa = PBXGroup;
 			children = (
-				7B131B011402DA06005A584D /* nlaacrtbuf.h */,
-				7B131AED13FDDE9B005A584D /* nlfifostream.cpp */,
-				7B131AEB13FDDA57005A584D /* avcbsbuf.h */,
-				7B131AE913FDD872005A584D /* nlfifostream.h */,
 				7BA0B44C13F081FC00E2844A /* v4fifoout.cpp */,
 				7BA0B44D13F081FC00E2844A /* v4fifoout.h */,
 				7BA0B44E13F081FC00E2844A /* v4rtenc.cpp */,
@@ -72,9 +60,6 @@
 			files = (
 				7BA0B45113F081FC00E2844A /* v4fifoout.h in Headers */,
 				7BA0B45313F081FC00E2844A /* v4rtenc.h in Headers */,
-				7B131AEA13FDD872005A584D /* nlfifostream.h in Headers */,
-				7B131AEC13FDDA57005A584D /* avcbsbuf.h in Headers */,
-				7B131B021402DA06005A584D /* nlaacrtbuf.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,7 +115,6 @@
 			files = (
 				7BA0B45013F081FC00E2844A /* v4fifoout.cpp in Sources */,
 				7BA0B45213F081FC00E2844A /* v4rtenc.cpp in Sources */,
-				7B131AEE13FDDE9B005A584D /* nlfifostream.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -198,6 +182,7 @@
 					../../../../neuroncommon/threading/NeuronBasics,
 					../../../capture,
 					"../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
+					../../../../include,
 				);
 				"HEADER_SEARCH_PATHS[arch=x86_64]" = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -219,6 +204,7 @@
 					../../../../neuroncommon/threading/NeuronBasics,
 					../../../capture,
 					"../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
+					../../../../include,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;

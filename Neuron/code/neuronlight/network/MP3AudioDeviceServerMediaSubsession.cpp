@@ -45,7 +45,7 @@ FramedSource* MP3AudioDeviceServerMediaSubsession::createNewStreamSource(unsigne
     // So, we want to CLEAR the deque buffer so that we remove any additional latency
     // from the system.
     // Later we may wish to only clear this to a low-water-mark but we'll be aggressive for now.
-    p_bsdq->clearAll();
+    //p_bsdq->clearAll();
     
     std::cerr << "MP3AudioDeviceServerMediaSubsession::createNewStreamSource() entered." << std::endl;
     

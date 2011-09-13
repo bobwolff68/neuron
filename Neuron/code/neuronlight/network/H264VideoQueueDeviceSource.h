@@ -11,25 +11,15 @@
 #include <deque>
 #include "SafeBufferDeque.h"
 
-// The following class can be used to define specific encoder parameters
-/*class DeviceParameters {
-public:
-    DeviceParameters() { };
-    ~DeviceParameters(void) { };
-protected:
-};*/
-
 class H264VideoQueueDeviceSource: public FramedSource {
 public:
-  static H264VideoQueueDeviceSource* createNew(UsageEnvironment& env/*,
-				 DeviceParameters params*/,SafeBufferDeque* _p_bsdq);
+  static H264VideoQueueDeviceSource* createNew(UsageEnvironment& env,SafeBufferDeque* _p_bsdq);
 
 public:
   static EventTriggerId eventTriggerId;
 
 protected:
-  H264VideoQueueDeviceSource(UsageEnvironment& env, /*DeviceParameters params*/
-                             SafeBufferDeque* _p_bsdq);
+  H264VideoQueueDeviceSource(UsageEnvironment& env,SafeBufferDeque* _p_bsdq);
   // called only by createNew(), or by subclass constructors
   virtual ~H264VideoQueueDeviceSource();
 
@@ -45,7 +35,6 @@ private:
 private:
   static unsigned referenceCount; // used to count how many instances of this class currently exist
     SafeBufferDeque* p_bsdq;  
-  //DeviceParameters fParams;
 };
 
 #endif
