@@ -16,7 +16,7 @@
 #include <errno.h>
 
 typedef struct strBufferItem {
-    void* pData;
+    unsigned char* pData;
     int32_t length;
 } BufferItem;
 
@@ -33,7 +33,7 @@ public:
     
     ~SafeBufferDeque() { clearAll();	pthread_mutex_destroy(&mutex); };
     
-    bool RemoveItem(void** pReturnData, int32_t* pLength) 
+    bool RemoveItem(unsigned char** pReturnData, int32_t* pLength) 
     { 
         int rc;
         
@@ -74,7 +74,7 @@ public:
         return true;
     }
 
-    bool AddItem(void* data, int32_t length) 
+    bool AddItem(unsigned char* data, int32_t length) 
     { 
         int rc;
         

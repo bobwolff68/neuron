@@ -36,7 +36,7 @@ int v4_fifoout_t::workerBee(void)
                     p_tslog->WriteEntry(&tod, frm_num++, 0, 0);
                 }
                 
-                p_bsdq->AddItem(p_ms->data, p_ms->used_size);
+                p_bsdq->AddItem((unsigned char*)p_ms->data, p_ms->used_size);
                 v4_free_media_sample(p_ms);
                 break;
             }

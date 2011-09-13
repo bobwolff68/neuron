@@ -2,13 +2,30 @@
 //
 
 #include "MP3AudioQueueDeviceSource.h"
+#include "MP3StreamState.hh"
+
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 #include <stdio.h>
 
 MP3AudioQueueDeviceSource*
 MP3AudioQueueDeviceSource::createNew(UsageEnvironment& env,
                                       /*DeviceParameters params*/SafeBufferDeque* _p_bsdq) {
-    return new MP3AudioQueueDeviceSource(env, _p_bsdq);
+    MP3AudioQueueDeviceSource* pSrc = NULL;
+    
+    do {
+        pSrc = new MP3AudioQueueDeviceSource(env, _p_bsdq);
+        if (pSrc==NULL) break;
+        
+        if (!pSrc->initializeStream()) break;
+        
+        return pSrc;
+    }
+    while(0);
+    
+    // Failure if we get here.
+    if (pSrc)
+        Medium::close(pSrc);
+    return NULL;
 }
 
 EventTriggerId MP3AudioQueueDeviceSource::eventTriggerId = 0;
@@ -18,7 +35,7 @@ unsigned MP3AudioQueueDeviceSource::referenceCount = 0;
 MP3AudioQueueDeviceSource::MP3AudioQueueDeviceSource(UsageEnvironment& env,
                                                        /*DeviceParameters params*/
                                                      SafeBufferDeque* _p_bsdq)
-: FramedSource(env), p_bsdq(_p_bsdq) {
+: FramedSource(env), p_bsdq(_p_bsdq), fStreamState(new MP3StreamState(env)) {
     /*if (referenceCount == 0) {
      assert(params.getRTBuffer());
      pRT = params.getRTBuffer();
@@ -57,6 +74,29 @@ MP3AudioQueueDeviceSource::~MP3AudioQueueDeviceSource() {
         envir().taskScheduler().deleteEventTrigger(eventTriggerId);
         eventTriggerId = 0;
     }
+    
+    delete fStreamState;
+}
+
+char const* MP3AudioQueueDeviceSource::MIMEtype() const {
+    return "audio/MPEG";
+}
+
+Boolean MP3FileSource::initializeStream() {
+    // Make sure the file has an appropriate header near the start:
+    if (fStreamState->findNextHeader(fFirstFramePresentationTime) == 0) {
+        envir().setResultMsg("not an MPEG audio file");
+        return False;
+    }
+    
+    fStreamState->checkForXingHeader(); // in case this is a VBR file
+    
+    fHaveJustInitialized = True;
+    
+    // Hack: It's possible that our environment's 'result message' has been
+    // reset within this function, so set it again to our name now:
+    envir().setResultMsg(name());
+    return True;
 }
 
 void MP3AudioQueueDeviceSource::nextTime(void *d)
@@ -66,6 +106,10 @@ void MP3AudioQueueDeviceSource::nextTime(void *d)
 }
 
 void MP3AudioQueueDeviceSource::doGetNextFrame() {
+    
+    assert(false); // Need to resolve usage of doGetNextFrame**1**() for MP3.
+    
+    
     // This function is called (by our 'downstream' object) when it asks for new data.
     
     // Note: If, for some reason, the source device stops being readable (e.g., it gets closed), then you do the following:
@@ -86,6 +130,30 @@ void MP3AudioQueueDeviceSource::doGetNextFrame() {
     
     // No new data is immediately available to be delivered.  We don't do anything more here.
     // Instead, our event trigger must be called (e.g., from a separate thread) when new data becomes available.
+}
+
+Boolean MP3FileSource::doGetNextFrame1() {
+    if (fLimitNumBytesToStream && fNumBytesToStream == 0) return False; // we've already streamed as much as we were asked for
+    
+    if (!fHaveJustInitialized) {
+        if (fStreamState->findNextHeader(fPresentationTime) == 0) return False;
+    } else {
+        fPresentationTime = fFirstFramePresentationTime;
+        fHaveJustInitialized = False;
+    }
+    
+    if (!fStreamState->readFrame(fTo, fMaxSize, fFrameSize, fDurationInMicroseconds)) {
+        char tmp[200];
+        sprintf(tmp,
+                "Insufficient buffer size %d for reading MPEG audio frame (needed %d)\n",
+                fMaxSize, fFrameSize);
+        envir().setResultMsg(tmp);
+        fFrameSize = fMaxSize;
+        return False;
+    }
+    if (fNumBytesToStream > fFrameSize) fNumBytesToStream -= fFrameSize; else fNumBytesToStream = 0;
+    
+    return True;
 }
 
 void MP3AudioQueueDeviceSource::deliverFrame0(void* clientData) {

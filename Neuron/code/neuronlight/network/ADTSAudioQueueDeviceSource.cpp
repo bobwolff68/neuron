@@ -144,7 +144,7 @@ void ADTSAudioQueueDeviceSource::deliverFrame() {
     //         to set this variable, because - in this case - data will never arrive 'early'.
     // Note the code below.
     
-    void* newFrameDataStart = NULL;
+    unsigned char* newFrameDataStart = NULL;
     int newFrameSize = 0;
     
     if (!isCurrentlyAwaitingData())

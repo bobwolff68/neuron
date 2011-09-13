@@ -19,6 +19,8 @@
 //protected:
 //};
 
+class MP3StreamState;
+
 class MP3AudioQueueDeviceSource: public FramedSource {
 public:
   static MP3AudioQueueDeviceSource* createNew(UsageEnvironment& env,
@@ -36,17 +38,26 @@ protected:
 
 private:
   // redefined virtual functions:
-  virtual void doGetNextFrame();
+    Boolean initializeStream();
+    
+    MP3StreamState* streamState() {return fStreamState;}
+    virtual void doGetNextFrame();
+    virtual char const* MIMEtype() const;
+    virtual void getAttributes() const;
 
 private:
     static void deliverFrame0(void* clientData);
     static void nextTime(void* d);
     void deliverFrame();
+    virtual Boolean doGetNextFrame1();
 
 private:
   static unsigned referenceCount; // used to count how many instances of this class currently exist
     SafeBufferDeque* p_bsdq;  
 //  DeviceParameters fParams;
+    MP3StreamState* fStreamState;
+    Boolean fHaveJustInitialized;
+    struct timeval fFirstFramePresentationTime; // set on stream init
 };
 
 #endif
