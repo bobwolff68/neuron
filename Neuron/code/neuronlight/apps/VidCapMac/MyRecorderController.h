@@ -16,6 +16,8 @@
     IBOutlet QTCaptureView *mCaptureView;
     IBOutlet NSView *mMainWindow;
     IBOutlet NSTextField *mDrops;
+    IBOutlet NSTextField *VLen;
+    IBOutlet NSTextField *ALen;
     int curDrops;
     
     QTCaptureDevice                  *videoDevice;
@@ -42,5 +44,6 @@
 - (IBAction)quitApplication:(id)sender;
 - (IBAction)sendAudioRawData:(id)sender;
 - (IBAction)sendAudioNoData:(id)sender;
+- (IBAction)clearQueues:(id)sender;
 
 @end

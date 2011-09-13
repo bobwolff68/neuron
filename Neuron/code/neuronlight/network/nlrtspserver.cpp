@@ -35,6 +35,7 @@ b_server_exit(0)
 
 nl_rtspserver_t::~nl_rtspserver_t()
 {
+    cout << "Deleting rtspserver instance..." << endl;
 }
 
 void nl_rtspserver_t::setup_sms(const char* stream_name,bool b_video_on,bool b_audio_on)

@@ -6,6 +6,9 @@
 //  Copyright 2011 XVD Technology LTD USA. All rights reserved.
 //
 
+#ifndef _SAFE_BUFFER_DEQUE_H_
+#define _SAFE_BUFFER_DEQUE_H_
+
 #include <iostream>
 #include <sstream>
 #include <deque>
@@ -21,52 +24,14 @@ typedef struct strBufferItem {
 // By commenting out this #define, you will be asking the deque to literally 
 // allocate and duplicate all inbound pointer-data. This could be costly for high volume/large data.
 //
-#define NO_DUPLICATE_DATA
+//#define NO_DUPLICATE_DATA
 
 class SafeBufferDeque {
 public:
-    SafeBufferDeque() { dequeItems.clear();	pthread_mutex_init(&mutex, NULL);   };
-    ~SafeBufferDeque() { clearAll();	pthread_mutex_destroy(&mutex); };
+    SafeBufferDeque(const int _maxItems): bDefunct(false), maxItems(_maxItems)
+    { dequeItems.clear();	pthread_mutex_init(&mutex, NULL);   };
     
-    bool AddItem(void* data, int32_t length) 
-    { 
-        int rc;
-        
-        rc = pthread_mutex_lock(&mutex);
-        if (rc)
-        {
-            std::cerr << "Lock failed with returncode = " << rc << std::endl;
-            std::cerr << "errno=" << errno << " at this moment." << std::endl;
-            std::cerr << "Equates to: " << strerror(errno) << std::endl;
-            assert(false && "Lock Failed");
-            return false;
-        }
-        
-        BufferItem* pItem = new BufferItem;
-        
-        pItem->length = length;
-#ifdef NO_DUPLICATE_DATA
-        pItem->pData = data;
-#else
-        pItem.pData = new unsigned char[length];
-        if (!pItem.pData)
-            return false;
-        memcpy((unsigned char*)(pItem.pData), (unsigned char*)data, length);
-#endif
-        
-        dequeItems.push_back(pItem);
-        
-        rc = pthread_mutex_unlock(&mutex);
-        if (rc)
-        {
-            std::cerr << "UnLock failed with returncode = " << rc << std::endl;
-            assert(false && "Unlock Failed");
-            
-            return false;
-        }
-        
-        return true;
-    };
+    ~SafeBufferDeque() { clearAll();	pthread_mutex_destroy(&mutex); };
     
     bool RemoveItem(void** pReturnData, int32_t* pLength) 
     { 
@@ -83,7 +48,7 @@ public:
         }
         
         BufferItem* pItem;
-
+        
         // Get the item.
         pItem = dequeItems.front();
         
@@ -95,7 +60,7 @@ public:
         *pLength = pItem->length;
         
         delete pItem;
-
+        
         rc = pthread_mutex_unlock(&mutex);
         if (rc)
         {
@@ -105,10 +70,72 @@ public:
             return false;
         }
         
+        //std::cout << "RemItem(): Queue size = " << dequeItems.size() << std::endl;
         return true;
-    };
-    
-protected:
+    }
+
+    bool AddItem(void* data, int32_t length) 
+    { 
+        int rc;
+        
+        rc = pthread_mutex_lock(&mutex);
+        if (rc)
+        {
+            std::cerr << "Lock failed with returncode = " << rc << std::endl;
+            std::cerr << "errno=" << errno << " at this moment." << std::endl;
+            std::cerr << "Equates to: " << strerror(errno) << std::endl;
+            assert(false && "Lock Failed");
+            return false;
+        }
+        
+        if(dequeItems.size() == maxItems)
+        {
+            delete (unsigned char*) dequeItems.front()->pData;
+            delete dequeItems.front();
+            dequeItems.pop_front();
+        }
+        
+        BufferItem* pItem = new BufferItem;
+        
+        
+#ifdef NO_DUPLICATE_DATA
+        //Can't use this coz need to add start-code
+        pItem->length = length;
+        pItem->pData = 0;//data;
+#else
+#if 0
+        pItem->length = length+4;
+        pItem->pData = new unsigned char[length+4];
+        if (!pItem->pData)
+            return false;
+        static char sc[4] = {0,0,0,1};
+        memcpy(pItem->pData, sc, 4);
+        memcpy(((unsigned char*)(pItem->pData)+4), (unsigned char*)data, length);
+#else
+        pItem->length = length;
+        pItem->pData = new unsigned char[length];
+        if (!pItem->pData)
+            return false;
+        memcpy((unsigned char*)(pItem->pData), (unsigned char*)data, length);        
+#endif
+#endif
+
+        dequeItems.push_back(pItem);
+        
+        rc = pthread_mutex_unlock(&mutex);
+        if (rc)
+        {
+            std::cerr << "UnLock failed with returncode = " << rc << std::endl;
+            assert(false && "Unlock Failed");
+            
+            return false;
+        }
+        
+        //std::cout << "AddItem(): Queue size = " << dequeItems.size() << std::endl;
+        
+        return true;
+    }
+        
     void clearAll(void) 
     { 
         BufferItem* pItem;
@@ -127,8 +154,28 @@ protected:
         }
         
         pthread_mutex_unlock(&mutex);
-    };
+    }
     
+    int qsize(void) const
+    {
+        return dequeItems.size();
+    }
+    
+    void SetDefunct(void)
+    {
+        bDefunct = false;
+    }
+    
+    bool IsDefunct(void) const
+    {
+        return bDefunct;
+    }
+        
+protected:
+    const int               maxItems;
     std::deque<BufferItem*> dequeItems;
 	pthread_mutex_t         mutex;
-}
+    bool                    bDefunct;    
+};
+
+#endif

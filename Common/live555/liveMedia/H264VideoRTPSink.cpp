@@ -183,6 +183,7 @@ void H264FUAFragmenter::doGetNextFrame() {
 	      << fMaxSize << ") is smaller than expected\n";
     } else {
       fMaxSize = fMaxOutputPacketSize;
+	//envir() << "FUA Fragmenter's good...\n";
     }
 
     fLastFragmentCompletedNALUnit = True; // by default

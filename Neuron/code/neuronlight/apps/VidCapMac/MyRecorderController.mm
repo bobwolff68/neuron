@@ -11,6 +11,12 @@
 
 #define DESIRED_BITS_PER_SAMPLE 16
 
+// For testing only - ability to clear a/v queues in Live555 source and monitor their lengths
+bool bClearQueues = false;
+bool bQuit = false;
+int audioQueueLength=0;
+int videoQueueLength=0;
+
 #if 0
 // Want to interrogate device attributes to see if we can set it's output to signed 16bit rather than convert later.
 NSDictionary *pDict = [audioDevice deviceAttributes];
@@ -143,7 +149,7 @@ for(key in pDict){
 
     // Now instantiate the 'connection' mechanism to the lower pipeline and call them to get the pipeline started.
     pTVC = new TVidCap(pCap);
-    p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY",true,false);
+    p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY",true,true);
     
     // Always keep window on top of other windows.
 //    [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
@@ -849,6 +855,7 @@ for(key in pDict){
 }
 
 - (IBAction)quitApplication:(id)sender {
+    bQuit = true;
     [NSApp terminate:self];
 }
 
@@ -858,6 +865,10 @@ for(key in pDict){
 
 - (IBAction)sendAudioNoData:(id)sender {
     sendAudioType = 0;
+}
+
+- (IBAction)clearQueues:(id)sender {
+    bClearQueues = true;
 }
 
 @end

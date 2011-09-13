@@ -180,6 +180,7 @@
 					../../../../../../neuroncommon/threading/NeuronBasics,
 					"../../../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
 					"../../../../../../../../Common/live555/**",
+					../../../../../../include,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -201,6 +202,7 @@
 					../../../../../../neuroncommon/threading/NeuronBasics,
 					"../../../../../../../../Common/vanguard/mac/v4sdk-4.6/inc",
 					"../../../../../../../../Common/live555/**",
+					../../../../../../include,
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

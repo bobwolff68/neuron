@@ -44,12 +44,10 @@ MPEGVideoStreamFramer::MPEGVideoStreamFramer(UsageEnvironment& env,
     fFrameRate(0.0) /* until we learn otherwise */,
     fParser(NULL) {
   reset();
-  //p_tslog = new TimestampsLog("ts_prertppack.log");
 }
 
 MPEGVideoStreamFramer::~MPEGVideoStreamFramer() {
   delete fParser;
-  //delete p_tslog;
 }
 
 void MPEGVideoStreamFramer::flushInput() {
@@ -169,12 +167,6 @@ void MPEGVideoStreamFramer::continueReadProcessing() {
 #ifdef DEBUG
     fprintf(stderr, "%d bytes @%u.%06d, fDurationInMicroseconds: %d ((%d*1000000)/%f)\n", acquiredFrameSize, fPresentationTime.tv_sec, fPresentationTime.tv_usec, fDurationInMicroseconds, fPictureCount, fFrameRate);
 #endif
-
-    /************ MANJESH *************/
-    //struct timeval tod;
-    //gettimeofday(&tod,NULL);
-    //p_tslog->WriteEntry(&tod,fPictureCount,fPresentationTime.tv_sec*1000000+fPresentationTime.tv_usec,0);
-    /**********************************/
 
     fPictureCount = 0;
 

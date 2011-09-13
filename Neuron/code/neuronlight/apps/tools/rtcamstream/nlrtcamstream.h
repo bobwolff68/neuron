@@ -5,7 +5,7 @@
 #include "v4fifoout.h"
 #include "nlrtspserver.h"
 
-#define N_STREAMS   9
+//#define N_STREAMS   1
 
 enum RTCS_ReturnCode_t
 {
@@ -31,7 +31,8 @@ private:
 #endif
 	v4_rtenc_t* p_rtenc;
     v4_fifoout_t* p_fifoout;
-    nl_aacrtbuf_t* p_aac_rtbuf;
+    SafeBufferDeque* p_absdq;
+    SafeBufferDeque* p_bsdq;
 	nl_rtspserver_t* p_serv;
 	virtual void IdleLoop(void);
     

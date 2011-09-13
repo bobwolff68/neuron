@@ -25,10 +25,6 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "MPEGVideoStreamFramer.hh"
 #endif
 
-/********** MANJESH ************/
-#include "Manjesh_TimestampLog.hh"
-/*******************************/
-
 class H264VideoStreamFramer: public MPEGVideoStreamFramer {
 public:
   static H264VideoStreamFramer* createNew(UsageEnvironment& env, FramedSource* inputSource,
@@ -41,13 +37,6 @@ public:
     pps = fLastSeenPPS; ppsSize = fLastSeenPPSSize;
   }
 
-  /******************** MANJESH **********************/
-  void LogTimestampEntry(struct timeval* p_tod,int frm_num,int64_t apple_ts,int64_t rtp_ts)
-  {
-    p_tslog->WriteEntry(p_tod,frm_num,apple_ts,rtp_ts);
-  }
-  /***************************************************/
-
 protected:
   H264VideoStreamFramer(UsageEnvironment& env, FramedSource* inputSource, Boolean createParser, Boolean includeStartCodeInOutput);
   virtual ~H264VideoStreamFramer();
@@ -57,10 +46,6 @@ protected:
 
   // redefined virtual functions:
   virtual Boolean isH264VideoStreamFramer() const;
-
-  /******* MANJESH *******/
-  TimestampsLog* p_tslog;
-  /***********************/
 
 private:
   void setPresentationTime() { fPresentationTime = fNextPresentationTime; }

@@ -5,6 +5,13 @@
 
 using namespace std;
 
+
+    // For testing only - ability to clear a/v queues in Live555 source and monitor their lengths
+extern    bool bClearQueues;
+extern    bool bQuit;
+extern    int audioQueueLength;
+extern    int videoQueueLength;
+
 #if (defined(__APPLE__) & defined(__MACH__))
     void nl_rtcamstream_t::main(TempVidCapBase* p_cap_objc,
                                 const int width,
@@ -43,9 +50,10 @@ using namespace std;
 		p_cap = new V4L2Cap("/dev/video0",i_width,i_height,"YUYV");
 #endif
         backup_ports[0] = rtsp_port;
-        p_aac_rtbuf = new nl_aacrtbuf_t();
-		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer(),p_aac_rtbuf,b_video_on,b_audio_on);
-        p_fifoout = new v4_fifoout_t("stream",p_rtenc,p_aac_rtbuf);
+        p_bsdq = new SafeBufferDeque(1000);
+        p_absdq = new SafeBufferDeque(5000);
+		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer(),p_absdq,b_video_on,b_audio_on);
+        p_fifoout = new v4_fifoout_t(p_bsdq,p_rtenc);
         
         for(int i=0; i<5 && p_serv==NULL; i++)
         {
@@ -54,7 +62,11 @@ using namespace std;
                         *BasicUsageEnvironment::createNew(
                             *BasicTaskScheduler::createNew()
                         ),
-                        backup_ports[i]
+                        backup_ports[i],
+                        NULL,
+                        65,
+                        p_bsdq,
+                        p_absdq
                      );
         }
         
@@ -66,14 +78,9 @@ using namespace std;
         else
             cout << "Successful" << endl;
         
-        for (int i=0; i<N_STREAMS; i++) 
-        {
-            
-            char stream_name[10];
-            sprintf(stream_name, "stream%d", i);
-            cout << "Creating stream: " << stream_name << endl;
-            p_serv->setup_sms(stream_name,b_video_on,b_audio_on);
-        }
+        //setup server media session "stream0"
+        p_serv->setup_sms("stream0",b_video_on,b_audio_on);
+
 
 		map<string,string> nvpairs;
         char s_width[20];
@@ -115,6 +122,8 @@ nl_rtcamstream_t::~nl_rtcamstream_t()
 {
 	try
 	{
+        delete p_bsdq;
+        delete p_absdq;
 	    nl_rtspserver_t::destroy(p_serv);
 		delete p_fifoout;
         p_rtenc->CloseAudio();
@@ -122,7 +131,7 @@ nl_rtcamstream_t::~nl_rtcamstream_t()
 #if( !(defined(__APPLE__) & defined(__MACH__)) )
 		delete p_cap;
 #endif
-        delete p_aac_rtbuf;
+        cout << "Deleting rtcamstream instance..." << endl;
 	}
 	catch(RTEnc_ReturnCode_t& rtenc_err_code)
 	{
@@ -147,23 +156,31 @@ void nl_rtcamstream_t::RunCapture(void)
 	try
 	{
 	    p_serv->startThread();
-        p_aac_rtbuf->startRunning();
-        p_fifoout->start_aac_fifoout();
 	    p_fifoout->startThread();
 	    p_rtenc->startThread();
 		//p_cap->start_capturing();
 
+        p_serv->test_sdp();
+        
 		//IdleLoop();
-        while (1) {
-            usleep(20000);
+        while (!bQuit) {
+            usleep(100000);
+            videoQueueLength = p_bsdq->qsize();
+            audioQueueLength = p_absdq->qsize();
+            
+            if (bClearQueues)
+            {
+                bClearQueues=false;
+                p_bsdq->clearAll();
+                p_absdq->clearAll();
+            }
         }
 	
 		//p_cap->stop_capturing();
 		p_rtenc->stopThread();
 		p_fifoout->stopThread();
-        p_aac_rtbuf->pauseRunning();
-        p_serv->stopThread();
         p_serv->request_server_exit();
+        p_serv->stopThread();
 
 	}
 	catch(RTEnc_ReturnCode_t& rtenc_err_code)

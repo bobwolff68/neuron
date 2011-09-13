@@ -3,15 +3,6 @@
 
 using namespace std;
 
-/*int64_t nl_gettimeofday(void);
-int64_t nl_gettimeofday(void)
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    
-    return ((int64_t)tv.tv_sec)*1000000 + (int64_t)(tv.tv_usec);
-}*/
-
 #ifdef LOG_TIMESTAMPS
 TimestampsLog::TimestampsLog(const char* log_file_name)
 {
@@ -147,12 +138,12 @@ void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf, int stride)
 #if (defined (__APPLE__) & defined (__MACH__))
 v4_rtenc_t::v4_rtenc_t(const char* cfg_file,
                        QTKitCapBuffer* _p_rtcap_buf,
-                       nl_aacrtbuf_t* _p_aac_rtbuf,
+                       SafeBufferDeque* _p_abs_dq,
                        bool _b_video_on,
                        bool _b_audio_on):
 b_video_on(_b_video_on),
 b_audio_on(_b_audio_on),
-p_aac_rtbuf(_p_aac_rtbuf),
+p_abs_dq(_p_abs_dq),
 #else
 v4_rtenc_t::v4_rtenc_t(const char* cfg_file,V4L2CapBuffer* _p_rtcap_buf):
 #endif
@@ -191,6 +182,7 @@ v4_rtenc_t::~v4_rtenc_t()
 {
     delete p_tslog;
     pthread_mutex_destroy(&handle_mutex);
+    cout << "Deleting rtenc instance... " << endl;
 }
 
 void* v4_rtenc_t::Handle(void) const
@@ -283,7 +275,6 @@ void v4_rtenc_t::SetEncSettings(map<string,string>& nvpairs)
 
 int v4_rtenc_t::workerBee(void)
 {    
-/*********** AAC AUDIO STREAM **********/
     int frm_num = 0;
     struct timeval tod;
     uint8_t* p_aacbuf = NULL;
@@ -293,7 +284,9 @@ int v4_rtenc_t::workerBee(void)
     const int exp_samples = p_acctx->frame_size;
     int in_samples = 0;
     short* p_samples = (short*) malloc((exp_samples<<1)*p_acctx->channels);
-/***************************************/
+    
+    p_aacbuf = (uint8_t*) malloc(aacbuf_size*sizeof(uint8_t)+7);
+    assert(p_aacbuf!=NULL);
     
     while(1)
     {
@@ -365,58 +358,65 @@ int v4_rtenc_t::workerBee(void)
             
             UnlockHandle();
         }
-        /********************* AAC AUDIO STREAM *******************/
         else if(!p_bi->bIsVideo && b_audio_on)
         {
             assert(p_bi->rawLength!=-1);
             
             if((exp_samples-in_samples) >= p_bi->rawNumSamples)
             {
-                //cout << "Expected samples remaining: " << (exp_samples-in_samples) << endl;
                 memcpy(p_samples+in_samples*p_acctx->channels, p_bi->pBuffer, p_bi->rawLength);
                 in_samples += p_bi->rawNumSamples;
             }
             else
             {
-                //cout << "Expected samples remaining: " << (exp_samples-in_samples) << endl;
                 memcpy(p_samples+in_samples*p_acctx->channels, p_bi->pBuffer, ((exp_samples-in_samples)<<1)*p_acctx->channels);
-
-                p_aacbuf = (uint8_t*) malloc(aacbuf_size*sizeof(uint8_t));
-                assert(p_aacbuf!=NULL);
             
                 //assume raw data mode
-                //p_bi->timeStamp_uS = nl_gettimeofday();
-                p_acctx->coded_frame->pts = p_bi->timeStamp_uS * 44100 / 1000000;
                 aac_outbytes = avcodec_encode_audio(
                                     p_acctx,
-                                    p_aacbuf,
+                                    p_aacbuf+7,
                                     aacbuf_size,
                                     p_samples
                            );
             
-                /*if(p_acctx->coded_frame->pts != AV_NOPTS_VALUE)
-                {
-                    cout << "Audio Frame Timestamp: " << p_acctx->coded_frame->pts << endl;
-                }*/
-                
                 if(aac_outbytes < 0)
                 {
                     LOG_ERR("Unable to encode sample...");
                 }
                 else if(aac_outbytes > 0)
                 {
-                    nl_aacbufinfo_t* pBI = new nl_aacbufinfo_t();
-                    pBI->bytes = aac_outbytes;
-                    pBI->pBuffer = p_aacbuf;
-                    pBI->bFinalSample = false;
-                    p_aac_rtbuf->FullBufferEnQ(pBI);
+                    //aac frame header
+                    p_aacbuf[0] = 0xFF;
+                    p_aacbuf[1] = 0xF1;
+
+                    //profile
+                    p_aacbuf[2] = 0 | (p_acctx->profile<<6);
+
+                    //sampling frequency index
+                    //TODO: remove hardcoded index and replace with map of sampling frequencies and indices
+                    p_aacbuf[2] |= (4<<2);
+                    p_aacbuf[2] |= (p_acctx->channels>>2);
+                    p_aacbuf[3] = 0 | ((p_acctx->channels&0x03)<<6);
+
+                    //frame length
+                    uint16_t frame_length = aac_outbytes + 7;
+                    p_aacbuf[3] |= ((frame_length>>11) & 0x03);
+                    p_aacbuf[4] = 0 | ((frame_length>>3) & 0xFF);
+                    p_aacbuf[5] = 0 | ((frame_length&0x07) << 5);
+                    
+                    //buffer fullness
+                    p_aacbuf[5] |= 0x1F;
+                    
+                    //buffer fullness + no of aac frames-1
+                    p_aacbuf[6] = 0xFC | 0;
+                    
+                    p_abs_dq->AddItem(p_aacbuf, frame_length);
                 }
                 
                 in_samples = p_bi->rawNumSamples - (exp_samples-in_samples);
                 memcpy(p_samples, p_bi->pBuffer, ((exp_samples-in_samples)<<1)*p_acctx->channels);
             }
         }
-        /*********************************************************************************/
 #else
         SetRawFrameBuffers((unsigned char*)(buf_info.pBuffer));
         frame.timestamp = buf_info.buf.timestamp.tv_sec*1000 + buf_info.buf.timestamp.tv_usec/1000;
@@ -433,7 +433,6 @@ int v4_rtenc_t::workerBee(void)
         UnlockHandle();
 #endif
         
-        //cout << "Before releasing" << endl;
 #ifdef COPY_QTKIT_CAP_BUFFERS
         if(p_rtcap_buf->EmptyBufferRelease(p_bib, pb)==false)
 #else
@@ -443,7 +442,6 @@ int v4_rtenc_t::workerBee(void)
             LOG_ERR("empty capture buffer release error");
             return -1;
         }
-        //cout << "After releasing" << endl;
     }
 
     LOG_OUT("checkpoint: flush encoder");
@@ -490,7 +488,7 @@ RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
 {
     avcodec_register_all();
 
-    p_acodec = avcodec_find_encoder(CODEC_ID_MP2);
+    p_acodec = avcodec_find_encoder(CODEC_ID_AAC);
     if(p_acodec == NULL)
     {
         LOG_ERR("aac codec not found...");
@@ -500,10 +498,12 @@ RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
     p_acctx = avcodec_alloc_context3(p_acodec);
     
     //encoder parameters
-    p_acctx->bit_rate = 64000;
+    //TODO: remove hardcoded values
+    p_acctx->bit_rate = 128000;
     p_acctx->sample_rate = 44100;
     p_acctx->channels = 2;
     p_acctx->sample_fmt = AV_SAMPLE_FMT_S16;
+    p_acctx->profile = FF_PROFILE_AAC_LOW;
     p_acctx->time_base = (AVRational){1,p_acctx->sample_rate};
     
     //Test if sample format is supported
@@ -531,24 +531,6 @@ RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
         LOG_ERR("unable to open aac codec...");
         return RTENC_RETCODE_ERR_AOPEN;
     }
-    
-    /*************** <TEST AREA> ****************
-    AVOutputFormat* p_ofmt;
-    AVFormatContext* p_fctx;
-    
-    av_register_all();
-    
-    avformat_alloc_output_context2(&p_fctx, NULL, "mpeg", NULL);
-    if (p_fctx == NULL) 
-    {
-        cerr << "Could not deduce output fmt mpeg" << endl;
-        exit(0);
-    }
-    else
-        cout << "Output format found..." << endl;
-    
-    /*************** </TEST AREA> ****************/
-    
     
     return RTENC_RETCODE_OK;
 }
