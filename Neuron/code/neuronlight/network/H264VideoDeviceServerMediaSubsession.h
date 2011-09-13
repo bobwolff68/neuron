@@ -37,6 +37,8 @@ private: // redefined virtual functions
                                     FramedSource* inputSource);
 
 private:
+    H264VideoQueueDeviceSource* pSrc;   // Used for initializing the framer regardless of a re-used source or not.
+    
   char* fAuxSDPLine;
   char fDoneFlag; // used when setting up "fAuxSDPLine"
   RTPSink* fDummyRTPSink; // ditto

@@ -11,7 +11,7 @@
 
 using namespace std;
 
-H264VideoDeviceServerMediaSubsession *gpReuseSrc = NULL;
+//static H264VideoQueueDeviceSource *gpReuseSrc = NULL;
 
 H264VideoDeviceServerMediaSubsession*
 H264VideoDeviceServerMediaSubsession::createNew(UsageEnvironment& env,
@@ -22,7 +22,7 @@ H264VideoDeviceServerMediaSubsession::createNew(UsageEnvironment& env,
 H264VideoDeviceServerMediaSubsession::H264VideoDeviceServerMediaSubsession(UsageEnvironment& env,
 								       Boolean reuseFirstSource, SafeBufferDeque* _p_bsdq)
   : OnDemandServerMediaSubsession(env, reuseFirstSource),
-    fAuxSDPLine(NULL), fDoneFlag(0), fDummyRTPSink(NULL) ,p_bsdq(_p_bsdq){
+    fAuxSDPLine(NULL), fDoneFlag(0), fDummyRTPSink(NULL), p_bsdq(_p_bsdq), pSrc(NULL) {
 }
 
 H264VideoDeviceServerMediaSubsession::~H264VideoDeviceServerMediaSubsession() {
@@ -59,7 +59,7 @@ void H264VideoDeviceServerMediaSubsession::checkForAuxSDPLine1() {
     setDoneFlag();
   } else {
     // try again after a brief delay:
-    int uSecsToDelay = 100000; // 100 ms
+    int uSecsToDelay = 30000; // 30 ms
     nextTask() = envir().taskScheduler().scheduleDelayedTask(uSecsToDelay,
 			      (TaskFunc*)checkForAuxSDPLine, this);
   }
@@ -87,14 +87,14 @@ char const* H264VideoDeviceServerMediaSubsession::getAuxSDPLine(RTPSink* rtpSink
 }
 
 FramedSource* H264VideoDeviceServerMediaSubsession::createNewStreamSource(unsigned /*clientSessionId*/, unsigned& estBitrate) {
-  estBitrate = 800; // kbps, estimate
+    
+    estBitrate = 800; // kbps, estimate
 
   // Create the video source:
   //DeviceParameters devparm;
     
-    cerr << "H264VideoDeviceServerMediaSubsession::createNewStreamSource() entered." << endl;
+    cerr << "H264 Video createNewStreamSource() entered." << endl;
     
-    H264VideoQueueDeviceSource* pSrc;   // Used for initializing the framer regardless of a re-used source or not.
     
 /*  if (reuseFirstSource)
   {
@@ -109,7 +109,21 @@ FramedSource* H264VideoDeviceServerMediaSubsession::createNewStreamSource(unsign
   else */
   {
       // Not re-using, so create a new device source each time.
+#ifdef TRY_REUSE_GAME
+      if (gpReuseSrc==NULL)
+      {
+          pSrc = H264VideoQueueDeviceSource::createNew(envir(), p_bsdq);
+          gpReuseSrc = pSrc;
+      }
+      else
+      {
+          pSrc = gpReuseSrc;
+          cerr << "H264 Video createNewStreamSource() Re-Using existing pSrc." << endl;
+      }
+#else
+#endif
       pSrc = H264VideoQueueDeviceSource::createNew(envir(), p_bsdq);
+      
       if (pSrc == NULL) return NULL;
   }
   
