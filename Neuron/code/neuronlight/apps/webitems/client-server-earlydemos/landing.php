@@ -225,40 +225,6 @@
                     land(loc,target);
                 }
             }
-            
-/*            function jump1(menu)
-            {   ref = menu.choice.options[menu.choice.selectedIndex].value;
-                //alert ('ref = ' + ref);
-                splitc = ref.lastIndexOf("*");
-                //alert ('splitc = ' + splitc);
-                target = "";
-                if (splitc != -1)
-                {   loc = ref.substring(0,splitc);
-                    if 
-                     ? $_SESSION['plugin'] = 'qt'; ?>
-                    target = ref.substring(splitc+1,1000);}
-                else {
-                    loc = ref; 
-                    switch (ref){
-                        case 'qt':
-                             ? $_SESSION['plugin'] = 'qt'; ?>
-                        break;
-
-                        default:
-                            ? $_SESSION['plugin'] = 'qt'; ?>
-                        break;
-                    }
-                    if (ref == 'qt'){
-                        ? $_SESSION['plugin'] = 'qt'; ?>
-                    }
-                    target="_self";
-                };
-
-                if (ref != "") {
-                    land(loc,target);
-                }
-            }
-*/
                
             function checkplugin(){
                 if ("<? echo $_SESSION[plugin] ?>" == "qt"){
@@ -372,8 +338,8 @@
                                     <div align="center">
                                         <p align="center">
                                             <select name="choice" size="1">
-                                                 <option value="readysession_qt.php">qt</option>
                                                  <option value="readysession.php">vlc</option>
+                                                 <option value="readysession_qt.php">qt</option>
                                              </select><br/>
                                              <input TYPE="button" VALUE="Start Session" onClick="jump(this.form)"></input>
                                         </p>
