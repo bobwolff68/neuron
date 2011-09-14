@@ -66,7 +66,7 @@
     
     </head> 
     
-    <body onload="load();">
+    <body onload="load();" style="font-family: Tahoma, Geneva, sans-serif;">
         <?
             require "check.php";
             
@@ -111,10 +111,10 @@
         </script>
     
 <div class="mainwrapper">
-	    <div id="header">
-                <div id="header2">Neuron Light 2-Way Demo
-                </div>
-            </div>  
+	<div id="header">
+            <div id="header2">Neuron Light 2-Way Demo
+            </div>
+        </div>  
 
 	<div id="content" class="content">
             <div id="join" style="width: 200px; padding-left: 400px; padding-top:100px; float: left">
