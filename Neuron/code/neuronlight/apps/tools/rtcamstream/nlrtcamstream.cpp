@@ -11,6 +11,10 @@ extern    bool bClearQueues;
 extern    bool bQuit;
 extern    int audioQueueLength;
 extern    int videoQueueLength;
+extern    int bitRate;
+extern    bool bChangeBitrate;
+extern    int frameRate;
+extern    bool bChangeFramerate;
 
 #if (defined(__APPLE__) & defined(__MACH__))
     void nl_rtcamstream_t::main(TempVidCapBase* p_cap_objc,
@@ -173,6 +177,20 @@ void nl_rtcamstream_t::RunCapture(void)
                 bClearQueues=false;
                 p_bsdq->clearAll();
                 p_absdq->clearAll();
+            }
+            if(bChangeBitrate)
+            {
+                bChangeBitrate = false;
+                p_rtenc->LockHandle();
+                p_rtenc->ChangeTargetBitrate(bitRate);
+                p_rtenc->UnlockHandle();
+            }
+            if(bChangeFramerate)
+            {
+                bChangeFramerate = false;
+                p_rtenc->LockHandle();
+                p_rtenc->ChangeTargetFrameRate(frameRate);
+                p_rtenc->UnlockHandle();
             }
         }
 	

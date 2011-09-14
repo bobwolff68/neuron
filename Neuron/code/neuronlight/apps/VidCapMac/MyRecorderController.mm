@@ -16,6 +16,10 @@ bool bClearQueues = false;
 bool bQuit = false;
 int audioQueueLength=0;
 int videoQueueLength=0;
+int bitRate = 600;
+bool bChangeBitrate = false;
+int frameRate = 30;
+bool bChangeFramerate = false;
 
 #if 0
 // Want to interrogate device attributes to see if we can set it's output to signed 16bit rather than convert later.
