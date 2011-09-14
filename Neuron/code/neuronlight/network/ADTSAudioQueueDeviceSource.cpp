@@ -15,14 +15,28 @@ static unsigned const samplingFrequencyTable[16] = {
     7350, 0, 0, 0
 };
 
+//Global audio source pointer to be signaled by the static function SignalData() when new frame arrives
+ADTSAudioQueueDeviceSource* gpAudioSource = NULL;
+
+void ADTSAudioQueueDeviceSource::SignalData(void* p_src)
+{
+    if(ADTSAudioQueueDeviceSource::referenceCount > 0)
+    {
+        ADTSAudioQueueDeviceSource* p_dsrc = (ADTSAudioQueueDeviceSource*) p_src;
+        p_dsrc->envir().taskScheduler().triggerEvent(ADTSAudioQueueDeviceSource::eventTriggerId,p_dsrc);
+        
+    }
+}
+
 ADTSAudioQueueDeviceSource*
 ADTSAudioQueueDeviceSource::createNew(UsageEnvironment& env,
                                       /*DeviceParameters params*/SafeBufferDeque* _p_bsdq) {
 
     // TODO - Replace hardwired 44100, 2-channel ADTS with parameterized version from stream or call itself.
-    return new ADTSAudioQueueDeviceSource(env, _p_bsdq, 1, //profile,
-                                          4, //sampling_frequency_index, 
-                                          2); //channel_configuration);
+    gpAudioSource = new ADTSAudioQueueDeviceSource(env, _p_bsdq, 1, //profile,
+                                                   4, //sampling_frequency_index, 
+                                                   2); //channel_configuration);
+    return gpAudioSource;
 }
 
 EventTriggerId ADTSAudioQueueDeviceSource::eventTriggerId = 0;
@@ -64,6 +78,8 @@ ADTSAudioQueueDeviceSource::ADTSAudioQueueDeviceSource(UsageEnvironment& env,
     if (eventTriggerId == 0) {
         eventTriggerId = envir().taskScheduler().createEventTrigger(deliverFrame0);
     }
+    
+    p_bsdq->SetSigDataFunc(&ADTSAudioQueueDeviceSource::SignalData, this);
 }
 
 ADTSAudioQueueDeviceSource::~ADTSAudioQueueDeviceSource() {
@@ -107,12 +123,7 @@ void ADTSAudioQueueDeviceSource::doGetNextFrame() {
     if (p_bsdq->qsize() > 0/*0 a new frame of data is immediately available to be delivered*/ /*%%% TO BE WRITTEN %%%*/) {
         deliverFrame();
     }
-    else
-    {
-        //printf("Scheduling 15 ms delayed task...\n");
-        envir().taskScheduler().scheduleDelayedTask(30000, (TaskFunc*)nextTime, this);
-    }
-    
+
     // No new data is immediately available to be delivered.  We don't do anything more here.
     // Instead, our event trigger must be called (e.g., from a separate thread) when new data becomes available.
 }
@@ -212,15 +223,3 @@ void ADTSAudioQueueDeviceSource::deliverFrame() {
     FramedSource::afterGetting(this);
 #endif
 }
-
-
-// The following code would be called to signal that a new frame of data has become available.
-// This (unlike other "LIVE555 Streaming Media" library code) may be called from a separate thread.
-/*void signalNewMP3AudioFrameData() {
- TaskScheduler* ourScheduler = NULL; //%%% TO BE WRITTEN %%%
- ADTSAudioQueueDeviceSource* ourDevice  = NULL; //%%% TO BE WRITTEN %%%
- 
- if (ourScheduler != NULL) { // sanity check
- ourScheduler->triggerEvent(ADTSAudioQueueDeviceSource::eventTriggerId, ourDevice);
- }
- }*/

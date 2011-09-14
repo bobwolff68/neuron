@@ -15,6 +15,8 @@
 #include <assert.h>
 #include <errno.h>
 
+typedef void (*DataSigFunc)(void*);
+
 typedef struct strBufferItem {
     unsigned char* pData;
     int32_t length;
@@ -28,10 +30,17 @@ typedef struct strBufferItem {
 
 class SafeBufferDeque {
 public:
-    SafeBufferDeque(const int _maxItems): bDefunct(false), maxItems(_maxItems)
+    SafeBufferDeque(const int _maxItems): 
+    bDefunct(false), maxItems(_maxItems), signalData(NULL), p_src(NULL)
     { dequeItems.clear();	pthread_mutex_init(&mutex, NULL);   };
     
     ~SafeBufferDeque() { clearAll();	pthread_mutex_destroy(&mutex); };
+    
+    void SetSigDataFunc(DataSigFunc _sigData, void* _psrc)
+    {
+        signalData = _sigData;
+        p_src = _psrc;
+    }
     
     bool RemoveItem(unsigned char** pReturnData, int32_t* pLength) 
     { 
@@ -131,7 +140,9 @@ public:
             return false;
         }
         
-        //std::cout << "AddItem(): Queue size = " << dequeItems.size() << std::endl;
+        //Signal arrival of data
+        if(signalData && p_src)
+            signalData(p_src);
         
         return true;
     }
@@ -175,7 +186,9 @@ protected:
     const int               maxItems;
     std::deque<BufferItem*> dequeItems;
 	pthread_mutex_t         mutex;
-    bool                    bDefunct;    
+    bool                    bDefunct;
+    DataSigFunc             signalData;
+    void*                   p_src;
 };
 
 #endif

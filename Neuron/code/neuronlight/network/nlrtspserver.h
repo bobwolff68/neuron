@@ -55,6 +55,11 @@ public:
     {
         b_server_exit = 1;
     }
+    
+    UsageEnvironment& get_usage_environment(void) const
+    {
+        return envir();
+    }
 };
 
 #endif

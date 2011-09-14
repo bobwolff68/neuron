@@ -5,18 +5,30 @@
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 #include <stdio.h>
 
+//Global video source pointer to be signaled by the static function SignalData() when new frame arrives
+H264VideoQueueDeviceSource* gpVideoSource = NULL;
+
+void H264VideoQueueDeviceSource::SignalData(void* p_src)
+{
+    if(H264VideoQueueDeviceSource::referenceCount > 0)
+    {
+        H264VideoQueueDeviceSource* p_dsrc = (H264VideoQueueDeviceSource*) p_src;
+        p_dsrc->envir().taskScheduler().triggerEvent(H264VideoQueueDeviceSource::eventTriggerId,p_dsrc);
+        
+    }
+}
+
 H264VideoQueueDeviceSource*
-H264VideoQueueDeviceSource::createNew(UsageEnvironment& env,
-			/*DeviceParameters params*/SafeBufferDeque* _p_bsdq) {
-  return new H264VideoQueueDeviceSource(env, _p_bsdq);
+H264VideoQueueDeviceSource::createNew(UsageEnvironment& env,SafeBufferDeque* _p_bsdq) {
+    gpVideoSource = new H264VideoQueueDeviceSource(env, _p_bsdq);
+    return gpVideoSource;
 }
 
 EventTriggerId H264VideoQueueDeviceSource::eventTriggerId = 0;
 
 unsigned H264VideoQueueDeviceSource::referenceCount = 0;
 
-H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,
-			   /*DeviceParameters params*/SafeBufferDeque* _p_bsdq)
+H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,SafeBufferDeque* _p_bsdq)
   : FramedSource(env), p_bsdq(_p_bsdq) {
     // Any global initialization of the device would be done here:
   ++referenceCount;
@@ -36,6 +48,7 @@ H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,
   if (eventTriggerId == 0) {
     eventTriggerId = envir().taskScheduler().createEventTrigger(deliverFrame0);
   }
+      p_bsdq->SetSigDataFunc(&H264VideoQueueDeviceSource::SignalData,this);
 }
 
 H264VideoQueueDeviceSource::~H264VideoQueueDeviceSource() {
@@ -74,11 +87,6 @@ void H264VideoQueueDeviceSource::doGetNextFrame() {
   // If a new frame of data is immediately available to be delivered, then do this now:
   if (p_bsdq->qsize() > 0/*0 a new frame of data is immediately available to be delivered*/ /*%%% TO BE WRITTEN %%%*/) {
     deliverFrame();
-  }
-  else
-  {
-      //printf("Scheduling 15 ms delayed task...\n");
-      envir().taskScheduler().scheduleDelayedTask(30000, (TaskFunc*)nextTime, this);
   }
 
   // No new data is immediately available to be delivered.  We don't do anything more here.
@@ -139,15 +147,3 @@ void H264VideoQueueDeviceSource::deliverFrame() {
   // After delivering the data, inform the reader that it is now available:
   FramedSource::afterGetting(this);
 }
-
-
-// The following code would be called to signal that a new frame of data has become available.
-// This (unlike other "LIVE555 Streaming Media" library code) may be called from a separate thread.
-/*void signalNewFrameData() {
-  TaskScheduler* ourScheduler = NULL; //%%% TO BE WRITTEN %%%
-  H264VideoQueueDeviceSource* ourDevice  = NULL; //%%% TO BE WRITTEN %%%
-
-  if (ourScheduler != NULL) { // sanity check
-    ourScheduler->triggerEvent(H264VideoQueueDeviceSource::eventTriggerId, ourDevice);
-  }
-}*/

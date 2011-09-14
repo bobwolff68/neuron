@@ -193,7 +193,7 @@ bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI)
         return false;
     }
     
-    if (bufferQ.size()==0)
+    if (bufferQ.size()==0 && !bReleased)
     {
         // Must have been cleared out from under us. Return false.
         cout << "Hello world. It is raining." << endl;

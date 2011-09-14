@@ -162,8 +162,7 @@ for(key in pDict){
 //	[mCaptureSession stopRunning];
     
 	pCap->stop_capturing();
-	pCap->clear();		// Force buffer cleared.
-
+    
     if ([[mCaptureVideoDeviceInput device] isOpen])
         [[mCaptureVideoDeviceInput device] close];
     
@@ -189,7 +188,7 @@ for(key in pDict){
     
     delete pCap;
     pCap = NULL;
-    
+        
 	[mCaptureSession release];
 	[mCaptureVideoDeviceInput release];
     [mCaptureAudioDeviceInput release];

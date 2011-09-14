@@ -29,6 +29,13 @@ bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI)
 
     pQTB = static_cast<QTKitBufferInfo*>(pBI);
     
+    //If final sample, buffers are invalid, so just return
+    if(pQTB->bFinalSample)
+    {
+        delete pQTB;
+        return true;
+    }
+    
     // This BI has already been taken off the internal Queue with DQ call
     if (pQTB->bIsVideo)
     {
@@ -167,7 +174,10 @@ void QTKitCap::stop_capturing                  (void)
 
 	pRTBuffer->Shutdown();
 	// Give the shutdown a little time prior to the deletion.
-    	
+    while (pRTBuffer->Qsize()) {
+        usleep(1000000);
+    }
+    
 	pRTBuffer->clear();
 	pRTBuffer->ReleaseOutputSide();
 }

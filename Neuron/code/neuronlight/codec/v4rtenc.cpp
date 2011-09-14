@@ -306,9 +306,9 @@ int v4_rtenc_t::workerBee(void)
         {
             cout << "OUCH - Bad Deque" << endl;
             LOG_ERR("capture buffer dequeue error");
-            return -1;
+            continue;
         }
-
+        
         if(p_bib->bFinalSample)
         {
 #ifdef COPY_QTKIT_CAP_BUFFERS
