@@ -10,6 +10,8 @@
 
 using namespace std;
 
+bool bFoundSDP=false;
+
 //static H264VideoQueueDeviceSource *gpReuseSrc = NULL;
 
 H264VideoDeviceServerMediaSubsession*
@@ -26,6 +28,7 @@ H264VideoDeviceServerMediaSubsession::H264VideoDeviceServerMediaSubsession(Usage
 
 H264VideoDeviceServerMediaSubsession::~H264VideoDeviceServerMediaSubsession() {
   delete[] fAuxSDPLine;
+    bFoundSDP=false;
 }
 
 //TODO - Not sure what we should be doing after playing and afterPlayingDummy1 for that matter.
@@ -47,16 +50,24 @@ static void checkForAuxSDPLine(void* clientData) {
 }
 
 void H264VideoDeviceServerMediaSubsession::checkForAuxSDPLine1() {
+//    std::cerr << "Video - checking for SDP Line..." << std::endl;
+    
   if (fAuxSDPLine != NULL) {
-    // Signal the event loop that we're done:
-    setDoneFlag();
-  } else if (fDummyRTPSink != NULL && fDummyRTPSink->auxSDPLine() != NULL) {
+      // Signal the event loop that we're done:
+      setDoneFlag();
+      
+      bFoundSDP=true;
+  }
+  else if (fDummyRTPSink != NULL && fDummyRTPSink->auxSDPLine() != NULL) {
     fAuxSDPLine = strDup(fDummyRTPSink->auxSDPLine());
     fDummyRTPSink = NULL;
 
     // Signal the event loop that we're done:
     setDoneFlag();
-  } else {
+
+      bFoundSDP=true;
+  } 
+  else {
     // try again after a brief delay:
     int uSecsToDelay = 30000; // 30 ms
     nextTask() = envir().taskScheduler().scheduleDelayedTask(uSecsToDelay,

@@ -65,8 +65,10 @@ class QTKitCap : public ThreadSingle {
 public:
 	QTKitCap(QTCaptureSession* capsess, QTCaptureDecompressedVideoOutput* vidout, int w=0, int h=0, const char* fmt=NULL);
 	virtual ~QTKitCap(void);
+    void init_capturing(void);
 	void start_capturing(void);
 	void stop_capturing(void);
+    void quit_capturing(void);
 	void clear(void) { pRTBuffer->clear(); };
 	
 	enum errtype {

@@ -5,6 +5,8 @@
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 #include <stdio.h>
 
+extern bool bFoundSDP;
+
 //Global video source pointer to be signaled by the static function SignalData() when new frame arrives
 H264VideoQueueDeviceSource* gpVideoSource = NULL;
 
@@ -33,9 +35,8 @@ H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,Saf
     // Any global initialization of the device would be done here:
   ++referenceCount;
 
-  // Any instance-specific initialization of the device would be done here:
-  //%%% TO BE WRITTEN %%%
-
+    bHaventClearedQueue=true;
+      
   // We arrange here for our "deliverFrame" member function to be called
   // whenever the next frame of data becomes available from the device.
   //
@@ -123,13 +124,24 @@ void H264VideoQueueDeviceSource::deliverFrame() {
   unsigned char* newFrameDataStart = NULL;
   int newFrameSize = 0;
     
+    if (bHaventClearedQueue && bFoundSDP)
+    {
+        // Only do this once after SDP is found. Reduce the video queue size.
+        bHaventClearedQueue=false;
+        
+        std::cerr << "Reducing VIDEO Queue(a)..." << std::endl;
+        
+        // After getting the SDP info, clear out the queue until we only have a small amount of time remaining.
+        p_bsdq->clearUntilOnlyMSAvailable(DESIRED_STARTING_CAPTUREDELAY);
+    }
+    
     if (!isCurrentlyAwaitingData())
     {
         envir().taskScheduler().scheduleDelayedTask(30000, (TaskFunc*)nextTime, this);
         return;
     }
 
-    p_bsdq->RemoveItem(&newFrameDataStart, &newFrameSize);
+    p_bsdq->RemoveItem(&newFrameDataStart, &newFrameSize, &fPresentationTime);
     
   // Deliver the data here:
   if (newFrameSize > fMaxSize) {
@@ -139,7 +151,6 @@ void H264VideoQueueDeviceSource::deliverFrame() {
     fFrameSize = newFrameSize;
   }
   
-  gettimeofday(&fPresentationTime, NULL); // If you have a more accurate time - e.g., from an encoder - then use that instead.
   // If the device is *not* a 'live source' (e.g., it comes instead from a file or buffer), then set "fDurationInMicroseconds" here.
   memmove(fTo, newFrameDataStart, fFrameSize);
   delete (unsigned char*)newFrameDataStart;

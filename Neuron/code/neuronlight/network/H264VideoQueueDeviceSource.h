@@ -36,6 +36,7 @@ private:
 private:
   static unsigned referenceCount; // used to count how many instances of this class currently exist
     SafeBufferDeque* p_bsdq;  
+    bool bHaventClearedQueue;
 };
 
 #endif

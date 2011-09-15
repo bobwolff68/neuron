@@ -164,10 +164,15 @@ void QTKitCap::DeInitDevice(void)
 
 }
 
-void QTKitCap::stop_capturing                  (void)
+void QTKitCap::stop_capturing()
 {
 	[mCaptureSession stopRunning];
+}
 
+void QTKitCap::quit_capturing(void)
+{
+    stop_capturing();
+    
 	// Now that we're done capturing...stop the workerBee thread.
 	if (IsRunning())
 		stopThread();
@@ -182,9 +187,13 @@ void QTKitCap::stop_capturing                  (void)
 	pRTBuffer->ReleaseOutputSide();
 }
 
-void QTKitCap::start_capturing(void)
+void QTKitCap::start_capturing()
 {
+    [mCaptureSession startRunning];
+}
 
+void QTKitCap::init_capturing(void)
+{
 	if (IsRunning())
 	{
         assert(false);
@@ -196,8 +205,6 @@ void QTKitCap::start_capturing(void)
     // TODO reset the local buffer list.
     pRTBuffer->startRunning();
 
-    [mCaptureSession startRunning];
-	
 	// Now that we're capturing...run the workerBee thread.
 	startThread();
 }

@@ -164,7 +164,7 @@ void ADTSAudioQueueDeviceSource::deliverFrame() {
         return;
     }
     
-    p_bsdq->RemoveItem(&newFrameDataStart, &newFrameSize);
+    p_bsdq->RemoveItem(&newFrameDataStart, &newFrameSize, &fPresentationTime);
 
 #if 1
     // Before delivering the frame, let's do some calculations to ensure this is everything we
@@ -197,7 +197,7 @@ void ADTSAudioQueueDeviceSource::deliverFrame() {
     delete (unsigned char*)newFrameDataStart;
     
 #if 1
-    gettimeofday(&fPresentationTime, NULL); // If you have a more accurate time - e.g., from an encoder - then use that instead.
+    // time of day timestamp ... replaced by more accurate captured-time timestamp above.
 #else
     // Set the 'presentation time':
     if (fPresentationTime.tv_sec == 0 && fPresentationTime.tv_usec == 0) {
