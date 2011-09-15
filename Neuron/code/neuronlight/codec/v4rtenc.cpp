@@ -306,9 +306,9 @@ int v4_rtenc_t::workerBee(void)
         {
             cout << "OUCH - Bad Deque" << endl;
             LOG_ERR("capture buffer dequeue error");
-            return -1;
+            continue;
         }
-
+        
         if(p_bib->bFinalSample)
         {
 #ifdef COPY_QTKIT_CAP_BUFFERS
@@ -349,13 +349,11 @@ int v4_rtenc_t::workerBee(void)
             
             
             LockHandle();
-                
             if(v4e_set_vp_frame(p_handle,&frame,1)!=VSSH_OK)
             {
                 LOG_ERR("v4e_set_vp_frame() error");
                 return -1;
             }
-            
             UnlockHandle();
         }
         else if(!p_bi->bIsVideo && b_audio_on)
@@ -540,6 +538,18 @@ RTEnc_ReturnCode_t v4_rtenc_t::CloseAudio(void)
     avcodec_close(p_acctx);
     av_free(p_acctx);
     return RTENC_RETCODE_OK;
+}
+
+void v4_rtenc_t::ChangeTargetBitrate(int newBitrateKbps)
+{
+    int retcode = v4e_change_bitrate(Handle(), newBitrateKbps);
+    assert(retcode == VSSH_OK);
+}
+
+void v4_rtenc_t::ChangeTargetFrameRate(int newFrameRateFps)
+{
+    int retcode = v4e_change_bitrate_and_framerate(Handle(), 0, newFrameRateFps*2000, 1000);
+    assert(retcode == VSSH_OK);
 }
 
 #endif

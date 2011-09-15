@@ -15,6 +15,7 @@ class ADTSAudioQueueDeviceSource: public FramedSource {
 public:
     // TODO - Eventually, we will want to pass in the codec configuration params here.
   static ADTSAudioQueueDeviceSource* createNew(UsageEnvironment& env,SafeBufferDeque* _p_bsdq);
+    static void SignalData(void*);
 
 public:
   static EventTriggerId eventTriggerId;

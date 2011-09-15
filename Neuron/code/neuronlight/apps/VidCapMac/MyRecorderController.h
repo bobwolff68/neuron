@@ -15,9 +15,13 @@
     
     IBOutlet QTCaptureView *mCaptureView;
     IBOutlet NSView *mMainWindow;
+    
+    IBOutlet NSTextField *Vkbps;
+    IBOutlet NSTextField *Vfps;
+    
+    IBOutlet NSButton *mHDCheckbox;
+    
     IBOutlet NSTextField *mDrops;
-    IBOutlet NSTextField *VLen;
-    IBOutlet NSTextField *ALen;
     int curDrops;
     
     QTCaptureDevice                  *videoDevice;
@@ -33,17 +37,22 @@
     TVidCap* pTVC;
     NSInteger sendAudioType;
     
+    NSTimer* timerUIUpdate;
+    
     int outputWidth, outputHeight;      // Final image size for encoding.
     int captureWidth, captureHeight;    // The camera's current device capture value (actual)
+    NSTextField *videoFramerateChanged;
 }
+
+- (void)updateUINow:(NSTimer*)timer;
 
 - (IBAction)startRecording:(id)sender;
 - (IBAction)stopRecording:(id)sender;
 - (IBAction)captureMode:(id)sender;
-- (IBAction)resetDrops:(id)sender;
 - (IBAction)quitApplication:(id)sender;
 - (IBAction)sendAudioRawData:(id)sender;
 - (IBAction)sendAudioNoData:(id)sender;
-- (IBAction)clearQueues:(id)sender;
+- (IBAction)videoBitrateChanged:(id)sender;
+- (IBAction)videoFramerateChanged:(id)sender;
 
 @end

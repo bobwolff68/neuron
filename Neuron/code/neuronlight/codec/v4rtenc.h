@@ -169,7 +169,7 @@ class v4_rtenc_t: public ThreadSingle
         //! \return void
         //!
         void SetRawFrameBuffers(unsigned char* p_frame_buf, int stride);
-
+        
     public:
 
         //!
@@ -208,6 +208,8 @@ class v4_rtenc_t: public ThreadSingle
         RTEnc_ReturnCode_t Close(void);
         RTEnc_ReturnCode_t LockHandle(void);
         RTEnc_ReturnCode_t UnlockHandle(void);
+        void ChangeTargetBitrate(int newBitrateKbps);
+        void ChangeTargetFrameRate(int newFrameRateFps);
 };
 
 #endif

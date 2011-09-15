@@ -5,25 +5,38 @@
 #include <GroupsockHelper.hh> // for "gettimeofday()"
 #include <stdio.h>
 
+extern bool bFoundSDP;
+
+//Global video source pointer to be signaled by the static function SignalData() when new frame arrives
+H264VideoQueueDeviceSource* gpVideoSource = NULL;
+
+void H264VideoQueueDeviceSource::SignalData(void* p_src)
+{
+    if(H264VideoQueueDeviceSource::referenceCount > 0)
+    {
+        H264VideoQueueDeviceSource* p_dsrc = (H264VideoQueueDeviceSource*) p_src;
+        p_dsrc->envir().taskScheduler().triggerEvent(H264VideoQueueDeviceSource::eventTriggerId,p_dsrc);
+        
+    }
+}
+
 H264VideoQueueDeviceSource*
-H264VideoQueueDeviceSource::createNew(UsageEnvironment& env,
-			/*DeviceParameters params*/SafeBufferDeque* _p_bsdq) {
-  return new H264VideoQueueDeviceSource(env, _p_bsdq);
+H264VideoQueueDeviceSource::createNew(UsageEnvironment& env,SafeBufferDeque* _p_bsdq) {
+    gpVideoSource = new H264VideoQueueDeviceSource(env, _p_bsdq);
+    return gpVideoSource;
 }
 
 EventTriggerId H264VideoQueueDeviceSource::eventTriggerId = 0;
 
 unsigned H264VideoQueueDeviceSource::referenceCount = 0;
 
-H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,
-			   /*DeviceParameters params*/SafeBufferDeque* _p_bsdq)
+H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,SafeBufferDeque* _p_bsdq)
   : FramedSource(env), p_bsdq(_p_bsdq) {
     // Any global initialization of the device would be done here:
   ++referenceCount;
 
-  // Any instance-specific initialization of the device would be done here:
-  //%%% TO BE WRITTEN %%%
-
+    bHaventClearedQueue=true;
+      
   // We arrange here for our "deliverFrame" member function to be called
   // whenever the next frame of data becomes available from the device.
   //
@@ -36,6 +49,7 @@ H264VideoQueueDeviceSource::H264VideoQueueDeviceSource(UsageEnvironment& env,
   if (eventTriggerId == 0) {
     eventTriggerId = envir().taskScheduler().createEventTrigger(deliverFrame0);
   }
+      p_bsdq->SetSigDataFunc(&H264VideoQueueDeviceSource::SignalData,this);
 }
 
 H264VideoQueueDeviceSource::~H264VideoQueueDeviceSource() {
@@ -75,11 +89,6 @@ void H264VideoQueueDeviceSource::doGetNextFrame() {
   if (p_bsdq->qsize() > 0/*0 a new frame of data is immediately available to be delivered*/ /*%%% TO BE WRITTEN %%%*/) {
     deliverFrame();
   }
-  else
-  {
-      //printf("Scheduling 15 ms delayed task...\n");
-      envir().taskScheduler().scheduleDelayedTask(30000, (TaskFunc*)nextTime, this);
-  }
 
   // No new data is immediately available to be delivered.  We don't do anything more here.
   // Instead, our event trigger must be called (e.g., from a separate thread) when new data becomes available.
@@ -115,13 +124,24 @@ void H264VideoQueueDeviceSource::deliverFrame() {
   unsigned char* newFrameDataStart = NULL;
   int newFrameSize = 0;
     
+    if (bHaventClearedQueue && bFoundSDP)
+    {
+        // Only do this once after SDP is found. Reduce the video queue size.
+        bHaventClearedQueue=false;
+        
+        std::cerr << "Reducing VIDEO Queue(a)..." << std::endl;
+        
+        // After getting the SDP info, clear out the queue until we only have a small amount of time remaining.
+        p_bsdq->clearUntilOnlyMSAvailable(DESIRED_STARTING_CAPTUREDELAY);
+    }
+    
     if (!isCurrentlyAwaitingData())
     {
         envir().taskScheduler().scheduleDelayedTask(30000, (TaskFunc*)nextTime, this);
         return;
     }
 
-    p_bsdq->RemoveItem(&newFrameDataStart, &newFrameSize);
+    p_bsdq->RemoveItem(&newFrameDataStart, &newFrameSize, &fPresentationTime);
     
   // Deliver the data here:
   if (newFrameSize > fMaxSize) {
@@ -131,7 +151,6 @@ void H264VideoQueueDeviceSource::deliverFrame() {
     fFrameSize = newFrameSize;
   }
   
-  gettimeofday(&fPresentationTime, NULL); // If you have a more accurate time - e.g., from an encoder - then use that instead.
   // If the device is *not* a 'live source' (e.g., it comes instead from a file or buffer), then set "fDurationInMicroseconds" here.
   memmove(fTo, newFrameDataStart, fFrameSize);
   delete (unsigned char*)newFrameDataStart;
@@ -139,15 +158,3 @@ void H264VideoQueueDeviceSource::deliverFrame() {
   // After delivering the data, inform the reader that it is now available:
   FramedSource::afterGetting(this);
 }
-
-
-// The following code would be called to signal that a new frame of data has become available.
-// This (unlike other "LIVE555 Streaming Media" library code) may be called from a separate thread.
-/*void signalNewFrameData() {
-  TaskScheduler* ourScheduler = NULL; //%%% TO BE WRITTEN %%%
-  H264VideoQueueDeviceSource* ourDevice  = NULL; //%%% TO BE WRITTEN %%%
-
-  if (ourScheduler != NULL) { // sanity check
-    ourScheduler->triggerEvent(H264VideoQueueDeviceSource::eventTriggerId, ourDevice);
-  }
-}*/

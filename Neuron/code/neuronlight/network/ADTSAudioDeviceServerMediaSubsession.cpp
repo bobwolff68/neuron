@@ -34,11 +34,14 @@ FramedSource* ADTSAudioDeviceServerMediaSubsession::createNewStreamSource(unsign
 
   
     // Now - we get called just as there is a new (first) access to this stream.
-    // So, we want to CLEAR the deque buffer so that we remove any additional latency
+    // So, we want to CLEAR the deque buffer so that we remove any stale captured items
     // from the system.
-    // Later we may wish to only clear this to a low-water-mark but we'll be aggressive for now.
-    //p_bsdq->clearAll();
     
+    std::cerr << "Reducing AUDIO Queue..." << std::endl;
+    
+    // Before getting started, clear out the queue until we only have a small amount of time remaining.
+    p_bsdq->clearUntilOnlyMSAvailable(DESIRED_STARTING_CAPTUREDELAY);
+
     std::cerr << "ADTSAudioDeviceServerMediaSubsession::createNewStreamSource() entered." << std::endl;
 
     return ADTSAudioQueueDeviceSource::createNew(envir(), p_bsdq);
@@ -48,6 +51,7 @@ RTPSink* ADTSAudioDeviceServerMediaSubsession
 ::createNewRTPSink(Groupsock* rtpGroupsock,
                    unsigned char rtpPayloadTypeIfDynamic,
                    FramedSource* inputSource) {
+    
     ADTSAudioQueueDeviceSource* adtsSource = (ADTSAudioQueueDeviceSource*)inputSource;
     return MPEG4GenericRTPSink::createNew(envir(), rtpGroupsock,
                                           rtpPayloadTypeIfDynamic,

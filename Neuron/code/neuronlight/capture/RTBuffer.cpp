@@ -17,8 +17,6 @@ RTBuffer::RTBuffer(void)
     
 	pthread_mutex_init(&mutex, NULL);
     p_sem_numbuffers = sem_open(semname.str().c_str(), O_CREAT, S_IRWXU, 0);
-	//ok = sem_init(&sem_numbuffers, 0, 0); 
-    //val = errno;
     string str;
     errnostr(str);
     assert(p_sem_numbuffers!=SEM_FAILED);
@@ -193,7 +191,7 @@ bool RTBuffer::FullBufferDQ(RTBufferInfoBase** ppBI)
         return false;
     }
     
-    if (bufferQ.size()==0)
+    if (bufferQ.size()==0 && !bReleased)
     {
         // Must have been cleared out from under us. Return false.
         cout << "Hello world. It is raining." << endl;

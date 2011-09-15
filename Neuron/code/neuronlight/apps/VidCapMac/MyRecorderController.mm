@@ -16,6 +16,10 @@ bool bClearQueues = false;
 bool bQuit = false;
 int audioQueueLength=0;
 int videoQueueLength=0;
+int bitRate = 600;
+bool bChangeBitrate = false;
+int frameRate = 30;
+bool bChangeFramerate = false;
 
 #if 0
 // Want to interrogate device attributes to see if we can set it's output to signed 16bit rather than convert later.
@@ -147,23 +151,29 @@ for(key in pDict){
     // Prepping to capture and send frames to pCap.
     pCap = new QTKitCap(mCaptureSession, mCaptureDecompressedVideoOutput);
 
-    // Now instantiate the 'connection' mechanism to the lower pipeline and call them to get the pipeline started.
-    pTVC = new TVidCap(pCap);
-    p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY",true,true);
+    pCap->init_capturing();
     
     // Always keep window on top of other windows.
 //    [[mMainWindow window] setLevel:NSScreenSaverWindowLevel];
+    
+    // Now - set a timer for updating the UI components for real-time data-lookups etc.
+    // This was inititally placed in service to track the audio and video queue lengths.
+    timerUIUpdate = [NSTimer scheduledTimerWithTimeInterval:0.25
+                                                  target:self
+                                                selector:@selector(updateUINow:)
+                                                userInfo:nil
+                                                 repeats:YES];
+}
+
+- (void)updateUINow:(NSTimer*) timer {
+//    [VLen setStringValue:[NSString stringWithFormat:@"V:%d",videoQueueLength]];
+//    [ALen setStringValue:[NSString stringWithFormat:@"A:%d",audioQueueLength]];
 }
 
 // Handle window closing notifications for your device input
 - (void)windowWillClose:(NSNotification *)notification
 {
 	
-//	[mCaptureSession stopRunning];
-    
-	pCap->stop_capturing();
-	pCap->clear();		// Force buffer cleared.
-
     if ([[mCaptureVideoDeviceInput device] isOpen])
         [[mCaptureVideoDeviceInput device] close];
     
@@ -189,7 +199,7 @@ for(key in pDict){
     
     delete pCap;
     pCap = NULL;
-    
+        
 	[mCaptureSession release];
 	[mCaptureVideoDeviceInput release];
     [mCaptureAudioDeviceInput release];
@@ -804,13 +814,27 @@ for(key in pDict){
 
 - (IBAction)startRecording:(id)sender
 {
-//	[mCaptureSession startRunning];
+    // No longer allowed to change resolution due to inflexible encoder situation currently so have UI reflect this by disabling the res-change
+    [mHDCheckbox setEnabled:false];
+    
+    // Pick off the UI elements for bitrate and framerate.
+    bitRate = [Vkbps intValue];
+    bChangeBitrate=true;
+    frameRate = [Vfps intValue];
+    bChangeFramerate=true;
+
+    // Now instantiate the 'connection' mechanism to the lower pipeline and call them to get the pipeline started.
+    if (!pTVC)
+        pTVC = new TVidCap(pCap);
+    
+    if (!p_pipeline_runner)
+        p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY",true,true);
+
     pCap->start_capturing();
 }
 
 - (IBAction)stopRecording:(id)sender
 {
-//    [mCaptureSession stopRunning];
     pCap->stop_capturing();
 }
 
@@ -849,13 +873,13 @@ for(key in pDict){
     }
 }
 
-- (IBAction)resetDrops:(id)sender {
-    curDrops=0;
-    [mDrops setIntValue:curDrops];
-}
-
 - (IBAction)quitApplication:(id)sender {
     bQuit = true;
+    
+    sleep(0);   // Yield for other thread to pickup the 'bQuit'
+    
+    pCap->quit_capturing();
+    
     [NSApp terminate:self];
 }
 
@@ -867,8 +891,16 @@ for(key in pDict){
     sendAudioType = 0;
 }
 
-- (IBAction)clearQueues:(id)sender {
-    bClearQueues = true;
+- (IBAction)videoBitrateChanged:(id)sender {
+    bitRate = [Vkbps intValue];
+    bChangeBitrate=true;
+}
+
+- (IBAction)videoFramerateChanged:(id)sender {
+    frameRate = [Vfps intValue];
+    bChangeFramerate=true;
+
+    [mCaptureDecompressedVideoOutput setMinimumVideoFrameInterval:1/(float)frameRate];
 }
 
 @end

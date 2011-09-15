@@ -14,6 +14,7 @@
 class H264VideoQueueDeviceSource: public FramedSource {
 public:
   static H264VideoQueueDeviceSource* createNew(UsageEnvironment& env,SafeBufferDeque* _p_bsdq);
+    static void SignalData(void*);
 
 public:
   static EventTriggerId eventTriggerId;
@@ -35,6 +36,7 @@ private:
 private:
   static unsigned referenceCount; // used to count how many instances of this class currently exist
     SafeBufferDeque* p_bsdq;  
+    bool bHaventClearedQueue;
 };
 
 #endif
