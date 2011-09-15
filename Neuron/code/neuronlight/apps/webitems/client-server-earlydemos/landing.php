@@ -245,7 +245,12 @@
             google.maps.event.addDomListener(window, 'load', load);
 
             function startcapture(){
-                alert('Start Capture');
+                downloadUrl("capture.php", function(data){
+                var xml = data.responseXML;
+                var pcap = xml.documentElement.getElementsByTagName("capture");
+                var field = pcap[0].getAttribute("captured");
+                 alert('Start Capture: ' + field);
+                });
             }
 
             function stopcapture(){
