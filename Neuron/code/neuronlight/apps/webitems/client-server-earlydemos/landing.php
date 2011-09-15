@@ -66,18 +66,6 @@
         
         <script type="text/javascript"> 
             
-            // This part gets the IP
-//            var ip = '#echo var="REMOTE_ADDR"';
-            // This part is for an alert box
-//            alert("Your IP address is "+ip);
-            // alert('myurl = ' + myjurl);
-            // This part is for the status bar
-//            window.defaultStatus = "Your IP address is "+ip;
-            // This part is for the title bar
-//            document.write("<title>Your IP address is "+ip+"</title>");
-         
-
-            
             function check(){
 //            alert('check called');
             
@@ -225,15 +213,6 @@
                     land(loc,target);
                 }
             }
-               
-//            function checkplugin(){
-//                if ("<? echo $_SESSION[plugin] ?>" == "qt"){
-//                    alert('Select a plugin = qt');
-//                    document.location = "readysession_qt.php";
-//                } else{
-//                    alert('Select a plugin = other');
-//                }
-//            }
             
             $(document.getElementsByTagName('div')[1]).ready(function() {
 //                addvlc();
@@ -299,12 +278,6 @@
             $_SESSION['dheight2'] = 180;  
             
             require "check.php"; 
-            // echo "<script type='text/javascript'>var myjurl='$_SESSION[remote_addr]';</script>";
-            
-//            $myurl3 = "rtsp://";
-//            $myurl3 = $myurl3 . $_SERVER["REMOTE_ADDR"];
-//            $myurl3 = $myurl3 . ':8554/stream0';
-//            echo ("myurl3 = " . "$myurl3");
         ?>
         
         <script type="text/javascript"> 
