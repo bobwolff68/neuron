@@ -181,7 +181,6 @@
                         case 1: 
                             if (a1.value != 'zero'){
                                 a1.value = 'zero';
-                                
                                 var p0 = document.getElementById("vlc0");                                
                                 var p1 = document.getElementById("vlc1");
                                 
@@ -194,7 +193,12 @@
                                 
                                 var urival0 = document.getElementById("uri0");
                                 urival0.value = member[0][1]; // member[0][1]; // rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov
-                                document.movie0.SetHREF(urival0.value);
+                                //document.movie0.SetHREF(urival0.value);
+                                //var matrix = document.movie1.GetMatrix();
+                                //alert('matrix = ' + matrix.value);
+                            //var mymat  = document.getElementById("matrix");
+                            //mymat.value = 'stuff'; //document.movie1.GetMatrix();
+
                                 document.movie0.play();
                             }
                         break;
@@ -525,7 +529,9 @@
                         var width = "<? echo $_SESSION[dwidth1] ?>";
                         var height = "<? echo $_SESSION[dheight1] ?>";                                            
 
-                        QT_WriteOBJECT('myoffline2.gif' , width, height, '', 'HREF', 'rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov','autohref' ,'true', 'target', 'myself','obj#id', 'movie1', 'emb#id', 'qtmovie_embed1', 'emb#name', 'movie1', 'postdomevents', 'true', 'enablejavascript', 'true');
+                        QT_WriteOBJECT('myoffline2.gif' , width, height, '', 'HREF', 'rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov','autohref' ,'true', 'scale','tofit','target', 'myself','obj#id', 'movie1', 'emb#id', 'qtmovie_embed1', 'emb#name', 'movie1', 'postdomevents', 'true', 'enablejavascript', 'true');
+                                //var matrix = document.movie1.GetMatrix();
+                                //alert('matrix = ' + matrix);
                         // QT_WriteOBJECT('myoffline2.gif' , width, height, '', 'HREF', 'rtsp://192.168.46.67:8554/stream0','autohref' ,'true', 'target', 'myself','obj#id', 'movie1', 'emb#id', 'qtmovie_embed1', 'emb#name', 'movie1', 'postdomevents', 'true', 'enablejavascript', 'true');
                         // QT_WriteOBJECT('rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov', width, height, '', 'obj#id', 'movie1', 'emb#id', 'qtmovie_embed1', 'emb#name', 'movie1', 'postdomevents', 'true', 'enablejavascript', 'true');
                         // QT_WriteOBJECT('rtsp://192.168.46.67:8554/stream0', width, height, '', 'obj#id', 'movie1', 'emb#id', 'qtmovie_embed1', 'emb#name', 'movie1', 'postdomevents', 'true', 'enablejavascript', 'true');
@@ -564,6 +570,19 @@
                             <a href="javascript:;" onclick='return vstop("vlc1")'>Stop </a>
                             <a href="javascript:;" onclick='return vmute("vlc1")'>Mute</a>
                         </li>
+                        <li>matrix<input id='matrix' value='emptyuri' size='70' type='text' name="vevo2"/></li>
+                        <script language="javascript" type="text/javascript">
+                            // alert ('here');
+                            var mymat  = document.getElementById("matrix");
+                            //document.movie1.SetMatrix("1,0,0, 0,1,0, 0,0,1");
+                            var gmat = "7";
+                            //gmat = document.movie1.GetHREF();
+                            //gmat = document.movie1.GetMovieMatrix();
+                            gmat = document.movie1.GetTrackCount();
+                            alert('mat = ' + gmat); // + document.movie1.GetRectangle() );
+                            // mymat.value = document.movie1.GetMatrix();
+                        </script>
+ 
                         <li>size: <input id='size1' value='empty size' size='11' type='text' name="vevo2"/></li>
                         <li><input id='uri' value='emptyuri' size='70' type='text' name="vevo2"/></li>        
                         <li><input id='xfile' value='emptyfile' type='hidden' name="vevo"/></li>
@@ -579,7 +598,7 @@
                             <script language="javascript" type="text/javascript">
                                 var width = "<? echo $_SESSION[dwidth0] ?>";
                                 var height = "<? echo $_SESSION[dheight0] ?>";
-                                QT_WriteOBJECT('myoffline2.gif' , width, height, '', 'HREF', 'rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov','autohref' ,'true', 'target', 'myself','obj#id', 'movie0', 'emb#id', 'qtmovie_embed0', 'emb#name', 'movie0', 'postdomevents', 'true', 'enablejavascript', 'true');
+                                QT_WriteOBJECT('myoffline2.gif' , '100%', '50%', '', 'HREF', 'rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov','autohref' ,'true', 'SCALE','TOFIT','target', 'myself','obj#id', 'movie0', 'emb#id', 'qtmovie_embed0', 'emb#name', 'movie0', 'postdomevents', 'true', 'enablejavascript', 'true');
                                 // QT_WriteOBJECT('rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov', width,height, '', 'obj#id', 'movie0', 'emb#id', 'qtmovie_embed0', 'emb#name', 'movie0', 'postdomevents', 'true', 'enablejavascript', 'true');
                             </script>
                         </li>
