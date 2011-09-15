@@ -334,9 +334,9 @@
                 p1.audio.toggleMute();
             }
             
-            function doalert(){
-                alert('doalert');
-            }
+//            function doalert(){
+//                alert('doalert');
+//            }
             
         </script> 
         
@@ -415,15 +415,15 @@
         ?>
         
         <script type="text/javascript"> 
-            var aspectratio = ":aspect-ratio=";
-            var aratio = "4:3";
-            aspectratio = aspectratio + aratio;
+//            var aspectratio = ":aspect-ratio=";
+//            var aratio = "4:3";
+//            aspectratio = aspectratio + aratio;
             
-            var mywidth = "160";
+//            var mywidth = "160";
             
-            function dowidth(){
-                return "160";
-            }
+//            function dowidth(){
+//                return "160";
+//            }
             
             $(document).ready(function(){
                 //p0.aspectRatio = "1:1";
