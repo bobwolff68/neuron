@@ -1,0 +1,71 @@
+Ubuntu Start-up:
+Httpd should already be running. If not start it.
+source ~/.profile
+/usr/local/apache2/bin/apachectl -k start
+
+start mysqld
+cd /usr/local/mysql/bin
+source ~/.profile
+sudo ./mysqld_safe --user=mysql
+
+start mysql (not necessary unless you want to view table changes (which you do))
+mysql -u xvdth -p
+12345
+>use xvdth;
+>select * from user;
+>select * from sessioncount;
+
+Similar process for Mac (except don't need to source...)
+
+Index.html
+HTML: Display user/password login screen. Calls landing.php.
+
+Landing.php
+Check username/password passed in from index.html against sql 'user' table. If valid set SESSION username & update sql user table with client IP, else return to index login page.
+Set other server SESSION default values, screen plugin size (TD: with session manager values when ready).
+HTML: Display contact list. Plugin selection button (other buttons).
+OnLoad() - calls check(). Check() is a timer based function, triggers every 5sec. Check 'user' sql table - display updates. Check calls landingupdate.php.
+Landingupdate.php - create dom object for return to parent. Check sql 'user' table. At this point for simplicity, just return all users in dom object.
+Store returned dom object in 'member' array. Check returned list against contact list & update presense icons in contact list.
+On plugin list selection call jump() & load readysession page.
+
+Readysession.php
+Get ip/rtsp from sql 'user' table & display (TD: from session manager when ready). Call startsession.php.
+
+StartSession.php
+Update 'user' sql table with ip/rtsp stream, video width/height. Check sessioncount table for count of users & load the appropriate page - conference1.php (no joiners), conference1a.php (2-way), conference2.php (3-way).
+
+Conference1.php
+Calculate SESSION variable width/height for each plugin (user must be insession).
+HTML: Set plugin width/height.
+OnReady(): Get plugin width/height & display.
+Check(): Calls checkupdate.php. Check 'user' table & update contact list presense icons. For each user insession, set rtsp stream for plugin & play.
+Checkupdate.php - same as Landingupdate.php above except only return users where insession=1.
+If number of users = 2, load conference1a.php to display 2-way, else load conference2.php for 3-way. If another user has joined, set removeuser variable to zero.
+Window Onbeforeunload(): Check removeuser variable. If removeuser=1, call removeuser.php. (Only partially implemented. Not developed enough for use).
+RegisterVLCEvent() - we don't use this. It is pasted in as it is part of the VLC API. It requires more/different code & not sure you're going to do that...
+
+Removeuser.php
+Update user table, set online=0 & insession=0. Decrement sessioncount count variable.
+
+Conference1a.php
+Same as Conference 1a. With recent changes, this can probably go back to being just conference1.php to handle two people/two plugin instances on startup.
+
+Conference2.php
+Similar to Conference1a.php except for 3 people.
+
+Note: Once the change for div refreshes/updates is done, everything will be done on same page.
+
+ReadyJoin.php & StartJoin.php - these can probably be replaced with ReadySession.php & StartSession.php as they are identical. There was some assumption that a 'joiner' may have some different handling logic compared to a session starter, however, this does not seem to be the case. Currently it does not make a difference.
+
+Conference1_qt.php, conference1a_qt.php, conference2_qt.php, readysession_qt.php, startsession_qt.php, readyjoin_qt.php, startjoin_qt.php are for handling the quicktime plugin. These should be on seperate pages. The main difference is how the plugin gets created in the <embed> tag on startup. The plugin has not been developed beyond a two person instance. So far, the plugin will not resize correctly for the incomming stream. It makes use of the AC_QuickTime.js file. This is Apples jQuery handler supplied for the quicktime plugin. We don't modify this file. Other than the embed tag, the page logic is the same as for VLC.
+
+Objects
+The only object is the 'members[][]' array in JS. It is used to store the returned user records from an sql query. The array elements are accessed as they are stored; member[0][1] username, member[0][2] ip, member[0][3] online ...
+
+To Do(TD):
+Should remove google.maps.event.addDomListener(window, 'load', load);. This is a bug. This does a pretty good job of handling windows events. Should write our own windows handler...
+
+
+
+
