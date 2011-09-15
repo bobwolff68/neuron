@@ -44,7 +44,7 @@ HTML: Display contact list. Plugin selection button (other buttons).
 OnLoad() - calls check(). Check() is a timer based function, triggers every 5sec. Check 'user' sql table - display updates. Check calls landingupdate.php.
 Landingupdate.php - create dom object for return to parent. Check sql 'user' table. At this point for simplicity, just return all users in dom object.
 Store returned dom object in 'member' array. Check returned list against contact list & update presense icons in contact list.
-On plugin list selection call jump() & load readysession page.
+On plugin list selection call jump() & load readysession.php page.
 
 Readysession.php
 Get ip/rtsp from sql 'user' table & display (TD: from session manager when ready). Call startsession.php.
