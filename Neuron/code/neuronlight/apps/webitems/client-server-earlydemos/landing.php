@@ -244,6 +244,22 @@
             
             google.maps.event.addDomListener(window, 'load', load);
 
+            function startcapture(){
+                alert('Start Capture');
+            }
+
+            function stopcapture(){
+                alert('Stop Capture');
+            }
+
+            function doexit(){
+                alert('Exiting');
+            }
+
+            function dosetvol(vollevel){
+                alert('Set Volume');
+            }
+
         </script>
     </head>
     
@@ -347,6 +363,11 @@
                                     </div>
                                     
                                 </form>
+                                <button onClick="startcapture();">Start Capture</button>
+                                <button onClick="stopcapture();">Stop Capture</button><br/>
+                                <input id='vol' value='7' size='5' type='text' name="vevo2"/>
+                                <button onClick="dosetvol();">Set Volume</button><br/>
+                                <button onClick="doexit();">Exit</button>
                                 
                                 <!-- a href="readysession.php"><button>Start Session</button></a -->
                                 <!-- INPUT TYPE="BUTTON" OnClick="checkplugin();" VALUE="Start Session"></INPUT -->
