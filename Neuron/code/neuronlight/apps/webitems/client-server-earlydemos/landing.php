@@ -226,14 +226,14 @@
                 }
             }
                
-            function checkplugin(){
-                if ("<? echo $_SESSION[plugin] ?>" == "qt"){
-                    alert('Select a plugin = qt');
-                    document.location = "readysession_qt.php";
-                } else{
-                    alert('Select a plugin = other');
-                }
-            }
+//            function checkplugin(){
+//                if ("<? echo $_SESSION[plugin] ?>" == "qt"){
+//                    alert('Select a plugin = qt');
+//                    document.location = "readysession_qt.php";
+//                } else{
+//                    alert('Select a plugin = other');
+//                }
+//            }
             
             $(document.getElementsByTagName('div')[1]).ready(function() {
 //                addvlc();
