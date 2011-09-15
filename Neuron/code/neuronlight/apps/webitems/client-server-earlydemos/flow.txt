@@ -17,6 +17,23 @@ mysql -u xvdth -p
 
 Similar process for Mac (except don't need to source...)
 
+mysql user table
++----+-------+-------+----------+----------+------------------------------------+--------+-----------+-----------+-------+--------+
+| id | first | last  | username | password | ip                                 | online | insession | colchange | width | height |
++----+-------+-------+----------+----------+------------------------------------+--------+-----------+-----------+-------+--------+
+|  1 | Sue   | Smith | Sue      | password | rtsp://192.168.46.67:8554/stream0  |      1 |         0 |         0 |   640 |    360 |
+|  2 | Eve   | Smith | Eve      | password | rtsp://192.168.46.120:8554/stream0 |      0 |         0 |         0 |   640 |    360 |
+|  3 | Tim   | Smith | Tim      | password | rtsp://192.168.46.129:8554/stream0 |      0 |         0 |         0 |   640 |    360 |
+|  4 | Joe   | Smith | Joe      | password | rtsp://192.168.46.57:8554/stream0  |      0 |         0 |         0 |   640 |    360 |
++----+-------+-------+----------+----------+------------------------------------+--------+-----------+-----------+-------+--------+
+
+mysql sessioncount table
++-------+
+| count |
++-------+
+|     0 |
++-------+
+
 Index.html
 HTML: Display user/password login screen. Calls landing.php.
 
