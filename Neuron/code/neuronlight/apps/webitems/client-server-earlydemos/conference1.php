@@ -334,10 +334,6 @@
                 p1.audio.toggleMute();
             }
             
-//            function doalert(){
-//                alert('doalert');
-//            }
-            
         </script> 
         
     </head> 
