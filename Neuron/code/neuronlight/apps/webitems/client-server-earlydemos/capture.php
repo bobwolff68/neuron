@@ -8,7 +8,8 @@
     // ADD TO XML DOCUMENT NODE  
     $node = $dom->createElement("capture");  
     $newnode = $parnode->appendChild($node);  
-    $newnode->setAttribute("captured", "You've been captured!");            
+    $message = "You've been captured!";
+    $newnode->setAttribute("captured", $message);            
    
     echo $dom->saveXML();   
 ?>
