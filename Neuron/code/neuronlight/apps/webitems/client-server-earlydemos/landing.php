@@ -243,7 +243,6 @@
             function dosetvol(vollevel){
                 alert('Set Volume');
             }
-
         </script>
     </head>
     
@@ -346,9 +345,6 @@
                                 <input id='vol' value='7' size='5' type='text' name="vevo2"/>
                                 <button onClick="dosetvol();">Set Volume</button><br/>
                                 <button onClick="doexit();">Exit</button>
-                                
-                                <!-- a href="readysession.php"><button>Start Session</button></a -->
-                                <!-- INPUT TYPE="BUTTON" OnClick="checkplugin();" VALUE="Start Session"></INPUT -->
 		   	</div>
 	    </div>
 
