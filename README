@@ -1,5 +1,9 @@
+
 This neuron repository represents all of the intellectual property
 for the Neuron project inside (initially) XVD Technology Holidings, LTD.
 Moving forward it becomes the IP for the Neuron spin-out startup company.
+
+The neuronlight portion is found under Neuron/code/neuronlight and the
+primary branch is "develop".
 
 Bob Wolff - April 2011
