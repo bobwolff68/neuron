@@ -217,10 +217,11 @@ for(key in pDict){
 // Handle deallocation of memory for your capture objects
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
-    assert(pTVC->bIsReleased);
-    
     delete p_pipeline_runner;
     p_pipeline_runner = NULL;
+
+    if(pTVC)
+        assert(pTVC->bIsReleased);
     
     if (Converter)
         AudioConverterDispose(Converter);
@@ -890,7 +891,7 @@ for(key in pDict){
 - (IBAction)quitApplication:(id)sender {
     bQuit = true;
     
-    sleep(1);   // Yield for other thread to pickup the 'bQuit'
+    sleep(0);   // Yield for other thread to pickup the 'bQuit'
     
     pCap->quit_capturing();
     
