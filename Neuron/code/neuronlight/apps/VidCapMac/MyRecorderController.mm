@@ -10,6 +10,7 @@
 #import "CameraInterrogation.h"
 
 #define DESIRED_BITS_PER_SAMPLE 16
+#define MODULO_REQUIRED 4
 
 // For testing only - ability to clear a/v queues in Live555 source and monitor their lengths
 bool bClearQueues = false;
@@ -33,6 +34,25 @@ for(key in pDict){
 // Helper function to convert QTTime value into raw micro-seconds.
 #define QTT_US(Q) ((1000000*Q.timeValue)/Q.timeScale)
 
+@interface NSString (IntCompare)
+
+- (NSComparisonResult) intCompare: (NSString *) aString;
+
+@end
+
+@implementation NSString (IntCompare)
+
+- (NSComparisonResult) intCompare: (NSString *) aString
+{
+    NSComparisonResult result;
+
+    result = [[NSNumber numberWithInt:[self intValue]] compare: [NSNumber numberWithInt:[aString intValue]]];
+    
+    return result;
+}
+
+@end
+
 @implementation MyRecorderController
 
 - (void)awakeFromNib
@@ -41,11 +61,23 @@ for(key in pDict){
     curDrops = 0;
     sendAudioType=2; // Using RAW-Data buffer mode by default now.
     
-    outputWidth = 640;
-    outputHeight = 360;
+    outputWidth   = 640;
+    outputHeight  = 360;
     
-    captureWidth = 640;
+    captureWidth  = 640;
     captureHeight = 480;
+    
+    pCameraResolutions = [NSMutableArray arrayWithObjects:@"160 x 120", @"176 x 144",
+                          @"320 x 240", @"640 x 480", @"960 x 540", 
+                          @"1024 x 576", @"1280 x 720", nil];
+
+    [pCameraResolutions sortUsingSelector:@selector(intCompare:)];
+    [pCameraResolutions retain];
+    
+    // A few UI components to setup.
+    [captureResBox setStringValue:[NSString stringWithFormat:@"%d x %d", outputWidth, outputHeight]];
+    [captureButton setEnabled:true];
+    [stopCaptureButton setEnabled:false];
     
 // Create the capture session
     
@@ -206,6 +238,9 @@ for(key in pDict){
 	
     [mCaptureDecompressedVideoOutput release];
     [mCaptureDecompressedAudioOutput release];
+    
+    if (pCameraResolutions)
+        [pCameraResolutions release];
     
 	[super dealloc];
 }
@@ -815,8 +850,11 @@ for(key in pDict){
 - (IBAction)startRecording:(id)sender
 {
     // No longer allowed to change resolution due to inflexible encoder situation currently so have UI reflect this by disabling the res-change
-    [mHDCheckbox setEnabled:false];
-    
+    [captureResBox setEnabled:false];
+
+    [captureButton setEnabled:false];
+    [stopCaptureButton setEnabled:true];
+
     // Pick off the UI elements for bitrate and framerate.
     bitRate = [Vkbps intValue];
     bChangeBitrate=true;
@@ -836,41 +874,10 @@ for(key in pDict){
 - (IBAction)stopRecording:(id)sender
 {
     pCap->stop_capturing();
-}
-
-- (IBAction)captureMode:(id)sender {
-    bool isHD;
     
-    isHD = [sender state]==NSOnState;
-    
-    if (isHD)
-    {
-        [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
-         [NSDictionary dictionaryWithObjectsAndKeys:
-                       [NSNumber numberWithDouble:1280], (id)kCVPixelBufferWidthKey,
-                       [NSNumber numberWithDouble:720], (id)kCVPixelBufferHeightKey,
-          //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
-          nil]];
-        
-        outputWidth = 1280;
-        outputHeight = 720;
-        
-        NSLog(@"Using HD mode 720p.");
-    }
-    else
-    {
-        [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
-         [NSDictionary dictionaryWithObjectsAndKeys:
-                       [NSNumber numberWithDouble:640], (id)kCVPixelBufferWidthKey,
-                       [NSNumber numberWithDouble:480], (id)kCVPixelBufferHeightKey,
-          //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
-          nil]];
-
-        outputWidth = 640;
-        outputHeight = 360;
-        
-        NSLog(@"Using SD mode 360p.");
-    }
+    [captureButton setEnabled:true];
+    [stopCaptureButton setEnabled:false];
+    [captureResBox setEnabled:false];
 }
 
 - (IBAction)quitApplication:(id)sender {
@@ -901,6 +908,193 @@ for(key in pDict){
     bChangeFramerate=true;
 
     [mCaptureDecompressedVideoOutput setMinimumVideoFrameInterval:1/(float)frameRate];
+}
+
+
+- (int)parseWidthHeight:(NSString*)pStr widthOut:(int*)pWidth heightOut:(int*)pHeight
+{
+    NSArray* pResStr;
+    
+    pResStr = [pStr componentsSeparatedByString: @"x"];
+    
+    // Give a try at a comma-separated version like '640,360'
+    if ([pResStr count] != 2)
+        pResStr = [pStr componentsSeparatedByString: @","];
+    
+    // Give a try at a space-separated version like '640 360'
+    if ([pResStr count] != 2)
+        pResStr = [pStr componentsSeparatedByString: @" "];
+    
+    if ([pResStr count] != 2)
+    {
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"Bad format for capture resolution"];
+        [alert setInformativeText:@"Must be of the form 'width x height'.\nFor example '640 x 360' is valid."];
+        [alert runModal];
+        [alert release];
+        
+        return -1;
+    }
+    
+    *pWidth = [[pResStr objectAtIndex:0] intValue];
+    *pHeight = [[pResStr objectAtIndex:1] intValue];
+
+    return 0;
+}
+
+- (IBAction)captureResolution:(id)sender {
+    int width, height;
+    int result;
+    
+    result = [self parseWidthHeight:[captureResBox stringValue] widthOut:&width heightOut:&height];
+    
+    if (result)
+        return;
+    
+    if (width < 0 || width > 4096 || height < 0 || height > 3072)
+    {
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"Bad format for capture resolution"];
+        [alert setInformativeText:@"You must use the form 'width x height'.\nFor example '640 x 360' is valid."];
+        [alert runModal];
+        [alert release];
+        
+        return;
+    }
+    
+    if (width % MODULO_REQUIRED || height % MODULO_REQUIRED)
+    {
+        // We must modify the width and height to become mod-4. Inform the user.
+        // Encoders generally won't allow odd numbers and sometimes not even all evens
+        // and need modulo 4 values.
+        int nonmodWidth, nonmodHeight;
+        
+        nonmodWidth = width;
+        nonmodHeight = height;
+
+        if (width % MODULO_REQUIRED)
+            width = width + (MODULO_REQUIRED - (width % MODULO_REQUIRED));
+        
+        if (height % MODULO_REQUIRED)
+            height = height + (MODULO_REQUIRED - (height % MODULO_REQUIRED));
+        
+        // Now inform the user.
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"Desired capture resolution modified."];
+        [alert setInformativeText:[NSString stringWithFormat:@"Requested resolution of (%d x %d)\nwas modified to become (%d x %d).\nVideo encoder requires modulo-%d values.", nonmodWidth, nonmodHeight, width, height, MODULO_REQUIRED]];
+        [alert runModal];
+        [alert release];
+    }
+    
+    // Set capture resolution based on desired output resolution in width/height
+    [self setDisplayResolutionWidth:width withHeight:height];
+        
+}
+
+- (int) CaptureMatchForDesiredWidth:(int)desWidth forDesiredHeight:(int)desHeight
+        CaptureWidth:(int *)pCaptureWidth CaptureHeight:(int *)pCaptureHeight
+{
+    int curWidth, curHeight;
+    int lastCandidateWidth, lastCandidateHeight;
+    
+    // No candidates yet...
+    lastCandidateWidth = lastCandidateHeight = -1;
+
+    // Map a desired width and height
+    // pCameraResolutions is sorted by the width-field at this time.
+    for (id e in pCameraResolutions){
+//        std::cerr << [(NSString*)e intValue] << " -- " << [(NSString*)e cString] << std::endl;
+
+        if ([self parseWidthHeight:e widthOut:&curWidth heightOut:&curHeight] == 0)
+        {
+            if (desWidth <= curWidth && desHeight <= curHeight) {
+                // We have a potential winner.
+                // If we have no last candidate, set the 'lastCandidate'
+                // Or if the delta between the current height/desired height is less
+                //    than the lastCandidate delta, then we have a BETTER match - so set
+                //    a new lastCandidate.
+                if (lastCandidateWidth==-1 || 
+                    ((curWidth-desWidth) + (curHeight-desHeight) < 
+                        ((lastCandidateWidth-desWidth) + (lastCandidateHeight-desHeight))))
+                    {
+                        lastCandidateWidth = curWidth;
+                        lastCandidateHeight = curHeight;
+                    }
+            }
+        }
+        else
+            assert(false); // Shouldn't have a parse error in our own formatted data.
+    }
+    
+    if (lastCandidateWidth != -1)
+    {
+        *pCaptureWidth = lastCandidateWidth;
+        *pCaptureHeight = lastCandidateHeight;
+        return 0;
+    }
+/*
+    if (desWidth==640 && desHeight==360)
+    {
+        *pCaptureWidth = 640;
+        *pCaptureHeight = 480;
+        return 0;
+    }
+    
+    if (desWidth==1280 && desHeight==720)
+    {
+        *pCaptureWidth = 1280;
+        *pCaptureHeight = 720;
+        return 0;
+    }
+  */  
+    return -1;
+}
+
+- (int)setDisplayResolutionWidth:(int)displayWidth withHeight:(int)displayHeight
+{
+    int captureWidthResult, captureHeightResult;
+    int result;
+    
+    result = [self CaptureMatchForDesiredWidth:displayWidth
+                                forDesiredHeight:displayHeight
+                                CaptureWidth:&captureWidthResult
+                                CaptureHeight:&captureHeightResult];
+    
+    if (result != 0)
+    {
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"Desired capture resolution was not available."];
+        [alert setInformativeText:[NSString stringWithFormat:@"Requested resolution of (%d x %d)\nis not available.", displayWidth, displayHeight]];
+        [alert runModal];
+        [alert release];
+        
+        [captureResBox setStringValue:[NSString stringWithFormat:@"%d x %d", outputWidth, outputHeight]];
+
+        return -99;
+    }
+    else
+    {
+        // Reflect new resolutions in class variables then set it up.
+        outputWidth = displayWidth;
+        outputHeight = displayHeight;
+        
+        captureWidth = captureWidthResult;
+        captureHeight = captureHeightResult;
+        
+        // Setup the capture change.
+        [mCaptureDecompressedVideoOutput setPixelBufferAttributes:
+         [NSDictionary dictionaryWithObjectsAndKeys:
+          [NSNumber numberWithDouble:captureWidth], (id)kCVPixelBufferWidthKey,
+          [NSNumber numberWithDouble:captureHeight], (id)kCVPixelBufferHeightKey,
+          //             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB/*kCVPixelFormatType_422YpCbCr10*/], (id)kCVPixelBufferPixelFormatTypeKey,
+          nil]];
+
+        // Re-update the UI. If the user chose a non-modulo-4 value, the text box
+        // will not be reflecting the proper value yet.
+        [captureResBox setStringValue:[NSString stringWithFormat:@"%d x %d", outputWidth, outputHeight]];
+    }
+    
+    return 0;
 }
 
 @end
