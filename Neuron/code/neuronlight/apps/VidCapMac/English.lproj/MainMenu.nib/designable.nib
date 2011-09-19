@@ -77,6 +77,7 @@
 							<string key="NSFrame">{{312, 21}, {96, 32}}</string>
 							<reference key="NSSuperview" ref="252641234"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSButtonCell" key="NSCell" id="894915894">
 								<int key="NSCellFlags">-2080244224</int>
@@ -1044,6 +1045,14 @@
 					</object>
 					<int key="connectionID">500290</int>
 				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBOutletConnection" key="connection">
+						<string key="label">delegate</string>
+						<reference key="source" ref="768053350"/>
+						<reference key="destination" ref="134484106"/>
+					</object>
+					<int key="connectionID">500292</int>
+				</object>
 			</array>
 			<object class="IBMutableOrderedSet" key="objectRecords">
 				<array key="orderedObjects">
@@ -1611,7 +1620,7 @@
 			<nil key="activeLocalization"/>
 			<dictionary class="NSMutableDictionary" key="localizations"/>
 			<nil key="sourceID"/>
-			<int key="maxID">500290</int>
+			<int key="maxID">500292</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<array class="NSMutableArray" key="referencedPartialClassDescriptions">

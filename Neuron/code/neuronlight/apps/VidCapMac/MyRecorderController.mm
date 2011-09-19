@@ -215,8 +215,7 @@ for(key in pDict){
 }
 
 // Handle deallocation of memory for your capture objects
-
-- (void)dealloc
+- (void)applicationWillTerminate:(NSNotification *)aNotification
 {
     assert(pTVC->bIsReleased);
     
@@ -242,7 +241,15 @@ for(key in pDict){
     if (pCameraResolutions)
         [pCameraResolutions release];
     
-	[super dealloc];
+}
+
+//
+//TODO - Find out why this dealloc function is ***NOT*** being called during
+//       the termiantion sequence. Shutdown seems to be taking a lot of time too.
+//
+- (void) dealloc
+{
+    [super dealloc];
 }
 
 - (CIImage *)view:(QTCaptureView *)view willDisplayImage:(CIImage *)image {

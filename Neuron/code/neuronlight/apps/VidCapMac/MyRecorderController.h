@@ -48,6 +48,8 @@
     NSMutableArray* pCameraResolutions;
 }
 
+- (void)applicationWillTerminate:(NSNotification *)aNotification;
+
 - (int)parseWidthHeight:(NSString*)pStr widthOut:(int*)pWidth heightOut:(int*)pHeight;
 - (int)setDisplayResolutionWidth:(int)dWidth withHeight:(int)dHeight;
 - (int) CaptureMatchForDesiredWidth:(int)desWidth forDesiredHeight:(int)desHeight
