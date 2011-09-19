@@ -21,12 +21,24 @@ width(_width),
 height(_height),
 colorspace(_colorspace)
 {
+    pRTCamStream = new nl_rtcamstream_t(
+                        p_cap_objc, 8554, 
+                        width, height, 
+                        colorspace.c_str(), 
+                        b_video_on, b_audio_on
+                   );
     startThread();
+}
+
+RunPipeline::~RunPipeline()
+{
+    stopThread();
+    delete (nl_rtcamstream_t*)(pRTCamStream);
 }
 
 int RunPipeline::workerBee(void)
 {
-    nl_rtcamstream_t::main(p_cap_objc, width, height, colorspace.c_str(),b_video_on,b_audio_on);
+    ((nl_rtcamstream_t*)pRTCamStream)->RunCapture();
     return 0;
 }
 

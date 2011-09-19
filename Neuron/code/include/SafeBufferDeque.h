@@ -57,6 +57,12 @@ public:
     { 
         int rc;
         
+        if(dequeItems.empty())
+        {
+            *pReturnData = NULL;
+            return true;
+        }
+        
         rc = pthread_mutex_lock(&mutex);
         if (rc)
         {
@@ -171,7 +177,7 @@ public:
         //Signal arrival of data
         if(signalData && p_src)
             signalData(p_src);
-        
+
         return true;
     }
         

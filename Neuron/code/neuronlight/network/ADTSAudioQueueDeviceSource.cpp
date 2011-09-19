@@ -20,11 +20,10 @@ ADTSAudioQueueDeviceSource* gpAudioSource = NULL;
 
 void ADTSAudioQueueDeviceSource::SignalData(void* p_src)
 {
-    if(ADTSAudioQueueDeviceSource::referenceCount > 0)
+   if(ADTSAudioQueueDeviceSource::referenceCount > 0)
     {
         ADTSAudioQueueDeviceSource* p_dsrc = (ADTSAudioQueueDeviceSource*) p_src;
         p_dsrc->envir().taskScheduler().triggerEvent(ADTSAudioQueueDeviceSource::eventTriggerId,p_dsrc);
-        
     }
 }
 

@@ -34,7 +34,6 @@ private:
     SafeBufferDeque* p_absdq;
     SafeBufferDeque* p_bsdq;
 	nl_rtspserver_t* p_serv;
-	virtual void IdleLoop(void);
     
 public:
 #if (defined(__APPLE__) & defined(__MACH__))
@@ -46,7 +45,6 @@ public:
                      const bool b_audio_on);
     
 	nl_rtcamstream_t(TempVidCapBase* _p_cap,
-                     const char* rtenc_cfg_file,
                      const short rtsp_port,
                      const int width,
                      const int height,

@@ -24,13 +24,12 @@ extern    bool bChangeFramerate;
                                 const bool b_video_on,
                                 const bool b_audio_on)
     {
-        nl_rtcamstream_t rtcs(p_cap_objc,"rtenc_avc_settings.cfg",8554,width,height,colorspace,b_video_on,b_audio_on);
+        nl_rtcamstream_t rtcs(p_cap_objc,8554,width,height,colorspace,b_video_on,b_audio_on);
         rtcs.RunCapture();
         return;
     }
                               
     nl_rtcamstream_t::nl_rtcamstream_t(TempVidCapBase* _p_cap,
-                                       const char* rtenc_cfg_file,
                                        const short rtsp_port,
                                        const int width,
                                        const int height,
@@ -56,7 +55,7 @@ extern    bool bChangeFramerate;
         backup_ports[0] = rtsp_port;
         p_bsdq = new SafeBufferDeque(1000);
         p_absdq = new SafeBufferDeque(5000);
-		p_rtenc = new v4_rtenc_t(rtenc_cfg_file,p_cap->GetBufferPointer(),p_absdq,b_video_on,b_audio_on);
+		p_rtenc = new v4_rtenc_t(p_cap->GetBufferPointer(),p_absdq,b_video_on,b_audio_on);
         p_fifoout = new v4_fifoout_t(p_bsdq,p_rtenc);
         
         for(int i=0; i<5 && p_serv==NULL; i++)
@@ -144,17 +143,6 @@ nl_rtcamstream_t::~nl_rtcamstream_t()
 	}
 }
 
-void nl_rtcamstream_t::IdleLoop(void)
-{
-	char ch;
-
-	cerr << "Press any character followed by the return key to stop capturing..." << endl;
-	cin >> ch;
-	cerr << "Stopping capture..." << endl;
-
-	return;
-}
-
 void nl_rtcamstream_t::RunCapture(void)
 {
 	try
@@ -166,7 +154,6 @@ void nl_rtcamstream_t::RunCapture(void)
 
         p_serv->test_sdp();
         
-		//IdleLoop();
         while (!bQuit) {
             usleep(100000);
             videoQueueLength = p_bsdq->qsize();

@@ -125,7 +125,6 @@ class v4_rtenc_t: public ThreadSingle
         AVCodecContext* p_acctx;
         AVDictionary* p_opts_dict;
         SafeBufferDeque* p_abs_dq;
-        //nl_aacrtbuf_t* p_aac_rtbuf;
         
 #else
         V4L2CapBuffer* p_rtcap_buf;
@@ -169,6 +168,8 @@ class v4_rtenc_t: public ThreadSingle
         //! \return void
         //!
         void SetRawFrameBuffers(unsigned char* p_frame_buf, int stride);
+    
+        std::string PrepareEncoderSettings(void);
         
     public:
 
@@ -178,8 +179,7 @@ class v4_rtenc_t: public ThreadSingle
         //! \param[in] _p_rtcap_buf - Pointer to the real-time capture buffer
         //!
 #if (defined (__APPLE__) & defined (__MACH__))
-        v4_rtenc_t(const char* cfg_file,
-                   QTKitCapBuffer* _p_rtcap_buf,
+        v4_rtenc_t(QTKitCapBuffer* _p_rtcap_buf,
                    SafeBufferDeque* _p_abs_dq,
                    const bool _b_video_on,
                    const bool _b_audio_on);

@@ -61,7 +61,7 @@ struct trial fullreq[] = {{80, 60}, {160,120}, {240,192}, {320,240}, {640,480}, 
 		success = [videoDevice open:&error];
 		
     }
-    
+        
     if (!success) {
         videoDevice = nil;
         // Handle error

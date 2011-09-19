@@ -66,11 +66,12 @@ void RTBuffer::Shutdown(void)
 {
     QTKitBufferInfo* pbi = new QTKitBufferInfo;
     
-    pbi->bFinalSample = true;
-    
-    FullBufferEnQ(pbi);	
-    
-    pauseRunning();
+    if(bIsRunning)
+    {
+        pbi->bFinalSample = true;
+        FullBufferEnQ(pbi);	
+        pauseRunning();
+    }
     
     mFrameCount=0;
     mRefusedCount=0;

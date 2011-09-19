@@ -136,8 +136,7 @@ void v4_rtenc_t::SetRawFrameBuffers(unsigned char* p_frame_buf, int stride)
 }
 
 #if (defined (__APPLE__) & defined (__MACH__))
-v4_rtenc_t::v4_rtenc_t(const char* cfg_file,
-                       QTKitCapBuffer* _p_rtcap_buf,
+v4_rtenc_t::v4_rtenc_t(QTKitCapBuffer* _p_rtcap_buf,
                        SafeBufferDeque* _p_abs_dq,
                        bool _b_video_on,
                        bool _b_audio_on):
@@ -164,12 +163,10 @@ p_rtcap_buf(_p_rtcap_buf)
     }
 
     LOG_OUT("checkpoint: read config file");
-    char cwd[500];
-    getcwd(cwd, 499);
-    cout << "Current working directory: " << cwd << endl;
+    string cfg_file_path = PrepareEncoderSettings();
     
     //Overwrite some settings from config file
-    if(v4e_read_config_file(&settings,(char*)cfg_file)!=VSSH_OK)
+    if(v4e_read_config_file(&settings,(char*)cfg_file_path.c_str())!=VSSH_OK)
     {
         LOG_ERR("v4e_read_config_file() error");
         throw RTENC_RETCODE_ERR_READ_CFG_FILE;
@@ -550,6 +547,49 @@ void v4_rtenc_t::ChangeTargetFrameRate(int newFrameRateFps)
 {
     int retcode = v4e_change_bitrate_and_framerate(Handle(), 0, newFrameRateFps*2000, 1000);
     assert(retcode == VSSH_OK);
+}
+
+string v4_rtenc_t::PrepareEncoderSettings(void)
+{
+    string encSettings(
+        "svc.num_layers=0\n"                     
+        "svc.multistream_mode=0\n" 
+        "profile_idc=77\n"
+        "level_idc=32\n"
+        "sym_mode=1\n"
+        "gpu_acceleration=0\n"
+        "gop.idr_period=1\n"
+        "gop.keyframes=150\n"
+        "gop.bframes=3\n"
+        "gop.emulate_b=2\n"
+        "gop.num_units=1000\n"
+        "gop.time_scale=60000\n"
+        "rc.type=2\n"
+        "rc.kbps=600\n"
+        "rc.auto_qp=1\n"
+        "speed.i=8\n"
+        "speed.p=8\n"
+        "speed.b=8\n"
+        "speed.automatic=0\n"
+    );
+    
+    char* sHomeDir = getenv("HOME");
+    
+    cout << "Default encoder settings:\n" << encSettings << endl;
+    cout << "Home Directory: " << sHomeDir << endl;
+    string sSettingsFilePath = sHomeDir;
+    sSettingsFilePath += "/Library/Preferences/neuronlite_vrtencoder_settings.cfg";
+    
+    //Check if settings file is present
+    if(access(sSettingsFilePath.c_str(), F_OK) == -1)
+    {
+        FILE* fpEncSettings = fopen(sSettingsFilePath.c_str(), "w");
+        assert(fpEncSettings != NULL);
+        fprintf(fpEncSettings, "%s", encSettings.c_str());
+        fclose(fpEncSettings);
+    }
+    
+    return sSettingsFilePath;
 }
 
 #endif

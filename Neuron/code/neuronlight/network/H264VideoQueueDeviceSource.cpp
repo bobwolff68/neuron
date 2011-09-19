@@ -11,12 +11,11 @@ extern bool bFoundSDP;
 H264VideoQueueDeviceSource* gpVideoSource = NULL;
 
 void H264VideoQueueDeviceSource::SignalData(void* p_src)
-{
+{    
     if(H264VideoQueueDeviceSource::referenceCount > 0)
     {
         H264VideoQueueDeviceSource* p_dsrc = (H264VideoQueueDeviceSource*) p_src;
         p_dsrc->envir().taskScheduler().triggerEvent(H264VideoQueueDeviceSource::eventTriggerId,p_dsrc);
-        
     }
 }
 

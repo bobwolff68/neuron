@@ -159,9 +159,7 @@ QTKitCap::errtype QTKitCap::InitDevice()
 
 void QTKitCap::DeInitDevice(void)
 {
-
 	stop_capturing();
-
 }
 
 void QTKitCap::stop_capturing()
@@ -189,6 +187,10 @@ void QTKitCap::quit_capturing(void)
 
 void QTKitCap::start_capturing()
 {
+    // Clear out the existing queue if we have a local one as a 'restart'.
+    // TODO reset the local buffer list.
+    pRTBuffer->startRunning();
+
     [mCaptureSession startRunning];
 }
 
@@ -200,10 +202,6 @@ void QTKitCap::init_capturing(void)
 		cerr << "start_capturing: Thread is already running...hmm...skipping start..." << endl;
 		return;
 	}
-
-    // Clear out the existing queue if we have a local one as a 'restart'.
-    // TODO reset the local buffer list.
-    pRTBuffer->startRunning();
 
 	// Now that we're capturing...run the workerBee thread.
 	startThread();

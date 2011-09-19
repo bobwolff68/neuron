@@ -17,6 +17,11 @@ class RunPipeline : public ThreadSingle
 {
 private:
     TempVidCapBase* p_cap_objc;
+    
+    //declared void* because inclusion of rtcamstream.h will pollute
+    //".mm" code with rtcamstream header code, which we did not want 
+    void* pRTCamStream;
+    
     const int width;
     const int height;
     const bool b_video_on;
@@ -32,10 +37,7 @@ public:
                 const bool b_video_on,
                 const bool b_audio_on);
     
-    ~RunPipeline()
-    {
-        stopThread();
-    }
+    ~RunPipeline();
 };
 
 #endif
