@@ -134,6 +134,8 @@ nl_rtcamstream_t::~nl_rtcamstream_t()
 		delete p_rtenc;
 #if( !(defined(__APPLE__) & defined(__MACH__)) )
 		delete p_cap;
+#else
+        p_cap->release();
 #endif
         cout << "Deleting rtcamstream instance..." << endl;
 	}
