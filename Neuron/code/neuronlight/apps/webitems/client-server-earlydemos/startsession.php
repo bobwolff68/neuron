@@ -10,10 +10,10 @@
         printf("failed");
         die('Not connected : ' . mysqli_error());
     } else {
-        $sql = "insert into sessionrecord (username, ip, portv, porta) values ('$_SESSION[userid]', '".$_POST["cURL"]."', 4000, 4001)";
-        $result = mysqli_query($mysqli, $sql);
+        // $sql = "insert into sessionrecord (username, ip, portv, porta) values ('$_SESSION[userid]', '".$_POST["cURL"]."', 4000, 4001)";
+        // $result = mysqli_query($mysqli, $sql);
         
-        $sql = "update user set insession=1,width='$_SESSION[cwidth]',height='$_SESSION[cheight]' where username='$_SESSION[userid]'";
+        $sql = "update user set ip='".$_POST["cURL"]."',insession=1,width='$_SESSION[cwidth]',height='$_SESSION[cheight]' where username='$_SESSION[userid]'";
         $result = mysqli_query($mysqli, $sql);
         
         $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];

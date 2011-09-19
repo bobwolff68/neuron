@@ -32,7 +32,7 @@ colorspace(_colorspace)
 
 RunPipeline::~RunPipeline()
 {
-    stopThread();
+    //stopThread();
     delete (nl_rtcamstream_t*)(pRTCamStream);
 }
 

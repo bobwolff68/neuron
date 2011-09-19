@@ -7,7 +7,7 @@
         <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
         <meta http-equiv="cache-control" content="max-age=200" />
                 
-	<link href="conf1.css" media="handheld, screen" rel="stylesheet" type="text/css" />
+	<link href="conf2.css" media="handheld, screen" rel="stylesheet" type="text/css" />
         <!-- link rel="stylesheet" type="text/css" href="http://revolunet.github.com/VLCcontrols/src/styles.css" / -->
 
 	<title>XVDTH Video</title>
@@ -198,7 +198,7 @@
                     var lastlocationurl = a1.value;
                     var changepage = 0;
                     var curl = 'conference2.php';
-                    var options = new Array(":aspect-ratio=4:3", "--rtsp-tcp");
+                    var options = new Array(":rtsp-caching=300");
                     switch (numinsession) {
                         case 3:
                             if (a1.value != 'two'){
@@ -232,10 +232,10 @@
                                     urival0.value = member[2][1];
                                     
                                     urival.value = member[0][1];
-                                    urival.value = urival.value.replace(/stream0/i, "stream2");
+                                    //urival.value = urival.value.replace(/stream0/i, "stream2");
                                     
                                     urival2.value = member[1][1];
-                                    urival2.value = urival2.value.replace(/stream0/i, "stream2");
+                                    //urival2.value = urival2.value.replace(/stream0/i, "stream2");
                                 } else {
                                     if(sesslogged == member[0][0]){
                                         var uname = document.getElementById("uname1");
@@ -246,10 +246,10 @@
                                         urival0.value = member[0][1];
                                         
                                         urival.value = member[1][1];
-                                        urival.value = urival.value.replace(/stream0/i, "stream1");
+                                        //urival.value = urival.value.replace(/stream0/i, "stream1");
                                         
                                         urival2.value = member[2][1];
-                                        urival2.value = urival2.value.replace(/stream0/i, "stream1");
+                                        //urival2.value = urival2.value.replace(/stream0/i, "stream1");
                                     } else{
                                         var uname = document.getElementById("uname1");
                                         uname.value = member[0][0];
@@ -259,25 +259,26 @@
                                         urival0.value = member[1][1];
                                         
                                         urival.value = member[0][1];
-                                        urival.value = urival.value.replace(/stream0/i, "stream1");
+                                        //urival.value = urival.value.replace(/stream0/i, "stream1");
                                         
                                         urival2.value = member[2][1];
-                                        urival2.value = urival2.value.replace(/stream0/i, "stream2");
+                                        //urival2.value = urival2.value.replace(/stream0/i, "stream2");
                                     }
                                 }
                                 
-                                // var id21 = p0.playlist.add(urival0.value, "stream one", options); 
-                                var id21 = p0.playlist.add(urival0.value, "stream one", null);
+                                var id21 = p0.playlist.add(urival0.value, "stream one", options); 
+                                // var id21 = p0.playlist.add(urival0.value, "stream one", null);
                                 p0.playlist.playItem(id21);
+//                                p0.audio.toggleMute();
                                 p0.playlist.play();
                                 
-                                // var id22 = p1.playlist.add(urival.value, "stream two", options); 
-                                var id22 = p1.playlist.add(urival.value, "stream two", null);
+                                var id22 = p1.playlist.add(urival.value, "stream two", options); 
+                                //var id22 = p1.playlist.add(urival.value, "stream two", null);
                                 p1.playlist.playItem(id22);
                                 p1.playlist.play();
                                 
-                                //var id23 = p2.playlist.add(urival2.value, "stream three", options); 
-                                var id23 = p2.playlist.add(urival2.value, "stream three", null);
+                                var id23 = p2.playlist.add(urival2.value, "stream three", options); 
+                                //var id23 = p2.playlist.add(urival2.value, "stream three", null);
                                 p2.playlist.playItem(id23);
                                 p2.playlist.play();
                             }
@@ -397,8 +398,8 @@
                                     if ($row['username'] == $_SESSION[userid]){  
                                         $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
                                         $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]);
-                                        if ($_SESSION[dheight0] > $_SESSION[dconstheight0]){
-                                            $_SESSION[dheight0] = $_SESSION[dconstheight0];
+                                        if ($_SESSION[dheight0] > $_SESSION[d0constheight]){
+                                            $_SESSION[dheight0] = $_SESSION[d0constheight];
                                             $_SESSION[dwidth0] = round($_SESSION[dheight0] * (1 / $_SESSION[aratio0]));
                                         }                                           
                                         $count--;
@@ -406,8 +407,8 @@
                                         $_SESSION[aratio1] = $row['height'] / $row['width'];
                                         // $_SESSION[dwidth1] = $row['width'];
                                         $_SESSION[dheight1] = round($_SESSION[dwidth1] * $_SESSION[aratio1]);
-                                        if ($_SESSION[dheight1] > $_SESSION[dconstheight1]){
-                                            $_SESSION[dheight1] = $_SESSION[dconstheight1];
+                                        if ($_SESSION[dheight1] > $_SESSION[d1constheight]){
+                                            $_SESSION[dheight1] = $_SESSION[d1constheight];
                                             $_SESSION[dwidth1] = round($_SESSION[dheight1] * (1 / $_SESSION[aratio1]));
                                         }                                        
                                     }
@@ -417,8 +418,8 @@
                                     if ($row['username'] == $_SESSION[userid]){  
                                         $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
                                         $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]);
-                                        if ($_SESSION[dheight0] > $_SESSION[dconstheight0]){
-                                            $_SESSION[dheight0] = $_SESSION[dconstheight0];
+                                        if ($_SESSION[dheight0] > $_SESSION[d0constheight]){
+                                            $_SESSION[dheight0] = $_SESSION[d0constheight];
                                             $_SESSION[dwidth0] = round($_SESSION[dheight0] * (1 / $_SESSION[aratio0]));
                                         }                                           
                                         $count--;
@@ -426,8 +427,8 @@
                                         $_SESSION[aratio2] = $row['height'] / $row['width'];
                                         // $_SESSION[dwidth2] = $row['width'];
                                         $_SESSION[dheight2] = round($_SESSION[dwidth2] * $_SESSION[aratio2]);
-                                        if ($_SESSION[dheight2] > $_SESSION[dconstheight1]){
-                                            $_SESSION[dheight2] = $_SESSION[dconstheight1];
+                                        if ($_SESSION[dheight2] > $_SESSION[d1constheight]){
+                                            $_SESSION[dheight2] = $_SESSION[d1constheight];
                                             $_SESSION[dwidth2] = round($_SESSION[dheight2] * (1 / $_SESSION[aratio2]));
                                         }
                                     }
@@ -437,8 +438,8 @@
                                     if ($row['username'] == $_SESSION[userid]){  
                                         $_SESSION[aratio0] = $_SESSION[cheight] / $_SESSION[cwidth];
                                         $_SESSION[dheight0] = round($_SESSION[dwidth0] * $_SESSION[aratio0]);
-                                        if ($_SESSION[dheight0] > $_SESSION[dconstheight0]){
-                                            $_SESSION[dheight0] = $_SESSION[dconstheight0];
+                                        if ($_SESSION[dheight0] > $_SESSION[d0constheight]){
+                                            $_SESSION[dheight0] = $_SESSION[d0constheight];
                                             $_SESSION[dwidth0] = round($_SESSION[dheight0] * (1 / $_SESSION[aratio0]));
                                         }                                           
                                         $count--;
@@ -574,7 +575,7 @@
                 </div>
             </div>
             
-            <div id="tslider">
+            <div id="tslider" class="tslider">
                 
                 <div id="vlce0" style="float: left">
                     <ul>

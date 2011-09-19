@@ -66,18 +66,6 @@
         
         <script type="text/javascript"> 
             
-            // This part gets the IP
-//            var ip = '#echo var="REMOTE_ADDR"';
-            // This part is for an alert box
-//            alert("Your IP address is "+ip);
-            // alert('myurl = ' + myjurl);
-            // This part is for the status bar
-//            window.defaultStatus = "Your IP address is "+ip;
-            // This part is for the title bar
-//            document.write("<title>Your IP address is "+ip+"</title>");
-         
-
-            
             function check(){
 //            alert('check called');
             
@@ -226,49 +214,6 @@
                 }
             }
             
-/*            function jump1(menu)
-            {   ref = menu.choice.options[menu.choice.selectedIndex].value;
-                //alert ('ref = ' + ref);
-                splitc = ref.lastIndexOf("*");
-                //alert ('splitc = ' + splitc);
-                target = "";
-                if (splitc != -1)
-                {   loc = ref.substring(0,splitc);
-                    if 
-                     ? $_SESSION['plugin'] = 'qt'; ?>
-                    target = ref.substring(splitc+1,1000);}
-                else {
-                    loc = ref; 
-                    switch (ref){
-                        case 'qt':
-                             ? $_SESSION['plugin'] = 'qt'; ?>
-                        break;
-
-                        default:
-                            ? $_SESSION['plugin'] = 'qt'; ?>
-                        break;
-                    }
-                    if (ref == 'qt'){
-                        ? $_SESSION['plugin'] = 'qt'; ?>
-                    }
-                    target="_self";
-                };
-
-                if (ref != "") {
-                    land(loc,target);
-                }
-            }
-*/
-               
-            function checkplugin(){
-                if ("<? echo $_SESSION[plugin] ?>" == "qt"){
-                    alert('Select a plugin = qt');
-                    document.location = "readysession_qt.php";
-                } else{
-                    alert('Select a plugin = other');
-                }
-            }
-            
             $(document.getElementsByTagName('div')[1]).ready(function() {
 //                addvlc();
  	    });
@@ -278,6 +223,26 @@
             
             google.maps.event.addDomListener(window, 'load', load);
 
+            function startcapture(){
+                downloadUrl("capture.php", function(data){
+                var xml = data.responseXML;
+                var pcap = xml.documentElement.getElementsByTagName("capture");
+                var field = pcap[0].getAttribute("captured");
+                 alert('Start Capture: ' + field);
+                });
+            }
+
+            function stopcapture(){
+                alert('Stop Capture');
+            }
+
+            function doexit(){
+                alert('Exiting');
+            }
+
+            function dosetvol(vollevel){
+                alert('Set Volume');
+            }
         </script>
     </head>
     
@@ -312,12 +277,6 @@
             $_SESSION['dheight2'] = 180;  
             
             require "check.php"; 
-            // echo "<script type='text/javascript'>var myjurl='$_SESSION[remote_addr]';</script>";
-            
-//            $myurl3 = "rtsp://";
-//            $myurl3 = $myurl3 . $_SERVER["REMOTE_ADDR"];
-//            $myurl3 = $myurl3 . ':8554/stream0';
-//            echo ("myurl3 = " . "$myurl3");
         ?>
         
         <script type="text/javascript"> 
@@ -372,8 +331,8 @@
                                     <div align="center">
                                         <p align="center">
                                             <select name="choice" size="1">
-                                                 <option value="readysession_qt.php">qt</option>
                                                  <option value="readysession.php">vlc</option>
+                                                 <option value="readysession_qt.php">qt</option>
                                              </select><br/>
                                              <input TYPE="button" VALUE="Start Session" onClick="jump(this.form)"></input>
                                         </p>
@@ -381,9 +340,11 @@
                                     </div>
                                     
                                 </form>
-                                
-                                <!-- a href="readysession.php"><button>Start Session</button></a -->
-                                <!-- INPUT TYPE="BUTTON" OnClick="checkplugin();" VALUE="Start Session"></INPUT -->
+                                <button onClick="startcapture();">Start Capture</button>
+                                <button onClick="stopcapture();">Stop Capture</button><br/>
+                                <input id='vol' value='7' size='5' type='text' name="vevo2"/>
+                                <button onClick="dosetvol();">Set Volume</button><br/>
+                                <button onClick="doexit();">Exit</button>
 		   	</div>
 	    </div>
 

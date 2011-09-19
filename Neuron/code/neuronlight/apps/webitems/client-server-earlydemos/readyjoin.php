@@ -23,22 +23,6 @@
         <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
 
         <script type="text/javascript"> 
-            var member = new Array();
-        
-        function downloadUrl(url, callback) {
-            var request = window.ActiveXObject ?
-            new ActiveXObject('Microsoft.XMLHTTP') :
-            new XMLHttpRequest;
-
-            request.onreadystatechange = function() {
-                if (request.readyState == 4) {
-                    request.onreadystatechange = doNothing;
-                    callback(request, request.status);
-                }
-            };
-            request.open('GET', url, true);
-            request.send(null);
-        }
         
             function load(){
                 //alert('load called');
@@ -66,7 +50,7 @@
     
     </head> 
     
-    <body onload="load();">
+    <body onload="load();" style="font-family: Tahoma, Geneva, sans-serif;">
         <?
             require "check.php";
             
@@ -111,10 +95,10 @@
         </script>
     
 <div class="mainwrapper">
-	    <div id="header">
-                <div id="header2">Neuron Light 2-Way Demo
-                </div>
-            </div>  
+	<div id="header">
+            <div id="header2">Neuron Light 2-Way Demo
+            </div>
+        </div>  
 
 	<div id="content" class="content">
             <div id="join" style="width: 200px; padding-left: 400px; padding-top:100px; float: left">

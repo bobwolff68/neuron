@@ -34,7 +34,9 @@
         
         #tslider {min-height: 250px; text-align: center; color: black; font-size:0.75em; background: #ffffff; }
         .tslider {padding: 5px 20px 0px 20px; min-width:200px;}
-        #tslider ul{ list-style-type: none; padding: 0; margin-left: 0;}
+        #tslider ul{ list-style-type: none; padding: 0 30px; margin-left: 10px; margin-right: 10px;}
+/*        #tslider vlce2{ padding: 10px 10px 10px 10px; margin-left: 30;} 
+*/
 
 /* --- END content --- */
 

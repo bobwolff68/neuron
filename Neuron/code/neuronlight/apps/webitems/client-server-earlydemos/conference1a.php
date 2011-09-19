@@ -201,7 +201,7 @@
                     var changepage = 0;
                     var curl = 'conference1.php';
                     // alert('aratio'+aspectratio);
-                    var options = new Array(aspectratio, "--rtsp-tcp");
+                    var options = new Array(":rtsp-caching=300");
                     switch (numinsession) {
                         case 0:
                             curl = 'landing.php';
@@ -234,22 +234,24 @@
                                     uname.value = member[1][0];
                                     urival0.value = member[0][1];
                                     urival.value = member[1][1];
-                                    urival.value = urival.value.replace(/stream0/i, "stream1");
+                                    //urival.value = urival.value.replace(/stream0/i, "stream0");
                                 } else {
                                     uname.value = member[0][0];
                                     urival0.value = member[1][1];
                                     urival.value = member[0][1];
-                                    urival.value = urival.value.replace(/stream0/i, "stream1");
+                                    //urival.value = urival.value.replace(/stream0/i, "stream0");
                                 }
                                 
-                                // var id22 = p1.playlist.add(urival.value, "stream two", options); 
-                                var id22 = p1.playlist.add(urival.value, "stream two", null);
+                                var id22 = p1.playlist.add(urival.value, "stream two", options); 
+                                //var id22 = p1.playlist.add("rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov", "stream two", options);
+                                //var id22 = p1.playlist.add(urival.value, "stream two", null);
                                 p1.playlist.playItem(id22);
                                 p1.playlist.play();
                                 
-                                // var id21 = p0.playlist.add(urival0.value, "stream zero", options); 
-                                var id21 = p0.playlist.add(urival0.value, "stream zero", null);
+                                var id21 = p0.playlist.add(urival0.value, "stream zero", options); 
+                                //var id21 = p0.playlist.add(urival0.value, "stream zero", null);
                                 p0.playlist.playItem(id21);
+//                                p0.audio.toggleMute();
                                 p0.playlist.play();
                             }
                         break;
@@ -532,7 +534,7 @@
                 </div>
             </div>
             
-            <div id="tslider">
+            <div id="tslider" class="tslider">
                 <div id="vlce0" style="float: left">
                     <ul>
                         <li><b><? echo ($_SESSION[userid]); ?></b></li>

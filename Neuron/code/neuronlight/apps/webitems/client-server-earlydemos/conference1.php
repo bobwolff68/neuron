@@ -22,6 +22,7 @@
         <!-- script src="jquery-1.6.2.min.js" type="text/javascript"></script -->
         
         <script type="text/javascript"> 
+        // start vlc    
             //var member = new Array();
             
             function registerVLCEvent(event, handler){
@@ -105,6 +106,8 @@
             registerVLCEvent('MediaPlayerPositionChanged', handleEvents);
             registerVLCEvent('MediaPlayerSeekableChanged', handleEvents);
             registerVLCEvent('MediaPlayerPausableChanged', handleEvents);
+            
+            // end vlc
             
             function check(){
             //alert('check called');
@@ -201,7 +204,7 @@
                     var changepage = 0;
                     var curl = 'conference1.php';
                     // alert('aratio'+aspectratio);
-                    // var options = new Array(aspectratio, "--rtsp-tcp");
+                    var options = new Array(":rtsp-caching=300");
                     switch (numinsession) {
                         case 0:
                             curl = 'landing.php';
@@ -224,24 +227,15 @@
                                 
                                 var urival = document.getElementById("uri");
                                 urival.value = ''; // 'rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov'; // ''; // member[0][1];
-                                //var options = new Array(aspectratio, "--rtsp-tcp");
-                                //var id22 = p1.playlist.add(urival.value, "stream one", options);
-                                var id22 = p1.playlist.add(urival.value, "stream one", null);
-                                 // p1.playlist.play();
+                                var id22 = p1.playlist.add(urival.value, "stream one", options);
+                                //var id22 = p1.playlist.add(urival.value, "stream one", null);
+                                //var id22 = p1.playlist.add("rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov", "stream one", options);
                                 p1.playlist.stop();
-                                
-                                var urival0 = document.getElementById("uri0");
-                                
+
+                                var urival0 = document.getElementById("uri0");                                
                                 urival0.value = member[0][1]; // member[0][1]; // rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov
-                                
-   //                             var width = member[0][4];
-   //                             var height = member[0][5];
-   //                             var aratio = member[0][4]/member[0][5];
-   //                             var dwidth = 160;
-   //                             var dheight = dwidth / aratio;
-//                                aspectratio = aspectratio + member[0][4];
-                                // var id21 = p0.playlist.add(urival0.value, "stream zero", options);
-                                var id21 = p0.playlist.add(urival0.value, "stream zero", null);
+                                var options0 = new Array(":rtsp-caching=300","noaudio");
+                                var id21 = p0.playlist.add(urival0.value, "stream zero", options0);
                                 p0.playlist.play();
                             }
                         break;
@@ -340,10 +334,6 @@
                 p1.audio.toggleMute();
             }
             
-            function doalert(){
-                alert('doalert');
-            }
-            
         </script> 
         
     </head> 
@@ -421,15 +411,15 @@
         ?>
         
         <script type="text/javascript"> 
-            var aspectratio = ":aspect-ratio=";
-            var aratio = "4:3";
-            aspectratio = aspectratio + aratio;
+//            var aspectratio = ":aspect-ratio=";
+//            var aratio = "4:3";
+//            aspectratio = aspectratio + aratio;
             
-            var mywidth = "160";
+//            var mywidth = "160";
             
-            function dowidth(){
-                return "160";
-            }
+//            function dowidth(){
+//                return "160";
+//            }
             
             $(document).ready(function(){
                 //p0.aspectRatio = "1:1";
@@ -529,7 +519,7 @@
                 </div>
             </div>
             
-            <div id="tslider">
+            <div id="tslider" class="tslider">
                 <div id="vlce0" style="float: left">
                     <ul>
                         <li><b><? echo ($_SESSION[userid]); ?></b></li>
