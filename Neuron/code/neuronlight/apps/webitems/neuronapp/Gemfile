@@ -7,6 +7,11 @@ gem 'rails', '3.1.0'
 
 gem 'mysql2'
 
+gem 'haml'
+gem 'sass'
+gem 'slim'
+
+
 # Gems used only for assets and not required
 # in production environments by default.
 group :assets do
@@ -28,5 +33,5 @@ gem 'jquery-rails'
 
 group :test do
   # Pretty printed test output
-  gem 'turn', :require => false
+  gem "rspec-rails", "~> 2.6.1.beta1"
 end
