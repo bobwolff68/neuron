@@ -12,6 +12,7 @@
 
 #define DESIRED_BITS_PER_SAMPLE 16
 #define DESIRED_AUDIO_FREQUENCY 44100
+#define DESIRED_NUM_CHANNELS_OUT    2
 //Manjesh - #define DESIRED_AUDIO_FREQUENCY 32000
 #define DESIRED_CONVERTEDOUTPUT_IN_TIME_MS 10
 
@@ -113,7 +114,9 @@ OSStatus iConverter (
     pAudioInputOutBuf = (unsigned char*)malloc(audioInputOutBufSize);    // Reasonably sized buffer for output. Will auto-resize if needed at runtime.
     // We can pre-calculate our desired size of an output buffer.
     // If we CHOOSE to ask for 10ms of data, we calculate how many samples and how many bytes this is.
-    audioInputPostConversionNumPackets = DESIRED_AUDIO_FREQUENCY / (1000 / DESIRED_CONVERTEDOUTPUT_IN_TIME_MS);
+//    audioInputPostConversionNumPackets = DESIRED_AUDIO_FREQUENCY / (1000 / DESIRED_CONVERTEDOUTPUT_IN_TIME_MS);
+    // TODO change to ms version and figure out the conversion offset problem.
+    audioInputPostConversionNumPackets = 512;
     
     // The rest of the initialization variables must be done after the first sample of audio is received.
     // See comment [FINISH_AUDIO_INITIALIZATION]
@@ -571,19 +574,27 @@ OSStatus iConverter (
 {
     int bytes_to_copy_total;
     int bytes_copied_so_far = 0;    // can be used for pAudioInputOutBuf offset in bytes.
+    int numInboundBuffers = data->mNumberBuffers;
     
-    std::cerr << "Supply input data to Converter - in callback." << endl;
+    // If/when we allow mono capture, this will wind up being '1' but the copy loops must be looked over carefully at that point.
+    // They are implemented to handle it but could be deficient in some way.
+    assert(numInboundBuffers == 2);
+    
+//    std::cerr << "Supply input data to Converter - in callback." << endl;
+/*    AudioBuffer* pbuff0 = &data->mBuffers[0];
+    AudioBuffer* pbuff1 = &data->mBuffers[1];
     assert(data->mNumberBuffers == 2);
-    *numberDataPackets = 100;
+//    *numberDataPackets = 100;
     pAudioInputOutBuf = (unsigned char*)malloc(32768);
     data->mBuffers[0].mNumberChannels = 1;
     data->mBuffers[0].mData = pAudioInputOutBuf;
-    data->mBuffers[0].mDataByteSize = 800;
+    data->mBuffers[0].mDataByteSize = *numberDataPackets * mAudioInputIndividualSampleSize;
     data->mBuffers[1].mNumberChannels = 1;
     data->mBuffers[1].mData = pAudioInputOutBuf;
-    data->mBuffers[1].mDataByteSize = 800;
+    data->mBuffers[1].mDataByteSize = *numberDataPackets * mAudioInputIndividualSampleSize;
     return 0;
-
+*/
+    
     // We may bail out if there is no residual and there is no further frames available.
     if (pAudioInputQueue->qsize()==0)
     {
@@ -593,8 +604,8 @@ OSStatus iConverter (
     
     // Remember, this is INPUT data we're pushing now. As of Sep 2011, this means float32 samples (4-bytes)
     //
-    // ALSO - since input data is float and NON-interleaved, we don't count both channels but only 'samples' instead.
-    bytes_to_copy_total = *numberDataPackets * mAudioInputIndividualSampleSize;
+    // ALSO - since 'regular' input data is float32 and NON-interleaved, we'll get 2 inbound buffers so grand total of bytes is doubled.
+    bytes_to_copy_total = *numberDataPackets * mAudioInputIndividualSampleSize * numInboundBuffers;
     
     // Flexibly grow the audio outbuf when needed.
     if (bytes_to_copy_total > audioInputOutBufSize)
@@ -613,7 +624,8 @@ OSStatus iConverter (
         int to_copy_now;
         
         // Let's assume the best - we get to copy all that's left to be copied.
-        to_copy_now = bytes_to_copy_total - bytes_copied_so_far;
+        // And to_copy_now is the actual memcpy amount so adjust for 2 inbound buffers.
+        to_copy_now = (bytes_to_copy_total - bytes_copied_so_far) / numInboundBuffers;
         
         // Copy at most '*numberDataPackets' into '*data' (as AudioBufferList of 1) . We will wind up with residual data on each iteration.
         // Initially, see if we need a residual buffer or already have residual to process.
@@ -629,9 +641,21 @@ OSStatus iConverter (
             // There was no data ready. Cope by sleeping for a few and going around again.
             if (!pAudioInputResidualData)
             {
+#if 1
+                // When we get here, we need to know it the first time it happens. Then decide what to do on implementation.
+                // It may be just fine to sleep and continue depending on threading model in AudioConverter. See alternative below.
                 std::cerr << "Delay in converter callback. Requested length=" << bytes_to_copy_total << ". Only copied " << bytes_copied_so_far << " at this point." << endl;
                 usleep(5*1000);
+                assert(false);
                 continue;
+#else
+                // This version says - we gotta report back how many samples we've copied and return.
+                // This is only necessary if this callback is ultimately in the same thread as the original call
+                // to FillComplexBuffer() which it shouldn't be. As this would stall out the audio reception callback from QTKit.
+                assert(false);
+                *numberDataPackets = bytes_copied_so_far / mAudioInputIndividualSampleSize / numInboundBuffers;
+                return noErr;
+#endif
             }
             
             // In this case, we have data. Let 'er ride.
@@ -641,14 +665,26 @@ OSStatus iConverter (
         if (pAudioInputResidualData)
         {
             // If we don't have enough data in the residual buffer, then only copy that amount for now.
-            if ((audioInputResidualTotalLength - audioInputResidualBytesProcessed) < to_copy_now)
-                to_copy_now = audioInputResidualTotalLength - audioInputResidualBytesProcessed;     // Artificially shorten.
+            if ((audioInputResidualTotalLength - audioInputResidualBytesProcessed)/numInboundBuffers < to_copy_now)
+                to_copy_now = (audioInputResidualTotalLength - audioInputResidualBytesProcessed)/numInboundBuffers;     // Artificially shorten.
             
-            memcpy(&pAudioInputOutBuf[bytes_copied_so_far], &pAudioInputResidualData[audioInputResidualBytesProcessed], to_copy_now);
+            ///
+            /// Now copy data and then copy again for 2nd buffer if there is one. 
+            /// NOTE: Decided against generic for() loop due to byte-tracking complication. 2 channels of input should be fine for a LONG time.
+            ///
+            assert(numInboundBuffers <= 2);
             
+            /// Do 0th entry. 0th channel of data goes into 1st half of output buffer memory area.
+            memcpy(&pAudioInputOutBuf[bytes_copied_so_far/numInboundBuffers], &pAudioInputResidualData[audioInputResidualBytesProcessed/numInboundBuffers], to_copy_now);
+
+            /// Now the 2nd half if required. Note the offset into each region for left/right channels.
+            if (numInboundBuffers == 2)
+                memcpy(&pAudioInputOutBuf[bytes_copied_so_far/numInboundBuffers + bytes_to_copy_total/numInboundBuffers], 
+                       &pAudioInputResidualData[audioInputResidualBytesProcessed/numInboundBuffers + audioInputResidualTotalLength/numInboundBuffers], to_copy_now);
+
             // Advance pointers/counters
-            audioInputResidualBytesProcessed += to_copy_now;
-            bytes_copied_so_far += to_copy_now;
+            audioInputResidualBytesProcessed += to_copy_now * numInboundBuffers;
+            bytes_copied_so_far += to_copy_now * numInboundBuffers;
             
             // Are we completely done with the residual buffer yet?
             if (audioInputResidualBytesProcessed == audioInputResidualTotalLength)
@@ -660,14 +696,21 @@ OSStatus iConverter (
                 delete pAudioInputResidualData;
                 pAudioInputResidualData = NULL;
             }
+            
+            // Should never happen unless math was wrong above.
+            assert(audioInputResidualBytesProcessed <= audioInputResidualTotalLength);
         }
 
     }
     
-    *numberDataPackets = bytes_copied_so_far / mAudioInputIndividualSampleSize;
-    data->mBuffers->mNumberChannels = mAudioInputNumChannels;
-    data->mBuffers->mData = pAudioInputOutBuf;
-    data->mBuffers->mDataByteSize = bytes_copied_so_far;
+    *numberDataPackets = bytes_copied_so_far / mAudioInputIndividualSampleSize / numInboundBuffers;
+    
+    for (int i=0 ; i < numInboundBuffers ; i++)
+    {
+// This is supplied to us on inbound.        data->mBuffers[0].mNumberChannels = mAudioInputNumChannels;
+        data->mBuffers[i].mData = &pAudioInputOutBuf[i*(audioInputResidualTotalLength/numInboundBuffers)];
+        data->mBuffers[i].mDataByteSize = bytes_copied_so_far / numInboundBuffers;
+    }
 
     if (![mCaptureSession isRunning])
         return 1;
@@ -724,12 +767,12 @@ OSStatus iConverter (
         
         // Now we can finalize... [FINISH_AUDIO_INITIALIZATION] (tag from awakeFromNib)
         // Time to prep our output-converted data area and ask for data.
-        audioInputPostConversionSize = mAudioInputNumChannels * audioInputPostConversionNumPackets * (DESIRED_BITS_PER_SAMPLE / 8);
+        audioInputPostConversionSize = DESIRED_NUM_CHANNELS_OUT * audioInputPostConversionNumPackets * (DESIRED_BITS_PER_SAMPLE / 8);
         pAudioInputPostConversionData = new char[audioInputPostConversionSize];
         assert(pAudioInputPostConversionData);
         
         audioInputPostConversionBufferList.mNumberBuffers = 1;
-        audioInputPostConversionBufferList.mBuffers->mNumberChannels = mAudioInputNumChannels;
+        audioInputPostConversionBufferList.mBuffers->mNumberChannels = DESIRED_NUM_CHANNELS_OUT;
         audioInputPostConversionBufferList.mBuffers->mDataByteSize = audioInputPostConversionSize;
         audioInputPostConversionBufferList.mBuffers->mData = pAudioInputPostConversionData;
     }
@@ -773,28 +816,7 @@ OSStatus iConverter (
         // Convert to interleaved.
         // Endian-ness uncertain.
 
-#if 1
-        FillOutASBDForLPCM(outputBufferASBD, 44100.00, 2, 16, 16, false, false, false);
-        
-#else
-        outputBufferASBD.mSampleRate = DESIRED_AUDIO_FREQUENCY; // 44100;   // Manjesh - switch to 32000 when you're ready.
-        outputBufferASBD.mBitsPerChannel = DESIRED_BITS_PER_SAMPLE;
-        outputBufferASBD.mFramesPerPacket = 1;  // Always true for LPCM.
-
-        outputBufferASBD.mFormatFlags &= ~kAudioFormatFlagIsFloat;
-        outputBufferASBD.mFormatFlags |= kAudioFormatFlagIsSignedInteger;
-        outputBufferASBD.mFormatFlags |= kLinearPCMFormatFlagIsPacked;
-#ifdef FORCE_BIGENDIAN
-        outputBufferASBD.mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
-#endif
-        
-#if 1   // Interleaved
-        outputBufferASBD.mFormatFlags &= ~kAudioFormatFlagIsNonInterleaved;
-#endif
-        
-        outputBufferASBD.mBytesPerFrame = (outputBufferASBD.mBitsPerChannel / 8) * outputBufferASBD.mChannelsPerFrame;
-        outputBufferASBD.mBytesPerPacket = outputBufferASBD.mBytesPerFrame * outputBufferASBD.mFramesPerPacket;
-#endif
+        FillOutASBDForLPCM(outputBufferASBD, DESIRED_AUDIO_FREQUENCY, DESIRED_NUM_CHANNELS_OUT, DESIRED_BITS_PER_SAMPLE, DESIRED_BITS_PER_SAMPLE, false, false, false);
         
         // Open the audio converter
         OSStatus stat = AudioConverterNew(&sampleBufferASBD, &outputBufferASBD, &Converter);
@@ -855,7 +877,9 @@ OSStatus iConverter (
     pBI->timeStamp_uS = QTT_US(qtt);
     
     // Must 'delete' this array in Release via pBuffer
-    pBI->pBuffer = pAudioInputPostConversionData;
+    pBI->pBuffer = new char[audioInputPostConversionSize];
+    assert(pBI->pBuffer);
+    memcpy(pBI->pBuffer, pAudioInputPostConversionData, audioInputPostConversionSize);
     pBI->pBufferLength = audioInputPostConversionSize;
     
     pBI->rawLength = audioInputPostConversionSize;
