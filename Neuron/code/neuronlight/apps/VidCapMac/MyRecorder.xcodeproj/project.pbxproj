@@ -99,6 +99,7 @@
 		34E37259140C1B6C001524C7 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = /System/Library/Frameworks/CoreVideo.framework; sourceTree = "<absolute>"; };
 		34E3725B140C1BB0001524C7 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = /System/Library/Frameworks/AudioToolbox.framework; sourceTree = "<absolute>"; };
 		34E3725D140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libv4codecsdk-m32g-all-md.a"; path = "../../../../../Common/vanguard/mac/v4sdk-4.6/lib/libv4codecsdk-m32g-all-md.a"; sourceTree = "<group>"; };
+		34F2D798142BAA820067E6BD /* SafeBufferDeque.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SafeBufferDeque.h; path = ../../../include/SafeBufferDeque.h; sourceTree = "<group>"; };
 		7B5CFABD13F1B780007479E1 /* codec.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = codec.xcodeproj; path = ../../codec/xcode_build/codec/codec.xcodeproj; sourceTree = "<group>"; };
 		7B5CFAC413F1B79B007479E1 /* network.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = network.xcodeproj; path = ../../network/xcode_build/network/network.xcodeproj; sourceTree = "<group>"; };
 		7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = rtcamstream.xcodeproj; path = ../tools/rtcamstream/xcode_build/rtcamstream/rtcamstream.xcodeproj; sourceTree = "<group>"; };
@@ -179,6 +180,7 @@
 				34DE7EDD13EC9BA0007B30F0 /* ThreadSingle.h */,
 				32CA4F630368D1EE00C91783 /* MyRecorder_Prefix.pch */,
 				29B97316FDCFA39411CA2CEA /* main.mm */,
+				34F2D798142BAA820067E6BD /* SafeBufferDeque.h */,
 				34421929140C0674007E833C /* CameraInterrogation.h */,
 				3442192A140C0674007E833C /* CameraInterrogation.m */,
 				C5E698F10BA8735700382716 /* MyRecorderController.h */,

@@ -6,10 +6,15 @@
 #import "CoreVideo/CVPixelBuffer.h"
 
 #import <CoreAudio/CoreAudioTypes.h>
+#import <AudioToolbox/AudioConverter.h>
 
 #import "CameraInterrogation.h"
 
 #define DESIRED_BITS_PER_SAMPLE 16
+#define DESIRED_AUDIO_FREQUENCY 44100
+//Manjesh - #define DESIRED_AUDIO_FREQUENCY 32000
+#define DESIRED_CONVERTEDOUTPUT_IN_TIME_MS 10
+
 #define MODULO_REQUIRED 4
 
 // For testing only - ability to clear a/v queues in Live555 source and monitor their lengths
@@ -33,6 +38,27 @@ for(key in pDict){
 
 // Helper function to convert QTTime value into raw micro-seconds.
 #define QTT_US(Q) ((1000000*Q.timeValue)/Q.timeScale)
+
+
+///
+/// This is the callback which will be used in the complex audio converter
+/// It's job is to call the real callback within the MyRecorderController instance
+/// via using the UserData field (for 'this')
+///
+OSStatus iConverter (
+                     AudioConverterRef             inAudioConverter,
+                     UInt32                        *ioNumberDataPackets,
+                     AudioBufferList               *ioData,
+                     AudioStreamPacketDescription  **outDataPacketDescription,
+                     void                          *inUserData
+                     )
+{
+    MyRecorderController * pMc = (MyRecorderController*)inUserData;
+    
+    return [pMc iConvertSupplyData: ioData withNumPackets: ioNumberDataPackets];
+}
+
+
 
 @interface NSString (IntCompare)
 
@@ -78,6 +104,20 @@ for(key in pDict){
     [captureResBox setStringValue:[NSString stringWithFormat:@"%d x %d", outputWidth, outputHeight]];
     [captureButton setEnabled:true];
     [stopCaptureButton setEnabled:false];
+    
+    // Audio conversion support.
+    pAudioInputQueue = new SafeBufferDeque(10);
+    mAudioInputNumChannels = -1; // Uninitialized
+    // Setup audio callback output buffer.
+    audioInputOutBufSize = 2048;
+    pAudioInputOutBuf = (unsigned char*)malloc(audioInputOutBufSize);    // Reasonably sized buffer for output. Will auto-resize if needed at runtime.
+    // We can pre-calculate our desired size of an output buffer.
+    // If we CHOOSE to ask for 10ms of data, we calculate how many samples and how many bytes this is.
+    audioInputPostConversionNumPackets = DESIRED_AUDIO_FREQUENCY / (1000 / DESIRED_CONVERTEDOUTPUT_IN_TIME_MS);
+    
+    // The rest of the initialization variables must be done after the first sample of audio is received.
+    // See comment [FINISH_AUDIO_INITIALIZATION]
+
     
 // Create the capture session
     
@@ -242,6 +282,9 @@ for(key in pDict){
     if (pCameraResolutions)
         [pCameraResolutions release];
     
+    free(pAudioInputOutBuf);
+    delete pAudioInputPostConversionData;
+    delete pAudioInputQueue;
 }
 
 //
@@ -520,120 +563,278 @@ for(key in pDict){
 }
 
 ///
+/// This is the class-version of the callback which will be used in the complex audio converter
+/// It's job is to supply data to the converter when the converter calls it.
+/// If no input is available, that's ok too.
+///
+- (OSStatus) iConvertSupplyData:  (AudioBufferList *)data withNumPackets:(UInt32 *)numberDataPackets
+{
+    int bytes_to_copy_total;
+    int bytes_copied_so_far = 0;    // can be used for pAudioInputOutBuf offset in bytes.
+    
+    std::cerr << "Supply input data to Converter - in callback." << endl;
+    assert(data->mNumberBuffers == 2);
+    *numberDataPackets = 100;
+    pAudioInputOutBuf = (unsigned char*)malloc(32768);
+    data->mBuffers[0].mNumberChannels = 1;
+    data->mBuffers[0].mData = pAudioInputOutBuf;
+    data->mBuffers[0].mDataByteSize = 800;
+    data->mBuffers[1].mNumberChannels = 1;
+    data->mBuffers[1].mData = pAudioInputOutBuf;
+    data->mBuffers[1].mDataByteSize = 800;
+    return 0;
+
+    // We may bail out if there is no residual and there is no further frames available.
+    if (pAudioInputQueue->qsize()==0)
+    {
+        *numberDataPackets = 0;
+        return 2;
+    }
+    
+    // Remember, this is INPUT data we're pushing now. As of Sep 2011, this means float32 samples (4-bytes)
+    //
+    // ALSO - since input data is float and NON-interleaved, we don't count both channels but only 'samples' instead.
+    bytes_to_copy_total = *numberDataPackets * mAudioInputIndividualSampleSize;
+    
+    // Flexibly grow the audio outbuf when needed.
+    if (bytes_to_copy_total > audioInputOutBufSize)
+    {
+        audioInputOutBufSize = bytes_to_copy_total;
+        pAudioInputOutBuf = (unsigned char*)realloc(pAudioInputOutBuf, audioInputOutBufSize);
+    }
+
+    assert(pAudioInputOutBuf);
+    
+    ///
+    /// Keep grabbing items off the queue until we've copied FULLY into the buffer area -  unless capturing stops.
+    ///
+    while (bytes_copied_so_far < bytes_to_copy_total && [mCaptureSession isRunning])
+    {
+        int to_copy_now;
+        
+        // Let's assume the best - we get to copy all that's left to be copied.
+        to_copy_now = bytes_to_copy_total - bytes_copied_so_far;
+        
+        // Copy at most '*numberDataPackets' into '*data' (as AudioBufferList of 1) . We will wind up with residual data on each iteration.
+        // Initially, see if we need a residual buffer or already have residual to process.
+        
+        // Now, we either still have residual or it's NULL.
+        // If it's NULL, then let's grab the next item and process it.
+        if (!pAudioInputResidualData)
+        {
+            // Get the new residual buffer for copying now and potentially later.
+            audioInputResidualBytesProcessed = 0;
+            pAudioInputQueue->RemoveItem(&pAudioInputResidualData, &audioInputResidualTotalLength, &audioInputResidualTV);
+            
+            // There was no data ready. Cope by sleeping for a few and going around again.
+            if (!pAudioInputResidualData)
+            {
+                std::cerr << "Delay in converter callback. Requested length=" << bytes_to_copy_total << ". Only copied " << bytes_copied_so_far << " at this point." << endl;
+                usleep(5*1000);
+                continue;
+            }
+            
+            // In this case, we have data. Let 'er ride.
+        }
+        
+        // Now process the data.
+        if (pAudioInputResidualData)
+        {
+            // If we don't have enough data in the residual buffer, then only copy that amount for now.
+            if ((audioInputResidualTotalLength - audioInputResidualBytesProcessed) < to_copy_now)
+                to_copy_now = audioInputResidualTotalLength - audioInputResidualBytesProcessed;     // Artificially shorten.
+            
+            memcpy(&pAudioInputOutBuf[bytes_copied_so_far], &pAudioInputResidualData[audioInputResidualBytesProcessed], to_copy_now);
+            
+            // Advance pointers/counters
+            audioInputResidualBytesProcessed += to_copy_now;
+            bytes_copied_so_far += to_copy_now;
+            
+            // Are we completely done with the residual buffer yet?
+            if (audioInputResidualBytesProcessed == audioInputResidualTotalLength)
+            {
+                audioInputResidualBytesProcessed = 0;
+                audioInputResidualTotalLength = 0;
+                
+                // Must delete as this pointer came from a SafeBufferDeque.RemoveItem()
+                delete pAudioInputResidualData;
+                pAudioInputResidualData = NULL;
+            }
+        }
+
+    }
+    
+    *numberDataPackets = bytes_copied_so_far / mAudioInputIndividualSampleSize;
+    data->mBuffers->mNumberChannels = mAudioInputNumChannels;
+    data->mBuffers->mData = pAudioInputOutBuf;
+    data->mBuffers->mDataByteSize = bytes_copied_so_far;
+
+    if (![mCaptureSession isRunning])
+        return 1;
+    else
+        return noErr;
+}
+
+///
 /// \brief Audio sample buffers are sent here via another threading calling into this function with a set of samples are ready for processing.
 ///         When audio processing is enabled, the 'QTBufferSamples* sampleBuffer' is sent in the QTKitBufferInfo* as pAudioSamples. This is **NOT**
 ///         to be used by the consumer. This is for tracking objects and freeing them appropriately on the Mac.
 ///
 ///         There are 3 dynamic audio modes. These are delimited in this function by the member 'sendAudioType' values 0, 1, and 2.
 ///         0 - None - no processing is done on inbound samples. They are simply dropped.
-///         1 - Samples - This mode sends a pointer to the AudioBufferList* in 'pBuffer' as a void*. This pointer requires the recipient
-///                     to iterate through an array of structs to get pointers to each buffer, the config of each sample such as
-///                     # channels, sample rate, etc. This allows the user to send individual buffers into an encoder. Hopefully
-///                     this is unnecessary as there is a lot more iterative tracking to do. It is currently the case that audio
-///                     samples are being placed here in 512 buffer lists. Lots of buffers. As the other side of processing the queue
-///                     may not have access to Apple structures, there are mimick structures 'neuronAudioBufferList' and 'neuronAudioBuffer'.
-///                     \note To distinguish this mode to the recipient, rawLength and rawNumSamples are set to a value of '-1'.
-///         2 - Raw buffer - This method sends a single pointer to the raw audio chunk in memory via 'pBuffer'. The members of QTKitBufferInfo
+///         1 - Samples - Now illegal.
+/// [OLD]        2 - Raw buffer - This method sends a single pointer to the raw audio chunk in memory via 'pBuffer'. The members of QTKitBufferInfo
 ///                     additionally used are: rawLength - the actual number of valid bytes in the pBuffer. And rawNumSamples - tells the recipient
 ///                     how many samples are contained in the pBuffer. This number should divide evenly and without remainder into the rawLength.
+///         2 - AudioConvert - a) Takes inbound samples and copies them into a SafeBufferDeque so that the audio converter callback can pull from the
+///             deque for conversion when the converter is ready for new input data. b) Make a call to see if there is any converted/final data, and
+///             if so, send this into the RTBuffer for later encoding.
 ///
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputAudioSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection
 {
     
+    ///
+    /// Skip out if audio is disabled.
+    ///
     if (sendAudioType==0)
     {
         //        NSLog(@"Skipping audio samples.");
         return;
     }
     
-    /* Get the sample buffer's AudioStreamBasicDescription, which will be used to set the input format of the effect audio unit and the ExtAudioFile. */
-    QTFormatDescription *formatDescription = [sampleBuffer formatDescription];
-    NSValue *sampleBufferASBDValue = [formatDescription attributeForKey:QTFormatDescriptionAudioStreamBasicDescriptionAttribute ];
-    if (!sampleBufferASBDValue)
-        return;
+    if (mAudioInputNumChannels==-1)
+    {
+        // Setup input channels based upon this sample.
+        /* Get the sample buffer's AudioStreamBasicDescription, which will be used to set the input format of the effect audio unit and the ExtAudioFile. */
+        QTFormatDescription *formatDescription = [sampleBuffer formatDescription];
+        NSValue *sampleBufferASBDValue = [formatDescription attributeForKey:QTFormatDescriptionAudioStreamBasicDescriptionAttribute ];
+        if (!sampleBufferASBDValue)
+        {
+            assert(false);
+            return;
+        }
+        
+        AudioStreamBasicDescription sampleBufferASBD = {0};
+        memset (&sampleBufferASBD, 0, sizeof (sampleBufferASBD));
+        
+        [sampleBufferASBDValue getValue:&sampleBufferASBD];
+        
+        mAudioInputNumChannels = sampleBufferASBD.mChannelsPerFrame;
+        mAudioInputIndividualSampleSize = sampleBufferASBD.mBitsPerChannel / 8;    // Float is float32.
+        
+        // Now we can finalize... [FINISH_AUDIO_INITIALIZATION] (tag from awakeFromNib)
+        // Time to prep our output-converted data area and ask for data.
+        audioInputPostConversionSize = mAudioInputNumChannels * audioInputPostConversionNumPackets * (DESIRED_BITS_PER_SAMPLE / 8);
+        pAudioInputPostConversionData = new char[audioInputPostConversionSize];
+        assert(pAudioInputPostConversionData);
+        
+        audioInputPostConversionBufferList.mNumberBuffers = 1;
+        audioInputPostConversionBufferList.mBuffers->mNumberChannels = mAudioInputNumChannels;
+        audioInputPostConversionBufferList.mBuffers->mDataByteSize = audioInputPostConversionSize;
+        audioInputPostConversionBufferList.mBuffers->mData = pAudioInputPostConversionData;
+    }
     
-    AudioStreamBasicDescription sampleBufferASBD = {0};
-    memset (&sampleBufferASBD, 0, sizeof (sampleBufferASBD));
+    ///
+    /// Get audio stream description. This will dictate how we convert data and setup the converter
+    ///
     
-    [sampleBufferASBDValue getValue:&sampleBufferASBD];
-#if 0
-    
-/*    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerFrame=%lu\n", sampleBufferASBD.mBytesPerFrame);
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBytesPerPacket=%lu\n", sampleBufferASBD.mBytesPerPacket);
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mSampleRate=%f\n", sampleBufferASBD.mSampleRate);
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mBitsPerChannel=%lu\n", sampleBufferASBD.mBitsPerChannel);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mChannelsPerFrame=%lu\n", sampleBufferASBD.mChannelsPerFrame);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFramesPerPacket=%lu\n", sampleBufferASBD.mFramesPerPacket);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags=0x%lx\n", sampleBufferASBD.mFormatFlags);	
-    
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsFloat=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsFloat);
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsBigEndian=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsBigEndian);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsNonMixable=%lu \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsNonMixable);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsAlignedHigh=%lu \n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsAlignedHigh);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagIsPacked=%lu\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagIsPacked);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kLinearPCMFormatFlagsSampleFractionShift= %lu\n", sampleBufferASBD.mFormatFlags & kLinearPCMFormatFlagsSampleFractionShift);	
-    
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsNonInterleaved=%lu \n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsNonInterleaved);	
-    printf( "!!!UncompressedVideoOutput::outputAudioSampleBuffer(), sampleBufferASBD.mFormatFlags kAudioFormatFlagIsSignedInteger=%lu\n", sampleBufferASBD.mFormatFlags & kAudioFormatFlagIsSignedInteger);	
-    
-    printf(" lengthForAllSamples=%d, numberOfSamples=%d\n",
-           [sampleBuffer lengthForAllSamples],
-           [sampleBuffer numberOfSamples]); 
-    fflush(stdout);	*/
-#endif
-
-#if 0
     // If the conversion unit is not running already, start it up now that we have an ASBD for the input.
     if (!Converter)
     {
         AudioStreamBasicDescription outputBufferASBD = {0};
         
+        /* Get the sample buffer's AudioStreamBasicDescription, which will be used to set the input format of the effect audio unit and the ExtAudioFile. */
+        QTFormatDescription *formatDescription = [sampleBuffer formatDescription];
+        NSValue *sampleBufferASBDValue = [formatDescription attributeForKey:QTFormatDescriptionAudioStreamBasicDescriptionAttribute ];
+        if (!sampleBufferASBDValue)
+            return;
+        
+        AudioStreamBasicDescription sampleBufferASBD = {0};
+        memset (&sampleBufferASBD, 0, sizeof (sampleBufferASBD));
+        
+        [sampleBufferASBDValue getValue:&sampleBufferASBD];
+        
         // Output is similar to input so a starting point is nice.
         outputBufferASBD = sampleBufferASBD;
-/*
- kAudioFormatFlagIsFloat                     = (1 << 0),     // 0x1
- kAudioFormatFlagIsBigEndian                 = (1 << 1),     // 0x2
- kAudioFormatFlagIsSignedInteger             = (1 << 2),     // 0x4
- kAudioFormatFlagIsPacked                    = (1 << 3),     // 0x8
- kAudioFormatFlagIsAlignedHigh               = (1 << 4),     // 0x10
- kAudioFormatFlagIsNonInterleaved            = (1 << 5),     // 0x20
- kAudioFormatFlagIsNonMixable                = (1 << 6),     // 0x40
- kAudioFormatFlagsAreAllClear                = (1 << 31),
-
- */
+        /* - FYI - flags list from the header file in CoreAudio
+         
+         kAudioFormatFlagIsFloat                     = (1 << 0),     // 0x1
+         kAudioFormatFlagIsBigEndian                 = (1 << 1),     // 0x2
+         kAudioFormatFlagIsSignedInteger             = (1 << 2),     // 0x4
+         kAudioFormatFlagIsPacked                    = (1 << 3),     // 0x8
+         kAudioFormatFlagIsAlignedHigh               = (1 << 4),     // 0x10
+         kAudioFormatFlagIsNonInterleaved            = (1 << 5),     // 0x20
+         kAudioFormatFlagIsNonMixable                = (1 << 6),     // 0x40
+         kAudioFormatFlagsAreAllClear                = (1 << 31),
+         
+         */
         // Now modify the output to become:
         // 16-bit signed
         // Convert to interleaved.
         // Endian-ness uncertain.
 
-#if 0
-        FillOutASBDForLPCM(outputBufferASBD, 44100.00, 2, 16, 16, false, true);
+#if 1
+        FillOutASBDForLPCM(outputBufferASBD, 44100.00, 2, 16, 16, false, false, false);
         
 #else
+        outputBufferASBD.mSampleRate = DESIRED_AUDIO_FREQUENCY; // 44100;   // Manjesh - switch to 32000 when you're ready.
         outputBufferASBD.mBitsPerChannel = DESIRED_BITS_PER_SAMPLE;
         outputBufferASBD.mFramesPerPacket = 1;  // Always true for LPCM.
 
         outputBufferASBD.mFormatFlags &= ~kAudioFormatFlagIsFloat;
         outputBufferASBD.mFormatFlags |= kAudioFormatFlagIsSignedInteger;
+        outputBufferASBD.mFormatFlags |= kLinearPCMFormatFlagIsPacked;
+#ifdef FORCE_BIGENDIAN
+        outputBufferASBD.mFormatFlags |= kLinearPCMFormatFlagIsBigEndian;
+#endif
+        
 #if 1   // Interleaved
         outputBufferASBD.mFormatFlags &= ~kAudioFormatFlagIsNonInterleaved;
 #endif
         
         outputBufferASBD.mBytesPerFrame = (outputBufferASBD.mBitsPerChannel / 8) * outputBufferASBD.mChannelsPerFrame;
-//#else
-//        outputBufferASBD.mBytesPerFrame = (outputBufferASBD.mBitsPerChannel / 8) * 1;
-//#endif
-        
         outputBufferASBD.mBytesPerPacket = outputBufferASBD.mBytesPerFrame * outputBufferASBD.mFramesPerPacket;
 #endif
         
         // Open the audio converter
         OSStatus stat = AudioConverterNew(&sampleBufferASBD, &outputBufferASBD, &Converter);
         assert(stat==0);
-    }
+    } // end if (!Converter)
 
     assert(Converter);
-#endif
+
+    
+    
+    ///
+    /// Part a) -- get inbound data and place it in a SafeBufferDeque for later use by the converter on its callback.
+    ///
+    bool bOk;
+    
+    bOk = pAudioInputQueue->AddItem((unsigned char*)[sampleBuffer bytesForAllSamples], [sampleBuffer lengthForAllSamples]);
+    if (!bOk)
+        std::cerr << "Audio Convertsion - Could not add incoming sample ot audioInputQueue. qSize=" << pAudioInputQueue->qsize() << endl;
+    assert(bOk);
+    
+    
+
+    ///
+    /// Part b) -- If there is data ready from the converter, send it into RTBuffer for encoding.
+    ///
+
+    UInt32 sampleSizeExpected = audioInputPostConversionNumPackets;
+    
+    // Get Converted samples if any are available.
+    OSStatus stat = AudioConverterFillComplexBuffer(Converter, iConverter, (void*)self, &sampleSizeExpected, &audioInputPostConversionBufferList, NULL);
+    assert(stat==noErr || stat==1 || stat==2);
+
+    if (stat == 1 || sampleSizeExpected==0)  // We're quitting. So bail out on this attempt.
+        return;
+    
+    if (stat == 2)  // There was no available data. Skip conversion this go-round.
+        return;
+    
+    // Otherwise we have data.
+    assert(sampleSizeExpected == audioInputPostConversionNumPackets);
     
     QTKitBufferInfo* pBI;
     QTTime qtt;
@@ -643,216 +844,27 @@ for(key in pDict){
     
     pBI->bIsVideo = false;
     
-    qtt = [sampleBuffer presentationTime];
-    
-//    NSLog(@"Audio sample count pre-increment: %d", [sampleBuffer sampleUseCount]);
-    
-    // Add a hold on this sample
-    [sampleBuffer incrementSampleUseCount];
-    [sampleBuffer retain];
-    
-//    NSLog(@"Audio sample count post-increment: %d", [sampleBuffer sampleUseCount]);
-//    uint8_t* pData;
-//    pData =(uint8_t*) [sampleBuffer bytesForAllSamples];
-//    pBI->pY = pData;
-//    NSLog(@"Databytes @ 0x%p: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",pData,
-//          pData[0],pData[1],pData[2],pData[3],
-//          pData[4],pData[5],pData[6],pData[7],
-//          pData[8],pData[9],pData[10],pData[11]);
-
-//    pData = (uint8_t*)sampleBuffer;
-//    NSLog(@"sampleBuffer @ 0x%p: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",pData,
-//          pData[0],pData[1],pData[2],pData[3],
-//          pData[4],pData[5],pData[6],pData[7],
-//          pData[8],pData[9],pData[10],pData[11]);
-    
     pBI->pVideoFrame=NULL;
-    pBI->pAudioSamples = sampleBuffer;
+    pBI->pAudioSamples = NULL;  // Not using the sampleBuffer in RTBuffer when AudioConvert is utilized.
 
     pBI->pY = NULL;
     pBI->pCb = NULL;
     pBI->pCr = NULL;
     
+    qtt = [sampleBuffer presentationTime];
     pBI->timeStamp_uS = QTT_US(qtt);
     
-//    NSLog(@"Audio sampleBuffer ptr=0x%p", sampleBuffer);
-//    NSLog(@"Audio: %d samples, %d bytes-total, timestamp: %lld, scale: %ld Ticks/sec, reported_uS:%lld", 
-//          [sampleBuffer numberOfSamples], [sampleBuffer lengthForAllSamples], qtt.timeValue, qtt.timeScale, pBI->timeStamp_uS);
+    // Must 'delete' this array in Release via pBuffer
+    pBI->pBuffer = pAudioInputPostConversionData;
+    pBI->pBufferLength = audioInputPostConversionSize;
     
-    NSDictionary *pd;
-    pd = [sampleBuffer sampleBufferAttributes];
+    pBI->rawLength = audioInputPostConversionSize;
+    pBI->rawNumSamples = audioInputPostConversionNumPackets;
 
-    // We know this should be incoming with LPCM audio samples, but we're gonna make sure.
-    QTFormatDescription* pfd;
-    pfd = [sampleBuffer formatDescription];
-    uint32 fourb;
-    fourb=[pfd formatType];
-    assert(fourb==kAudioFormatLinearPCM);
-
-    AudioBufferList* pAbufflist;
-    pAbufflist = [sampleBuffer audioBufferListWithOptions:0];
-
-    // Only allowing NONE or RAW-Data format now.
-    assert(sendAudioType==2 || sendAudioType==0);
-#if 0    
-    pBI->pBuffer = (void*)pAbufflist;
-    if (sendAudioType==1)       // Send list of samplebuffers.
-    {
-        AudioBufferList* pAbufflist;
-        pAbufflist = [sampleBuffer audioBufferListWithOptions:0];
-        
-        pBI->pBuffer = (void*)pAbufflist;
-        
-        pBI->rawLength = -1;
-        pBI->rawNumSamples = -1;
-    }
-    else
-#endif
-    if (sendAudioType==2)
-    {
-        assert(sendAudioType==2);   // Raw bucket of data plus # samples thrown in 'other'
-// Old method of sending float32 direct.        pBI->pBuffer = [sampleBuffer bytesForAllSamples];
-        // Time to convert.
-        UInt32 outSize = [sampleBuffer numberOfSamples] * (DESIRED_BITS_PER_SAMPLE / 8) * sampleBufferASBD.mChannelsPerFrame;
-//TODO - reset to PROPER amount. *4 is only for illegal access debug
-        void* pConvData = new char[outSize];
-        assert(pConvData);
-        
-        // Must 'delete' this array in Release via pBuffer
-        pBI->pBuffer = pConvData;
-        pBI->pBufferLength = outSize;
-        
-//        unsigned char* test = (unsigned char*)pBI->pBuffer;
-        
-//        for (int i=0;i<[sampleBuffer lengthForAllSamples];i++,test++)
-//            *test = *test;
-        Float32* inbuf = (Float32*)[sampleBuffer bytesForAllSamples];
-#if 0        
-        
-        // Convert
-        OSStatus stat = AudioConverterConvertBuffer(Converter, [sampleBuffer lengthForAllSamples], (const void*)[sampleBuffer bytesForAllSamples], &outSize, pBI->pBuffer);
-        assert(stat==0);
-#endif
-#if 1
-        SInt16* outbuf = (SInt16*)pConvData;
-        
-        int offset = [sampleBuffer numberOfSamples];
-        int max = INT16_MAX;
-        Float32 fl1, fl2;
-        
-//        NSLog(@"Sample  in-L(f)    in-R(f)       out-L     out-R");
-        
-        // Bob's po-man float32->sint16 converter and interleaver.
-        for (int sample=0; sample < [sampleBuffer numberOfSamples]; sample++)
-        {
-            // On input, must take sample left and sample right and compensate for offset of non-interleaved.
-            //assert(inbuf[sample] <= 1.0 && inbuf[sample] >= -1.0);
-            //assert(inbuf[sample+offset] <= 1.0 && inbuf[sample+offset] >= -1.0);
-            
-            fl1 = inbuf[sample] * (Float32)max;
-            outbuf[sample*2] = (SInt16)(fl1);
-            //outbuf[sample*2] = EndianS16_NtoB(outbuf[sample*2]);
-                                //Lower Byte shifted up         //Upper byte shifted low
-            //outbuf[sample*2] = ((outbuf[sample*2]&0xff)<<8) | ((outbuf[sample*2]&0xff00)>>8);
-            //EndianS16_NtoB(outbuf[sample*2]);
-            
-            fl2 = inbuf[sample + offset] * (Float32)max;
-            outbuf[sample*2 + 1] = (SInt16)(fl2);
-            //outbuf[sample*2 + 1] = EndianS16_NtoB(outbuf[sample*2]+1);
-
-
-            
-            //outbuf[sample*2+1] = ((outbuf[sample*2+1]&0xff)<<8) | ((outbuf[sample*2+1]&0xff00)>>8);
-            
-//            NSLog(@"[%03d]:  % 1.4f    % 1.4f    %6hi      %6hi", sample, inbuf[sample], inbuf[sample+offset], outbuf[sample*2], outbuf[sample*2+1]);
-        }
-        
-#ifdef DUMP_RAW_LPCM
-        static FILE* fpFloat=NULL;
-        static FILE* fpSint=NULL;
-        static FILE* fpSintBigEndian=NULL;
-        static int chunksWritten=0;
-        
-        if (!fpFloat)
-        {
-            fpFloat = fopen("FloatRaw.lpcm", "wb");
-            assert(fpFloat);
-        }
-        if (!fpSint)
-        {
-            fpSint = fopen("SInt16RawNative.lpcm", "wb");
-            assert(fpSint);
-        }
-        if (!fpSintBigEndian)
-        {
-            fpSintBigEndian = fopen("SInt16RawBigEndian.lpcm", "wb");
-            assert(fpSintBigEndian);
-        }
-
-        //Write out the data. First we write outbuf as this is Sint16 interleaved and prepared.
-        int out;
-        out = fwrite(outbuf, sizeof(SInt16), [sampleBuffer numberOfSamples]*2, fpSint);
-        assert(out == [sampleBuffer numberOfSamples]*2);
-        
-        // Now convert in-place to Big endian.
-        for (int sample=0; sample < [sampleBuffer numberOfSamples]; sample++)
-        {
-            outbuf[sample*2] = EndianS16_NtoB(outbuf[sample*2]);
-            outbuf[sample*2 + 1] = EndianS16_NtoB(outbuf[sample*2 + 1]);
-        }
-        out = fwrite(outbuf, sizeof(SInt16), [sampleBuffer numberOfSamples]*2, fpSintBigEndian);
-        assert(out == [sampleBuffer numberOfSamples]*2);
-        
-       // Now take the original float32 values and simply interleave them into outbuf[] and write it out.
-        Float32* pFOut = new Float32[[sampleBuffer numberOfSamples] * 2];
-        out = sizeof(pFOut);        // should be 4096, right?
-        for (int sample=0; sample < [sampleBuffer numberOfSamples]; sample++)
-        {
-            pFOut[sample*2] = inbuf[sample];
-            pFOut[sample*2 + 1] = inbuf[sample + offset];
-       }
-        out = fwrite(pFOut, sizeof(Float32), [sampleBuffer numberOfSamples]*2, fpFloat);
-        assert(out == [sampleBuffer numberOfSamples]*2);
-        
-        delete pFOut;
-        
-        // Artificial way to limit the number of samples and ensure the files get closed properly.
-        if (chunksWritten++ > 200)
-        {
-            fclose(fpSint);
-            fclose(fpSintBigEndian);
-            fclose(fpFloat);
-            assert(false);
-        }
-#endif  // DUMP_RAW_LPCM
-
-#endif  // 1/0 in/out
-        
-        // Now decrement the sample count on the original input buffer.
-        [sampleBuffer decrementSampleUseCount];
-        
-        // outSize was modified by the conversion routine -- so this is the actual amount used. We want to make sure it is always
-        // less than our calculated outSize initially however.
-        assert(outSize < [sampleBuffer lengthForAllSamples]);
-               
-        pBI->rawLength = outSize;
-        
-        // Are samples the same? How do we find out?
-        // Would be nice to assert this fact.
-        pBI->rawNumSamples = [sampleBuffer numberOfSamples];
-        assert(pBI->rawLength % pBI->rawNumSamples == 0);
-    }
-
-    // Counting on FullBufferEnQ() to lock down the videoFrame for us.
-    // Only did this for symmetry of responsibility between enque and dq
     if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))
-    {
-        //        NSLog(@"Enqueue failed above. Marking as dropped.");
-        
-        curDrops++;
-        [mDrops setIntValue:curDrops];
-    }
+        NSLog(@"Audio Enqueue failed. No way to mark audio drops at this time.");
 }
+
 // Add these start and stop recording actions, and specify the output destination for your recorded media. The output is a QuickTime movie.
 
 - (IBAction)startRecording:(id)sender

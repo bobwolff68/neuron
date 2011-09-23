@@ -9,7 +9,15 @@
 
 #import "QTKitCap.h"
 #import "cpp_main.h"
+#import "SafeBufferDeque.h"
 
+OSStatus iConverter (
+                     AudioConverterRef             inAudioConverter,
+                     UInt32                        *ioNumberDataPackets,
+                     AudioBufferList               *ioData,
+                     AudioStreamPacketDescription  **outDataPacketDescription,
+                     void                          *inUserData
+                     );
 
 @interface MyRecorderController : NSObject {
     
@@ -34,6 +42,22 @@
     QTCaptureDeviceInput             *mCaptureVideoDeviceInput;
     QTCaptureDeviceInput             *mCaptureAudioDeviceInput;
     
+    // Conversion support items.
+    SafeBufferDeque* pAudioInputQueue;
+    int mAudioInputNumChannels;
+    int mAudioInputIndividualSampleSize;
+    int audioInputOutBufSize;
+    unsigned char* pAudioInputOutBuf;
+    unsigned char* pAudioInputResidualData;
+    int audioInputResidualBytesProcessed;
+    int audioInputResidualTotalLength;
+    
+    char* pAudioInputPostConversionData;
+    int audioInputPostConversionSize;
+    int audioInputPostConversionNumPackets;
+    AudioBufferList audioInputPostConversionBufferList;
+    struct timeval audioInputResidualTV;
+    
     RunPipeline* p_pipeline_runner;
     QTKitCap* pCap;
     TVidCap* pTVC;
@@ -50,6 +74,7 @@
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification;
 
+- (OSStatus) iConvertSupplyData:  (AudioBufferList *)data withNumPackets:(UInt32 *)numberDataPackets;
 - (int)parseWidthHeight:(NSString*)pStr widthOut:(int*)pWidth heightOut:(int*)pHeight;
 - (int)setDisplayResolutionWidth:(int)dWidth withHeight:(int)dHeight;
 - (int) CaptureMatchForDesiredWidth:(int)desWidth forDesiredHeight:(int)desHeight

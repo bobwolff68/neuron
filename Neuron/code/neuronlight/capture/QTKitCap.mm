@@ -47,20 +47,7 @@ bool QTKitCapBuffer::EmptyBufferRelease(RTBufferInfoBase* pBI)
     }
     else
     {
-        QTSampleBuffer* pSamp;
-        pSamp = static_cast<QTSampleBuffer*>(pQTB->pAudioSamples);
-
-//        int count = [pSamp sampleUseCount];
-        
-        // Delete converted data.
-        //free(pQTB->pBuffer);
-
         delete [] (SInt16*)pQTB->pBuffer;
-
-// No longer doing this. pBuffer is now an allocated buffer due to conversion.        [pSamp decrementSampleUseCount];
-
-        // Remove hold on Apple's QT item.
-        [pSamp release];
     }
 	
     delete pQTB;
