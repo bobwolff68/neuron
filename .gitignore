@@ -65,3 +65,4 @@ Neuron/code/neuroncommon/oolua/unit_tests/*.make
 Neuron/code/neuroncommon/oolua/unit_tests/string_is_integral/Makefile
 Neuron/code/neuroncommon/oolua/unit_tests/tests_may_fail/Makefile
 /0001-Commit-for-integration-with-Sean.patch
+.DS_Store
