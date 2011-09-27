@@ -33,7 +33,7 @@ ADTSAudioQueueDeviceSource::createNew(UsageEnvironment& env,
 
     // TODO - Replace hardwired 44100, 2-channel ADTS with parameterized version from stream or call itself.
     gpAudioSource = new ADTSAudioQueueDeviceSource(env, _p_bsdq, 1, //profile,
-                                                   4, //sampling_frequency_index, 
+                                                   5, //sampling_frequency_index, 
                                                    2); //channel_configuration);
     return gpAudioSource;
 }

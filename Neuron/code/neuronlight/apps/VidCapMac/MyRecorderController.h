@@ -19,6 +19,8 @@ OSStatus iConverter (
                      void                          *inUserData
                      );
 
+class ExtractConverted;
+
 @interface MyRecorderController : NSObject {
     
     IBOutlet QTCaptureView *mCaptureView;
@@ -48,15 +50,18 @@ OSStatus iConverter (
     int mAudioInputIndividualSampleSize;
     int audioInputOutBufSize;
     unsigned char* pAudioInputOutBuf;
+//
+    AudioBufferList audioInputPostConversionBufferList;
+    struct timeval audioInputResidualTV;
     unsigned char* pAudioInputResidualData;
     int audioInputResidualBytesProcessed;
     int audioInputResidualTotalLength;
+//
+    ExtractConverted *pExtractor;
     
     char* pAudioInputPostConversionData;
     int audioInputPostConversionSize;
     int audioInputPostConversionNumPackets;
-    AudioBufferList audioInputPostConversionBufferList;
-    struct timeval audioInputResidualTV;
     
     RunPipeline* p_pipeline_runner;
     QTKitCap* pCap;
@@ -79,6 +84,7 @@ OSStatus iConverter (
 - (int)setDisplayResolutionWidth:(int)dWidth withHeight:(int)dHeight;
 - (int) CaptureMatchForDesiredWidth:(int)desWidth forDesiredHeight:(int)desHeight
                       CaptureWidth:(int *)pCaptureWidth CaptureHeight:(int *)pCaptureHeight;
+- (void)ExtractConvertedData;
 
 - (void)updateUINow:(NSTimer*)timer;
 
@@ -92,3 +98,29 @@ OSStatus iConverter (
 - (IBAction)captureResolution:(id)sender;
 
 @end
+
+
+class ExtractConverted : public ThreadSingle {
+public:
+    ExtractConverted(MyRecorderController* pCtrl)
+    {
+        assert(pCtrl);
+        pController = pCtrl;
+        
+        bConvert = false;
+        
+        startThread();
+    };
+    ~ExtractConverted(void) { pause(); };
+    void start() { bConvert = true; };
+    void pause() { bConvert = false; };
+protected:
+    int workerBee(void);
+    MyRecorderController* pController;
+    bool bConvert;
+    AudioBufferList audioInputPostConversionBufferList;
+    struct timeval audioInputResidualTV;
+    unsigned char* pAudioInputResidualData;
+    int audioInputResidualBytesProcessed;
+    int audioInputResidualTotalLength;
+};

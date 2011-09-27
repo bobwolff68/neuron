@@ -11,7 +11,7 @@
 #import "CameraInterrogation.h"
 
 #define DESIRED_BITS_PER_SAMPLE 16
-#define DESIRED_AUDIO_FREQUENCY 44100
+#define DESIRED_AUDIO_FREQUENCY 32000
 #define DESIRED_NUM_CHANNELS_OUT    2
 //Manjesh - #define DESIRED_AUDIO_FREQUENCY 32000
 #define DESIRED_CONVERTEDOUTPUT_IN_TIME_MS 10
@@ -27,6 +27,82 @@ int bitRate = 600;
 bool bChangeBitrate = false;
 int frameRate = 30;
 bool bChangeFramerate = false;
+
+//#define TESTCONV_WRITEDATA
+//#define TESTCONV
+//#define TESTCONV2
+
+
+#ifdef TESTCONV
+const Float32 floatzero=0.00;
+
+void TestConvInitFloatBuf(void*pbuf, int bufsize)
+{
+    assert(pbuf);
+    assert(bufsize);
+    memset(pbuf, 0xcd, bufsize);
+}
+
+void TestConvVerifyFloatBuf(unsigned char* pbuf, int bufsize)
+{
+    // Entire buffer should be filled with nothing but the pattern found from a float32==0.00
+    assert(bufsize % sizeof(Float32) == 0);
+    for ( int i=0; i<bufsize ; i += sizeof(Float32))
+        assert((Float32)pbuf[i] == floatzero);
+}
+
+
+void TestConvVerifySInt16Buf(char* pbuf, int bufsize)
+{
+    // Entire buffer should be filled with nothing but the pattern found from a SInt16=0 but we'll allow +/- 2
+    SInt16 proper=0;
+    
+    assert(bufsize % sizeof(SInt16) == 0);
+    for ( int i=0; i<bufsize ; i += sizeof(SInt16))
+        assert((SInt16)pbuf[i] >= proper-2 && (SInt16)pbuf[i] <= proper+2);
+}
+#endif
+
+#ifdef TESTCONV2
+const Float32 floatzero=0.00;
+
+void TestConvInitFloatBuf(void*pbuf, int bufsize)
+{
+    assert(pbuf);
+    assert(bufsize);
+    memset(pbuf, 0xcd, bufsize);
+}
+
+void TestConv2InitOriginalBuf(unsigned char*pbuf, int bufsize)
+{
+    assert(pbuf);
+    assert(bufsize);
+    int32_t* plong;
+    long val = 0;
+    
+    for(plong = (int32_t*)pbuf; (void*)plong < (void*)(pbuf + bufsize) ; plong++, val += 4)
+        *plong = val;
+}
+/*
+void TestConv2VerifyOutBuf(unsigned char* pbuf, int bufsize)
+{
+    // Entire buffer should be filled with nothing but the pattern found from a float32==0.00
+    assert(bufsize % sizeof(Float32) == 0);
+    for ( int i=0; i<bufsize ; i += sizeof(Float32))
+        assert((Float32)pbuf[i] == floatzero);
+}
+
+
+void TestConvVerifySInt16Buf(char* pbuf, int bufsize)
+{
+    // Entire buffer should be filled with nothing but the pattern found from a SInt16=0 but we'll allow +/- 2
+    SInt16 proper=0;
+    
+    assert(bufsize % sizeof(SInt16) == 0);
+    for ( int i=0; i<bufsize ; i += sizeof(SInt16))
+        assert((SInt16)pbuf[i] >= proper-2 && (SInt16)pbuf[i] <= proper+2);
+}*/
+#endif
 
 #if 0
 // Want to interrogate device attributes to see if we can set it's output to signed 16bit rather than convert later.
@@ -114,13 +190,15 @@ OSStatus iConverter (
     pAudioInputOutBuf = (unsigned char*)malloc(audioInputOutBufSize);    // Reasonably sized buffer for output. Will auto-resize if needed at runtime.
     // We can pre-calculate our desired size of an output buffer.
     // If we CHOOSE to ask for 10ms of data, we calculate how many samples and how many bytes this is.
-//    audioInputPostConversionNumPackets = DESIRED_AUDIO_FREQUENCY / (1000 / DESIRED_CONVERTEDOUTPUT_IN_TIME_MS);
+    audioInputPostConversionNumPackets = DESIRED_AUDIO_FREQUENCY / (1000 / DESIRED_CONVERTEDOUTPUT_IN_TIME_MS);
     // TODO change to ms version and figure out the conversion offset problem.
-    audioInputPostConversionNumPackets = 512;
+//    audioInputPostConversionNumPackets = 256;
     
     // The rest of the initialization variables must be done after the first sample of audio is received.
     // See comment [FINISH_AUDIO_INITIALIZATION]
 
+    // Must start the Complex Converter thread for feeding the converter.
+    pExtractor = new ExtractConverted(self);
     
 // Create the capture session
     
@@ -271,6 +349,9 @@ OSStatus iConverter (
     
     delete pTVC;
     pTVC = NULL;
+    
+    delete pExtractor;
+    pExtractor = NULL;
     
     delete pCap;
     pCap = NULL;
@@ -580,6 +661,31 @@ OSStatus iConverter (
     // They are implemented to handle it but could be deficient in some way.
     assert(numInboundBuffers == 2);
     
+#ifdef TESTCONV_WRITEDATA
+    static FILE* fpOrigFloats=NULL;
+    static FILE* fpOutBufFloats=NULL;
+    static FILE* fpByHandOutBufInts=NULL;
+    static FILE* fpAfterConvertInts=NULL;
+    
+    if (!fpOrigFloats)
+    {
+        fpOrigFloats = fopen("/Users/rwolff/test_OrigFloats.lpcm", "wb");
+        assert(fpOrigFloats);
+    }
+    
+    if (!fpOutBufFloats)
+    {
+        fpOutBufFloats = fopen("/Users/rwolff/test_OutBufFloats.lpcm", "wb");
+        assert(fpOutBufFloats);
+    }
+    
+    if (!fpByHandOutBufInts)
+    {
+        fpByHandOutBufInts = fopen("/Users/rwolff/test_ByHandOutBufInts.lpcm", "wb");
+        assert(fpByHandOutBufInts);
+    }
+#endif
+    
 //    std::cerr << "Supply input data to Converter - in callback." << endl;
 /*    AudioBuffer* pbuff0 = &data->mBuffers[0];
     AudioBuffer* pbuff1 = &data->mBuffers[1];
@@ -596,11 +702,12 @@ OSStatus iConverter (
 */
     
     // We may bail out if there is no residual and there is no further frames available.
-    if (pAudioInputQueue->qsize()==0)
+/*    if (pAudioInputQueue->qsize()==0)
     {
         *numberDataPackets = 0;
         return 2;
     }
+*/
     
     // Remember, this is INPUT data we're pushing now. As of Sep 2011, this means float32 samples (4-bytes)
     //
@@ -616,6 +723,14 @@ OSStatus iConverter (
 
     assert(pAudioInputOutBuf);
     
+#ifdef TESTCONV
+    TestConvInitFloatBuf(pAudioInputOutBuf, audioInputOutBufSize);
+#endif
+#ifdef TESTCONV2
+    TestConvInitFloatBuf(pAudioInputOutBuf, audioInputOutBufSize);
+#endif
+    
+    int wait_iterations=0;
     ///
     /// Keep grabbing items off the queue until we've copied FULLY into the buffer area -  unless capturing stops.
     ///
@@ -637,27 +752,42 @@ OSStatus iConverter (
             // Get the new residual buffer for copying now and potentially later.
             audioInputResidualBytesProcessed = 0;
             pAudioInputQueue->RemoveItem(&pAudioInputResidualData, &audioInputResidualTotalLength, &audioInputResidualTV);
+            if (pAudioInputQueue->qsize())
+                std::cerr << "After removing an item for input, AudioInputQueue length==" << pAudioInputQueue->qsize() << endl;
             
             // There was no data ready. Cope by sleeping for a few and going around again.
             if (!pAudioInputResidualData)
             {
-#if 1
+                ///
+                /// This will only function properly if the inbound samples are on a separate thread as the FillComplexAudioBuffer() call.
+                /// Initially this was not true and so this would iterate forever.
+                ///
+                
                 // When we get here, we need to know it the first time it happens. Then decide what to do on implementation.
                 // It may be just fine to sleep and continue depending on threading model in AudioConverter. See alternative below.
-                std::cerr << "Delay in converter callback. Requested length=" << bytes_to_copy_total << ". Only copied " << bytes_copied_so_far << " at this point." << endl;
-                usleep(5*1000);
-                assert(false);
+//                std::cerr << "Iter:" << wait_iterations++ << " Delay in converter callback. Requested length=" << bytes_to_copy_total << ". Only copied " << bytes_copied_so_far << " at this point." << endl;
+                usleep(8*1000);
                 continue;
-#else
-                // This version says - we gotta report back how many samples we've copied and return.
-                // This is only necessary if this callback is ultimately in the same thread as the original call
-                // to FillComplexBuffer() which it shouldn't be. As this would stall out the audio reception callback from QTKit.
-                assert(false);
-                *numberDataPackets = bytes_copied_so_far / mAudioInputIndividualSampleSize / numInboundBuffers;
-                return noErr;
-#endif
             }
             
+#ifdef TESTCONV_WRITEDATA
+            int written;
+            Float32* pfl = (Float32*)pAudioInputResidualData;
+            int smpls = (audioInputResidualTotalLength / sizeof(Float32)) / 2;
+            
+            for (int i=0; i < smpls ; i++)
+            {
+                written = fwrite(pfl + i, sizeof(Float32), 1, fpOrigFloats);
+                assert(written==1);
+
+                written = fwrite(pfl + smpls + i , sizeof(Float32), 1, fpOrigFloats);
+                assert(written==1);
+            }
+#endif
+
+#ifdef TESTCONV2
+            TestConv2InitOriginalBuf(pAudioInputResidualData, audioInputResidualTotalLength);
+#endif
             // In this case, we have data. Let 'er ride.
         }
         
@@ -675,12 +805,26 @@ OSStatus iConverter (
             assert(numInboundBuffers <= 2);
             
             /// Do 0th entry. 0th channel of data goes into 1st half of output buffer memory area.
+            int outoffset=bytes_copied_so_far/numInboundBuffers;
+            int inoffset=audioInputResidualBytesProcessed/numInboundBuffers;
+#ifdef TESTCONV
+            assert(to_copy_now % 4 == 0);
+            memset_pattern4(&pAudioInputOutBuf[bytes_copied_so_far/numInboundBuffers], &floatzero, to_copy_now);
+#else
             memcpy(&pAudioInputOutBuf[bytes_copied_so_far/numInboundBuffers], &pAudioInputResidualData[audioInputResidualBytesProcessed/numInboundBuffers], to_copy_now);
-
+#endif
             /// Now the 2nd half if required. Note the offset into each region for left/right channels.
             if (numInboundBuffers == 2)
-                memcpy(&pAudioInputOutBuf[bytes_copied_so_far/numInboundBuffers + bytes_to_copy_total/numInboundBuffers], 
+            {
+                outoffset = bytes_copied_so_far/numInboundBuffers + audioInputOutBufSize/numInboundBuffers;
+                inoffset = audioInputResidualBytesProcessed/numInboundBuffers + audioInputResidualTotalLength/numInboundBuffers;
+#ifdef TESTCONV
+                memset_pattern4(&pAudioInputOutBuf[bytes_copied_so_far/numInboundBuffers + audioInputOutBufSize/numInboundBuffers], &floatzero, to_copy_now);
+#else
+                memcpy(&pAudioInputOutBuf[bytes_copied_so_far/numInboundBuffers + audioInputOutBufSize/numInboundBuffers], 
                        &pAudioInputResidualData[audioInputResidualBytesProcessed/numInboundBuffers + audioInputResidualTotalLength/numInboundBuffers], to_copy_now);
+#endif
+            }
 
             // Advance pointers/counters
             audioInputResidualBytesProcessed += to_copy_now * numInboundBuffers;
@@ -705,13 +849,83 @@ OSStatus iConverter (
     
     *numberDataPackets = bytes_copied_so_far / mAudioInputIndividualSampleSize / numInboundBuffers;
     
+    // Fill out the output structures
     for (int i=0 ; i < numInboundBuffers ; i++)
     {
-// This is supplied to us on inbound.        data->mBuffers[0].mNumberChannels = mAudioInputNumChannels;
-        data->mBuffers[i].mData = &pAudioInputOutBuf[i*(audioInputResidualTotalLength/numInboundBuffers)];
+        // This is supplied to us on inbound.        data->mBuffers[0].mNumberChannels = mAudioInputNumChannels;
+        data->mBuffers[i].mData = &pAudioInputOutBuf[i*(audioInputOutBufSize/numInboundBuffers)];
         data->mBuffers[i].mDataByteSize = bytes_copied_so_far / numInboundBuffers;
     }
+    
+#ifdef TESTCONV_WRITEDATA
+    int written2;
+    Float32* pfl = (Float32*)pAudioInputOutBuf;
+    int smpls = (bytes_copied_so_far / sizeof(Float32)) / 2;
+    
+    for (int i=0; i < smpls ; i++)
+    {
+        written2 = fwrite(pfl + i, sizeof(Float32), 1, fpOutBufFloats);
+        assert(written2==1);
+        
+        written2 = fwrite(pfl + smpls + i , sizeof(Float32), 1, fpOutBufFloats);
+        assert(written2==1);
+    }
+#endif
+    
+#ifdef TESTCONV_WRITEDATA
+    // Convert outbuf by hand to SInt16.
+    // Will be writing out half the amount of data.
+    char* pByHand = new char[bytes_copied_so_far / 2];
+    assert(pByHand);
 
+    // Convert by hand.
+    
+    SInt16* outbuf = (SInt16*)pByHand;
+    Float32* inbuf = (Float32*)pAudioInputOutBuf;
+    
+    int numsamples = (bytes_copied_so_far / 2) / sizeof(Float32);
+    int offset = numsamples;
+    int max = INT16_MAX;
+    Float32 fl1, fl2;
+    
+    //        NSLog(@"Sample  in-L(f)    in-R(f)       out-L     out-R");
+    
+    // Bob's po-man float32->sint16 converter and interleaver.
+    for (int sample=0; sample < numsamples; sample++)
+    {
+        // On input, must take sample left and sample right and compensate for offset of non-interleaved.
+        //assert(inbuf[sample] <= 1.0 && inbuf[sample] >= -1.0);
+        //assert(inbuf[sample+offset] <= 1.0 && inbuf[sample+offset] >= -1.0);
+        
+        fl1 = inbuf[sample] * (Float32)max;
+        outbuf[sample*2] = (SInt16)(fl1);
+        //outbuf[sample*2] = EndianS16_NtoB(outbuf[sample*2]);
+        //Lower Byte shifted up         //Upper byte shifted low
+        //outbuf[sample*2] = ((outbuf[sample*2]&0xff)<<8) | ((outbuf[sample*2]&0xff00)>>8);
+        //EndianS16_NtoB(outbuf[sample*2]);
+        
+        fl2 = inbuf[sample + offset] * (Float32)max;
+        outbuf[sample*2 + 1] = (SInt16)(fl2);
+        //outbuf[sample*2 + 1] = EndianS16_NtoB(outbuf[sample*2]+1);
+        
+        
+        
+        //outbuf[sample*2+1] = ((outbuf[sample*2+1]&0xff)<<8) | ((outbuf[sample*2+1]&0xff00)>>8);
+        
+        //            NSLog(@"[%03d]:  % 1.4f    % 1.4f    %6hi      %6hi", sample, inbuf[sample], inbuf[sample+offset], outbuf[sample*2], outbuf[sample*2+1]);
+    }
+    
+    // Finally write it out.
+    int written3 = fwrite(pByHand, 1, bytes_copied_so_far / 2, fpByHandOutBufInts);
+    
+    assert(written3==bytes_copied_so_far / 2);
+    
+    delete pByHand;
+#endif
+
+#ifdef TESTCONV
+    TestConvVerifyFloatBuf(pAudioInputOutBuf, audioInputOutBufSize);
+#endif
     if (![mCaptureSession isRunning])
         return 1;
     else
@@ -841,52 +1055,9 @@ OSStatus iConverter (
 
     ///
     /// Part b) -- If there is data ready from the converter, send it into RTBuffer for encoding.
+    ///         -- NOTE: This is handled by the pFeedConverter thread now.
     ///
 
-    UInt32 sampleSizeExpected = audioInputPostConversionNumPackets;
-    
-    // Get Converted samples if any are available.
-    OSStatus stat = AudioConverterFillComplexBuffer(Converter, iConverter, (void*)self, &sampleSizeExpected, &audioInputPostConversionBufferList, NULL);
-    assert(stat==noErr || stat==1 || stat==2);
-
-    if (stat == 1 || sampleSizeExpected==0)  // We're quitting. So bail out on this attempt.
-        return;
-    
-    if (stat == 2)  // There was no available data. Skip conversion this go-round.
-        return;
-    
-    // Otherwise we have data.
-    assert(sampleSizeExpected == audioInputPostConversionNumPackets);
-    
-    QTKitBufferInfo* pBI;
-    QTTime qtt;
-
-    pBI = new QTKitBufferInfo;
-    assert(pBI);
-    
-    pBI->bIsVideo = false;
-    
-    pBI->pVideoFrame=NULL;
-    pBI->pAudioSamples = NULL;  // Not using the sampleBuffer in RTBuffer when AudioConvert is utilized.
-
-    pBI->pY = NULL;
-    pBI->pCb = NULL;
-    pBI->pCr = NULL;
-    
-    qtt = [sampleBuffer presentationTime];
-    pBI->timeStamp_uS = QTT_US(qtt);
-    
-    // Must 'delete' this array in Release via pBuffer
-    pBI->pBuffer = new char[audioInputPostConversionSize];
-    assert(pBI->pBuffer);
-    memcpy(pBI->pBuffer, pAudioInputPostConversionData, audioInputPostConversionSize);
-    pBI->pBufferLength = audioInputPostConversionSize;
-    
-    pBI->rawLength = audioInputPostConversionSize;
-    pBI->rawNumSamples = audioInputPostConversionNumPackets;
-
-    if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))
-        NSLog(@"Audio Enqueue failed. No way to mark audio drops at this time.");
 }
 
 // Add these start and stop recording actions, and specify the output destination for your recorded media. The output is a QuickTime movie.
@@ -1141,4 +1312,116 @@ OSStatus iConverter (
     return 0;
 }
 
+- (void)ExtractConvertedData
+{
+    UInt32 sampleSizeExpected = audioInputPostConversionNumPackets;
+    
+#ifdef TESTCONV_WRITEDATA
+    static FILE* fpAfterConvertInts=NULL;
+    
+    if (!fpAfterConvertInts)
+    {
+        fpAfterConvertInts = fopen("/Users/rwolff/test_AfterConvertInts.lpcm", "wb");
+        assert(fpAfterConvertInts);
+    }
+#endif
+    
+    // Must wait until the converter is created upon first sample reception.
+    if (!Converter)
+    {
+        usleep(20 * 1000);
+        return;
+    }
+    
+    if ([mCaptureSession isRunning])
+    {
+        // Get Converted samples if any are available.
+        OSStatus stat = AudioConverterFillComplexBuffer(Converter, iConverter, (void*)self, &sampleSizeExpected, &audioInputPostConversionBufferList, NULL);
+        assert(stat==noErr || stat==1 || stat==2);
+        
+        if (stat == 1 || sampleSizeExpected==0)  // We're quitting. So bail out on this attempt.
+            return;
+        
+        if (stat == 2)  // There was no available data. Skip conversion this go-round.
+        {
+            usleep(DESIRED_CONVERTEDOUTPUT_IN_TIME_MS * 1000);
+            return;
+        }
+    }
+    else
+    {
+        // Paused...so clear things out and sleep a bit.
+        //
+        // Clear out any residual and start fresh.
+        //
+        if (pAudioInputResidualData)
+        {
+            audioInputResidualBytesProcessed = 0;
+            audioInputResidualTotalLength = 0;
+            
+            // Must delete as this pointer came from a SafeBufferDeque.RemoveItem()
+            if (pAudioInputResidualData)
+            {
+                delete pAudioInputResidualData;
+                pAudioInputResidualData = NULL;
+            }
+        }
+        
+        usleep(20 * 1000);
+        
+        // Skip as we're no longer running.
+        return;
+    }
+    
+    // Otherwise we have data. It should be the right size, right?
+    assert(sampleSizeExpected == audioInputPostConversionNumPackets);
+    
+#ifdef TESTCONV_WRITEDATA
+    int written4 = fwrite(pAudioInputPostConversionData, 1, audioInputPostConversionSize, fpAfterConvertInts);
+    assert(written4==audioInputPostConversionSize);
+#endif
+
+#ifdef TESTCONV
+    TestConvVerifySInt16Buf(pAudioInputPostConversionData, audioInputPostConversionSize);
+#endif
+    
+    QTKitBufferInfo* pBI;
+//    QTTime qtt;
+    
+    pBI = new QTKitBufferInfo;
+    assert(pBI);
+    
+    pBI->bIsVideo = false;
+    
+    pBI->pVideoFrame=NULL;
+    pBI->pAudioSamples = NULL;  // Not using the sampleBuffer in RTBuffer when AudioConvert is utilized.
+    
+    pBI->pY = NULL;
+    pBI->pCb = NULL;
+    pBI->pCr = NULL;
+    
+//    qtt = [sampleBuffer presentationTime];
+    pBI->timeStamp_uS = 0; // QTT_US(qtt);
+    
+    // Must 'delete' this array in Release via pBuffer
+    pBI->pBuffer = new char[audioInputPostConversionSize];
+    assert(pBI->pBuffer);
+    memcpy(pBI->pBuffer, pAudioInputPostConversionData, audioInputPostConversionSize);
+    pBI->pBufferLength = audioInputPostConversionSize;
+    
+    pBI->rawLength = audioInputPostConversionSize;
+    pBI->rawNumSamples = audioInputPostConversionNumPackets;
+    
+    if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))
+        NSLog(@"Audio Enqueue failed. No way to mark audio drops at this time.");
+}
+
 @end
+
+int ExtractConverted::workerBee(void)
+{
+    while (!isStopRequested)
+        [pController ExtractConvertedData];
+    
+    return 0;
+}

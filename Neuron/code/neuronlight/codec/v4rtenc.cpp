@@ -389,7 +389,7 @@ int v4_rtenc_t::workerBee(void)
 
                     //sampling frequency index
                     //TODO: remove hardcoded index and replace with map of sampling frequencies and indices
-                    p_aacbuf[2] |= (4<<2);
+                    p_aacbuf[2] |= (5<<2);
                     p_aacbuf[2] |= (p_acctx->channels>>2);
                     p_aacbuf[3] = 0 | ((p_acctx->channels&0x03)<<6);
 
@@ -407,9 +407,13 @@ int v4_rtenc_t::workerBee(void)
                     
                     p_abs_dq->AddItem(p_aacbuf, frame_length);
                 }
+
+                int offset = ((exp_samples-in_samples)<<1)*p_acctx->channels;
+                int wrlen = ((p_bi->rawNumSamples - (exp_samples-in_samples))<<1)*p_acctx->channels;
+                
+                memcpy(p_samples, (void*)((unsigned char*)p_bi->pBuffer + offset), wrlen);
                 
                 in_samples = p_bi->rawNumSamples - (exp_samples-in_samples);
-                memcpy(p_samples, p_bi->pBuffer, ((exp_samples-in_samples)<<1)*p_acctx->channels);
             }
         }
 #else
@@ -494,8 +498,8 @@ RTEnc_ReturnCode_t v4_rtenc_t::OpenAudio(void)
     
     //encoder parameters
     //TODO: remove hardcoded values
-    p_acctx->bit_rate = 128000;
-    p_acctx->sample_rate = 44100;
+    p_acctx->bit_rate = 64000;
+    p_acctx->sample_rate = 32000;
     p_acctx->channels = 2;
     p_acctx->sample_fmt = AV_SAMPLE_FMT_S16;
     p_acctx->profile = FF_PROFILE_AAC_LOW;
