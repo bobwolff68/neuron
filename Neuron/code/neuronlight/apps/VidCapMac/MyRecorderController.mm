@@ -583,7 +583,7 @@ OSStatus iConverter (
     
     // If/when we allow mono capture, this will wind up being '1' but the copy loops must be looked over carefully at that point.
     // They are implemented to handle it but could be deficient in some way.
-    assert(numInboundBuffers == 2);
+//    assert(numInboundBuffers == 2);
     
 //    std::cerr << "Supply input data to Converter - in callback." << endl;
 /*    AudioBuffer* pbuff0 = &data->mBuffers[0];
