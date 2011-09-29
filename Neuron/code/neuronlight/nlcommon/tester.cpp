@@ -24,6 +24,19 @@ bool Tester::ParseRequest(void)
 
     // If parsing fails in the derived class, simply return false and a failure return will be
     // sent to the client.
+    
+    // Iterate through the inboundPairs and print them out
+    cout << endl << "Inbound requested URL is: " << inboundBaseURL << endl;
+    
+    map<string,string>::iterator iter;
+    
+    for (iter=inboundPairs.begin() ; iter != inboundPairs.end() ; iter++)
+    {
+        if (iter->second == "")
+            cout << "Argument: " << iter->first << "=<NO_VALUE_GIVEN>" << endl;
+        else
+            cout << "Argument: " << iter->first << "=" << iter->second << endl;
+    }
 
     return true;
 }
