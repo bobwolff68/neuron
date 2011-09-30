@@ -28,6 +28,7 @@ public:
 	LittleHttpd(map<string, string> rvals, int initport=8081);
 	virtual ~LittleHttpd();
 	int workerBee(void);
+    bool isServerRunning(void) { return bIsServerUp; };
 
 protected:
     string bodyToReturn;
@@ -37,6 +38,7 @@ protected:
     
 private:
 	bool bIsServerUp;
+    bool bInitComplete;
 	int serverError;
 	int serversock;
 	int port;

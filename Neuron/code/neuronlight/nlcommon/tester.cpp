@@ -67,8 +67,8 @@ int main(int argc, char**argv)
     map<string, string> pairs;
   Tester tst(pairs, 8081);
 
-  while(1)
-	;
+  while(tst.isServerRunning())
+	usleep(250 * 1000);
 
   return 0;
 }

@@ -45,6 +45,9 @@ LittleHttpd::LittleHttpd(map<string, string> rvals, int initport)
 #endif
 
 	startThread();
+    
+    while (!bInitComplete)
+        usleep(20 * 1000);
 }
 
 LittleHttpd::~LittleHttpd()
@@ -84,6 +87,10 @@ int LittleHttpd::workerBee(void)
 //	struct sigaction sact;
 
 	Init();
+    
+    // Server didn't come up. Likely due to bind error on old port not given up by kernel yet.
+    if (!bIsServerUp)
+        return -1;
 
 #if 0
 	// Pre-setup of sig handler due to alarm() being used for breaking out of blocking i/o
@@ -186,6 +193,8 @@ void LittleHttpd::Init(void)
 		bIsServerUp = true;
 		cout << endl << "Success: server is ready on port " << port << endl;
 	}
+    
+    bInitComplete = true;
 }
 
 string urlDecode(string &SRC) {
@@ -249,6 +258,9 @@ bool LittleHttpd::HConnection(int csock)
     // Grab out the URL for derived classes who want to do a simple 'parse'.
     AutoParse();
     
+    if (inboundBaseURL=="")
+        return true;    // Jump out. No need to parse at the higher level.
+    
 	if (!ParseRequest())
 	{
         SendBadRequestResponse(csock);
@@ -280,7 +292,21 @@ void LittleHttpd::AutoParse(void)
     
     // No '?' in the URL -- so no parameters.
     if (pos==string::npos)
+    {
+        unsigned int poscmd;
+        // Need to make sure to get at least the main command / base url.
+        inboundBaseURL = fullInboundURL.substr(4, pos);
+        poscmd = inboundBaseURL.find("/favicon");
+        
+        if (poscmd==0)
+            inboundBaseURL = "";
+        else
+        {
+            poscmd =inboundBaseURL.find("HTTP/");
+            inboundBaseURL = inboundBaseURL.substr(0, poscmd);
+        }
         return;
+    }
     
     // Otherwise, we have at least a trailing ? so chop off the base and let's find the paired parameters.
     // Must skip the beginning "GET " command (hence the '4')
