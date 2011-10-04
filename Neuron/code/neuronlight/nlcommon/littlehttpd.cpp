@@ -17,12 +17,6 @@
 
 //#define DEBUG_LITTLEHTTPD
 
-#define BAD_REQUEST "HTTP/1.0 400 Bad Request\r\n" \
-					"Server: Neuron Server\r\n" \
-					"Content-Type: text/html; charset=UTF-8\r\n" \
-					"Content-Length: 0\r\n" \
-					"\r\n"
-
 LittleHttpd::LittleHttpd(map<string, string> rvals, int initport)
 {
 	reqParameters.clear();
@@ -255,6 +249,9 @@ bool LittleHttpd::HConnection(int csock)
     fullInboundURL = request;
     fullInboundURL = urlDecode(fullInboundURL);
 
+    // Reset all responses prior to parsing.
+    bodyToReturn = "";
+    
     // Grab out the URL for derived classes who want to do a simple 'parse'.
     AutoParse();
     
@@ -263,7 +260,7 @@ bool LittleHttpd::HConnection(int csock)
     
 	if (!ParseRequest())
 	{
-        SendBadRequestResponse(csock);
+        SendBadRequestResponse(csock, bodyToReturn);
 		return false;
 	}
 
@@ -272,7 +269,7 @@ bool LittleHttpd::HConnection(int csock)
     
     if (!ExecuteAction())
 	{
-        SendBadRequestResponse(csock);
+        SendBadRequestResponse(csock, bodyToReturn);
 		return false;
 	}
     else
@@ -332,6 +329,9 @@ void LittleHttpd::AutoParse(void)
     cout << "Leftover for pairs is: " << chopped_req << endl;
 #endif
     
+    // Now all lowercase for args.
+    std::transform(chopped_req.begin(), chopped_req.end(), chopped_req.begin(), ::tolower);
+
     // Now get the pairs.
     instr.str(chopped_req);
     
@@ -391,12 +391,34 @@ void LittleHttpd::AutoParse(void)
     }
 }
 
-void LittleHttpd::SendBadRequestResponse(int csock)
+void LittleHttpd::SendBadRequestResponse(int csock, string &body)
 {
+    stringstream header;
     string headerString;
     
-    headerString = BAD_REQUEST;
-    send(csock, headerString.c_str(), headerString.size(), 0);
+	// Now form the header. This is intertwined for a reason.
+	// The "Content-Length: **" item must know the size of the body.
+	// So it needs formed first and sent last.
+    
+	header << "HTTP/1.0 400 Bad Request\r\n";
+	header << "Server: NeuronLight Server\r\n";
+	header << "Content-Type: text/html; charset=UTF-8\r\n";
+	header << "Content-Length: " << body.size() << "\r\n";
+	header << "\r\n";
+    
+	headerString = header.str();
+    
+    //	cout << "LittleHttpd: Ready to send Header:" << headerString << endl;
+    //	cout << "LittleHttpd: Ready to send Body:" << bodyString << endl;
+    
+	// Send header.
+	send(csock, headerString.c_str(), headerString.size(), 0);
+	// Send body.
+    
+    if (body.size())
+        send(csock, body.c_str(), body.size(), 0);
+    
+    return;    
 }
 
 void LittleHttpd::SendOKResponse(int csock, string &body)
@@ -423,6 +445,43 @@ void LittleHttpd::SendOKResponse(int csock, string &body)
 	send(csock, headerString.c_str(), headerString.size(), 0);
 	// Send body.
 	send(csock, body.c_str(), body.size(), 0);
-
+    
     return;    
+}
+
+bool LittleHttpd::RequiredArgPresent(const char* reqarg)
+{
+    // Argument must be present.
+    if (inboundPairs.find(reqarg)==inboundPairs.end()) {
+        bodyToReturn = "Bad parameters. Expected '";
+        bodyToReturn += reqarg;
+        bodyToReturn += "'";
+        return false;
+    }
+    else
+        return true;
+}
+
+bool LittleHttpd::getRequiredArgAsInt(const char* reqarg, int low, int high, int& outint)
+{
+    outint = -1;
+    
+    if (!RequiredArgPresent(reqarg))
+        return false;
+    
+    // Otherwise we're ready to grab the parameter and set it.
+    int tempval = StrToInt(inboundPairs[reqarg]);
+    
+    if (tempval < low || tempval > high)
+    {
+        stringstream strm;
+        
+        strm << "Bad parameter " << reqarg << "=" << inboundPairs[reqarg] << ". Expected " << reqarg << "=[" << low << "-" << high << "]";
+        
+        bodyToReturn += strm.str();
+        return false;
+    }
+
+    outint = tempval;
+    return true;
 }
