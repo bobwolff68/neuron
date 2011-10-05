@@ -37,6 +37,10 @@ public:
     bool ExecuteSetSpeakerVolume(void);
     bool ExecuteGetSpeakerVolume(void);
     bool ExecuteSetSpeakerToggleMute(void);
+    
+#ifndef NDEBUG
+    bool ExecuteSendTestScript(void);
+#endif
 protected:
     
     map<string, TesterFn> commandMap;
@@ -95,6 +99,9 @@ Tester::Tester(map<string, string> vals, int port) : LittleHttpd(vals, port)
     commandMap["SET_SPEAKER_VOLUME"] = (TesterFn)&Tester:: ExecuteSetSpeakerVolume;
     commandMap["GET_SPEAKER_VOLUME"] = (TesterFn)&Tester:: ExecuteGetSpeakerVolume;
     commandMap["SET_SPEAKER_TOGGLE_MUTE"] = (TesterFn)&Tester:: ExecuteSetSpeakerToggleMute;
+#ifndef NDEBUG
+    commandMap["TEST"] = (TesterFn)&Tester:: ExecuteSendTestScript;
+#endif
 }
 
 ///
@@ -145,9 +152,7 @@ bool Tester::ParseRequest(void)
     }
 
     // Now make the call to the appropriate parser/execution method.
-    CALL_MEMBER_FN(*this, commandMap[finalcommand])();
-    
-    return true;
+    return CALL_MEMBER_FN(*this, commandMap[finalcommand])();
 }
 
 ///
@@ -360,6 +365,46 @@ bool Tester::ExecuteSetSpeakerToggleMute(void)
     return true;
 }
 
+#ifndef NDEBUG
+bool Tester::ExecuteSendTestScript(void)
+{
+    string homedir;
+    string fname;
+    FILE *fp;
+    
+    homedir = getenv("HOME");
+    fname =  homedir + "/TestSessionManager.html";
+    fp = fopen(fname.c_str(), "r");
+    
+    
+    if (!fp) {
+        
+        // Try again in local working directory.
+        fp = fopen("./TestSessionManager.html", "r");
+        
+        if (!fp)
+        {
+            bodyToReturn = "'TestSessionManager.html' - file not found in ~ and not found in CWD (.)";
+            return false;
+        }
+    }
+    
+    char ln[101];
+    int bytesread;
+
+    bodyToReturn = "";
+    
+    while (!feof(fp))
+    {
+        bytesread = fread(ln, 1, 100, fp);
+        ln[bytesread] = 0;  // null forced.
+        bodyToReturn += ln;
+    }
+    
+    fclose(fp);
+    return true;
+}
+#endif
 
 int main(int argc, char**argv)
 {

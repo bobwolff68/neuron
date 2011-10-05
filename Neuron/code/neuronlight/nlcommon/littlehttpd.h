@@ -36,7 +36,7 @@ protected:
     int StrToInt(string& str)
     {
         std::stringstream strstr(str);
-        int i;
+        int i=INT_MIN;  /// Preparing to send back smallest number possible if input is bogus.
         
         strstr >> i;
         

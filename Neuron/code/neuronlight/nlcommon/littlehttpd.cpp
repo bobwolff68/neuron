@@ -94,7 +94,7 @@ int LittleHttpd::workerBee(void)
 	sigaction(SIGALRM, &sact, NULL);
 #endif
 
-	while (serversock != -1)
+	while (serversock != -1 && IsRunning())
 	{
 		struct sockaddr_in remAddress;
 		socklen_t remAddress_len;
@@ -142,6 +142,10 @@ int LittleHttpd::workerBee(void)
 
 	}
 
+    // Failsafe mechanism for Mac issue with EDEADLK upon pthread_join()
+    if (isServerRunning())
+        ShutdownServer();
+    
 	return 0;
 }
 
