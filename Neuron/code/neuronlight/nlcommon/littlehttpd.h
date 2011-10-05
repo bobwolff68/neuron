@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <errno.h>
 
-class LittleHttpd : ThreadSingle
+class LittleHttpd : public ThreadSingle
 {
 public:
 	LittleHttpd(map<string, string> rvals, int initport=8081);

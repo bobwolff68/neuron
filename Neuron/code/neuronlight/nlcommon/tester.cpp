@@ -33,8 +33,10 @@ public:
     bool ExecuteSetMicVolume(void);
     bool ExecuteGetMicVolume(void);
     bool ExecuteSetMicToggleMute(void);
+    
     bool ExecuteSetSpeakerVolume(void);
     bool ExecuteGetSpeakerVolume(void);
+    bool ExecuteSetSpeakerToggleMute(void);
 protected:
     
     map<string, TesterFn> commandMap;
@@ -44,6 +46,9 @@ protected:
     
     int curBitrate;
     int curFramerate;
+    int curWidth, curHeight;
+    int curMicVol, curSpeakerVol;
+    bool bMicMuted, bSpeakerMuted;
     
     stringstream strstream;
 };
@@ -59,7 +64,15 @@ Tester::Tester(map<string, string> vals, int port) : LittleHttpd(vals, port)
     
     curBitrate = 600;
     curFramerate = 30;
+    curWidth = 640;
+    curHeight = 360;
     
+    curMicVol = 75;
+    bMicMuted = false;
+    
+    curSpeakerVol = 50;
+    bSpeakerMuted = false;
+
     commandMap["START_CAPTURE"] = (TesterFn)&Tester::ExecuteStartCapture;
     commandMap["STOP_CAPTURE"] = (TesterFn)&Tester::ExecuteStopCapture;
     commandMap["GET_CAPTURE_STATE"] = (TesterFn)&Tester::ExecuteGetCaptureState;
@@ -78,8 +91,10 @@ Tester::Tester(map<string, string> vals, int port) : LittleHttpd(vals, port)
     commandMap["SET_MIC_VOLUME"] = (TesterFn)&Tester:: ExecuteSetMicVolume;
     commandMap["GET_MIC_VOLUME"] = (TesterFn)&Tester:: ExecuteGetMicVolume;
     commandMap["SET_MIC_TOGGLE_MUTE"] = (TesterFn)&Tester:: ExecuteSetMicToggleMute;
+    
     commandMap["SET_SPEAKER_VOLUME"] = (TesterFn)&Tester:: ExecuteSetSpeakerVolume;
     commandMap["GET_SPEAKER_VOLUME"] = (TesterFn)&Tester:: ExecuteGetSpeakerVolume;
+    commandMap["SET_SPEAKER_TOGGLE_MUTE"] = (TesterFn)&Tester:: ExecuteSetSpeakerToggleMute;
 }
 
 ///
@@ -206,9 +221,6 @@ bool Tester::ExecuteSetBitrate(void)
 {
     int temprate;
     
-    if (!RequiredArgPresent("bitrate"))
-        return false;
-
     if (!getRequiredArgAsInt("bitrate", 100, 50000, temprate))
         return false;
     
@@ -230,9 +242,6 @@ bool Tester::ExecuteSetFramerate(void)
 {
     int temprate;
     
-    if (!RequiredArgPresent("fps"))
-        return false;
-    
     if (!getRequiredArgAsInt("fps", 1, 60, temprate))
         return false;
     
@@ -252,53 +261,102 @@ bool Tester::ExecuteGetFramerate(void)
 
 bool Tester::ExecuteSetResolution(void)
 {
+    int tempwidth, tempheight;
+    
+    if (!getRequiredArgAsInt("width", 2, 4096, tempwidth))
+        return false;
+    
+    if (!getRequiredArgAsInt("height", 2, 2048, tempheight))
+        return false;
+    
+    // Else all is good.
+    curWidth = tempwidth;
+    curHeight = tempheight;
+    
     return true;
 }
 
 bool Tester::ExecuteGetResolution(void)
 {
+    strstream.str("");
+    strstream << "{ width: " << curWidth << ", height: " << curHeight << " }";
+    bodyToReturn = strstream.str();
     return true;
 }
 
 
 bool Tester::ExecuteGetRtspUrl(void)
 {
+    string rtspUrl = "rtsp://localhost:8554/stream0";
+    
+    strstream.str("");
+    strstream << "{ rtsp_url: \"" << rtspUrl << "\" }";
+    bodyToReturn = strstream.str();
     return true;
 }
 
 bool Tester::ExecuteQuit(void)
 {
+    stopThread();
     return true;
 }
 
 bool Tester::ExecuteShowGui(void)
 {
+    //TODO: Show the GUI
     return true;
 }
 
 
 bool Tester::ExecuteSetMicVolume(void)
 {
+    int tempvol;
+    
+    if (!getRequiredArgAsInt("vol", 0, 100, tempvol))
+        return false;
+    
+    // Else all is good.
+    curMicVol = tempvol;
     return true;
 }
 
 bool Tester::ExecuteGetMicVolume(void)
 {
+    strstream.str("");
+    strstream << "{ vol: " << curMicVol << ", muted: " << (bMicMuted ? "true" : "false") << " }";
+    bodyToReturn = strstream.str();
     return true;
 }
 
 bool Tester::ExecuteSetMicToggleMute(void)
 {
+    bMicMuted = !bMicMuted;
     return true;
 }
 
 bool Tester::ExecuteSetSpeakerVolume(void)
 {
+    int tempvol;
+    
+    if (!getRequiredArgAsInt("vol", 0, 100, tempvol))
+        return false;
+    
+    // Else all is good.
+    curSpeakerVol = tempvol;
     return true;
 }
 
 bool Tester::ExecuteGetSpeakerVolume(void)
 {
+    strstream.str("");
+    strstream << "{ vol: " << curSpeakerVol << ", muted: " << (bSpeakerMuted ? "true" : "false") << " }";
+    bodyToReturn = strstream.str();
+    return true;
+}
+
+bool Tester::ExecuteSetSpeakerToggleMute(void)
+{
+    bSpeakerMuted = !bSpeakerMuted;
     return true;
 }
 
