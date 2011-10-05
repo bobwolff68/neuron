@@ -14,6 +14,8 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <assert.h>
+#include <errno.h>
+
 using namespace std;
 
 //!
@@ -112,7 +114,7 @@ public:
             // Set the stop requested flag, stop the thread, and then clear the isRunning flag.
             isStopRequested = true;
             ret = pthread_join(thread, 0);
-            if (ret)
+            if (ret != EDEADLK && ret)
             {
                 assert(false);
                 REPORT_ERROR("ending/joining thread failed. Err:%d", ret);
