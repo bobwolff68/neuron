@@ -16,19 +16,7 @@ extern    bool bChangeBitrate;
 extern    int frameRate;
 extern    bool bChangeFramerate;
 
-#if (defined(__APPLE__) & defined(__MACH__))
-    void nl_rtcamstream_t::main(TempVidCapBase* p_cap_objc,
-                                const int width,
-                                const int height,
-                                const char* colorspace,
-                                const bool b_video_on,
-                                const bool b_audio_on)
-    {
-        nl_rtcamstream_t rtcs(p_cap_objc,8554,width,height,colorspace,b_video_on,b_audio_on);
-        rtcs.RunCapture();
-        return;
-    }
-                              
+#if (defined(__APPLE__) & defined(__MACH__))                              
     nl_rtcamstream_t::nl_rtcamstream_t(TempVidCapBase* _p_cap,
                                        const short rtsp_port,
                                        const int width,
