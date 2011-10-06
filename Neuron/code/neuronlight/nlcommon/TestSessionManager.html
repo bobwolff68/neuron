@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>Tester</title>
+<script
+src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<style>
+#errors {
+color: #c00;
+}
+#passes{
+color: #0c0;
+}
+</style>
+<script>
+$(document).ready(function() {
+
+  function assertStatusCode(url, expectedStatusCode, expectedResponseText) {
+		$.ajax({
+               url: url, async: false,
+			dataType: 'json',
+			complete: function(actualResponse, textStatus) {
+         actualResponse = actualResponse;
+         actualStatusCode = actualResponse.status;
+         actualResponseText = actualResponse.responseText;
+
+         if (actualStatusCode == expectedStatusCode){
+           $("#passes").append("<li>" + url + " status code passed!</li>");
+         } else {
+					 $("#errors").append("<li><h3>Code Fail on "+url+"</h3><p>Expected:"+expectedStatusCode+"</p><p>Actual:"+actualStatusCode+"</p></li>");
+         }
+
+         if (actualResponseText == expectedResponseText){
+           $("#passes").append("<li>" + url + " response passed!</li>");
+         } else {
+					 $("#errors").append("<li><h3>Response Fail on "+url+"</h3><p>Expected:"+expectedResponseText+"</p><p>Actual:"+actualResponseText+"</p></li>");
+         }
+					 
+      }
+		});
+  }
+                  
+	assertStatusCode("http://localhost:8081/BAD_UGLY_COMMAND","400","{ errMsg: \"Bad Command: Command unknown.\" }")		                  
+                  
+    assertStatusCode("http://localhost:8081/STOP_CAPTURE","200","")
+	assertStatusCode("http://localhost:8081/GET_CAPTURE_STATE","200","{ state: \"stopped\" }")			 
+    assertStatusCode("http://localhost:8081/START_CAPTURE","200","")
+    assertStatusCode("http://localhost:8081/GET_CAPTURE_STATE","200","{ state: \"running\" }")
+    assertStatusCode("http://localhost:8081/STOP_CAPTURE","200","")
+    assertStatusCode("http://localhost:8081/GET_CAPTURE_STATE","200","{ state: \"stopped\" }")			 
+
+    assertStatusCode("http://localhost:8081/SET_BITRATE","400","Bad parameters. Expected 'bitrate'")
+    assertStatusCode("http://localhost:8081/SET_BITRATE?junk=23","400","Bad parameters. Expected 'bitrate'")
+    assertStatusCode("http://localhost:8081/SET_BITRATE?bitrate=text","400","Bad parameter bitrate=text . Expected bitrate=[100-50000]")
+    assertStatusCode("http://localhost:8081/SET_BITRATE?bitrate=99000","400","Bad parameter bitrate=99000 . Expected bitrate=[100-50000]")
+    assertStatusCode("http://localhost:8081/SET_BITRATE?bitrate=1200","200","")
+    assertStatusCode("http://localhost:8081/GET_BITRATE","200","{ bitrate: 1200 }")
+    assertStatusCode("http://localhost:8081/SET_BITRATE?bitrate=400","200","")
+    assertStatusCode("http://localhost:8081/GET_BITRATE","200","{ bitrate: 400 }")
+                  
+    assertStatusCode("http://localhost:8081/SET_FRAMERATE","400","Bad parameters. Expected 'fps'")
+    assertStatusCode("http://localhost:8081/SET_FRAMERATE?junk=23","400","Bad parameters. Expected 'fps'")
+    assertStatusCode("http://localhost:8081/SET_FRAMERATE?fps=text","400","Bad parameter fps=text . Expected fps=[1-60]")
+    assertStatusCode("http://localhost:8081/SET_FRAMERATE?fps=99000","400","Bad parameter fps=99000 . Expected fps=[1-60]")
+    assertStatusCode("http://localhost:8081/SET_FRAMERATE?fps=20","200","")
+    assertStatusCode("http://localhost:8081/GET_FRAMERATE","200","{ fps: 20 }")
+    assertStatusCode("http://localhost:8081/SET_FRAMERATE?fps=7","200","")
+    assertStatusCode("http://localhost:8081/GET_FRAMERATE","200","{ fps: 7 }")
+                  
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION","400","Bad parameters. Expected 'width'")
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION?junk=1","400","Bad parameters. Expected 'width'")
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=text","400","Bad parameter width=text . Expected width=[2-4096]")
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=99000","400","Bad parameter width=99000 . Expected width=[2-4096]")
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=640","400","Bad parameters. Expected 'height'")
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=800&height=600","200","")
+    assertStatusCode("http://localhost:8081/GET_RESOLUTION","200","{ width: 800, height: 600 }")
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=640&height=360","200","")
+    assertStatusCode("http://localhost:8081/GET_RESOLUTION","200","{ width: 640, height: 360 }")
+    
+    assertStatusCode("http://localhost:8081/GET_RTSP_URL","200","{ rtsp_url: \"rtsp://localhost:8554/stream0\" }")
+    assertStatusCode("http://localhost:8081/SHOW_GUI","200","")
+                  
+    assertStatusCode("http://localhost:8081/SET_MIC_VOLUME","400","Bad parameters. Expected 'vol'")
+    assertStatusCode("http://localhost:8081/SET_MIC_VOLUME?junk=23","400","Bad parameters. Expected 'vol'")
+    assertStatusCode("http://localhost:8081/SET_MIC_VOLUME?vol=text","400","Bad parameter vol=text . Expected vol=[0-100]")
+    assertStatusCode("http://localhost:8081/SET_MIC_VOLUME?vol=99000","400","Bad parameter vol=99000 . Expected vol=[0-100]")
+    assertStatusCode("http://localhost:8081/SET_MIC_VOLUME?vol=20","200","")
+    assertStatusCode("http://localhost:8081/GET_MIC_VOLUME","200","{ vol: 20, muted: false }")
+    assertStatusCode("http://localhost:8081/SET_MIC_TOGGLE_MUTE","200","")
+    assertStatusCode("http://localhost:8081/SET_MIC_VOLUME?vol=7","200","")
+    assertStatusCode("http://localhost:8081/GET_MIC_VOLUME","200","{ vol: 7, muted: true }")
+    assertStatusCode("http://localhost:8081/SET_MIC_TOGGLE_MUTE","200","")
+    assertStatusCode("http://localhost:8081/GET_MIC_VOLUME","200","{ vol: 7, muted: false }")
+                  
+    assertStatusCode("http://localhost:8081/SET_SPEAKER_VOLUME","400","Bad parameters. Expected 'vol'")
+    assertStatusCode("http://localhost:8081/SET_SPEAKER_VOLUME?junk=23","400","Bad parameters. Expected 'vol'")
+    assertStatusCode("http://localhost:8081/SET_SPEAKER_VOLUME?vol=text","400","Bad parameter vol=text . Expected vol=[0-100]")
+    assertStatusCode("http://localhost:8081/SET_SPEAKER_VOLUME?vol=99000","400","Bad parameter vol=99000 . Expected vol=[0-100]")
+    assertStatusCode("http://localhost:8081/SET_SPEAKER_VOLUME?vol=20","200","")
+    assertStatusCode("http://localhost:8081/GET_SPEAKER_VOLUME","200","{ vol: 20, muted: false }")
+    assertStatusCode("http://localhost:8081/SET_SPEAKER_TOGGLE_MUTE","200","")
+    assertStatusCode("http://localhost:8081/SET_SPEAKER_VOLUME?vol=7","200","")
+    assertStatusCode("http://localhost:8081/GET_SPEAKER_VOLUME","200","{ vol: 7, muted: true }")
+    assertStatusCode("http://localhost:8081/SET_SPEAKER_TOGGLE_MUTE","200","")
+    assertStatusCode("http://localhost:8081/GET_SPEAKER_VOLUME","200","{ vol: 7, muted: false }")
+                  
+  $("#url_tester").submit(function(){
+    url = $("#url_tester [name='url']").val();
+
+    $.ajax({
+			url: url,
+			dataType: 'json',
+			complete: function(response, textStatus) {
+         window.lastUrl = url;
+         window.lastResponse = response;
+         window.lastResponseText = (textStatus == "error" ? "[nothing]" : lastResponse.responseText);
+         
+         $("#responses").prepend("<li><h3>" + url + ": " + lastResponse.status +"</h3><p>"+lastResponseText+"</p></li>")
+      }
+		});
+				 
+    return false; // this way the form won't really submit
+  });
+
+});
+</script>
+</head>
+
+<body>
+	<h1>Url to test:</h1>
+	<form id="url_tester">
+		<input type="text" name="url"
+	value="http://localhost:8081/GET_CAPTURE_STATE" size="70"/>
+    <input type="submit"/>
+	</form>
+
+  <ul id="responses">
+	</ul>
+
+	<ul id="errors">
+	</ul>
+	<ul id="passes">
+	</ul>
+		
+</body>
