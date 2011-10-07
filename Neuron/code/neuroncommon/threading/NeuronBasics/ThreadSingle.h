@@ -114,7 +114,7 @@ public:
             // Set the stop requested flag, stop the thread, and then clear the isRunning flag.
             isStopRequested = true;
             ret = pthread_join(thread, 0);
-            if (ret != EDEADLK && ret)
+            if (/*ret != EDEADLK &&*/ ret)
             {
                 assert(false);
                 REPORT_ERROR("ending/joining thread failed. Err:%d", ret);

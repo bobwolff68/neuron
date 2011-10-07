@@ -72,7 +72,6 @@ extern    bool bChangeFramerate;
         //setup server media session "stream0"
         p_serv->setup_sms("stream0",b_video_on,b_audio_on);
 
-
 		map<string,string> nvpairs;
         char s_width[20];
         char s_height[20];
@@ -140,8 +139,6 @@ void nl_rtcamstream_t::RunCapture(void)
 	    p_serv->startThread();
 	    p_fifoout->startThread();
 	    p_rtenc->startThread();
-		//p_cap->start_capturing();
-
         p_serv->test_sdp();
         
         while (!bQuit) {
