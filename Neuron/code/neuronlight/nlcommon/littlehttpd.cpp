@@ -29,6 +29,8 @@ LittleHttpd::LittleHttpd(map<string, string> rvals, int initport)
 
 	respvalues = rvals;
 
+    bNeedsToShutdown = false;
+    
 #if 0
 	// Setup parent process/thread to have an 'ignore' handler so its getlin() doesnt get interrupted.
 	struct sigaction sact;
@@ -278,6 +280,10 @@ bool LittleHttpd::HConnection(int csock)
 	}
     else
         SendOKResponse(csock, bodyToReturn);
+    
+    // This is the method by which an 'execute action' can flag the parent that the server needs to quit.
+    if (bNeedsToShutdown)
+        ShutdownServer();
     
 	return true;
 }

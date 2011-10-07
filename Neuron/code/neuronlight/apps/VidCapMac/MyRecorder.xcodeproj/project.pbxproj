@@ -17,6 +17,8 @@
 		34E3725A140C1B6C001524C7 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34E37259140C1B6C001524C7 /* CoreVideo.framework */; };
 		34E3725C140C1BB1001524C7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34E3725B140C1BB0001524C7 /* AudioToolbox.framework */; };
 		34E3725E140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 34E3725D140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a */; };
+		34FEFD5C143E2581007975FF /* sessionmanager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34FEFD5B143E2581007975FF /* sessionmanager.cpp */; };
+		34FEFD80143E3A80007975FF /* libnlcommon.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 34FEFD7B143E3335007975FF /* libnlcommon.a */; };
 		7B5CFAED13F1C0D2007479E1 /* libgroupsock.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAEC13F1C0D2007479E1 /* libgroupsock.a */; };
 		7B5CFAEF13F1C0F8007479E1 /* libliveMedia.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAEE13F1C0F8007479E1 /* libliveMedia.a */; };
 		7B5CFAF113F1C10C007479E1 /* libBasicUsageEnvironment.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5CFAF013F1C10C007479E1 /* libBasicUsageEnvironment.a */; };
@@ -33,6 +35,27 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		34FEFD7A143E3335007975FF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 34FEFD72143E3334007975FF /* nlcommon.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 59F31059F31059F310000000;
+			remoteInfo = nlcommon;
+		};
+		34FEFD7C143E3335007975FF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 34FEFD72143E3334007975FF /* nlcommon.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 5AB4E05AB4E05AB4E0000000;
+			remoteInfo = tester;
+		};
+		34FEFD7E143E3363007975FF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 34FEFD72143E3334007975FF /* nlcommon.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 596990596990596990000000;
+			remoteInfo = nlcommon;
+		};
 		7B5CFAC113F1B780007479E1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7B5CFABD13F1B780007479E1 /* codec.xcodeproj */;
@@ -100,6 +123,9 @@
 		34E3725B140C1BB0001524C7 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = /System/Library/Frameworks/AudioToolbox.framework; sourceTree = "<absolute>"; };
 		34E3725D140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libv4codecsdk-m32g-all-md.a"; path = "../../../../../Common/vanguard/mac/v4sdk-4.6/lib/libv4codecsdk-m32g-all-md.a"; sourceTree = "<group>"; };
 		34F2D798142BAA820067E6BD /* SafeBufferDeque.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SafeBufferDeque.h; path = ../../../include/SafeBufferDeque.h; sourceTree = "<group>"; };
+		34FEFD5B143E2581007975FF /* sessionmanager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = sessionmanager.cpp; path = ../../nlcommon/sessionmanager.cpp; sourceTree = "<group>"; };
+		34FEFD5D143E258B007975FF /* sessionmanager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sessionmanager.h; path = ../../nlcommon/sessionmanager.h; sourceTree = "<group>"; };
+		34FEFD72143E3334007975FF /* nlcommon.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = nlcommon.xcodeproj; path = ../../nlcommon/nlcommon.xcodeproj; sourceTree = "<group>"; };
 		7B5CFABD13F1B780007479E1 /* codec.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = codec.xcodeproj; path = ../../codec/xcode_build/codec/codec.xcodeproj; sourceTree = "<group>"; };
 		7B5CFAC413F1B79B007479E1 /* network.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = network.xcodeproj; path = ../../network/xcode_build/network/network.xcodeproj; sourceTree = "<group>"; };
 		7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = rtcamstream.xcodeproj; path = ../tools/rtcamstream/xcode_build/rtcamstream/rtcamstream.xcodeproj; sourceTree = "<group>"; };
@@ -119,6 +145,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34FEFD80143E3A80007975FF /* libnlcommon.a in Frameworks */,
 				34E3725E140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a in Frameworks */,
 				34E3725C140C1BB1001524C7 /* AudioToolbox.framework in Frameworks */,
 				34E3725A140C1B6C001524C7 /* CoreVideo.framework in Frameworks */,
@@ -170,6 +197,7 @@
 		29B97314FDCFA39411CA2CEA /* MyRecorder */ = {
 			isa = PBXGroup;
 			children = (
+				34FEFD72143E3334007975FF /* nlcommon.xcodeproj */,
 				7B5CFABD13F1B780007479E1 /* codec.xcodeproj */,
 				7B5CFAC413F1B79B007479E1 /* network.xcodeproj */,
 				7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */,
@@ -177,6 +205,8 @@
 				3426E93713F0BAFB00897BA7 /* RTBuffer.h */,
 				34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */,
 				34DE7EDF13ECA2CE007B30F0 /* QTKitCap.h */,
+				34FEFD5B143E2581007975FF /* sessionmanager.cpp */,
+				34FEFD5D143E258B007975FF /* sessionmanager.h */,
 				34DE7EDD13EC9BA0007B30F0 /* ThreadSingle.h */,
 				32CA4F630368D1EE00C91783 /* MyRecorder_Prefix.pch */,
 				29B97316FDCFA39411CA2CEA /* main.mm */,
@@ -228,6 +258,15 @@
 			name = LinkLibs;
 			sourceTree = "<group>";
 		};
+		34FEFD73143E3334007975FF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				34FEFD7B143E3335007975FF /* libnlcommon.a */,
+				34FEFD7D143E3335007975FF /* tester */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		7B5CFABE13F1B780007479E1 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -266,6 +305,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				34FEFD7F143E3363007975FF /* PBXTargetDependency */,
 				7B5CFB2913F1CE52007479E1 /* PBXTargetDependency */,
 				7B5CFB2B13F1CE52007479E1 /* PBXTargetDependency */,
 				7B5CFB2D13F1CE52007479E1 /* PBXTargetDependency */,
@@ -303,6 +343,10 @@
 					ProjectRef = 7B5CFAC413F1B79B007479E1 /* network.xcodeproj */;
 				},
 				{
+					ProductGroup = 34FEFD73143E3334007975FF /* Products */;
+					ProjectRef = 34FEFD72143E3334007975FF /* nlcommon.xcodeproj */;
+				},
+				{
 					ProductGroup = 7B5CFACE13F1B7FD007479E1 /* Products */;
 					ProjectRef = 7B5CFACD13F1B7FD007479E1 /* rtcamstream.xcodeproj */;
 				},
@@ -315,6 +359,20 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		34FEFD7B143E3335007975FF /* libnlcommon.a */ = {
+			isa = PBXReferenceProxy;
+			fileType = archive.ar;
+			path = libnlcommon.a;
+			remoteRef = 34FEFD7A143E3335007975FF /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		34FEFD7D143E3335007975FF /* tester */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = tester;
+			remoteRef = 34FEFD7C143E3335007975FF /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		7B5CFAC213F1B780007479E1 /* libcodec.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -362,12 +420,18 @@
 				34DE7EE013ECA2CE007B30F0 /* QTKitCap.mm in Sources */,
 				3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */,
 				3442192B140C0674007E833C /* CameraInterrogation.m in Sources */,
+				34FEFD5C143E2581007975FF /* sessionmanager.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		34FEFD7F143E3363007975FF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = nlcommon;
+			targetProxy = 34FEFD7E143E3363007975FF /* PBXContainerItemProxy */;
+		};
 		7B5CFB2913F1CE52007479E1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = rtcamstream;

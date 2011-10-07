@@ -10,6 +10,8 @@
 
 #import "CameraInterrogation.h"
 
+#define SESSION_MANAGER_PORT 8081
+
 #define DESIRED_BITS_PER_SAMPLE 16
 #define DESIRED_AUDIO_FREQUENCY 32000
 #define DESIRED_NUM_CHANNELS_OUT    2
@@ -60,6 +62,16 @@ OSStatus iConverter (
 }
 
 
+void smCallbackGlobal(void* pData , SessionManager* psm)
+{
+    MyRecorderController* pMyRec = (MyRecorderController*)pData;
+    assert(pMyRec);
+    assert(psm);
+    
+    [pMyRec smCallback:psm];
+}
+
+
 
 @interface NSString (IntCompare)
 
@@ -82,6 +94,58 @@ OSStatus iConverter (
 
 @implementation MyRecorderController
 
+- (void)smCallback:(SessionManager*) psm
+{
+    assert(psm);
+    assert(psm == sm);
+    
+    if (sm->bIsQuitting)
+        [self quitApplication:NULL];
+    
+    // Go through and iterate all the variables to update either the UI or internal values.
+    if (bitRate != sm->curBitrate)
+    {
+        [Vkbps setIntValue:sm->curBitrate];
+        [self videoBitrateChanged:NULL];
+    }
+    if (frameRate != sm->curFramerate)
+    {
+        [Vfps setIntValue:sm->curFramerate];
+        [self videoFramerateChanged:NULL];
+    }
+    
+    // resolution
+    if (outputWidth != sm->curWidth || outputHeight != sm->curHeight)
+    {
+        assert(bIsCapturing==false);
+        
+        [captureResBox setStringValue:[NSString stringWithFormat:@"%d x %d", sm->curWidth, sm->curHeight]];
+
+        // Now - we call the normal gui progression and that will set/change the capture resolution.
+        // The only 'gotcha' is if the inbound width and height are invalid, then we need to re-reflect
+        // this back to the SessionManager.
+        // NOTE: Since there's really no full backchannel to the original caller (web browser), if the
+        // values are incorrect, the caller of /SET_RESOLUTION would have to do a /GET_RESOLUTION to be
+        // sure their values "took".
+        
+        [self captureResolution:NULL];
+        
+        // Now send back any changes. Just re-copy - no need to if() this.
+        sm->curWidth = outputWidth;
+        sm->curHeight = outputHeight;
+    }
+    
+    // mic volume & mute
+    
+    // speaker volume & mute
+    
+    // Figure out if the desire is to have us start or stop capture.
+    if (bIsCapturing && sm->capState==SessionManager::stopped)
+        [self stopRecording:NULL];
+    if (!bIsCapturing && sm->capState==SessionManager::running)
+        [self startRecording:NULL];
+}
+
 - (void)awakeFromNib
 {    
     Converter = NULL;
@@ -93,6 +157,8 @@ OSStatus iConverter (
     
     captureWidth  = 640;
     captureHeight = 480;
+    
+    bIsCapturing = false;
     
     pCameraResolutions = [NSMutableArray arrayWithObjects:@"160 x 120", @"176 x 144",
                           @"320 x 240", @"640 x 480", @"960 x 540", 
@@ -240,6 +306,19 @@ OSStatus iConverter (
                                                 selector:@selector(updateUINow:)
                                                 userInfo:nil
                                                  repeats:YES];
+    
+    map<string, string> pairs;
+    sm = new SessionManager(pairs, SESSION_MANAGER_PORT);
+    assert(sm);
+    sm->addCallback(self, smCallbackGlobal);
+    
+    // Populate sm with our present startup values.
+    sm->capState = SessionManager::stopped;
+    sm->curWidth = outputWidth;
+    sm->curHeight = outputHeight;
+    sm->curBitrate = bitRate;
+    sm->curFramerate = frameRate;
+
 }
 
 - (void)updateUINow:(NSTimer*) timer {
@@ -262,6 +341,11 @@ OSStatus iConverter (
 // Handle deallocation of memory for your capture objects
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
+    // Don't call me anymore. Then I'll delete you safely.
+    sm->removeCallback(smCallbackGlobal);
+    delete sm;
+    sm = NULL;
+    
     delete p_pipeline_runner;
     p_pipeline_runner = NULL;
 
@@ -883,6 +967,9 @@ OSStatus iConverter (
         p_pipeline_runner = new RunPipeline(pTVC,outputWidth,outputHeight,"UYVY",true,true);
 
     pCap->start_capturing();
+    
+    bIsCapturing = true;
+    sm->setActualCaptureState(SessionManager::running);
 }
 
 - (IBAction)stopRecording:(id)sender
@@ -892,6 +979,9 @@ OSStatus iConverter (
     [captureButton setEnabled:true];
     [stopCaptureButton setEnabled:false];
     [captureResBox setEnabled:false];
+    
+    bIsCapturing = false;
+    sm->setActualCaptureState(SessionManager::stopped);
 }
 
 - (IBAction)quitApplication:(id)sender {
@@ -915,11 +1005,15 @@ OSStatus iConverter (
 - (IBAction)videoBitrateChanged:(id)sender {
     bitRate = [Vkbps intValue];
     bChangeBitrate=true;
+    
+    sm->curBitrate = bitRate;
 }
 
 - (IBAction)videoFramerateChanged:(id)sender {
     frameRate = [Vfps intValue];
     bChangeFramerate=true;
+    
+    sm->curFramerate = frameRate;
 
     [mCaptureDecompressedVideoOutput setMinimumVideoFrameInterval:1/(float)frameRate];
 }
@@ -992,16 +1086,22 @@ OSStatus iConverter (
         if (height % MODULO_REQUIRED)
             height = height + (MODULO_REQUIRED - (height % MODULO_REQUIRED));
         
+#if 0
         // Now inform the user.
         NSAlert *alert = [[NSAlert alloc] init];
         [alert setMessageText:@"Desired capture resolution modified."];
         [alert setInformativeText:[NSString stringWithFormat:@"Requested resolution of (%d x %d)\nwas modified to become (%d x %d).\nVideo encoder requires modulo-%d values.", nonmodWidth, nonmodHeight, width, height, MODULO_REQUIRED]];
         [alert runModal];
         [alert release];
+#endif
     }
     
     // Set capture resolution based on desired output resolution in width/height
     [self setDisplayResolutionWidth:width withHeight:height];
+    
+    // Update SessionManager
+    sm->curWidth = width;
+    sm->curHeight = height;
         
 }
 
@@ -1046,21 +1146,7 @@ OSStatus iConverter (
         *pCaptureHeight = lastCandidateHeight;
         return 0;
     }
-/*
-    if (desWidth==640 && desHeight==360)
-    {
-        *pCaptureWidth = 640;
-        *pCaptureHeight = 480;
-        return 0;
-    }
-    
-    if (desWidth==1280 && desHeight==720)
-    {
-        *pCaptureWidth = 1280;
-        *pCaptureHeight = 720;
-        return 0;
-    }
-  */  
+
     return -1;
 }
 

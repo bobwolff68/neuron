@@ -66,6 +66,7 @@ $(document).ready(function() {
     assertStatusCode("http://localhost:8081/SET_FRAMERATE?fps=7","200","")
     assertStatusCode("http://localhost:8081/GET_FRAMERATE","200","{ fps: 7 }")
                   
+    assertStatusCode("http://localhost:8081/STOP_CAPTURE","200","")
     assertStatusCode("http://localhost:8081/SET_RESOLUTION","400","Bad parameters. Expected 'width'")
     assertStatusCode("http://localhost:8081/SET_RESOLUTION?junk=1","400","Bad parameters. Expected 'width'")
     assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=text","400","Bad parameter width=text . Expected width=[2-4096]")
@@ -75,6 +76,11 @@ $(document).ready(function() {
     assertStatusCode("http://localhost:8081/GET_RESOLUTION","200","{ width: 800, height: 600 }")
     assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=640&height=360","200","")
     assertStatusCode("http://localhost:8081/GET_RESOLUTION","200","{ width: 640, height: 360 }")
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=601&height=302","200","")
+    assertStatusCode("http://localhost:8081/GET_RESOLUTION","200","{ width: 604, height: 304 }")
+    assertStatusCode("http://localhost:8081/START_CAPTURE","200","")
+    assertStatusCode("http://localhost:8081/SET_RESOLUTION?width=640&height=360","400","Failed: Resolution cannot be set while capturing.")
+    assertStatusCode("http://localhost:8081/STOP_CAPTURE","200","")
     
     assertStatusCode("http://localhost:8081/GET_RTSP_URL","200","{ rtsp_url: \"rtsp://localhost:8554/stream0\" }")
     assertStatusCode("http://localhost:8081/SHOW_GUI","200","")

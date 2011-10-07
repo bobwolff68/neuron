@@ -1,63 +1,6 @@
-#include "littlehttpd.h"
+#include "sessionmanager.h"
 
-class Tester;
-
-typedef  int (Tester::*TesterFn)(void);
-
-#define CALL_MEMBER_FN(object,ptrToMember)  ((object).*(ptrToMember))
-
-class Tester : public LittleHttpd {
-public:
-	Tester(map<string, string> vals, int port);
-	virtual ~Tester() { };
-
-    map<string, string> mystuff;
-	bool ParseRequest(void);
-	bool ExecuteAction(void);
-    
-    bool ExecuteStartCapture(void);
-    bool ExecuteStopCapture(void);
-    bool ExecuteGetCaptureState(void);
-    
-    bool ExecuteSetBitrate(void);
-    bool ExecuteGetBitrate(void);
-    bool ExecuteSetFramerate(void);
-    bool ExecuteGetFramerate(void);
-    bool ExecuteSetResolution(void);
-    bool ExecuteGetResolution(void);
-
-    bool ExecuteGetRtspUrl(void);
-    bool ExecuteQuit(void);
-    bool ExecuteShowGui(void);
-    
-    bool ExecuteSetMicVolume(void);
-    bool ExecuteGetMicVolume(void);
-    bool ExecuteSetMicToggleMute(void);
-    
-    bool ExecuteSetSpeakerVolume(void);
-    bool ExecuteGetSpeakerVolume(void);
-    bool ExecuteSetSpeakerToggleMute(void);
-    
-#ifndef NDEBUG
-    bool ExecuteSendTestScript(void);
-#endif
-protected:
-    
-    map<string, TesterFn> commandMap;
-    enum states { stopped, paused, running, error, max_states };
-    states capState;
-    string states[max_states];
-    
-    int curBitrate;
-    int curFramerate;
-    int curWidth, curHeight;
-    int curMicVol, curSpeakerVol;
-    bool bMicMuted, bSpeakerMuted;
-    
-    stringstream strstream;
-};
-
-Tester::Tester(map<string, string> vals, int port) : LittleHttpd(vals, port)
+SessionManager::SessionManager(map<string, string> vals, int port) : LittleHttpd(vals, port)
 {
     states[stopped] = "stopped";
     states[paused] = "paused";
@@ -76,31 +19,33 @@ Tester::Tester(map<string, string> vals, int port) : LittleHttpd(vals, port)
     
     curSpeakerVol = 50;
     bSpeakerMuted = false;
+    
+    bIsQuitting = false;
 
-    commandMap["START_CAPTURE"] = (TesterFn)&Tester::ExecuteStartCapture;
-    commandMap["STOP_CAPTURE"] = (TesterFn)&Tester::ExecuteStopCapture;
-    commandMap["GET_CAPTURE_STATE"] = (TesterFn)&Tester::ExecuteGetCaptureState;
+    commandMap["START_CAPTURE"] = (SessionManagerFn)&SessionManager::ExecuteStartCapture;
+    commandMap["STOP_CAPTURE"] = (SessionManagerFn)&SessionManager::ExecuteStopCapture;
+    commandMap["GET_CAPTURE_STATE"] = (SessionManagerFn)&SessionManager::ExecuteGetCaptureState;
     
-    commandMap["SET_BITRATE"] = (TesterFn)&Tester:: ExecuteSetBitrate;
-    commandMap["GET_BITRATE"] = (TesterFn)&Tester:: ExecuteGetBitrate;
-    commandMap["SET_FRAMERATE"] = (TesterFn)&Tester:: ExecuteSetFramerate;
-    commandMap["GET_FRAMERATE"] = (TesterFn)&Tester:: ExecuteGetFramerate;
-    commandMap["SET_RESOLUTION"] = (TesterFn)&Tester:: ExecuteSetResolution;
-    commandMap["GET_RESOLUTION"] = (TesterFn)&Tester:: ExecuteGetResolution;
+    commandMap["SET_BITRATE"] = (SessionManagerFn)&SessionManager:: ExecuteSetBitrate;
+    commandMap["GET_BITRATE"] = (SessionManagerFn)&SessionManager:: ExecuteGetBitrate;
+    commandMap["SET_FRAMERATE"] = (SessionManagerFn)&SessionManager:: ExecuteSetFramerate;
+    commandMap["GET_FRAMERATE"] = (SessionManagerFn)&SessionManager:: ExecuteGetFramerate;
+    commandMap["SET_RESOLUTION"] = (SessionManagerFn)&SessionManager:: ExecuteSetResolution;
+    commandMap["GET_RESOLUTION"] = (SessionManagerFn)&SessionManager:: ExecuteGetResolution;
     
-    commandMap["GET_RTSP_URL"] = (TesterFn)&Tester:: ExecuteGetRtspUrl;
-    commandMap["QUIT"] = (TesterFn)&Tester:: ExecuteQuit;
-    commandMap["SHOW_GUI"] = (TesterFn)&Tester:: ExecuteShowGui;
+    commandMap["GET_RTSP_URL"] = (SessionManagerFn)&SessionManager:: ExecuteGetRtspUrl;
+    commandMap["QUIT"] = (SessionManagerFn)&SessionManager:: ExecuteQuit;
+    commandMap["SHOW_GUI"] = (SessionManagerFn)&SessionManager:: ExecuteShowGui;
 
-    commandMap["SET_MIC_VOLUME"] = (TesterFn)&Tester:: ExecuteSetMicVolume;
-    commandMap["GET_MIC_VOLUME"] = (TesterFn)&Tester:: ExecuteGetMicVolume;
-    commandMap["SET_MIC_TOGGLE_MUTE"] = (TesterFn)&Tester:: ExecuteSetMicToggleMute;
+    commandMap["SET_MIC_VOLUME"] = (SessionManagerFn)&SessionManager:: ExecuteSetMicVolume;
+    commandMap["GET_MIC_VOLUME"] = (SessionManagerFn)&SessionManager:: ExecuteGetMicVolume;
+    commandMap["SET_MIC_TOGGLE_MUTE"] = (SessionManagerFn)&SessionManager:: ExecuteSetMicToggleMute;
     
-    commandMap["SET_SPEAKER_VOLUME"] = (TesterFn)&Tester:: ExecuteSetSpeakerVolume;
-    commandMap["GET_SPEAKER_VOLUME"] = (TesterFn)&Tester:: ExecuteGetSpeakerVolume;
-    commandMap["SET_SPEAKER_TOGGLE_MUTE"] = (TesterFn)&Tester:: ExecuteSetSpeakerToggleMute;
+    commandMap["SET_SPEAKER_VOLUME"] = (SessionManagerFn)&SessionManager:: ExecuteSetSpeakerVolume;
+    commandMap["GET_SPEAKER_VOLUME"] = (SessionManagerFn)&SessionManager:: ExecuteGetSpeakerVolume;
+    commandMap["SET_SPEAKER_TOGGLE_MUTE"] = (SessionManagerFn)&SessionManager:: ExecuteSetSpeakerToggleMute;
 #ifndef NDEBUG
-    commandMap["TEST"] = (TesterFn)&Tester:: ExecuteSendTestScript;
+    commandMap["TEST"] = (SessionManagerFn)&SessionManager:: ExecuteSendTestScript;
 #endif
 }
 
@@ -108,7 +53,7 @@ Tester::Tester(map<string, string> vals, int port) : LittleHttpd(vals, port)
 /// \brief ParseRequest is an opportunity to parse if desired by hand. But this is unlikely as
 ///        the original request has been boiled down to inboundBaseURL and a map<> of name/value pairs.
 ///
-bool Tester::ParseRequest(void)
+bool SessionManager::ParseRequest(void)
 {
     string finalcommand;
 
@@ -139,6 +84,7 @@ bool Tester::ParseRequest(void)
     // sent to the client.
     
     // Iterate through the inboundPairs and print them out
+#if 0
     cout << endl << "Inbound Command is: " << finalcommand << endl;
     
     map<string,string>::iterator iter;
@@ -150,9 +96,16 @@ bool Tester::ParseRequest(void)
         else
             cout << "Argument: " << iter->first << "=" << iter->second << endl;
     }
-
+#endif
+    
     // Now make the call to the appropriate parser/execution method.
-    return CALL_MEMBER_FN(*this, commandMap[finalcommand])();
+    if (CALL_MEMBER_FN(*this, commandMap[finalcommand])())
+    {
+        doCallbacks();
+        return true;
+    }
+    else
+        return false;
 }
 
 ///
@@ -162,25 +115,26 @@ bool Tester::ParseRequest(void)
 ///
 /// \note We are choosing to do nothing here as each Execute*() function will setup it's own bodyToReturn.
 ///
-bool Tester::ExecuteAction(void)
+bool SessionManager::ExecuteAction(void)
 {
     stringstream tosend;
     
     // The below snips show how a bodyToReturn can be built up of name/value pairs using
     // a stringstream and then assigning the final .str() to bodyToReturn.
     
-/*    tosend << "name1" << "=" << "value1" << endl;
+/*
+    tosend << "name1" << "=" << "value1" << endl;
     tosend << "name2" << "=" << "value2" << endl;
     tosend << "name3" << "=" << "value3" << endl;
     
     // The value of 'bodyString' is what will be sent back to the client upon a 'true' success to ExecuteAction().
     bodyToReturn = tosend.str();
-  */
+*/
     
     return true;
 }
 
-bool Tester::ExecuteStartCapture(void)
+bool SessionManager::ExecuteStartCapture(void)
 {
     cerr << "Execute START_CAPTURE" << endl;
     // Return true if execution went ok.
@@ -192,7 +146,7 @@ bool Tester::ExecuteStartCapture(void)
     return true;
 }
 
-bool Tester::ExecuteStopCapture(void)
+bool SessionManager::ExecuteStopCapture(void)
 {
     cerr << "Execute STOP_CAPTURE" << endl;
     // Return true if execution went ok.
@@ -204,7 +158,7 @@ bool Tester::ExecuteStopCapture(void)
     return true;
 }
 
-bool Tester::ExecuteGetCaptureState(void)
+bool SessionManager::ExecuteGetCaptureState(void)
 {
     cerr << "Execute GET_CAPTURE_STATE" << endl;
     // Return true if execution went ok.
@@ -222,7 +176,7 @@ bool Tester::ExecuteGetCaptureState(void)
 }
 
 
-bool Tester::ExecuteSetBitrate(void)
+bool SessionManager::ExecuteSetBitrate(void)
 {
     int temprate;
     
@@ -235,7 +189,7 @@ bool Tester::ExecuteSetBitrate(void)
     return true;
 }
 
-bool Tester::ExecuteGetBitrate(void)
+bool SessionManager::ExecuteGetBitrate(void)
 {
     strstream.str("");
     strstream << "{ bitrate: " << curBitrate << " }";
@@ -243,7 +197,7 @@ bool Tester::ExecuteGetBitrate(void)
     return true;
 }
 
-bool Tester::ExecuteSetFramerate(void)
+bool SessionManager::ExecuteSetFramerate(void)
 {
     int temprate;
     
@@ -256,7 +210,7 @@ bool Tester::ExecuteSetFramerate(void)
     return true;
 }
 
-bool Tester::ExecuteGetFramerate(void)
+bool SessionManager::ExecuteGetFramerate(void)
 {
     strstream.str("");
     strstream << "{ fps: " << curFramerate << " }";
@@ -264,9 +218,16 @@ bool Tester::ExecuteGetFramerate(void)
     return true;
 }
 
-bool Tester::ExecuteSetResolution(void)
+bool SessionManager::ExecuteSetResolution(void)
 {
     int tempwidth, tempheight;
+    
+    // Setting resolution is only legal when capturing is stopped.
+    if (capState != stopped)
+    {
+        bodyToReturn = "Failed: Resolution cannot be set while capturing.";
+        return false;
+    }
     
     if (!getRequiredArgAsInt("width", 2, 4096, tempwidth))
         return false;
@@ -281,7 +242,7 @@ bool Tester::ExecuteSetResolution(void)
     return true;
 }
 
-bool Tester::ExecuteGetResolution(void)
+bool SessionManager::ExecuteGetResolution(void)
 {
     strstream.str("");
     strstream << "{ width: " << curWidth << ", height: " << curHeight << " }";
@@ -290,7 +251,7 @@ bool Tester::ExecuteGetResolution(void)
 }
 
 
-bool Tester::ExecuteGetRtspUrl(void)
+bool SessionManager::ExecuteGetRtspUrl(void)
 {
     string rtspUrl = "rtsp://localhost:8554/stream0";
     
@@ -300,20 +261,24 @@ bool Tester::ExecuteGetRtspUrl(void)
     return true;
 }
 
-bool Tester::ExecuteQuit(void)
+bool SessionManager::ExecuteQuit(void)
 {
-    stopThread();
+    // Flag parent upon return that we need to shutdown the server.
+    bNeedsToShutdown = true;
+    
+    bIsQuitting = true;
+    
     return true;
 }
 
-bool Tester::ExecuteShowGui(void)
+bool SessionManager::ExecuteShowGui(void)
 {
     //TODO: Show the GUI
     return true;
 }
 
 
-bool Tester::ExecuteSetMicVolume(void)
+bool SessionManager::ExecuteSetMicVolume(void)
 {
     int tempvol;
     
@@ -325,7 +290,7 @@ bool Tester::ExecuteSetMicVolume(void)
     return true;
 }
 
-bool Tester::ExecuteGetMicVolume(void)
+bool SessionManager::ExecuteGetMicVolume(void)
 {
     strstream.str("");
     strstream << "{ vol: " << curMicVol << ", muted: " << (bMicMuted ? "true" : "false") << " }";
@@ -333,13 +298,13 @@ bool Tester::ExecuteGetMicVolume(void)
     return true;
 }
 
-bool Tester::ExecuteSetMicToggleMute(void)
+bool SessionManager::ExecuteSetMicToggleMute(void)
 {
     bMicMuted = !bMicMuted;
     return true;
 }
 
-bool Tester::ExecuteSetSpeakerVolume(void)
+bool SessionManager::ExecuteSetSpeakerVolume(void)
 {
     int tempvol;
     
@@ -351,7 +316,7 @@ bool Tester::ExecuteSetSpeakerVolume(void)
     return true;
 }
 
-bool Tester::ExecuteGetSpeakerVolume(void)
+bool SessionManager::ExecuteGetSpeakerVolume(void)
 {
     strstream.str("");
     strstream << "{ vol: " << curSpeakerVol << ", muted: " << (bSpeakerMuted ? "true" : "false") << " }";
@@ -359,14 +324,14 @@ bool Tester::ExecuteGetSpeakerVolume(void)
     return true;
 }
 
-bool Tester::ExecuteSetSpeakerToggleMute(void)
+bool SessionManager::ExecuteSetSpeakerToggleMute(void)
 {
     bSpeakerMuted = !bSpeakerMuted;
     return true;
 }
 
 #ifndef NDEBUG
-bool Tester::ExecuteSendTestScript(void)
+bool SessionManager::ExecuteSendTestScript(void)
 {
     string homedir;
     string fname;
@@ -406,13 +371,15 @@ bool Tester::ExecuteSendTestScript(void)
 }
 #endif
 
+#ifdef STANDALONE_TESTER
 int main(int argc, char**argv)
 {
     map<string, string> pairs;
-  Tester tst(pairs, 8081);
+  SessionManager tst(pairs, 8081);
 
   while(tst.isServerRunning())
 	usleep(250 * 1000);
 
   return 0;
 }
+#endif

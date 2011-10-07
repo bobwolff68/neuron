@@ -28,8 +28,6 @@ include_directories(${NEURON_COMMON_DIR}/threading/NeuronBasics)
 #include_directories(../codec)
 
 set(SOURCES littlehttpd.cpp)
-#list(APPEND SOURCES
-#     tester.cpp)
 
 add_definitions(-g3 -DBUILD_DEBUG -m32)
 
@@ -48,6 +46,9 @@ endif()
 
 add_library(nlcommon ${SOURCES})
 
+# For 'tester', we need the 'int main(...)' to come into play. Otherwise it stays out.
+add_definitions(-DSTANDALONE_TESTER)
+
 find_library(C_LIB c)
-add_executable(tester tester.cpp)
+add_executable(tester sessionmanager.cpp sessionmanager.h)
 target_link_libraries(tester ${C_LIB} nlcommon)

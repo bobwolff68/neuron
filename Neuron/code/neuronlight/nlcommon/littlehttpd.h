@@ -43,6 +43,8 @@ protected:
         return i;
     }
 
+    bool bNeedsToShutdown;
+    
     string bodyToReturn;
     string fullInboundURL;
     string inboundBaseURL;

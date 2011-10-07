@@ -11,6 +11,9 @@
 #import "cpp_main.h"
 #import "SafeBufferDeque.h"
 
+// Our httpd daemon is partially controlled and utilized by MyRecorderController among others.
+#import "sessionmanager.h"
+
 OSStatus iConverter (
                      AudioConverterRef             inAudioConverter,
                      UInt32                        *ioNumberDataPackets,
@@ -63,6 +66,9 @@ class ExtractConverted;
     int audioInputPostConversionSize;
     int audioInputPostConversionNumPackets;
     
+    SessionManager* sm;
+    
+    bool bIsCapturing;
     RunPipeline* p_pipeline_runner;
     QTKitCap* pCap;
     TVidCap* pTVC;
@@ -87,6 +93,7 @@ class ExtractConverted;
 - (void)ExtractConvertedData;
 
 - (void)updateUINow:(NSTimer*)timer;
+- (void)smCallback:(SessionManager*) psm;
 
 - (IBAction)startRecording:(id)sender;
 - (IBAction)stopRecording:(id)sender;
@@ -99,6 +106,7 @@ class ExtractConverted;
 
 @end
 
+void smCallbackGlobal(void* pData, SessionManager* psm);
 
 class ExtractConverted : public ThreadSingle {
 public:
