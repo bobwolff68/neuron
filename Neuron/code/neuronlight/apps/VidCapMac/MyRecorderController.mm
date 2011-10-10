@@ -29,6 +29,7 @@ int bitRate = 600;
 bool bChangeBitrate = false;
 int frameRate = 30;
 bool bChangeFramerate = false;
+std::string serverURL = "";
 
 #if 0
 // Want to interrogate device attributes to see if we can set it's output to signed 16bit rather than convert later.

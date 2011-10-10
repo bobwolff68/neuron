@@ -3,6 +3,8 @@
 
 using namespace std;
 
+extern std::string serverURL;
+
 nl_rtspserver_t* nl_rtspserver_t::createNew(
     UsageEnvironment& uenv,
     Port serv_port,
@@ -59,6 +61,7 @@ void nl_rtspserver_t::setup_sms(const char* stream_name,bool b_video_on,bool b_a
     }
     
     addServerMediaSession(p_sms);
+    serverURL = rtspURL(p_sms);
 }
 
 void nl_rtspserver_t::test_sdp(void)

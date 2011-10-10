@@ -53,13 +53,6 @@ LittleHttpd::~LittleHttpd()
 	// Fake-out thread stop just for this odd blocking accept() problem (to avoid non-blocking code at this time)
 	isStopRequested = true;
 
-	// Now formulate a 'wget' to handle the last (current) blocking accept()
-	string syscmd("wget -q http://localhost:");
-	stringstream finalget;
-	finalget << port;
-	syscmd += finalget.str();
-	system(syscmd.c_str());
-
 	stopThread();
 
 	cout << "Complete." << endl;
@@ -115,32 +108,44 @@ int LittleHttpd::workerBee(void)
 		alarm(5);
 #endif
 
-		// TODO This item is synchronous inside the thread. So quitting the thread won't happen
-		//      unless one more connection comes in AFTER the quit is signalled.
-		//      Change to async.
-//		cout << "Prepping to wait (block) for an incoming connection right now." << endl;
-		accept_sock = accept(serversock, (struct sockaddr*) &remAddress, &remAddress_len);
-//		cout << "   accept() completed.  returned = " << accept_sock << ", errno = " << errno << endl;
+        fd_set rfds;
+        
+        FD_ZERO(&rfds);
+        FD_SET(serversock, &rfds);
+        struct timeval timeout = {1,0};
+        
+        int retcode = select(serversock+1, &rfds, NULL, NULL, &timeout);
+        
+        if(retcode < 0)
+        {
+            //Handle error
+            assert(false);
+        }
+        else if(retcode > 0)
+        {
+//          cout << "Prepping to wait (block) for an incoming connection right now." << endl;
+            accept_sock = accept(serversock, (struct sockaddr*) &remAddress, &remAddress_len);
+//          cout << "   accept() completed.  returned = " << accept_sock << ", errno = " << errno << endl;
 
-		if (accept_sock >= 0)
-		{
-//			cout << "   Incoming connection was recevied" << endl;
-			HConnection(accept_sock);
-			close(accept_sock);
-		}
-		else
-		{
-			if (errno == EINTR)
-			{
-				cout << "Alarm went off. Continuing to see if we need to quit or try again." << endl;
-				continue;
-			}
-			else
-			{
-				  perror("   errno string");
-				  return EINTR;
-			}
-		}
+            if (accept_sock >= 0)
+            {
+//              cout << "   Incoming connection was recevied" << endl;
+                HConnection(accept_sock);
+                close(accept_sock);
+            }
+            else
+            {
+                if (errno == EINTR)
+                {
+                    cout << "Alarm went off. Continuing to see if we need to quit or try again." << endl;
+                    continue;
+                }
+                else
+                {
+                      perror("   errno string");
+                      return EINTR;
+            }
+        }
 
 	}
 
@@ -164,7 +169,10 @@ void LittleHttpd::Init(void)
 	serverAddress.sin_family = AF_INET;
 
 	serversock = socket(AF_INET, SOCK_STREAM, 0);
-
+    int opts = fcntl(serversock, F_GETFL, 0);
+    opts |= O_NONBLOCK;
+    fcntl(serversock, F_SETFL, opts);
+    
 //	inet_aton("127.0.0.1", &mySockAddr.sin_addr);
 //	inet_aton("0.0.0.0", &mySockAddr.sin_addr);
 
@@ -235,40 +243,53 @@ bool LittleHttpd::HConnection(int csock)
 	else
 		return false;
 
-	bytesRead = read(csock, request, 99);
-	if (bytesRead < 0)
-	{
-		cout << "Error: Read on connection failed. Bytes read reported as " << bytesRead << endl;
-		return false;
-	}
-	else if (bytesRead == 0)
-	{
-		// This is an EOF condition.
-		cout << "Connection ended." << endl;;
-		return false;
-	}
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(csock, &rfds);
+    struct timeval timeout = {1,0};
+    
+    int retcode = select(csock+1, &rfds, NULL, NULL, &timeout);
+    
+    if(retcode < 0)
+    {
+        assert(false);
+    }
+    else if(retcode > 0)
+    {
+        bytesRead = read(csock, request, 99);
+        if (bytesRead < 0)
+        {
+            cout << "Error: Read on connection failed. Bytes read reported as " << bytesRead << endl;
+            return false;
+        }
+        else if (bytesRead == 0)
+        {
+            // This is an EOF condition.
+            cout << "Connection ended." << endl;;
+            return false;
+        }
 
 #ifdef DEBUG_LITTLEHTTPD
-	cout << "Request received:'" << request << "'" << endl;;
+        cout << "Request received:'" << request << "'" << endl;
 #endif
-    
-    fullInboundURL = request;
-    fullInboundURL = urlDecode(fullInboundURL);
+        
+        fullInboundURL = request;
+        fullInboundURL = urlDecode(fullInboundURL);
 
-    // Reset all responses prior to parsing.
-    bodyToReturn = "";
-    
-    // Grab out the URL for derived classes who want to do a simple 'parse'.
-    AutoParse();
-    
-    if (inboundBaseURL=="")
-        return true;    // Jump out. No need to parse at the higher level.
-    
-	if (!ParseRequest())
-	{
-        SendBadRequestResponse(csock, bodyToReturn);
-		return false;
-	}
+        // Reset all responses prior to parsing.
+        bodyToReturn = "";
+        
+        // Grab out the URL for derived classes who want to do a simple 'parse'.
+        AutoParse();
+        
+        if (inboundBaseURL=="")
+            return true;    // Jump out. No need to parse at the higher level.
+        
+        if (!ParseRequest())
+        {
+            SendBadRequestResponse(csock, bodyToReturn);
+            return false;
+        }
 
     // Now that the request is parsed, it should be held in the derived class' data structure.
     // Execute on it.
