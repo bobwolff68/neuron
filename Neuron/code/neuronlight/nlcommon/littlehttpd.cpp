@@ -144,6 +144,7 @@ int LittleHttpd::workerBee(void)
                 {
                       perror("   errno string");
                       return EINTR;
+                }
             }
         }
 
@@ -179,28 +180,55 @@ void LittleHttpd::Init(void)
 	// Bind to any address
 	serverAddress.sin_addr.s_addr = htonl( INADDR_ANY );
 
-	if (serversock == -1)
-	{
-		serverError = 1;
-		cout << "Error: Unable to create server socket." << endl;
-	}
-	else if (bind(serversock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0)
-	{
-		serverError = 2;
-		cout << "Error: Unable to bind on " << port << ". errno=" << errno << endl;
-		perror("Error: errno description:");
-	}
-	else if (listen(serversock, MAXCLIENTCON) == -1)
-	{
-		serverError = 3;
-		cout << "Error: Unable to listen on " << port << ". errno=" << errno << endl;
-		perror("Error: errno description:");
-	}
-	else
-	{
-		bIsServerUp = true;
-		cout << endl << "Success: server is ready on port " << port << endl;
-	}
+    do {
+        if (serversock == -1)
+        {
+            serverError = 1;
+            cout << "Error: Unable to create server socket." << endl;
+            break;
+        }
+
+        int ret;
+        int maxretries=10;
+        
+        do {
+            ret = bind(serversock, (struct sockaddr*)&serverAddress, sizeof(serverAddress));
+            
+            if (ret < 0)
+            {
+                serverError = 2;
+                
+                if (errno == EADDRINUSE)
+                    cout << "Unable to bind. Retrying - " << maxretries << endl;
+                else
+                {
+                    cout << "Warning: Unable to bind on " << port << ". errno=" << errno << endl;
+                    perror("Warning: Will retry:");
+                }
+                
+                if (maxretries)
+                    sleep(1);
+            }
+        } while (ret && maxretries--);
+        
+        if (ret < 0)
+        {
+            cout << "Failed to bind port " << port << " after repeated attempts. Giving up." << endl;
+            break;
+        }
+        
+        if (listen(serversock, MAXCLIENTCON) == -1)
+        {
+            serverError = 3;
+            cout << "Error: Unable to listen on " << port << ". errno=" << errno << endl;
+            perror("Error: errno description:");
+            break;
+        }
+        
+        bIsServerUp = true;
+        cout << endl << "Success: littlehttpd server is ready on port " << port << endl;
+
+    } while (!bIsServerUp);
     
     bInitComplete = true;
 }
@@ -291,16 +319,17 @@ bool LittleHttpd::HConnection(int csock)
             return false;
         }
 
-    // Now that the request is parsed, it should be held in the derived class' data structure.
-    // Execute on it.
-    
-    if (!ExecuteAction())
-	{
-        SendBadRequestResponse(csock, bodyToReturn);
-		return false;
-	}
-    else
-        SendOKResponse(csock, bodyToReturn);
+        // Now that the request is parsed, it should be held in the derived class' data structure.
+        // Execute on it.
+        
+        if (!ExecuteAction())
+        {
+            SendBadRequestResponse(csock, bodyToReturn);
+            return false;
+        }
+        else
+            SendOKResponse(csock, bodyToReturn);
+    }
     
     // This is the method by which an 'execute action' can flag the parent that the server needs to quit.
     if (bNeedsToShutdown)

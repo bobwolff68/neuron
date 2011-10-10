@@ -13,6 +13,7 @@
 		3415AD171405C1AC000C2C51 /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3415AD161405C1AC000C2C51 /* libavutil.a */; };
 		3426E93813F0BAFB00897BA7 /* RTBuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3426E93613F0BAFB00897BA7 /* RTBuffer.cpp */; };
 		3442192B140C0674007E833C /* CameraInterrogation.m in Sources */ = {isa = PBXBuildFile; fileRef = 3442192A140C0674007E833C /* CameraInterrogation.m */; };
+		348373AA143FC7390029494E /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 348373A9143FC7390029494E /* CoreAudio.framework */; };
 		34DE7EE013ECA2CE007B30F0 /* QTKitCap.mm in Sources */ = {isa = PBXBuildFile; fileRef = 34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */; };
 		34E3725A140C1B6C001524C7 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34E37259140C1B6C001524C7 /* CoreVideo.framework */; };
 		34E3725C140C1BB1001524C7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34E3725B140C1BB0001524C7 /* AudioToolbox.framework */; };
@@ -116,6 +117,7 @@
 		3426E93713F0BAFB00897BA7 /* RTBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RTBuffer.h; path = ../../capture/RTBuffer.h; sourceTree = "<group>"; };
 		34421929140C0674007E833C /* CameraInterrogation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = CameraInterrogation.h; path = MyRecorder.xcodeproj/../CameraInterrogation.h; sourceTree = "<group>"; };
 		3442192A140C0674007E833C /* CameraInterrogation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = CameraInterrogation.m; path = MyRecorder.xcodeproj/../CameraInterrogation.m; sourceTree = "<group>"; };
+		348373A9143FC7390029494E /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = ../../../../../../../../../System/Library/Frameworks/CoreAudio.framework; sourceTree = "<group>"; };
 		34DE7EDD13EC9BA0007B30F0 /* ThreadSingle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ThreadSingle.h; path = ../../../neuroncommon/threading/NeuronBasics/ThreadSingle.h; sourceTree = "<group>"; };
 		34DE7EDE13ECA2CE007B30F0 /* QTKitCap.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = QTKitCap.mm; path = ../../capture/QTKitCap.mm; sourceTree = "<group>"; };
 		34DE7EDF13ECA2CE007B30F0 /* QTKitCap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = QTKitCap.h; path = ../../capture/QTKitCap.h; sourceTree = "<group>"; };
@@ -145,6 +147,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				348373AA143FC7390029494E /* CoreAudio.framework in Frameworks */,
 				34FEFD80143E3A80007975FF /* libnlcommon.a in Frameworks */,
 				34E3725E140C1F04001524C7 /* libv4codecsdk-m32g-all-md.a in Frameworks */,
 				34E3725C140C1BB1001524C7 /* AudioToolbox.framework in Frameworks */,
@@ -197,6 +200,7 @@
 		29B97314FDCFA39411CA2CEA /* MyRecorder */ = {
 			isa = PBXGroup;
 			children = (
+				348373A9143FC7390029494E /* CoreAudio.framework */,
 				34FEFD72143E3334007975FF /* nlcommon.xcodeproj */,
 				7B5CFABD13F1B780007479E1 /* codec.xcodeproj */,
 				7B5CFAC413F1B79B007479E1 /* network.xcodeproj */,

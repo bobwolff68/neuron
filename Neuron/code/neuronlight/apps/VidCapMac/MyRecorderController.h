@@ -67,7 +67,9 @@ class ExtractConverted;
     int audioInputPostConversionNumPackets;
     
     SessionManager* sm;
-    
+    AudioDeviceID m_InputDeviceId;
+    bool bIsMicMuted;
+
     bool bIsCapturing;
     RunPipeline* p_pipeline_runner;
     QTKitCap* pCap;
@@ -92,8 +94,13 @@ class ExtractConverted;
                       CaptureWidth:(int *)pCaptureWidth CaptureHeight:(int *)pCaptureHeight;
 - (void)ExtractConvertedData;
 
-- (void)updateUINow:(NSTimer*)timer;
-- (void)smCallback:(SessionManager*) psm;
+- (void) updateUINow:(NSTimer*)timer;
+- (void) smCallback:(SessionManager*) psm;
+- (void) openDefaultMicrophoneInput;
+- (void) setMicVolume:(int) vol100;
+- (int)  getMicVolume;
+- (void) setMicMuteToggle;
+- (bool) getIsMicMuted;
 
 - (IBAction)startRecording:(id)sender;
 - (IBAction)stopRecording:(id)sender;

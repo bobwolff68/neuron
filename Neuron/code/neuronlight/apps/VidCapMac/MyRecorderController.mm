@@ -118,7 +118,8 @@ void smCallbackGlobal(void* pData , SessionManager* psm)
     // resolution
     if (outputWidth != sm->curWidth || outputHeight != sm->curHeight)
     {
-        assert(bIsCapturing==false);
+        assert(serverURL == "");    // Only allowed to set capture prior to first capture.
+//        assert(bIsCapturing==false);
         
         [captureResBox setStringValue:[NSString stringWithFormat:@"%d x %d", sm->curWidth, sm->curHeight]];
 
@@ -137,8 +138,13 @@ void smCallbackGlobal(void* pData , SessionManager* psm)
     }
     
     // mic volume & mute
+    if ([self getMicVolume] != sm->curMicVol)
+        [self setMicVolume:sm->curMicVol];
+    if ([self getIsMicMuted] != sm->bMicMuted)
+        [self setMicMuteToggle];
     
     // speaker volume & mute
+    // Not implemented - our pipeline doesn't PLAY anything.
     
     // Figure out if the desire is to have us start or stop capture.
     if (bIsCapturing && sm->capState==SessionManager::stopped)
@@ -308,6 +314,18 @@ void smCallbackGlobal(void* pData , SessionManager* psm)
                                                 userInfo:nil
                                                  repeats:YES];
     
+    ///
+    /// Setup microphone for controls of volume amount and mute.
+    ///
+    bIsMicMuted = false;
+    
+    [self openDefaultMicrophoneInput];
+    
+    [self setMicVolume:100];
+    
+    ///
+    /// Now setup the SessionManager
+    ///
     map<string, string> pairs;
     sm = new SessionManager(pairs, SESSION_MANAGER_PORT);
     assert(sm);
@@ -319,7 +337,116 @@ void smCallbackGlobal(void* pData , SessionManager* psm)
     sm->curHeight = outputHeight;
     sm->curBitrate = bitRate;
     sm->curFramerate = frameRate;
+    sm->bMicMuted = bIsMicMuted;
+    sm->curMicVol = [self getMicVolume];
+    
+    if (sm->getServerError())
+    {
+        std::string msg;
+        
+        switch (sm->getServerError())
+        {
+            case 1:
+                msg = "Could not open socket";
+                break;
+            case 2:
+                msg = "Could not bind port";
+                break;
+            case 3:
+                msg = "Unable to listen";
+                break;
+            default:
+                msg = "Unknown error. Problem";
+                break;
+        }
+        
+        msg += " for SessionManager.\nWeb-Servermanager functionality disabled.";
+        
+        cout << msg << endl;
+            
+        NSAlert *alert = [[NSAlert alloc] init];
+        [alert setMessageText:@"Sessionmanager issue."];
+        [alert setInformativeText:[NSString stringWithCString:msg.c_str() 
+                                    encoding:[NSString defaultCStringEncoding]]];
+        [alert runModal];
+        [alert release];
+    }
 
+}
+
+- (void)setMicVolume:(int) vol100
+{
+    UInt32 size = 0;
+    Float32 vol = (Float32)((Float32)vol100 / 100.0);
+    
+    assert(vol100 >= 0 && vol100 <= 100);
+    assert(m_InputDeviceId);
+
+    // Does the capture device have a master volume control?
+    // If so, use it exclusively.
+    AudioObjectPropertyAddress
+    propertyAddress = { kAudioDevicePropertyVolumeScalar,
+        kAudioDevicePropertyScopeInput, 1 };
+    Boolean isSettable = false;
+    OSStatus status = AudioObjectIsPropertySettable(m_InputDeviceId, &propertyAddress,
+                                           &isSettable);
+    if (status == noErr && isSettable)
+    {
+        size = sizeof(vol);
+        AudioObjectSetPropertyData(m_InputDeviceId, &propertyAddress, 0, NULL, size, &vol);
+    }
+}
+
+- (int)getMicVolume
+{
+    Float32 vol = 0.0;
+    UInt32 size;
+
+    assert(m_InputDeviceId);
+
+    // Does the device have a master volume control?
+    // If so, use it exclusively.
+    AudioObjectPropertyAddress
+    propertyAddress = { kAudioDevicePropertyVolumeScalar,
+        kAudioDevicePropertyScopeInput, 1 };
+    Boolean hasProperty = AudioObjectHasProperty(m_InputDeviceId,
+                                                 &propertyAddress);
+    if (hasProperty)
+    {
+        size = sizeof(vol);
+        AudioObjectGetPropertyData(m_InputDeviceId, &propertyAddress, 0, NULL, &size, &vol);
+    }
+    
+    return (int)(vol * 100.0);
+}
+
+- (void)setMicMuteToggle
+{
+    UInt32 size;
+    UInt32 mute = (bIsMicMuted ? 1 : 0);
+    
+    assert(m_InputDeviceId);
+    
+    // Does the capture device have a master mute control?
+    // If so, use it exclusively.
+    AudioObjectPropertyAddress propertyAddress = { kAudioDevicePropertyMute,
+        kAudioDevicePropertyScopeInput, 1 };
+    Boolean isSettable = false;
+    OSStatus err = AudioObjectIsPropertySettable(m_InputDeviceId, &propertyAddress,
+                                        &isSettable);
+    
+    if (err == noErr && isSettable)
+    {
+        size = sizeof(mute);
+        AudioObjectSetPropertyData(m_InputDeviceId, &propertyAddress, 0, NULL, size, &mute);
+
+        bIsMicMuted = !bIsMicMuted;
+    }
+}
+
+- (bool)getIsMicMuted
+{
+    return bIsMicMuted;
 }
 
 - (void)updateUINow:(NSTimer*) timer {
@@ -948,6 +1075,13 @@ void smCallbackGlobal(void* pData , SessionManager* psm)
 
 - (IBAction)startRecording:(id)sender
 {
+    //
+    // Re-grab the default microphone input deviceID so that if things have changed system-wide, we'll follow.
+    // The CORRECT way is to have a change-listener.
+    // TODO:rwolff - implement object change notification for device input change and reopen at that time.
+    //
+    [self openDefaultMicrophoneInput];
+    
     // No longer allowed to change resolution due to inflexible encoder situation currently so have UI reflect this by disabling the res-change
     [captureResBox setEnabled:false];
 
@@ -1213,10 +1347,28 @@ void smCallbackGlobal(void* pData , SessionManager* psm)
     {
         // Get Converted samples if any are available.
         OSStatus stat = AudioConverterFillComplexBuffer(Converter, iConverter, (void*)self, &sampleSizeExpected, &audioInputPostConversionBufferList, NULL);
-        assert(stat==noErr || stat==1 || stat==2);
+        assert(stat==noErr || stat==1 || stat==2 || stat==paramErr);
         
         if (stat == 1 || sampleSizeExpected==0)  // We're quitting. So bail out on this attempt.
             return;
+        
+        if (stat == paramErr && audioInputPostConversionBufferList.mBuffers[0].mDataByteSize==0)
+        {
+            static int go_round = 0;
+            std::cerr << "paramErr received on Audio Conversion - # Times: " << go_round++ << endl;
+
+            // Reset out expectations for next time.
+            // This value was set initially and once it's killed, we'll never get data.
+            audioInputPostConversionBufferList.mBuffers[0].mDataByteSize = audioInputPostConversionSize;
+            
+//            if (Converter)
+//                AudioConverterDispose(Converter);
+            
+            // Need to re-open the converter.
+//            Converter = NULL;       /// Set this to NULL so the next set of buffers inbound will cause a re-open and heal the problem.
+
+            return;
+        }
         
         if (stat == 2)  // There was no available data. Skip conversion this go-round.
         {
@@ -1281,6 +1433,18 @@ void smCallbackGlobal(void* pData , SessionManager* psm)
     
     if (!pCap->GetBufferPointer()->FullBufferEnQ(pBI))
         NSLog(@"Audio Enqueue failed. No way to mark audio drops at this time.");
+}
+
+-(void) openDefaultMicrophoneInput
+{
+    //Get default hardware input device id
+    UInt32 auhalPropertyParam = sizeof(AudioDeviceID);
+    OSStatus status = AudioHardwareGetProperty(
+                                               kAudioHardwarePropertyDefaultInputDevice,
+                                               &auhalPropertyParam,
+                                               &m_InputDeviceId
+                                               );
+    assert(status==noErr);
 }
 
 @end

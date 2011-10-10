@@ -29,6 +29,7 @@ public:
 	virtual ~LittleHttpd();
 	int workerBee(void);
     bool isServerRunning(void) { return bIsServerUp; };
+    int getServerError(void) { return serverError; };
 
 protected:
     bool RequiredArgPresent(const char* reqarg);

@@ -87,15 +87,38 @@ public:
 	  int ret;
         assert(!isRunning);
         assert(!isStopRequested);
+
+        int rc;
+        rc = pthread_mutex_lock(&mutex);
+        if (rc)
+        {
+            std::cerr << "ThreadSingle thread not created - Lock failed with returncode = " << rc << std::endl;
+            std::cerr << "errno=" << errno << " at this moment." << std::endl;
+            std::cerr << "Equates to: " << strerror(errno) << std::endl;
+            assert(false && "Lock Failed");
+            return;
+        }
+        
 	  // Now set to running and create the thread -- and in an error condition, set to 'NOT running' again.
-	  isRunning = true;
 	  ret = pthread_create(&thread, 0, &(ThreadSingle::threadLaunchpoint), this);
-	  if (ret)
+        
+	  if (ret==0)
+          isRunning = true;
+      else
 	  {
 	    isRunning = false;
 	    assert(false);
 	    REPORT_ERROR("thread creation failed. Err:%d", ret);
 	  }
+        
+        rc = pthread_mutex_unlock(&mutex);
+        if (rc)
+        {
+            std::cerr << "UnLock failed with returncode = " << rc << std::endl;
+            assert(false && "Unlock Failed");
+            
+            return;
+        }
 	}
     
 
@@ -108,9 +131,20 @@ public:
         //!
 	void stopThread()
 	{
-	  int ret;
-	  if (isRunning)
-	  {
+        int ret;
+        int rc;
+        rc = pthread_mutex_lock(&mutex);
+        if (rc)
+        {
+            std::cerr << "ThreadSingle thread not created - Lock failed with returncode = " << rc << std::endl;
+            std::cerr << "errno=" << errno << " at this moment." << std::endl;
+            std::cerr << "Equates to: " << strerror(errno) << std::endl;
+            assert(false && "Lock Failed");
+            return;
+        }
+        
+        if (isRunning)
+        {
             // Set the stop requested flag, stop the thread, and then clear the isRunning flag.
             isStopRequested = true;
             ret = pthread_join(thread, 0);
@@ -120,8 +154,17 @@ public:
                 REPORT_ERROR("ending/joining thread failed. Err:%d", ret);
             }
             isRunning = false;
-          isStopRequested = false;
-	  }
+            isStopRequested = false;
+        }
+        
+        rc = pthread_mutex_unlock(&mutex);
+        if (rc)
+        {
+            std::cerr << "UnLock failed with returncode = " << rc << std::endl;
+            assert(false && "Unlock Failed");
+            
+            return;
+        }
 	}
 
     bool IsRunning(void) const

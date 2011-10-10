@@ -222,12 +222,18 @@ bool SessionManager::ExecuteSetResolution(void)
 {
     int tempwidth, tempheight;
     
-    // Setting resolution is only legal when capturing is stopped.
-    if (capState != stopped)
+    if (serverURL != "")
     {
-        bodyToReturn = "Failed: Resolution cannot be set while capturing.";
+        bodyToReturn = "Failed: Resolution can only be set prior to initial (first time) capturing.";
         return false;
     }
+
+    // Setting resolution is only legal when capturing is stopped.
+//    if (capState != stopped)
+//    {
+//        bodyToReturn = "Failed: Resolution cannot be set while capturing.";
+//        return false;
+//    }
     
     if (!getRequiredArgAsInt("width", 2, 4096, tempwidth))
         return false;
@@ -253,10 +259,8 @@ bool SessionManager::ExecuteGetResolution(void)
 
 bool SessionManager::ExecuteGetRtspUrl(void)
 {
-    string rtspUrl = "rtsp://localhost:8554/stream0";
-    
     strstream.str("");
-    strstream << "{ rtsp_url: \"" << rtspUrl << "\" }";
+    strstream << "{ rtsp_url: \"" << serverURL << "\" }";
     bodyToReturn = strstream.str();
     return true;
 }
@@ -308,6 +312,9 @@ bool SessionManager::ExecuteSetSpeakerVolume(void)
 {
     int tempvol;
     
+    bodyToReturn = "Currently Speaker control is not implemented.";
+    return false;
+    
     if (!getRequiredArgAsInt("vol", 0, 100, tempvol))
         return false;
     
@@ -318,6 +325,9 @@ bool SessionManager::ExecuteSetSpeakerVolume(void)
 
 bool SessionManager::ExecuteGetSpeakerVolume(void)
 {
+    bodyToReturn = "Currently Speaker control is not implemented.";
+    return false;
+    
     strstream.str("");
     strstream << "{ vol: " << curSpeakerVol << ", muted: " << (bSpeakerMuted ? "true" : "false") << " }";
     bodyToReturn = strstream.str();
@@ -326,6 +336,9 @@ bool SessionManager::ExecuteGetSpeakerVolume(void)
 
 bool SessionManager::ExecuteSetSpeakerToggleMute(void)
 {
+    bodyToReturn = "Currently Speaker control is not implemented.";
+    return false;
+    
     bSpeakerMuted = !bSpeakerMuted;
     return true;
 }

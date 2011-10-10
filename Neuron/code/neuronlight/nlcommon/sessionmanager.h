@@ -11,6 +11,7 @@ extern    int bitRate;
 extern    bool bChangeBitrate;
 extern    int frameRate;
 extern    bool bChangeFramerate;
+extern    std::string serverURL;
 #endif
 
 class SessionManager;
