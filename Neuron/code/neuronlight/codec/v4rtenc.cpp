@@ -1,5 +1,10 @@
+//#import <Cocoa/Cocoa.h>
+//#import <Foundation/Foundation.h>
+
 #include <iostream>
 #include "v4rtenc.h"
+
+#include <pwd.h>
 
 using namespace std;
 
@@ -577,7 +582,22 @@ string v4_rtenc_t::PrepareEncoderSettings(void)
         "speed.automatic=0\n"
     );
     
+#if 1
     char* sHomeDir = getenv("HOME");
+    if (!sHomeDir)
+    {
+        struct passwd* pwd = getpwuid(getuid());
+        if (pwd)
+            sHomeDir = pwd->pw_dir;
+        else
+            cerr << "getenv() failed followed by getpwuid() failing. Failed to find $HOME environment." << endl;
+    }
+#else
+    // Must rename this file to .mm or make a new .mm file which does '#import "v4rtenc.cpp"'
+    NSString* pNSHome = NSHomeDirectory();
+    char sHomeDir[100];
+    [pNSHome getCString:sHomeDir maxLength:99 encoding:NSASCIIStringEncoding];
+#endif
     
     cout << "Default encoder settings:\n" << encSettings << endl;
     cout << "Home Directory: " << sHomeDir << endl;

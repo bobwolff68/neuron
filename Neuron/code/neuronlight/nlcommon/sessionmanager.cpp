@@ -1,5 +1,7 @@
 #include "sessionmanager.h"
 
+#include <pwd.h>
+
 SessionManager::SessionManager(map<string, string> vals, int port) : LittleHttpd(vals, port)
 {
     states[stopped] = "stopped";
@@ -346,12 +348,22 @@ bool SessionManager::ExecuteSetSpeakerToggleMute(void)
 #ifndef NDEBUG
 bool SessionManager::ExecuteSendTestScript(void)
 {
-    string homedir;
+    char* pHomedir;
     string fname;
     FILE *fp;
     
-    homedir = getenv("HOME");
-    fname =  homedir + "/TestSessionManager.html";
+    pHomedir = getenv("HOME");
+    if (!pHomedir)
+    {
+        struct passwd* pwd = getpwuid(getuid());
+        if (pwd)
+            pHomedir = pwd->pw_dir;
+        else
+            cerr << "getenv() failed followed by getpwuid() failing. Failed to find $HOME environment." << endl;
+    }
+    
+    fname =  pHomedir;
+    fname += "/TestSessionManager.html";
     fp = fopen(fname.c_str(), "r");
     
     
