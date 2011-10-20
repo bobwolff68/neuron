@@ -171,8 +171,24 @@ void LittleHttpd::Init(void)
 
 	serversock = socket(AF_INET, SOCK_STREAM, 0);
     int opts = fcntl(serversock, F_GETFL, 0);
+    if (opts==-1)
+    {
+        cerr << "fcntl failed on F_GETFL." << endl;
+        serverError = 4;
+        bInitComplete = true;
+        return;
+    }
     opts |= O_NONBLOCK;
-    fcntl(serversock, F_SETFL, opts);
+    int err;
+    err = fcntl(serversock, F_SETFL, opts);
+    if (err==-1)
+    {
+        cerr << "fcntl failed on F_SETFL." << endl;
+        serverError = 5;
+        bInitComplete = true;
+        return;
+    }
+
     
 //	inet_aton("127.0.0.1", &mySockAddr.sin_addr);
 //	inet_aton("0.0.0.0", &mySockAddr.sin_addr);
