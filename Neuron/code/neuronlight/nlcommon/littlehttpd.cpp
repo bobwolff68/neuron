@@ -275,6 +275,8 @@ bool LittleHttpd::HConnection(int csock)
 
     reqParameters.clear();
 
+    cerr << "LittleHttpd::HConnection -- connection made. Socket # is " << csock << endl;
+    
 	addrLen = sizeof(addr);
 	getpeername(csock, (struct sockaddr*)&addr, &addrLen);
 
