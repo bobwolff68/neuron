@@ -346,7 +346,17 @@ bool LittleHttpd::HConnection(int csock)
             return false;
         }
         else
+        {
+            // Adding json-p
+            stringstream strstream;
+            strstream.str("");
+            strstream << inboundPairs["callback"] << "(" << bodyToReturn << ")";
+            
+            bodyToReturn = strstream.str();
+            
             SendOKResponse(csock, bodyToReturn);
+        }
+            
     }
     
     // This is the method by which an 'execute action' can flag the parent that the server needs to quit.
@@ -510,7 +520,7 @@ void LittleHttpd::SendOKResponse(int csock, string &body)
     
 	header << "HTTP/1.0 200 OK\r\n";
 	header << "Server: NeuronLight Server\r\n";
-	header << "Content-Type: text/html; charset=UTF-8\r\n";
+	header << "Content-Type: application/json; charset=UTF-8\r\n";
 	header << "Content-Length: " << body.size() << "\r\n";
 	header << "\r\n";
     
