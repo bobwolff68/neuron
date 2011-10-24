@@ -234,7 +234,7 @@ int QTKitCap::workerBee(void)
         i++;
     }
     
-    NSLog(@"workerBee: Exiting thread. FYI.");
+    NSLog(@"QTKitCap::workerBee() - Exiting thread. FYI.");
     return 0;
 }
 

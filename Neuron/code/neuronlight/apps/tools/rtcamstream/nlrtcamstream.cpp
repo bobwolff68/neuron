@@ -139,10 +139,13 @@ void nl_rtcamstream_t::RunCapture(void)
 	    p_serv->startThread();
 	    p_fifoout->startThread();
 	    p_rtenc->startThread();
+        
+        // Sleep for about 2 seconds before testing for SDP presence.
+        usleep(2000 * 1000);
         p_serv->test_sdp();
         
         while (!bQuit) {
-            usleep(100000);
+            usleep(100 * 1000);
             videoQueueLength = p_bsdq->qsize();
             audioQueueLength = p_absdq->qsize();
             

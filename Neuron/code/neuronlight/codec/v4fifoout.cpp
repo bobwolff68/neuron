@@ -18,6 +18,8 @@ int v4_fifoout_t::workerBee(void)
     int retcode;
     int frm_num = 0;
     
+    cout << "fifoout workerBee() started." << endl;
+
     while(1)
     {
         p_rtenc->LockHandle();
@@ -35,6 +37,8 @@ int v4_fifoout_t::workerBee(void)
                     gettimeofday(&tod, NULL);
                     p_tslog->WriteEntry(&tod, frm_num++, 0, 0);
                 }
+                
+//                cout << "v4fifoout - Encoded video received - Adding to p_ms->data" << endl;
                 
                 p_bsdq->AddItem((unsigned char*)p_ms->data, p_ms->used_size);
                 v4_free_media_sample(p_ms);

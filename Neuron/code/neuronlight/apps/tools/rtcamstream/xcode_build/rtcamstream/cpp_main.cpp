@@ -34,6 +34,7 @@ RunPipeline::~RunPipeline()
 {
     //stopThread();
     delete (nl_rtcamstream_t*)(pRTCamStream);
+    cout << "~RunPipeLine() - rtcamstream deleted successfully." << endl;
 }
 
 int RunPipeline::workerBee(void)

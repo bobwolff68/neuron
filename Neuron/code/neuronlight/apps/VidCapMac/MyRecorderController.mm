@@ -10,7 +10,7 @@
 
 #import "CameraInterrogation.h"
 
-#define SESSION_MANAGER_PORT 8081
+#define SESSION_MANAGER_PORT 8082
 
 #define DESIRED_BITS_PER_SAMPLE 16
 #define DESIRED_AUDIO_FREQUENCY 32000
@@ -166,6 +166,7 @@ void smCallbackGlobal(void* pData , SessionManager* psm)
     captureHeight = 480;
     
     bIsCapturing = false;
+    p_pipeline_runner = NULL;
     
     pCameraResolutions = [NSMutableArray arrayWithObjects:@"160 x 120", @"176 x 144",
                           @"320 x 240", @"640 x 480", @"960 x 540", 

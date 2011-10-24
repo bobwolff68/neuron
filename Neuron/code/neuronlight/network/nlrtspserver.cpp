@@ -105,11 +105,13 @@ void nl_rtspserver_t::test_sdp(void)
 void nl_rtspserver_t::after_describe_request(RTSPClient* p_client,int result_code,char* result_string)
 {
     if (result_code != 0) {
-        cerr << "Unable to obtain SDP... " << result_string << endl;
+        cerr << "Unable to obtain SDP...result_code=" << result_code << " : " << result_string << endl;
     }
     else {
         cout << "SDP creation successful..." << endl;
     }
+    
+    delete result_string;
 }
 
 int nl_rtspserver_t::workerBee(void)

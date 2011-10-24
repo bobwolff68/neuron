@@ -21,6 +21,7 @@ LittleHttpd::LittleHttpd(map<string, string> rvals, int initport)
 {
 	reqParameters.clear();
 
+    bInitComplete = false;
 	bIsServerUp = false;
 	serverError = 0;
 
@@ -42,6 +43,7 @@ LittleHttpd::LittleHttpd(map<string, string> rvals, int initport)
 
 	startThread();
     
+    // Sleep for 20ms at a time until init is finished.
     while (!bInitComplete)
         usleep(20 * 1000);
 }
@@ -55,7 +57,7 @@ LittleHttpd::~LittleHttpd()
 
 	stopThread();
 
-	cout << "Complete." << endl;
+	cout << "LittleHttpd Shutdown Complete." << endl;
 
 	ShutdownServer();			// Should be done but just for completeness sake.
 
@@ -69,6 +71,7 @@ void LittleHttpd::ShutdownServer(void)
 
 	serversock = 0;
 	bIsServerUp = false;
+    bInitComplete = false;
 }
 
 int LittleHttpd::workerBee(void)
@@ -79,7 +82,10 @@ int LittleHttpd::workerBee(void)
     
     // Server didn't come up. Likely due to bind error on old port not given up by kernel yet.
     if (!bIsServerUp)
+    {
+        cerr << "LittleHttpd::workerBee() - Server didn't come up - exiting thread." << endl;
         return -1;
+    }
 
 #if 0
 	// Pre-setup of sig handler due to alarm() being used for breaking out of blocking i/o
@@ -98,6 +104,7 @@ int LittleHttpd::workerBee(void)
 		// Kill our thread at parent's request.
 		if (isStopRequested)
 		{
+            cerr << "LittleHttpd::workerBee() - Stop was requested - exiting thread." << endl;
 			// Close all socket stuff
 			ShutdownServer();
 			return 0;
@@ -142,6 +149,7 @@ int LittleHttpd::workerBee(void)
                 }
                 else
                 {
+                      cerr << "LittleHttpd::workerBee() - socket error in accept() - exiting thread." << endl;
                       perror("   errno string");
                       return EINTR;
                 }
@@ -154,6 +162,7 @@ int LittleHttpd::workerBee(void)
     if (isServerRunning())
         ShutdownServer();
     
+    cerr << "LittleHttpd::workerBee() - bottom of function... - exiting thread." << endl;
 	return 0;
 }
 
@@ -212,8 +221,6 @@ void LittleHttpd::Init(void)
             
             if (ret < 0)
             {
-                serverError = 2;
-                
                 if (errno == EADDRINUSE)
                     cout << "Unable to bind. Retrying - " << maxretries << endl;
                 else
@@ -229,6 +236,7 @@ void LittleHttpd::Init(void)
         
         if (ret < 0)
         {
+            serverError = 2;
             cout << "Failed to bind port " << port << " after repeated attempts. Giving up." << endl;
             break;
         }
@@ -275,7 +283,7 @@ bool LittleHttpd::HConnection(int csock)
 
     reqParameters.clear();
 
-    cerr << "LittleHttpd::HConnection -- connection made. Socket # is " << csock << endl;
+//    cerr << "LittleHttpd::HConnection -- connection made. Socket # is " << csock << endl;
     
 	addrLen = sizeof(addr);
 	getpeername(csock, (struct sockaddr*)&addr, &addrLen);

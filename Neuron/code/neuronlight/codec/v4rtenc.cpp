@@ -290,6 +290,8 @@ int v4_rtenc_t::workerBee(void)
     p_aacbuf = (uint8_t*) malloc(aacbuf_size*sizeof(uint8_t)+7);
     assert(p_aacbuf!=NULL);
     
+    cout << "v4_rtenc_t::workerBee() started." << endl;
+    
     while(1)
     {
 #if (defined (__APPLE__) & defined (__MACH__))
@@ -310,6 +312,8 @@ int v4_rtenc_t::workerBee(void)
             LOG_ERR("capture buffer dequeue error");
             continue;
         }
+        
+//        cout << "v4_rtenc_t - DQ success. BufferType=" << (p_bib->bIsVideo ? "V" : "A") << " QSize==" << p_rtcap_buf->Qsize() << endl;
         
         if(p_bib->bFinalSample)
         {
@@ -409,6 +413,8 @@ int v4_rtenc_t::workerBee(void)
                     
                     //buffer fullness + no of aac frames-1
                     p_aacbuf[6] = 0xFC | 0;
+                    
+//                    cout << "Audio Encoded -- Being added to p_aacbuf..." << endl;
                     
                     p_abs_dq->AddItem(p_aacbuf, frame_length);
                 }
@@ -599,8 +605,8 @@ string v4_rtenc_t::PrepareEncoderSettings(void)
     [pNSHome getCString:sHomeDir maxLength:99 encoding:NSASCIIStringEncoding];
 #endif
     
-    cout << "Default encoder settings:\n" << encSettings << endl;
-    cout << "Home Directory: " << sHomeDir << endl;
+//    cout << "Default encoder settings:\n" << encSettings << endl;
+//    cout << "Home Directory: " << sHomeDir << endl;
     string sSettingsFilePath = sHomeDir;
     sSettingsFilePath += "/Library/Preferences/neuronlite_vrtencoder_settings.cfg";
     
