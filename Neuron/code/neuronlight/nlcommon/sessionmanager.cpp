@@ -2,6 +2,17 @@
 
 #include <pwd.h>
 
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+
+#include <arpa/inet.h>
+
+void getN2NIP(string& outIP);
+
 SessionManager::SessionManager(map<string, string> vals, int port) : LittleHttpd(vals, port)
 {
     states[stopped] = "stopped";
@@ -262,7 +273,38 @@ bool SessionManager::ExecuteGetResolution(void)
 bool SessionManager::ExecuteGetRtspUrl(void)
 {
     strstream.str("");
-    strstream << "{ rtsp_url: \"" << serverURL << "\" }";
+    //
+    // Now check to see if we have n2n running by locating an ethernet adapter
+    // which is 'tun0', 'tap0', or 'n2n0'. If so, modify the returned URL with the n2n
+    // IP address as it takes precedence over any other IP address for now.
+    //
+    string n2nip = "";
+    getN2NIP(n2nip);
+    
+    /// If n2n is running, we'll simply substitute the reported IP address from the
+    /// rtsp URL with the IP address of the tap/tun n2n adapter.
+    if (n2nip!="" && serverURL!="")
+    {
+        size_t beg_ip, end_ip;
+        
+        /// Look for the first // (rtsp://) and then move beyond the //
+        beg_ip = serverURL.find("//");
+        assert(beg_ip != string::npos);
+        beg_ip += 2;
+        
+        /// End of the IP is either a ':' for port or '/' for rest of the URL
+        end_ip = serverURL.find(":", beg_ip);
+        if (end_ip == string::npos)
+            end_ip = serverURL.find("/", beg_ip);
+        
+        assert(end_ip != string::npos);
+
+        strstream << "{ rtsp_url: \"" << serverURL.substr(0, beg_ip) << n2nip
+                << serverURL.substr(end_ip) << "\" }";
+    }
+    else
+        strstream << "{ rtsp_url: \"" << serverURL << "\" }";
+    
     bodyToReturn = strstream.str();
     return true;
 }
@@ -395,6 +437,48 @@ bool SessionManager::ExecuteSendTestScript(void)
     return true;
 }
 #endif
+
+void getN2NIP(string& outIP)
+{
+    int fd;
+    struct ifreq ifr;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    
+    /* I want to get an IPv4 IP address */
+    ifr.ifr_addr.sa_family = AF_INET;
+
+    int ret;
+    
+    /* I want IP address attached to "tap0" */
+    strncpy(ifr.ifr_name, "n2n0", IFNAMSIZ-1);
+    ret = ioctl(fd, SIOCGIFADDR, &ifr);
+    if (ret)
+    {
+        strncpy(ifr.ifr_name, "tun0", IFNAMSIZ-1);
+        ret = ioctl(fd, SIOCGIFADDR, &ifr);
+        if (ret)
+        {
+            strncpy(ifr.ifr_name, "tap0", IFNAMSIZ-1);
+            ret = ioctl(fd, SIOCGIFADDR, &ifr);
+            if (ret)
+            {
+                close(fd);
+                outIP = "";
+                return;
+            }
+        }
+    }
+
+    // Otherwise, we have a winner. Grab the IP and send it back.
+
+    close(fd);
+
+    struct in_addr inaddr = ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr;
+    outIP = inet_ntoa(inaddr);
+    
+    return;
+}
 
 #ifdef STANDALONE_TESTER
 int main(int argc, char**argv)

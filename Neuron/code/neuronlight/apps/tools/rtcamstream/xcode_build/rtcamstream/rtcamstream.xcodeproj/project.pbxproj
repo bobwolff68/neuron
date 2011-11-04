@@ -89,6 +89,7 @@
 		7B8B588B13F0AB4C006CEE3B /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastUpgradeCheck = 0420;
 				ORGANIZATIONNAME = XVDTH;
 			};
 			buildConfigurationList = 7B8B588E13F0AB4C006CEE3B /* Build configuration list for PBXProject "rtcamstream" */;

@@ -89,6 +89,7 @@
 		7BA0B43C13F081CE00E2844A /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastUpgradeCheck = 0420;
 				ORGANIZATIONNAME = XVDTH;
 			};
 			buildConfigurationList = 7BA0B43F13F081CE00E2844A /* Build configuration list for PBXProject "codec" */;

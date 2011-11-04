@@ -114,6 +114,7 @@
 		7B8B587513F0A9BD006CEE3B /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastUpgradeCheck = 0420;
 				ORGANIZATIONNAME = XVDTH;
 			};
 			buildConfigurationList = 7B8B587813F0A9BD006CEE3B /* Build configuration list for PBXProject "network" */;
